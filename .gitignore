@@ -39,8 +39,9 @@ build/
 *.sqlite
 *.sqlite3
 
-# === Media uploads (large binary, serve from storage) ===
-media/
+# === Media uploads ===
+media/avatars/
+media/*.tmp
 
 # === Node / Tailwind ===
 node_modules/
