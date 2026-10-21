@@ -1,0 +1,63 @@
+# === SECRETS & CREDENTIALS (never commit) ===
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# === REPORTS containing credentials ===
+report.txt
+reports/
+*.dump
+*.sql.gz
+*.sql.bz2
+screenshots/
+*.png.screenshot
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+dist/
+build/
+*.whl
+
+# === Local databases ===
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# === Media uploads (large binary, serve from storage) ===
+media/
+
+# === Node / Tailwind ===
+node_modules/
+.npm
+
+# === Virtual environments ===
+.venv/
+venv/
+env/
+
+# === IDE / OS ===
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Alembic auto-gen scratch ===
+alembic/versions/*.pyc

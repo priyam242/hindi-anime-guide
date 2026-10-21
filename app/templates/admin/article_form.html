@@ -1,0 +1,289 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if article %}Edit: {{ article.title }}{% else %}नया लेख बनाएं (New Article){% endif %}{% endblock %}
+{% block breadcrumb_current %}{% if article %}Edit Article{% else %}नया लेख बनाएं{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .editor-layout {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .editor-pane, .preview-pane {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .preview-pane {
+        position: sticky;
+        top: calc(var(--header-height) + 24px);
+        max-height: calc(100vh - var(--header-height) - 48px);
+        overflow-y: auto;
+    }
+
+    .preview-header {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .preview-body {
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--text-primary);
+    }
+
+    .preview-body h1, .preview-body h2, .preview-body h3 {
+        margin: 16px 0 8px 0;
+        color: var(--text-primary);
+    }
+
+    .preview-body p {
+        margin-bottom: 12px;
+    }
+
+    .preview-body a {
+        color: var(--primary);
+    }
+
+    .platform-checkboxes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .platform-check-item {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .platform-check-item:hover {
+        border-color: var(--primary);
+    }
+
+    .counter-text {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        text-align: right;
+        margin-top: 4px;
+    }
+
+    @media (max-width: 960px) {
+        .editor-layout {
+            grid-template-columns: 1fr;
+        }
+        .preview-pane {
+            position: static;
+            max-height: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>📝</span> {% if article %}Edit Article{% else %}Create New Article{% endif %}</h1>
+        <div class="page-subtitle">Publish Hindi anime streaming information with platform links and recommendations.</div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="/admin/articles" class="btn btn-outline">Cancel</a>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('article-form').submit()">
+            💾 Save Article
+        </button>
+    </div>
+</div>
+
+<form id="article-form" action="{% if article %}/admin/articles/{{ article.id }}/edit{% else %}/admin/articles/create{% endif %}" method="POST" enctype="multipart/form-data">
+    <div class="editor-layout">
+        <!-- Left: Form Controls -->
+        <div class="editor-pane">
+            <div class="form-group">
+                <label class="form-label">Article Title</label>
+                <input type="text" id="title-input" name="title" class="input" value="{{ article.title if article else '' }}" required placeholder="e.g. Naruto Hindi Dub: Where to Watch in India (2026)" oninput="updateLivePreview(); autoFillSlug(this.value)">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">URL Slug</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span style="font-size: 13px; color: var(--text-secondary); font-family: monospace;">/article/</span>
+                    <input type="text" id="slug-input" name="slug" class="input" value="{{ article.slug if article else '' }}" required placeholder="naruto-hindi-dub-guide" style="font-family: monospace;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Article Cover / Poster (16:9 widescreen, up to 10MB)</label>
+                <input type="file" id="cover-file-input" name="cover_file" class="input" accept=".jpg,.jpeg,.png,.webp" onchange="previewCoverFile(this)">
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">Recommended: High-res poster (auto-cropped to 16:9 WebP, max 1200x675).</div>
+                
+                {% if article and article.cover_image %}
+                <div id="current-cover-wrap" style="margin-top: 10px; display: flex; align-items: center; gap: 14px; background: var(--bg); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <img src="{{ article.cover_image }}" alt="Current Cover" style="width: 90px; height: 50px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Current Cover Image</div>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--primary); cursor: pointer; margin-top: 4px;">
+                            <input type="checkbox" name="remove_cover" value="1">
+                            <span>Remove Cover Image</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label">Meta Description (SEO)</label>
+                    <span id="meta-counter" class="counter-text">0 / 250</span>
+                </div>
+                <textarea id="meta-input" name="meta_description" class="textarea" rows="2" maxlength="250" placeholder="Summary for Google and search engines..." oninput="updateCharCount('meta-input', 'meta-counter', 250)">{{ article.meta_description if article else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Categories (श्रेणियां - एक या अधिक चुनें)</label>
+                <div class="platform-checkboxes-grid">
+                    {% for c in categories %}
+                        <label class="platform-check-item">
+                            <input type="checkbox" name="category_names" value="{{ c.name }}" {% if c.name in (selected_category_names or []) or (article and (article.category == c.name or (article.category_rel and article.category_rel.name == c.name))) %}checked{% endif %} style="accent-color: var(--primary);">
+                            <span>{{ c.display_name }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 5px;">
+                    💡 आप एक लेख को एक से अधिक श्रेणियों (e.g. कहाँ देखें + सिफारिशें + एक्शन) में रख सकते हैं।
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Available Streaming Platforms</label>
+                <div class="platform-checkboxes-grid">
+                    {% for p in platforms %}
+                        <label class="platform-check-item">
+                            <input type="checkbox" name="platform_ids" value="{{ p.name }}" {% if p.name in selected_platforms %}checked{% endif %} style="accent-color: var(--primary);">
+                            <span>{{ p.display_name }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Article Content (Markdown supported)</label>
+                <textarea id="content-input" name="content_md" class="textarea" rows="15" required placeholder="# Title&#10;&#10;Write your guide in Hindi or Hinglish here...&#10;&#10;### Overview&#10;Key anime details..." oninput="updateLivePreview()">{{ article.content_md if article else '' }}</textarea>
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">Supports # Heading, **bold**, *italic*, [links](url), lists, tables.</div>
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;">
+                <a href="/admin/articles" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save & Publish</button>
+            </div>
+        </div>
+
+        <!-- Right: Live Preview Pane -->
+        <div class="preview-pane">
+            <div class="preview-header">
+                <span>Live Reader Preview</span>
+                <span class="badge badge-info">Real-time</span>
+            </div>
+            <div class="preview-body">
+                <div id="preview-cover-container" style="{% if not (article and article.cover_image) %}display: none;{% endif %} margin-bottom: 14px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border);">
+                    <img id="preview-cover-img" src="{{ article.cover_image if article and article.cover_image else '' }}" alt="Cover Preview" style="width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; display: block;">
+                </div>
+                <h1 id="preview-title" style="font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">
+                    {{ article.title if article else 'Article Title Preview' }}
+                </h1>
+                <div id="preview-meta" style="font-size: 13px; color: var(--text-secondary); font-style: italic; margin-bottom: 16px; border-left: 3px solid var(--border); padding-left: 10px;">
+                    {{ article.meta_description if article else 'Meta summary description will appear here...' }}
+                </div>
+                <div id="preview-content">
+                    {{ article.content_md if article else 'Type content on the left to see live markdown preview.' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let slugAutoGenerated = {% if article %}false{% else %}true{% endif %};
+
+    function autoFillSlug(title) {
+        if (!slugAutoGenerated) return;
+        const slug = generateSlug(title);
+        const slugInput = document.getElementById('slug-input');
+        if (slugInput) slugInput.value = slug;
+    }
+
+    document.getElementById('slug-input').addEventListener('input', function() {
+        slugAutoGenerated = false;
+    });
+
+    function previewCoverFile(input) {
+        const file = input.files && input.files[0];
+        const previewContainer = document.getElementById('preview-cover-container');
+        const previewImg = document.getElementById('preview-cover-img');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function updateLivePreview() {
+        const title = document.getElementById('title-input').value;
+        const meta = document.getElementById('meta-input').value;
+        const content = document.getElementById('content-input').value;
+
+        document.getElementById('preview-title').textContent = title || 'Article Title Preview';
+        document.getElementById('preview-meta').textContent = meta || 'Meta summary description will appear here...';
+
+        // Basic quick markdown renderer for live preview pane
+        const previewEl = document.getElementById('preview-content');
+        if (!content) {
+            previewEl.textContent = 'Type content on the left to see live markdown preview.';
+            return;
+        }
+
+        let html = content
+            .replace(/^### (.*$)/gim, '<h3 style="font-size:16px;font-weight:700;margin:12px 0 6px;">$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2 style="font-size:18px;font-weight:700;margin:16px 0 8px;color:var(--text-primary);">$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1 style="font-size:20px;font-weight:700;margin:18px 0 10px;color:var(--primary);">$1</h1>')
+            .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+            .replace(/\n\n/gim, '</p><p>')
+            .replace(/\n/gim, '<br>');
+
+        previewEl.innerHTML = '<p>' + html + '</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCharCount('meta-input', 'meta-counter', 250);
+        updateLivePreview();
+    });
+</script>
+{% endblock %}

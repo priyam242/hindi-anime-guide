@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.name }} (@{{ user.username }}) — Profile{% endblock %}
+
+{% block extra_head %}
+<style>
+    .profile-wrap {
+        max-width: 840px;
+        margin: 32px auto 64px auto;
+        padding: 0 16px;
+    }
+
+    .profile-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 28px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .profile-main-info {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 38px;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 4px solid var(--surface);
+        box-shadow: var(--shadow-md);
+        background: {{ get_avatar_color(user.name or user.username) }};
+    }
+
+    .profile-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-text h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.5px;
+    }
+
+    .profile-meta {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 4px;
+    }
+
+    .profile-bio-box {
+        margin-top: 14px;
+        font-size: 14.5px;
+        color: var(--text);
+        font-style: italic;
+        line-height: 1.6;
+        padding-left: 12px;
+        border-left: 3px solid var(--red);
+    }
+
+    .profile-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stat-box-title {
+        font-size: 12.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-box-val {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 4px;
+    }
+
+    .comment-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 14px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .comment-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--red);
+    }
+
+    .btn-edit-profile {
+        background: var(--red);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: var(--shadow-crimson);
+        transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn-edit-profile:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 640px) {
+        .profile-main-info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .profile-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+    <!-- Profile Card Header -->
+    <div class="profile-card">
+        <div class="profile-main-info">
+            <div class="profile-avatar-large">
+                {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" alt="{{ user.name }}">
+                {% else %}
+                    {{ get_initials(user.name or user.username) }}
+                {% endif %}
+            </div>
+            <div class="profile-text">
+                <h1>{{ user.name }}</h1>
+                <div class="profile-meta">
+                    <strong>@{{ user.username }}</strong> • {{ user.email }}
+                </div>
+                <div class="profile-meta" style="font-size: 12.5px; margin-top: 2px;">
+                    Member since {{ user.created_at.strftime('%B %Y') if user.created_at else '2026' }}
+                </div>
+                {% if user.bio %}
+                    <div class="profile-bio-box">
+                        "{{ user.bio }}"
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <a href="/settings" class="btn-edit-profile">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-settings"></use></svg> Edit Profile & Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Snapshot -->
+    <div class="profile-stats-grid">
+        <div class="stat-box">
+            <div class="stat-box-title">Comments Posted</div>
+            <div class="stat-box-val">{{ comments|length if comments else 0 }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-title">Account Status</div>
+            <div class="stat-box-val" style="font-size: 20px; color: var(--success); margin-top: 8px;">
+                {% if user.is_banned %}
+                    <span style="color: var(--danger);">Suspended</span>
+                {% else %}
+                    Active Reader
+                {% endif %}
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-title">Language</div>
+            <div class="stat-box-val" style="font-size: 20px; margin-top: 8px;">English</div>
+        </div>
+    </div>
+
+    <!-- Recent Comments Section -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h2 style="font-size: 22px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px;">
+            <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-message-square"></use></svg> Your Comments & Discussions ({{ comments|length if comments else 0 }})
+        </h2>
+    </div>
+
+    {% if comments and comments|length > 0 %}
+        <div>
+            {% for c in comments %}
+                <div class="comment-card">
+                    <p style="color: var(--text); font-size: 15px; line-height: 1.6; margin-bottom: 12px;">
+                        {{ c.content }}
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 10px;">
+                        <span>
+                            {% if c.article_rel %}
+                                On article: <a href="/article/{{ c.article_rel.slug }}" style="color: var(--red); text-decoration: none; font-weight: 600;">{{ c.article_rel.title }} ↗</a>
+                            {% else %}
+                                On article #{{ c.article_id }}
+                            {% endif %}
+                            • {{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}
+                        </span>
+                        <form method="POST" action="/comment/{{ c.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this comment permanently?');">
+                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg class="icon" width="12" height="12" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span>Delete</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--muted);">
+            <div style="margin-bottom: 12px; color: var(--muted);"><svg class="icon" width="36" height="36" aria-hidden="true"><use href="#i-message-square"></use></svg></div>
+            <div style="font-weight: 600; font-size: 15px; color: var(--text);">You haven't posted any comments yet</div>
+            <p style="font-size: 13.5px; margin-top: 4px;">Visit any anime guide on the homepage to join the community discussion!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}सुरक्षा सेटिंग्स — Hindi Anime Guide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sec-wrapper { max-width: 780px; margin: 32px auto 80px; padding: 0 16px; }
+
+  .sec-header { margin-bottom: 28px; }
+  .sec-header h1 { font-size: 26px; font-weight: 700; color: var(--text); }
+  .sec-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .sec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sec-card-title {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+
+  .sec-card-title svg { color: var(--red); stroke: currentColor; }
+  .sec-card-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+
+  .badge-secure {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--success-bg); color: var(--success-text);
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  [data-theme="dark"] .badge-secure { background: var(--success-bg); color: var(--success-text); }
+
+  .badge-warn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--warning-bg); color: var(--warning-text);
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  [data-theme="dark"] .badge-warn { background: var(--warning-bg); color: var(--warning-text); }
+
+  .btn-primary {
+    padding: 10px 20px; background: var(--red); color: var(--on-red);
+    border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+
+  .btn-danger {
+    padding: 8px 16px; background: transparent; color: var(--danger-text);
+    border: 1.5px solid var(--danger-text); border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-danger:hover { background: var(--danger-text); color: var(--on-red); }
+
+  .btn-ghost {
+    padding: 8px 16px; background: transparent; color: var(--muted);
+    border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  /* QR panel */
+  .qr-panel { text-align: center; padding: 24px 0 0; }
+  .qr-panel img { border-radius: 12px; border: 4px solid var(--surface); box-shadow: var(--shadow-md); max-width: 200px; }
+  .manual-secret {
+    font-family: monospace; font-size: 14px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+    word-break: break-all; margin: 12px 0; color: var(--text); letter-spacing: 2px;
+  }
+  .confirm-row { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+  .confirm-row input[type="text"] {
+    flex: 1; padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font-size: 20px; font-weight: 700;
+    letter-spacing: 4px; text-align: center; outline: none;
+  }
+  .confirm-row input[type="text"]:focus { border-color: var(--red); }
+
+  /* Backup codes */
+  .backup-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin: 16px 0;
+  }
+  .backup-code-item {
+    font-family: monospace; font-size: 15px; font-weight: 700;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text);
+    letter-spacing: 2px; text-align: center;
+  }
+  .backup-code-item.used { opacity: 0.4; text-decoration: line-through; }
+
+  /* Devices list */
+  .device-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .device-item:last-child { border-bottom: none; }
+  .device-label { font-size: 13px; color: var(--text); font-weight: 500; }
+  .device-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Security log */
+  .log-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .log-dot.ok { background: var(--success-text); }
+  .log-dot.warn { background: var(--warning-text); }
+  .log-dot.bad { background: var(--danger-text); }
+  .log-action { font-weight: 600; color: var(--text); }
+  .log-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  /* Alert banner */
+  .alert-required {
+    background: var(--warning-bg); border: 1.5px solid var(--warning-border); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  [data-theme="dark"] .alert-required { background: var(--warning-bg); border-color: var(--warning-border); }
+  .alert-required-text { font-size: 14px; font-weight: 600; color: var(--warning-text); }
+  [data-theme="dark"] .alert-required-text { color: var(--warning-text); }
+  .alert-required-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .success-banner {
+    background: var(--success-bg); border: 1px solid var(--admin-success-border); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: var(--success-text);
+    display: flex; gap: 8px; align-items: center;
+  }
+  [data-theme="dark"] .success-banner { background: var(--success-bg); border-color: var(--admin-success-border); color: var(--success-text); }
+
+  .error-banner {
+    background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: var(--danger-text);
+    display: flex; gap: 8px; align-items: center;
+  }
+  [data-theme="dark"] .error-banner { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+
+  .disable-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .disable-form input[type="password"], .disable-form input[type="text"] {
+    width: 100%; padding: 10px 14px; border: 2px solid var(--border);
+    border-radius: 8px; background: var(--bg); color: var(--text);
+    font-size: 14px; outline: none; margin-bottom: 10px;
+  }
+  .disable-form input:focus { border-color: var(--red); }
+
+  .section-divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  @media (max-width: 600px) {
+    .backup-grid { grid-template-columns: 1fr; }
+    .confirm-row { flex-direction: column; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sec-wrapper">
+
+  <div class="sec-header">
+    <h1 data-i18n-hi="सुरक्षा सेटिंग्स" data-i18n-en="Security Settings">सुरक्षा सेटिंग्स</h1>
+    <p data-i18n-hi="अपने खाते की सुरक्षा प्रबंधित करें" data-i18n-en="Manage your account security">अपने खाते की सुरक्षा प्रबंधित करें</p>
+  </div>
+
+  {% if setup_required %}
+  <div class="alert-required" role="alert">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" style="flex-shrink:0;margin-top:1px;color:var(--warning-text)">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <div>
+      <div class="alert-required-text">एडमिन पैनल के लिए 2FA अनिवार्य है</div>
+      <div class="alert-required-sub">नीचे दिए गए निर्देशों का पालन करके 2FA सेट करें — इसके बिना /admin एक्सेस नहीं होगा।</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if success %}
+  <div class="success-banner" role="status">
+    <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ success }}
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="error-banner" role="alert">
+    <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/></svg>
+    {{ error }}
+  </div>
+  {% endif %}
+
+  {# ── 2FA Status Card ──────────────────────────────────────────────────── #}
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>दो-चरणीय प्रमाणीकरण (2FA)</span>
+      {% if account.totp_enabled %}
+        <span class="badge-secure">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          सुरक्षित ✓
+        </span>
+      {% else %}
+        <span class="badge-warn">बिना 2FA</span>
+      {% endif %}
+    </div>
+    <p class="sec-card-desc">TOTP आधारित 2FA — Google Authenticator, Microsoft Authenticator, Authy जैसे ऐप्स से काम करता है।</p>
+
+    {% if show_qr %}
+    {# ── QR setup panel ── #}
+    <div class="qr-panel">
+      <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;">
+        अपने ऑथेंटिकेटर ऐप से नीचे का QR स्कैन करें:
+      </p>
+      <img src="{{ qr_data_uri }}" alt="TOTP QR Code" width="200" height="200">
+      <p style="font-size:12px;color:var(--muted);margin:12px 0 6px;">या यह सीक्रेट की मैन्युअली दर्ज करें:</p>
+      <div class="manual-secret" id="manual-secret-display" aria-label="Manual TOTP secret">{{ manual_secret }}</div>
+      <button type="button" onclick="copySecret()" class="btn-ghost" style="font-size:12px;padding:6px 14px;margin-bottom:16px;">
+        कॉपी करें
+      </button>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">ऐप में कोड दिखने लगे तो नीचे दर्ज करें:</p>
+      <form method="post" action="/settings/security/2fa/confirm">
+        <div class="confirm-row">
+          <input type="text" name="code" placeholder="123456" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required aria-label="Confirmation TOTP code">
+          <button type="submit" class="btn-primary">सत्यापित करें</button>
+        </div>
+      </form>
+    </div>
+
+    {% elif show_backup_codes %}
+    {# ── Backup codes panel ── #}
+    <div>
+      <p style="font-size:13px;font-weight:600;color:var(--warning-text);background:var(--warning-bg);border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+        ये कोड केवल एक बार दिखाए जाते हैं। इन्हें अभी सेव करें।
+      </p>
+      <div class="backup-grid" id="backup-codes-grid">
+        {% for code in backup_codes_plaintext %}
+        <div class="backup-code-item">{{ code[:5] }}-{{ code[5:] }}</div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+        <button type="button" onclick="copyBackupCodes()" class="btn-ghost">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style="display:inline;margin-right:4px"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
+          कॉपी करें
+        </button>
+        <button type="button" onclick="downloadBackupCodes()" class="btn-ghost">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style="display:inline;margin-right:4px"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          डाउनलोड .txt
+        </button>
+      </div>
+    </div>
+
+    {% else %}
+    {# ── Normal 2FA status view ── #}
+    {% if account.totp_enabled %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <form method="post" action="/settings/security/2fa/regen-backup" style="display:inline;">
+          <button type="submit" class="btn-ghost">नए बैकअप कोड बनाएँ ({{ backup_count }} बचे हैं)</button>
+        </form>
+        <button type="button" class="btn-danger" onclick="document.getElementById('disable-form').classList.toggle('hidden')" aria-expanded="false">
+          2FA बंद करें
+        </button>
+      </div>
+      <div class="disable-form hidden" id="disable-form">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">2FA बंद करने के लिए पुष्टि करें:</p>
+        <form method="post" action="/settings/security/2fa/disable">
+          <input type="password" name="current_password" placeholder="वर्तमान पासवर्ड दर्ज करें" aria-label="Current password">
+          <p style="font-size:12px;color:var(--muted);text-align:center;margin:-4px 0 8px;">— या —</p>
+          <input type="text" name="totp_code" placeholder="TOTP कोड (6 अंक)" maxlength="6" inputmode="numeric" aria-label="TOTP code for disable">
+          <button type="submit" class="btn-danger" style="width:100%;">2FA अक्षम करें</button>
+        </form>
+      </div>
+    {% else %}
+      <form method="post" action="/settings/security/2fa/setup">
+        <button type="submit" class="btn-primary">2FA सेट करें</button>
+      </form>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  {# ── Trusted Devices ──────────────────────────────────────────────────── #}
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>
+      </svg>
+      <span>विश्वसनीय डिवाइस</span>
+    </div>
+    <p class="sec-card-desc">ये डिवाइस अगले 30 दिनों तक TOTP कोड माँगे बिना लॉगिन करेंगे।</p>
+
+    {% if devices %}
+      {% for device in devices %}
+      <div class="device-item">
+        <div>
+          <div class="device-label">{{ device.label[:80] or "अज्ञात डिवाइस" }}</div>
+          <div class="device-meta">
+            जोड़ा: {{ device.created_at.strftime('%d %b %Y') }} •
+            समाप्त: {{ device.expires_at.strftime('%d %b %Y') }}
+          </div>
+        </div>
+        <form method="post" action="/settings/security/device/revoke">
+          <input type="hidden" name="device_id" value="{{ device.id }}">
+          <button type="submit" class="btn-danger" style="padding:6px 12px;font-size:12px;">हटाएं</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size:13px;color:var(--muted);">कोई विश्वसनीय डिवाइस नहीं है।</p>
+    {% endif %}
+  </div>
+
+  {# ── Logout everywhere ────────────────────────────────────────────────── #}
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      <span>सभी सत्र बंद करें</span>
+    </div>
+    <p class="sec-card-desc">सभी डिवाइसों पर लॉगिन सत्र तुरंत समाप्त करें। यह भरोसेमंद डिवाइस भी रद्द कर देगा।</p>
+    <form method="post" action="/settings/security/logout-everywhere" onsubmit="return confirm('क्या आप वाकई सभी सत्र बंद करना चाहते हैं?')">
+      <button type="submit" class="btn-danger">सभी सत्र बंद करें</button>
+    </form>
+  </div>
+
+  {# ── Security Activity ─────────────────────────────────────────────────── #}
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <span>हाल की सुरक्षा गतिविधि</span>
+    </div>
+    <p class="sec-card-desc">पिछले 20 सुरक्षा इवेंट।</p>
+
+    {% if logs %}
+      {% for log in logs %}
+      <div class="log-item">
+        <div class="log-dot {{ 'ok' if log.action in ('2fa_success', '2fa_enabled', 'trusted_device_added') else ('bad' if log.action in ('failed_2fa', '2fa_lockout', 'backup_code_used') else 'warn') }}"></div>
+        <div>
+          <div class="log-action">{{ {
+            '2fa_enabled': '2FA सक्षम',
+            '2fa_disabled': '2FA अक्षम',
+            '2fa_success': '2FA सफल लॉगिन',
+            'failed_2fa': 'गलत 2FA कोड',
+            '2fa_lockout': 'खाता लॉक (बहुत प्रयास)',
+            'backup_code_used': 'बैकअप कोड उपयोग',
+            'backup_codes_regenerated': 'नए बैकअप कोड बनाए',
+            'trusted_device_added': 'डिवाइस विश्वसनीय जोड़ा',
+            'trusted_device_revoked': 'डिवाइस रद्द किया',
+            'logout_everywhere': 'सभी सत्र बंद',
+            'admin_2fa_reset': 'एडमिन ने 2FA रीसेट किया',
+            '2fa_setup_wrong_code': 'सेटअप — गलत कोड',
+          }.get(log.action, log.action) }}</div>
+          <div class="log-meta">
+            {{ log.created_at.strftime('%d %b %Y, %H:%M') }}
+            {% if log.ip_address %} • IP: {{ log.ip_address }}{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size:13px;color:var(--muted);">कोई गतिविधि रिकॉर्ड नहीं।</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Copy secret
+function copySecret() {
+  const el = document.getElementById('manual-secret-display');
+  if (el) {
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+      showToast && showToast('सीक्रेट कॉपी हो गया!', 'success');
+    });
+  }
+}
+
+// Toggle disable form
+const disableToggle = document.querySelector('[aria-expanded]');
+if (disableToggle) {
+  disableToggle.addEventListener('click', function() {
+    const expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+  });
+}
+
+// Copy backup codes
+function copyBackupCodes() {
+  const items = document.querySelectorAll('.backup-code-item');
+  const text = Array.from(items).map((el, i) => `${i+1}. ${el.textContent.trim()}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    showToast && showToast('बैकअप कोड कॉपी हो गए!', 'success');
+  });
+}
+
+// Download backup codes as .txt
+function downloadBackupCodes() {
+  const items = document.querySelectorAll('.backup-code-item');
+  const text = ['Hindi Anime Guide — बैकअप रिकवरी कोड', '================================', '']
+    .concat(Array.from(items).map((el, i) => `${i+1}. ${el.textContent.trim()}`))
+    .concat(['', 'प्रत्येक कोड केवल एक बार काम करता है।', 'इन्हें सुरक्षित स्थान पर रखें।'])
+    .join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'hindi-anime-guide-backup-codes.txt';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Show hidden class support
+document.querySelectorAll('.hidden').forEach(el => el.style.display = 'none');
+document.querySelectorAll('[onclick*="classList.toggle"]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const targetId = this.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+    if (targetId) {
+      const target = document.getElementById(targetId);
+      if (target) {
+        const hidden = target.style.display === 'none' || !target.style.display;
+        target.style.display = hidden ? 'block' : 'none';
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

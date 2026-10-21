@@ -1,0 +1,571 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb_current %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+    .welcome-banner {
+        background: var(--banner-gradient);
+        border: 1px solid var(--glass-border-subtle);
+        border-radius: var(--radius-lg);
+        padding: 28px 32px;
+        color: white;
+        margin-bottom: 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .welcome-banner::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: var(--glow-crimson);
+        pointer-events: none;
+    }
+
+    .welcome-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .welcome-avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        font-weight: 700;
+        color: white;
+        border: 3px solid var(--glass-border-white20);
+        box-shadow: var(--shadow-avatar-dark);
+        overflow: hidden;
+        flex-shrink: 0;
+        background: {{ get_avatar_color(user_name or 'Admin') }};
+    }
+
+    .welcome-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .welcome-text h2 {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 4px;
+    }
+
+    .welcome-text p {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .welcome-actions {
+        display: flex;
+        gap: 12px;
+        position: relative;
+        z-index: 2;
+        flex-wrap: wrap;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 22px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+    }
+
+    .stat-card.articles::before { background: var(--primary); }
+    .stat-card.categories::before { background: var(--info); }
+    .stat-card.platforms::before { background: var(--purple); }
+    .stat-card.users::before { background: var(--teal); }
+    .stat-card.comments::before { background: var(--warning); }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .stat-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .stat-card.articles .stat-icon { background: var(--stat-icon-article); color: var(--primary); }
+    .stat-card.categories .stat-icon { background: var(--stat-icon-cat); color: var(--info); }
+    .stat-card.platforms .stat-icon { background: var(--stat-icon-plat); color: var(--purple); }
+    .stat-card.users .stat-icon { background: var(--stat-icon-user); color: var(--teal); }
+    .stat-card.comments .stat-icon { background: var(--stat-icon-comment); color: var(--warning); }
+
+    .stat-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .stat-footer {
+        margin-top: 10px;
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Quick Actions Grid */
+    .quick-actions-bar {
+        margin-bottom: 28px;
+    }
+
+    .quick-actions-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+    }
+
+    .action-tile {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .action-tile:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        background: var(--crimson-tint-subtle);
+    }
+
+    body.dark-mode .action-tile:hover {
+        background: var(--glass-white-04);
+    }
+
+    .action-tile .icon {
+        font-size: 22px;
+    }
+
+    .action-tile-text .title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .action-tile-text .desc {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+    }
+
+    /* Split Dashboard Layout */
+    .dashboard-split {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr;
+        gap: 24px;
+    }
+
+    /* Activity Feed */
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        font-size: 13.5px;
+        transition: background 0.15s;
+    }
+
+    .activity-item:hover {
+        background: var(--crimson-tint);
+    }
+
+    .activity-icon {
+        font-size: 16px;
+        margin-top: 2px;
+    }
+
+    .activity-main {
+        flex: 1;
+    }
+
+    .activity-action {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .activity-details {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    .activity-time {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    /* Notifications Panel */
+    .notif-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .notif-item:last-child {
+        border-bottom: none;
+    }
+
+    .notif-title {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .notif-message {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    .notif-time {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .dashboard-split {
+            grid-template-columns: 1fr;
+        }
+        .welcome-banner {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="welcome-content">
+        <div class="welcome-avatar">
+            {% if admin_user and admin_user.avatar_url %}
+                <img src="{{ admin_user.avatar_url }}" alt="{{ user_name }}">
+            {% else %}
+                {{ get_initials(user_name or 'Admin') }}
+            {% endif %}
+        </div>
+        <div class="welcome-text">
+            <h2>Welcome back, {{ user_name or 'Admin' }}! 👋</h2>
+            <p>डैशबोर्ड (Dashboard) — Here is what's happening with the Hindi Anime Guide platform today. Logged in as {{ user_email }}.</p>
+        </div>
+    </div>
+    <div class="welcome-actions">
+        <a href="/admin/articles/create" class="btn btn-primary">
+            <span>+</span> New Article
+        </a>
+        <a href="/admin/account" class="btn btn-outline" style="color: white; border-color: var(--glass-border-white20);">
+            ⚙️ Settings
+        </a>
+    </div>
+</div>
+
+<!-- 5 Stat Cards -->
+<div class="stats-grid">
+    <!-- Articles Stat -->
+    <div class="stat-card articles">
+        <div class="stat-header">
+            <span class="stat-title">Articles</span>
+            <div class="stat-icon">📝</div>
+        </div>
+        <div class="stat-value">{{ article_count }}</div>
+        <div class="stat-footer">
+            <a href="/admin/articles" style="color: var(--primary); text-decoration: none; font-weight: 600;">Manage articles →</a>
+        </div>
+    </div>
+
+    <!-- Categories Stat -->
+    <div class="stat-card categories">
+        <div class="stat-header">
+            <span class="stat-title">Categories</span>
+            <div class="stat-icon">📂</div>
+        </div>
+        <div class="stat-value">{{ category_count }}</div>
+        <div class="stat-footer">
+            <a href="/admin/categories" style="color: var(--info); text-decoration: none; font-weight: 600;">View categories →</a>
+        </div>
+    </div>
+
+    <!-- Platforms Stat -->
+    <div class="stat-card platforms">
+        <div class="stat-header">
+            <span class="stat-title">Platforms</span>
+            <div class="stat-icon">🖥️</div>
+        </div>
+        <div class="stat-value">{{ platform_count }}</div>
+        <div class="stat-footer">
+            <a href="/admin/platforms" style="color: var(--purple); text-decoration: none; font-weight: 600;">Streaming platforms →</a>
+        </div>
+    </div>
+
+    <!-- Users Stat -->
+    <div class="stat-card users">
+        <div class="stat-header">
+            <span class="stat-title">Registered Users</span>
+            <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-value">{{ user_count }}</div>
+        <div class="stat-footer">
+            <a href="/admin/users" style="color: var(--teal); text-decoration: none; font-weight: 600;">View user directory →</a>
+        </div>
+    </div>
+
+    <!-- Comments Stat -->
+    <div class="stat-card comments">
+        <div class="stat-header">
+            <span class="stat-title">Comments</span>
+            <div class="stat-icon">💬</div>
+        </div>
+        <div class="stat-value">{{ comment_count }}</div>
+        <div class="stat-footer">
+            {% if pending_comments > 0 %}
+                <span class="badge badge-warning">{{ pending_comments }} unapproved</span>
+            {% else %}
+                <span class="badge badge-success">All approved</span>
+            {% endif %}
+            <a href="/admin/comments" style="margin-left: auto; color: var(--warning); text-decoration: none; font-weight: 600;">Review →</a>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions-bar">
+    <div class="quick-actions-title">⚡ Quick Management Actions</div>
+    <div class="quick-actions-grid">
+        <a href="/admin/articles/create" class="action-tile">
+            <div class="icon" style="color: var(--primary);">📝</div>
+            <div class="action-tile-text">
+                <div class="title">Create Article</div>
+                <div class="desc">Publish new anime guide</div>
+            </div>
+        </a>
+        <a href="/admin/categories" class="action-tile">
+            <div class="icon" style="color: var(--info);">📂</div>
+            <div class="action-tile-text">
+                <div class="title">Categories</div>
+                <div class="desc">Add or reorder genres</div>
+            </div>
+        </a>
+        <a href="/admin/platforms" class="action-tile">
+            <div class="icon" style="color: var(--purple);">🖥️</div>
+            <div class="action-tile-text">
+                <div class="title">Platforms</div>
+                <div class="desc">Streaming links & URLs</div>
+            </div>
+        </a>
+        <a href="/admin/comments" class="action-tile">
+            <div class="icon" style="color: var(--warning);">💬</div>
+            <div class="action-tile-text">
+                <div class="title">Moderate Comments</div>
+                <div class="desc">Approve or remove posts</div>
+            </div>
+        </a>
+        <a href="/admin/users" class="action-tile">
+            <div class="icon" style="color: var(--teal);">👥</div>
+            <div class="action-tile-text">
+                <div class="title">Manage Users</div>
+                <div class="desc">Directory & status</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Split: Recent Activity & Notifications -->
+<div class="dashboard-split">
+    <!-- Recent Activity Log Card -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <span>📜</span> Recent System Activity
+            </h2>
+            <a href="/admin/activity" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600;">
+                Full Log →
+            </a>
+        </div>
+
+        <div class="activity-list">
+            {% if recent_activities and recent_activities|length > 0 %}
+                {% for act in recent_activities %}
+                    <div class="activity-item">
+                        <span class="activity-icon">
+                            {% if 'article' in act.action %}📝
+                            {% elif 'user' in act.action %}👤
+                            {% elif 'comment' in act.action %}💬
+                            {% elif 'category' in act.action %}📂
+                            {% elif 'platform' in act.action %}🖥️
+                            {% elif 'login' in act.action %}🔑
+                            {% else %}⚡{% endif %}
+                        </span>
+                        <div class="activity-main">
+                            <div class="activity-action">{{ act.action | replace('_', ' ') | title }}</div>
+                            <div class="activity-details">{{ act.details or 'System action executed' }}</div>
+                        </div>
+                        <div class="activity-time">
+                            {{ act.created_at.strftime('%H:%M, %d %b') if act.created_at else '' }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 24px; color: var(--text-secondary); font-size: 14px;">
+                    No recent activity logs recorded yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notifications & Platform Health -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <span>🔔</span> Unread Alerts
+            </h2>
+            <a href="/admin/notifications" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600;">
+                View All →
+            </a>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+            {% if unread_notifications and unread_notifications|length > 0 %}
+                {% for n in unread_notifications %}
+                    <div class="notif-item">
+                        <span style="font-size: 18px;">
+                            {% if n.notification_type == 'success' %}✅
+                            {% elif n.notification_type == 'warning' %}⚠️
+                            {% elif n.notification_type == 'error' %}❌
+                            {% else %}ℹ️{% endif %}
+                        </span>
+                        <div style="flex: 1;">
+                            <div class="notif-title">{{ n.title }}</div>
+                            <div class="notif-message">{{ n.message }}</div>
+                            <div class="notif-time">{{ n.created_at.strftime('%d %b, %H:%M') if n.created_at else '' }}</div>
+                        </div>
+                        {% if n.link %}
+                            <a href="{{ n.link }}" class="btn btn-outline btn-sm">View</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+                    <div style="font-size: 28px; margin-bottom: 8px;">🎉</div>
+                    <div style="font-weight: 600; font-size: 14px;">No unread notifications</div>
+                    <div style="font-size: 12.5px; margin-top: 4px;">You are all up to date with comments and alerts.</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Platform Stats Snapshot -->
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                Platform Quick Status
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                <span style="color: var(--text-secondary);">Database</span>
+                <span style="color: var(--success); font-weight: 600;">● PostgreSQL Connected</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                <span style="color: var(--text-secondary);">Theme Engine</span>
+                <span style="font-weight: 600;">Bell MT / Georgia (English)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: var(--text-secondary);">Admin Role</span>
+                <span style="font-weight: 600;">Super Administrator</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

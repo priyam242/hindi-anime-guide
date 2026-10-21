@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.display_name or category.name }} | {{ site.name }}{% endblock %}
+{% block meta_description %}{{ category.description }}{% endblock %}
+
+{% block content %}
+<main class="wrap" style="padding-top: 28px; padding-bottom: 56px;">
+
+  <!-- Breadcrumbs -->
+  <nav style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); margin-bottom: 20px;">
+    <a href="/" data-i18n="nav_home" style="color: var(--muted); text-decoration: none;">होम</a>
+    <svg class="icon" width="12" height="12" aria-hidden="true" style="color: var(--muted);"><use href="#i-chevron-right"></use></svg>
+    <span class="cat-page-name" data-cat-raw="{{ category.display_name or category.name }}" style="color: var(--text); font-weight: 500;">{{ category.display_name or category.name }}</span>
+  </nav>
+
+  <!-- Category Banner Header -->
+  <header style="padding: 28px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 28px;">
+    <div style="margin-bottom: 12px;">
+      <span class="tag" data-i18n="tag_category">श्रेणी</span>
+    </div>
+
+    <h1 class="cat-page-name" data-cat-raw="{{ category.display_name or category.name }}" style="font-size: clamp(26px, 4vw, 38px); font-weight: 700; color: var(--text); margin-bottom: 10px;">
+      {{ category.display_name or category.name }}
+    </h1>
+
+    {% if category.description %}
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 70ch;">
+      {{ category.description }}
+    </p>
+    {% endif %}
+  </header>
+
+  <!-- Section Divider -->
+  <div class="sec">
+    <h2><span class="cat-page-name" data-cat-raw="{{ category.display_name or category.name }}">{{ category.display_name or category.name }}</span> <span class="cat-page-sec-suffix">के लेख</span></h2>
+    <span class="meta"><span class="cat-articles-count">{{ articles|length }}</span> <span class="cat-articles-word">लेख</span></span>
+  </div>
+
+  <!-- Articles Grid -->
+  {% if articles %}
+  <section class="grid">
+    {% for article in articles %}
+      {% include "components/anime_card.html" %}
+    {% endfor %}
+  </section>
+  {% else %}
+  <div style="padding: 48px 24px; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;">
+    <p data-i18n="empty_cat_msg" style="font-size: 16px; color: var(--muted); margin: 0 0 16px; line-height: 1.7;">इस श्रेणी में लेख जल्द आएँगे।</p>
+    <a href="/" data-i18n="empty_cat_btn" style="font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+      मुख्य पृष्ठ पर वापस जाएं
+    </a>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

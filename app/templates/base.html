@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#FAFAF7">
+  <title>{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ site.description }}{% endblock %}">
+  
+  {% if (article and article.is_sample) or is_sample %}
+  <meta name="robots" content="noindex,nofollow">
+  {% endif %}
+  
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url or request.url }}{% endblock %}">
+  {% if not article %}
+  {% block og_tags %}
+  <meta property="og:site_name" content="{{ site.name }}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_title %}{{ site.name }} — {{ site.description }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ site.description }}{% endblock %}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}{{ site.name }} — {{ site.description }}{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}{{ site.description }}{% endblock %}">
+  {% endblock %}
+  {% endif %}
+  
+  <!-- Inline Light-First Theme Controller -->
+  <script>try { if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}</script>
+
+  <!-- Fonts & Design Tokens -->
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/noto-serif-devanagari-variable.woff2" crossorigin>
+  <link rel="stylesheet" href="/static/css/fonts.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/tailwind.css">
+  
+  <!-- Alpine.js -->
+  <script defer src="/static/js/alpine.min.js"></script>
+  <style>
+    * {
+      font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, 'Times New Roman', serif;
+    }
+    body {
+      font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, serif;
+      font-weight: 400;
+      line-height: 1.8;
+      font-variant-numeric: lining-nums tabular-nums;
+      font-feature-settings: "lnum" 1;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, serif;
+      font-weight: 700;
+      line-height: 1.35;
+      font-variant-numeric: lining-nums tabular-nums;
+      font-feature-settings: "lnum" 1;
+    }
+    /* Devanagari text must never be italic */
+    *, body, h1, h2, h3, h4, h5, h6, p, span, a, li, blockquote, div {
+      font-style: normal !important;
+    }
+
+    /* Public user dropdown styling */
+    .user-profile-menu-container {
+      position: relative;
+    }
+
+    .user-avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .user-avatar-circle:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .public-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 220px;
+      box-shadow: var(--dropdown-shadow);
+      padding: 8px 0;
+      z-index: 1000;
+      animation: dropIn 0.15s ease-out;
+    }
+
+    @keyframes dropIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .public-dropdown-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .public-dropdown-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .public-dropdown-email {
+      font-size: 11.5px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .public-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      font-size: 13.5px;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .public-dropdown-item:hover {
+      background: var(--crimson-tint);
+      color: var(--red);
+    }
+
+    .public-dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body 
+  x-data="{
+    mobileOpen: false,
+    userMenuOpen: false,
+    isMobile: window.innerWidth <= 860,
+    isDark: (() => {
+      try { return document.cookie.includes('dark_mode=1') || localStorage.getItem('theme') === 'dark'; } catch (e) { return false; }
+    })(),
+    init() {
+      try {
+        if (this.isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        this.isDark = false;
+      }
+      window.addEventListener('resize', () => {
+        this.isMobile = window.innerWidth <= 860;
+        if (!this.isMobile && this.mobileOpen) {
+          this.mobileOpen = false;
+        }
+      });
+    },
+    openMobile() {
+      this.mobileOpen = true;
+    },
+    closeMobile() {
+      this.mobileOpen = false;
+      this.userMenuOpen = false;
+    },
+    toggleMobile() {
+      this.mobileOpen = !this.mobileOpen;
+    },
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      if (this.isDark) {
+        document.documentElement.classList.add('dark');
+        try { localStorage.setItem('theme', 'dark'); } catch (e) {}
+        document.cookie = 'dark_mode=1; path=/; max-age=31536000';
+      } else {
+        document.documentElement.classList.remove('dark');
+        try { localStorage.setItem('theme', 'light'); } catch (e) {}
+        document.cookie = 'dark_mode=0; path=/; max-age=31536000';
+      }
+    }
+  }"
+  :class="{ 'open': mobileOpen }"
+  @keydown.escape.window="closeMobile()"
+  @click.away="userMenuOpen = false"
+>
+  <!-- Inline SVG Sprite & A11y Skip Link -->
+  {% include "partials/icons.html" %}
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- Left Sidebar Navigation -->
+  <aside 
+    class="side-nav" 
+    id="nav"
+    :inert="isMobile && !mobileOpen"
+    :style="isMobile && !mobileOpen ? 'visibility: hidden;' : 'visibility: visible;'"
+  >
+    <a class="logo" href="/">Hindi Anime <span>Guide</span></a>
+    <input class="find" type="search" placeholder="खोजें" aria-label="खोजें" data-i18n-placeholder="search_placeholder" onkeyup="if(event.key === 'Enter') window.location.href='/explore?q=' + encodeURIComponent(this.value)">
+    
+    <nav class="menu">
+      <a class="{% if active_nav == 'home' %}on{% endif %}" href="/" {% if active_nav == 'home' %}aria-current="page"{% endif %}><span data-i18n="nav_home">होम</span></a>
+      {% if categories %}
+        {% for nav_cat in categories %}
+        <a class="{% if active_nav == nav_cat.slug %}on{% endif %}" href="/category/{{ nav_cat.slug }}" {% if active_nav == nav_cat.slug %}aria-current="page"{% endif %}>
+          <span class="sidebar-cat-label" data-cat-raw="{{ nav_cat.name_hi }}" data-i18n="cat_{{ nav_cat.slug }}">{{ nav_cat.name_hi }}</span>
+        </a>
+        {% endfor %}
+      {% endif %}
+    </nav>
+
+    <nav class="menu sidebar-extra-nav" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+      <a class="{% if active_nav == 'explore' %}on{% endif %}" href="/explore" {% if active_nav == 'explore' %}aria-current="page"{% endif %} style="display: flex; align-items: center; gap: 10px;">
+        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-compass"></use></svg> <span data-i18n="nav_explore">एक्सप्लोर</span>
+      </a>
+      {% if user %}
+      <a class="{% if active_nav == 'saved' %}on{% endif %}" href="/saved" {% if active_nav == 'saved' %}aria-current="page"{% endif %} style="display: flex; align-items: center; gap: 10px;">
+        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-bookmark"></use></svg> <span data-i18n="nav_saved">मेरी सूची</span>
+      </a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- Mobile Backdrop Scrim -->
+  <div class="scrim" @click="closeMobile()"></div>
+
+  <!-- Main Content Area -->
+  <div class="main">
+    
+    <!-- Header / Topbar -->
+    <header class="topbar">
+      <div class="wrap" style="display: flex; align-items: center; justify-content: space-between; height: 100%;">
+        <div class="topbar-left">
+        <button 
+          id="hamburger-btn"
+          type="button" 
+          aria-label="मेन्यू" 
+          aria-controls="nav"
+          :aria-expanded="mobileOpen ? 'true' : 'false'"
+          @click="toggleMobile()" 
+          class="topbar-btn"
+        ><svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-menu"></use></svg></button>
+        <a class="logo mobile-logo" href="/">Hindi Anime <span>Guide</span></a>
+      </div>
+      
+      <div class="topbar-right" style="display: flex; align-items: center; gap: 14px; font-size: 14px;">
+        {% if user %}
+            <!-- Notification Bell Dropdown -->
+            <div style="position: relative;" id="notif-container">
+                <button 
+                  type="button" 
+                  class="notif-bell-btn" 
+                  aria-label="Notifications" 
+                  onclick="toggleNotifDropdown(event)"
+                >
+                  <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-bell"></use></svg>
+                  <span id="notif-badge" class="notif-badge-dot" style="display: none;"></span>
+                </button>
+                
+                <div id="notif-dropdown" class="notif-dropdown" onclick="event.stopPropagation()">
+                  <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; font-size: 13.5px; color: var(--text);" data-i18n="notifications">सूचनाएं</span>
+                    <button type="button" onclick="markAllNotificationsRead()" style="background: none; border: none; font-size: 11.5px; color: var(--red); cursor: pointer; font-weight: 600;" data-i18n="mark_all_read">सभी पढ़े हुए मार्क करें</button>
+                  </div>
+                  <div id="notif-list" style="max-height: 320px; overflow-y: auto;">
+                    <div style="padding: 20px; text-align: center; color: var(--muted); font-size: 13px;" data-i18n="no_notifications">कोई नई सूचना नहीं है</div>
+                  </div>
+                </div>
+            </div>
+
+            <!-- Logged in User Avatar Dropdown -->
+            <div class="user-profile-menu-container" @click.stop="userMenuOpen = !userMenuOpen">
+                <button type="button" style="background: none; border: none; padding: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <div class="user-avatar-circle" style="background: {{ get_avatar_color(user.name or 'Reader') }};">
+                        {% if user.avatar_url %}
+                            <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="avatar-img" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">
+                        {% else %}
+                            {{ get_initials(user.name or 'Reader') }}
+                        {% endif %}
+                    </div>
+                    <span style="font-weight: 600; color: var(--text); font-size: 13.5px;" class="hide-mobile">{{ user.name }} ▾</span>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="public-dropdown" x-show="userMenuOpen" style="display: none;" @click.stop>
+                    <div class="public-dropdown-header">
+                        <div class="public-dropdown-name">{{ user.name }}</div>
+                        <div class="public-dropdown-email">{{ user.email or ('@' + user.username if user.username else '') }}</div>
+                    </div>
+                    {% if user.user_type == 'admin' or user.is_superuser or user.is_staff %}
+                        <a href="/admin/dashboard" class="public-dropdown-item" style="color: var(--red); font-weight: 700;">
+                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-shield-check"></use></svg> Admin Portal
+                        </a>
+                        <a href="/admin/articles" class="public-dropdown-item" style="color: var(--red); font-weight: 600;">
+                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-pencil"></use></svg> Articles Management
+                        </a>
+                        <div class="public-dropdown-divider"></div>
+                    {% endif %}
+                    <a href="/profile" class="public-dropdown-item">
+                        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-user"></use></svg> <span data-i18n="my_profile">My Profile</span>
+                    </a>
+                    <a href="/saved" class="public-dropdown-item">
+                        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-bookmark"></use></svg> <span data-i18n="my_saved">सेव किए गए गाइड्स</span>
+                    </a>
+                    <a href="/settings" class="public-dropdown-item">
+                        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-settings"></use></svg> <span data-i18n="settings_title">खाता सेटिंग्स</span>
+                    </a>
+                    <div class="public-dropdown-divider"></div>
+                    <a href="/auth/logout" onclick="try{localStorage.removeItem('site_lang');}catch(e){}" class="public-dropdown-item" style="color: var(--danger);">
+                        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-log-out"></use></svg> <span data-i18n="logout">लॉग आउट</span>
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <!-- Guest Controls: Log In & Sign Up -->
+            <a href="/auth/login" style="color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600;" data-i18n="login">लॉग इन</a>
+            <a href="/auth/register" style="background: var(--red); color: white; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-crimson);" data-i18n="signup">साइन अप</a>
+        {% endif %}
+
+        <span style="border-left: 1px solid var(--border); height: 18px; margin: 0 2px;"></span>
+
+        <!-- Segmented Control EN | हिंदी -->
+        <div class="lang-segmented-control" role="group" aria-label="Language selection" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); font-size: 12px; font-weight: 700;">
+          <button 
+            type="button" 
+            id="lang-btn-en" 
+            onclick="setLanguage('en')" 
+            style="padding: 5px 9px; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s ease;"
+            aria-pressed="false"
+          >EN</button>
+          <span style="width: 1px; height: 14px; background: var(--border);"></span>
+          <button 
+            type="button" 
+            id="lang-btn-hi" 
+            onclick="setLanguage('hi')" 
+            style="padding: 5px 9px; border: none; background: transparent; color: var(--red); cursor: pointer; transition: all 0.15s ease;"
+            aria-pressed="true"
+          >हिंदी</button>
+        </div>
+
+        <!-- Dark Mode Toggle Button -->
+        <button 
+          @click="toggleTheme()" 
+          type="button" 
+          aria-label="डार्क मोड"
+          aria-pressed="false"
+          :aria-pressed="isDark ? 'true' : 'false'"
+          :aria-label="isDark ? 'लाइट मोड' : 'डार्क मोड'"
+          class="theme-toggle-btn"
+          style="border: 1px solid var(--border-strong);"
+        >
+          <svg x-show="!isDark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg x-show="isDark" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <span x-show="!isDark" data-i18n="dark_mode">डार्क मोड</span>
+          <span x-show="isDark" style="display: none;" data-i18n="light_mode">लाइट मोड</span>
+        </button>
+      </div>
+    </div>
+    </header>
+
+    <!-- Top Announcement Notice -->
+    {% if (article and article.is_sample) or is_sample or (featured_article and featured_article.is_sample) or (articles and (articles | selectattr('is_sample') | list | length > 0)) or (related_articles and (related_articles | selectattr('is_sample') | list | length > 0)) %}
+    <div class="note">
+      नमूना सामग्री — यह सार्वजनिक साइट के लिए नहीं है
+    </div>
+    {% endif %}
+
+    <!-- Page Body Content -->
+    <div class="content-area" id="main-content">
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Global Footer -->
+    {% set footer_categories = categories if (categories and categories | length > 0) else [
+      {"slug": "where-to-watch", "name_hi": "कहाँ देखें"},
+      {"slug": "beginners-guide", "name_hi": "शुरुआती गाइड"},
+      {"slug": "dub-vs-sub", "name_hi": "डब vs सब"},
+      {"slug": "recommendations", "name_hi": "सिफारिशें"},
+      {"slug": "action", "name_hi": "एक्शन"}
+    ] %}
+
+    {% set footer_sections = [
+      {
+        "id": "guides",
+        "title_key": "footer_guides",
+        "title_hi": "गाइड्स",
+        "is_categories": true
+      },
+      {
+        "id": "site",
+        "title_key": "footer_site",
+        "title_hi": "साइट",
+        "links": [
+          {"href": "/about", "key": "about_us", "label": "हमारे बारे में"},
+          {"href": "/editorial-policy", "key": "editorial_policy", "label": "संपादकीय नीति"},
+          {"href": "/contact", "key": "contact", "label": "संपर्क"},
+          {"href": "/saved", "key": "nav_saved", "label": "मेरी सूची", "auth_only": true}
+        ]
+      },
+      {
+        "id": "legal",
+        "title_key": "footer_legal",
+        "title_hi": "कानूनी",
+        "links": [
+          {"href": "/privacy", "key": "privacy", "label": "गोपनीयता नीति"},
+          {"href": "/disclaimer", "key": "disclaimer", "label": "अस्वीकरण"}
+        ]
+      }
+    ] %}
+
+    {% set footer_bottom_links = [
+      {"href": "/privacy", "key": "privacy", "label": "गोपनीयता नीति"},
+      {"href": "/disclaimer", "key": "disclaimer", "label": "अस्वीकरण"}
+    ] %}
+
+    <footer>
+      <div class="wrap">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="logo" href="/">Hindi Anime <span>Guide</span></a>
+            <p class="footer-tagline" data-i18n="footer_tagline">भारतीय पाठकों के लिए एनीमे कहाँ देखें, हिंदी डब और शुरुआती गाइड।</p>
+            <!-- Secondary Language Switcher in Footer -->
+            <div class="footer-lang-control" role="group" aria-label="Language selection">
+              <button 
+                type="button" 
+                class="footer-lang-btn footer-lang-btn-en" 
+                onclick="setLanguage('en')" 
+                aria-pressed="false"
+              >EN</button>
+              <span class="footer-lang-divider" aria-hidden="true"></span>
+              <button 
+                type="button" 
+                class="footer-lang-btn footer-lang-btn-hi active" 
+                onclick="setLanguage('hi')" 
+                aria-pressed="true"
+              >हिंदी</button>
+            </div>
+          </div>
+          {% for sec in footer_sections %}
+          <div class="footer-group">
+            <span class="footer-heading" data-i18n="{{ sec.title_key }}">{{ sec.title_hi }}</span>
+            <div class="footer-links">
+              {% if sec.is_categories %}
+                {% for c in footer_categories %}
+                  {% set c_name = c.name_hi if c.name_hi is defined else (c.display_name if c.display_name is defined else c.name) %}
+                  <a href="/category/{{ c.slug }}" data-i18n="cat_{{ c.slug }}">
+                    {%- if ' vs ' in c_name -%}
+                      {{ c_name.split(' vs ')[0] }} <span class="latin">vs</span> {{ c_name.split(' vs ')[1] }}
+                    {%- elif ' बनाम ' in c_name -%}
+                      {{ c_name.split(' बनाम ')[0] }} <span class="latin">vs</span> {{ c_name.split(' बनाम ')[1] }}
+                    {%- else -%}
+                      {{ c_name }}
+                    {%- endif -%}
+                  </a>
+                {% endfor %}
+              {% else %}
+                {% for link in sec.links %}
+                  {% if not link.auth_only or user %}
+                    <a href="{{ link.href }}" data-i18n="{{ link.key }}">{{ link.label }}</a>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="footer-disclaimer">
+          <span data-i18n="footer_disclaimer_text">सभी ट्रेडमार्क और कॉपीराइट उनके संबंधित स्वामियों के हैं। यह साइट केवल आधिकारिक स्ट्रीमिंग सेवाओं के संदर्भ प्रदान करती है। विस्तृत कानूनी जानकारी के लिए हमारा</span>
+          <a href="/disclaimer" data-i18n="disclaimer">अस्वीकरण</a>
+          <span data-i18n="footer_disclaimer_suffix">पढ़ें।</span>
+        </p>
+        <div class="footer-bottom">
+          <div class="footer-copy">
+            © {{ current_year() }} {{ site.name }}. <span data-i18n="footer_rights">सर्वाधिकार सुरक्षित।</span>
+          </div>
+          <div class="footer-bottom-links">
+            {% for b_link in footer_bottom_links %}
+              {% if loop.index0 > 0 %}<span class="footer-bottom-sep" aria-hidden="true">•</span>{% endif %}
+              <a href="{{ b_link.href }}" data-i18n="{{ b_link.key }}">{{ b_link.label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    window.I18N = {
+      hi: {
+        "nav_home": "होम",
+        "search_placeholder": "खोजें",
+        "dark_mode": "डार्क मोड",
+        "light_mode": "लाइट मोड",
+        "login": "लॉग इन",
+        "signup": "साइन अप",
+        "logout": "लॉग आउट (Sign Out)",
+        "my_profile": "My Profile",
+        "settings_title": "खाता सेटिंग्स (Account Settings)",
+        "settings_desc": "अपनी व्यक्तिगत जानकारी, प्रोफ़ाइल फ़ोटो, पासवर्ड और खाता प्राथमिकताएँ प्रबंधित करें।",
+        "nav_profile": "प्रोफ़ाइल जानकारी (Profile)",
+        "nav_security": "सुरक्षा और सेटिंग्स (Security)",
+        "public_profile": "सार्वजनिक प्रोफ़ाइल (Public Profile)",
+        "avatar_title": "प्रोफ़ाइल फ़ोटो (Avatar Photo)",
+        "avatar_hint": "JPG, PNG या WEBP अपलोड करें (अधिकतम 10MB)।",
+        "btn_upload_photo": "फ़ोटो अपलोड करें (Max 10MB)",
+        "btn_remove_photo": "फ़ोटो हटाएँ (Remove Photo)",
+        "label_fullname": "पूरा नाम (Full Name) *",
+        "hint_fullname": "English characters and spaces only.",
+        "label_username": "यूज़रनेम (Username) *",
+        "hint_username": "Starts with letter; letters, numbers, and underscores only.",
+        "label_email": "ईमेल पता (Email Address) *",
+        "hint_email": "वैध ईमेल पता दर्ज करें। ईमेल बदलने पर आपका लॉगिन सत्र स्वतः अपडेट हो जाएगा।",
+        "label_bio": "बायो (Bio)",
+        "bio_placeholder": "अपने पसंदीदा एनीमे के बारे में कुछ बताएं...",
+        "btn_save_changes": "बदलाव सहेजें (Save Changes)",
+        "sec_lang_title": "भाषा प्राथमिकता (Language Preference)",
+        "sec_lang_subtitle": "इंटरफ़ेस की भाषा चुनें। अंग्रेज़ी चुनने पर नेविगेशन और सेटिंग्स अंग्रेज़ी में हो जाएँगे, जबकि लेख सामग्री (Articles) हमेशा हिंदी में रहेगी।",
+        "lang_desc_hi": "डिफ़ॉल्ट भाषा — पूरी साइट और गाइड्स हिंदी में।",
+        "lang_desc_en": "All UI, settings & menus in English; articles remain in Hindi.",
+        "sec_pwd_title": "खाता पासवर्ड बदलें (Change Password)",
+        "label_curr_pwd": "वर्तमान पासवर्ड (Current Password) *",
+        "placeholder_curr_pwd": "वर्तमान पासवर्ड दर्ज करें",
+        "label_new_pwd": "नया पासवर्ड (New Password — min 8 chars) *",
+        "placeholder_new_pwd": "नया पासवर्ड दर्ज करें (कम से कम 8 वर्ण)",
+        "pwd_strength_hint": "मजबूती (Strength): कम से कम 8 वर्ण",
+        "label_conf_pwd": "नए पासवर्ड की पुष्टि करें (Confirm New Password) *",
+        "placeholder_conf_pwd": "नए पासवर्ड को दोबारा दर्ज करें",
+        "pwd_req_title": "पासवर्ड आवश्यकताएँ (Requirements):",
+        "pwd_req_1": "कम से कम 8 अक्षर (Minimum 8 characters)",
+        "pwd_req_2": "अपरकेस (A-Z) और लोअरकेस (a-z) अक्षर",
+        "pwd_req_3": "कम से कम 1 संख्या (0-9)",
+        "pwd_req_4": "कम से कम 1 विशेष चिह्न (!@#$%^&* आदि)",
+        "pwd_req_5": "वर्तमान पासवर्ड से भिन्न होना चाहिए",
+        "btn_update_pwd": "पासवर्ड अपडेट करें (Update Password)",
+        "export_title": "डेटा निर्यात (Export Data)",
+        "export_desc": "अपनी सभी टिप्पणियाँ और प्रोफ़ाइल जानकारी JSON फ़ाइल के रूप में डाउनलोड करें।",
+        "btn_export_json": "Export JSON",
+        "danger_title": "खाता हटाएँ (Delete My Account)",
+        "danger_desc": "खाता हटाने से आपकी प्रोफ़ाइल, यूज़रनेम और आपकी सभी टिप्पणियाँ स्थायी रूप से हटा दी जाएंगी। इसे वापस नहीं लाया जा सकता।",
+        "label_danger_pwd": "हटाने की पुष्टि के लिए पासवर्ड दर्ज करें",
+        "placeholder_danger_pwd": "पासवर्ड दर्ज करें",
+        "btn_delete_account": "खाता स्थायी रूप से हटाएँ",
+        "tag_category": "श्रेणी",
+        "empty_cat_msg": "इस श्रेणी में लेख जल्द आएँगे।",
+        "empty_cat_btn": "मुख्य पृष्ठ पर वापस जाएं",
+        "cat_where-to-watch": "कहाँ देखें",
+        "cat_beginners-guide": "शुरुआती गाइड",
+        "cat_dub-vs-sub": "डब <span class=\"latin\">vs</span> सब",
+        "cat_recommendations": "सिफारिशें",
+        "cat_कहाँ देखें": "कहाँ देखें",
+        "cat_सिफारिशें": "सिफारिशें",
+        "cat_शुरुआती गाइड": "शुरुआती गाइड",
+        "cat_डब vs सब": "डब <span class=\"latin\">vs</span> सब",
+        "cat_डब बनाम सब": "डब <span class=\"latin\">vs</span> सब",
+        "cat_action": "एक्शन",
+        "cat_Action": "एक्शन",
+        "footer_tagline": "भारतीय पाठकों के लिए एनीमे कहाँ देखें, हिंदी डब और शुरुआती गाइड।",
+        "footer_guides": "गाइड्स",
+        "footer_site": "साइट",
+        "footer_legal": "कानूनी",
+        "about_us": "हमारे बारे में",
+        "editorial_policy": "संपादकीय नीति",
+        "contact": "संपर्क",
+        "community_guidelines": "कम्युनिटी दिशानिर्देश",
+        "privacy": "गोपनीयता नीति",
+        "terms": "उपयोग की शर्तें",
+        "cookies": "कुकी नीति",
+        "disclaimer": "अस्वीकरण",
+        "copyright_takedown": "कॉपीराइट और टेकडाउन",
+        "affiliate_disclosure": "स्ट्रीमिंग और संबद्धता प्रकटीकरण",
+        "footer_disclaimer_text": "सभी ट्रेडमार्क और कॉपीराइट उनके संबंधित स्वामियों के हैं। यह साइट केवल आधिकारिक स्ट्रीमिंग सेवाओं के संदर्भ प्रदान करती है। विस्तृत कानूनी जानकारी के लिए हमारा",
+        "footer_disclaimer_suffix": "पढ़ें।",
+        "footer_rights": "सर्वाधिकार सुरक्षित।",
+        "nav_explore": "एक्सप्लोर",
+        "nav_saved": "मेरी सूची",
+        "my_saved": "सेव किए गए गाइड्स",
+        "settings_title": "खाता सेटिंग्स",
+        "logout": "लॉग आउट",
+        "notifications": "सूचनाएं",
+        "mark_all_read": "सभी पढ़े हुए मार्क करें",
+        "no_notifications": "कोई नई सूचना नहीं है",
+        "search_btn": "खोजें",
+        "reset_filters": "फ़िल्टर साफ़ करें",
+        "filter_hindi_dub": "केवल हिंदी डब",
+        "filter_all_platforms": "सभी प्लेटफॉर्म्स",
+        "filter_all_categories": "सभी श्रेणियां",
+        "sort_label": "क्रम:",
+        "sort_latest": "नवीनतम",
+        "sort_az": "नाम A–Z"
+      },
+      en: {
+        "nav_home": "Home",
+        "search_placeholder": "Search anime guides...",
+        "dark_mode": "Dark Mode",
+        "light_mode": "Light Mode",
+        "login": "Log In",
+        "signup": "Sign Up",
+        "logout": "Sign Out",
+        "my_profile": "My Profile",
+        "settings_title": "Account Settings",
+        "settings_desc": "Manage your personal information, profile photo, password, and security preferences.",
+        "nav_profile": "Profile Info",
+        "nav_security": "Security & Settings",
+        "public_profile": "Public Profile",
+        "avatar_title": "Profile Photo",
+        "avatar_hint": "Upload JPG, PNG or WEBP (Max 10MB).",
+        "btn_upload_photo": "Upload Photo (Max 10MB)",
+        "btn_remove_photo": "Remove Photo",
+        "label_fullname": "Full Name *",
+        "hint_fullname": "English characters and spaces only.",
+        "label_username": "Username *",
+        "hint_username": "Starts with letter; letters, numbers, and underscores only.",
+        "label_email": "Email Address *",
+        "hint_email": "Enter a valid email. Updating email automatically refreshes your login session.",
+        "label_bio": "Bio",
+        "bio_placeholder": "Tell us about your favorite anime...",
+        "btn_save_changes": "Save Changes",
+        "sec_lang_title": "Language Preference",
+        "sec_lang_subtitle": "Choose interface language. Selecting English changes navigation and settings to English, while articles remain in Hindi.",
+        "lang_desc_hi": "Default language — site and guides in Hindi.",
+        "lang_desc_en": "All UI, settings & menus in English; articles remain in Hindi.",
+        "sec_pwd_title": "Change Account Password",
+        "label_curr_pwd": "Current Password *",
+        "placeholder_curr_pwd": "Enter current password",
+        "label_new_pwd": "New Password (min 8 chars) *",
+        "placeholder_new_pwd": "Enter new password (at least 8 chars)",
+        "pwd_strength_hint": "Strength: at least 8 chars",
+        "label_conf_pwd": "Confirm New Password *",
+        "placeholder_conf_pwd": "Re-enter new password",
+        "pwd_req_title": "Password Requirements:",
+        "pwd_req_1": "Minimum 8 characters",
+        "pwd_req_2": "Uppercase (A-Z) and lowercase (a-z) letters",
+        "pwd_req_3": "At least 1 number (0-9)",
+        "pwd_req_4": "At least 1 special character (!@#$%^&* etc.)",
+        "pwd_req_5": "Must differ from current password",
+        "btn_update_pwd": "Update Password",
+        "export_title": "Export Data",
+        "export_desc": "Download your comments and profile info as a JSON file.",
+        "btn_export_json": "Export JSON",
+        "danger_title": "Delete My Account",
+        "danger_desc": "Permanently delete your profile, username, and comments. This action cannot be undone.",
+        "label_danger_pwd": "Enter your password to confirm deletion",
+        "placeholder_danger_pwd": "Enter password",
+        "btn_delete_account": "Permanently Delete Account",
+        "tag_category": "Category",
+        "empty_cat_msg": "Articles in this category coming soon.",
+        "empty_cat_btn": "Return to Homepage",
+        "cat_where-to-watch": "Where to Watch",
+        "cat_beginners-guide": "Beginner's Guide",
+        "cat_dub-vs-sub": "Dub <span class=\"latin\">vs</span> Sub",
+        "cat_recommendations": "Recommendations",
+        "cat_कहाँ देखें": "Where to Watch",
+        "cat_सिफारिशें": "Recommendations",
+        "cat_शुरुआती गाइड": "Beginner's Guide",
+        "cat_डब vs सब": "Dub <span class=\"latin\">vs</span> Sub",
+        "cat_डब बनाम सब": "Dub <span class=\"latin\">vs</span> Sub",
+        "cat_action": "Action",
+        "cat_Action": "Action",
+        "footer_tagline": "Anime streaming guides, Hindi dubs, and beginner recommendations for Indian fans.",
+        "footer_guides": "Guides",
+        "footer_site": "Site",
+        "footer_legal": "Legal",
+        "about_us": "About Us",
+        "editorial_policy": "Editorial Policy",
+        "contact": "Contact",
+        "community_guidelines": "Community Guidelines",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Use",
+        "cookies": "Cookie Policy",
+        "disclaimer": "Disclaimer",
+        "copyright_takedown": "Copyright & Takedown",
+        "affiliate_disclosure": "Streaming & Affiliate Disclosure",
+        "footer_disclaimer_text": "All trademarks and copyrights belong to their respective owners. We reference official streaming platforms only. For full legal information, read our",
+        "footer_disclaimer_suffix": ".",
+        "footer_rights": "All rights reserved.",
+        "nav_explore": "Explore",
+        "nav_saved": "Saved Guides",
+        "my_saved": "Saved Guides",
+        "notifications": "Notifications",
+        "mark_all_read": "Mark all read",
+        "no_notifications": "No new notifications",
+        "search_btn": "Search",
+        "reset_filters": "Clear Filters",
+        "filter_hindi_dub": "Hindi Dub Only",
+        "filter_all_platforms": "All Platforms",
+        "filter_all_categories": "All Categories",
+        "sort_label": "Sort:",
+        "sort_latest": "Latest",
+        "sort_az": "Name A–Z"
+      }
+    };
+
+    const CATEGORIES_EN = {
+      'कहाँ देखें': 'Where to Watch',
+      'सिफारिशें': 'Recommendations',
+      'शुरुआती गाइड': "Beginner's Guide",
+      'डब vs सब': 'Dub vs Sub',
+      'डब बनाम सब': 'Dub vs Sub',
+      'एक्शन': 'Action',
+      'action': 'Action',
+      'Action': 'Action',
+      'where-to-watch': 'Where to Watch',
+      'recommendations': 'Recommendations',
+      'beginners-guide': "Beginner's Guide",
+      'dub-vs-sub': 'Dub vs Sub'
+    };
+
+    const CATEGORIES_HI = {
+      'Where to Watch': 'कहाँ देखें',
+      'Recommendations': 'सिफारिशें',
+      "Beginner's Guide": 'शुरुआती गाइड',
+      'Dub vs Sub': 'डब vs सब',
+      'Action': 'एक्शन',
+      'action': 'एक्शन',
+      'एक्शन': 'एक्शन',
+      'कहाँ देखें': 'कहाँ देखें',
+      'सिफारिशें': 'सिफारिशें',
+      'शुरुआती गाइड': 'शुरुआती गाइड',
+      'डब vs सब': 'डब vs सब',
+      'डब बनाम सब': 'डब vs सब',
+      'where-to-watch': 'कहाँ देखें',
+      'recommendations': 'सिफारिशें',
+      'beginners-guide': 'शुरुआती गाइड',
+      'dub-vs-sub': 'डब vs सब'
+    };
+
+    const IS_AUTHENTICATED = {{ 'true' if user else 'false' }};
+    const CURRENT_USER_EMAIL = "{{ user.email if user else '' }}";
+
+    window.showToast = function(message, type, duration) {
+      type = type || 'success';
+      duration = duration || 4000;
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.setAttribute('role', 'status');
+      toast.innerHTML = '<span>' + message + '</span>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-6px)';
+        toast.style.transition = 'all 0.2s ease-out';
+        setTimeout(function() {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 200);
+      }, duration);
+    };
+
+    window.getSiteLang = function() {
+      // 1. Check URL query param ?lang=en or ?lang=hi first
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const langParam = urlParams.get('lang');
+        if (langParam === 'en' || langParam === 'hi') {
+          try { localStorage.setItem('site_lang', langParam); } catch (e) {}
+          document.cookie = "site_lang=" + langParam + "; path=/; max-age=31536000; SameSite=Lax";
+          return langParam;
+        }
+      } catch (e) {}
+
+      // 2. Check stored preference
+      try {
+        const userPref = (CURRENT_USER_EMAIL ? localStorage.getItem('user_lang_' + CURRENT_USER_EMAIL) : null) || localStorage.getItem('site_lang');
+        if (userPref === 'en' || userPref === 'hi') return userPref;
+      } catch (e) {}
+
+      const match = document.cookie.match(/(?:^|;\s*)site_lang=([^;]+)/);
+      if (match && (match[1] === 'en' || match[1] === 'hi')) return match[1];
+
+      // Default for every visitor is Hindi
+      return 'hi';
+    };
+
+    window.updateLangSwitcherUI = function(lang) {
+      const isEn = (lang === 'en');
+      const btnEn = document.getElementById('lang-btn-en');
+      const btnHi = document.getElementById('lang-btn-hi');
+      if (btnEn && btnHi) {
+        btnEn.setAttribute('aria-pressed', isEn ? 'true' : 'false');
+        btnEn.style.color = isEn ? 'var(--red)' : 'var(--muted)';
+        btnHi.setAttribute('aria-pressed', isEn ? 'false' : 'true');
+        btnHi.style.color = isEn ? 'var(--muted)' : 'var(--red)';
+      }
+      document.querySelectorAll('.footer-lang-btn-en').forEach(function(b) {
+        b.setAttribute('aria-pressed', isEn ? 'true' : 'false');
+        b.classList.toggle('active', isEn);
+      });
+      document.querySelectorAll('.footer-lang-btn-hi').forEach(function(b) {
+        b.setAttribute('aria-pressed', isEn ? 'false' : 'true');
+        b.classList.toggle('active', !isEn);
+      });
+    };
+
+    window.applySiteLanguage = function(lang) {
+      if (lang !== 'en' && lang !== 'hi') lang = 'hi';
+      const isEn = (lang === 'en');
+      const dict = window.I18N[lang] || window.I18N.hi || window.I18N.en;
+
+      // Toggle multi-language blocks (like on legal/footer pages)
+      document.querySelectorAll('[data-lang-block]').forEach(function(el) {
+        if (el.getAttribute('data-lang-block') === lang) {
+          el.removeAttribute('hidden');
+          el.style.display = '';
+        } else {
+          el.setAttribute('hidden', '');
+          el.style.display = 'none';
+        }
+      });
+
+      // Update legal page title if present
+      const legalTitleSpan = document.querySelector('.legal-title [data-lang-block="' + lang + '"]');
+      if (legalTitleSpan) {
+        document.title = legalTitleSpan.textContent.trim() + " | {{ site.name }}";
+      }
+
+      // 1. Text elements with data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        // Strict guard: NEVER translate inside article body, title, dek, or user comments
+        if (el.closest('.article-main-col') && !el.closest('.comments-header')) return;
+        if (el.closest('.article-detail-wrap') && !el.closest('.comments-header')) return;
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+          if (dict[key].indexOf('<') !== -1) {
+            el.innerHTML = dict[key];
+          } else {
+            el.textContent = dict[key];
+          }
+        }
+      });
+
+      // 2. Placeholder attributes
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) {
+          el.setAttribute('placeholder', dict[key]);
+        }
+      });
+
+      // 3. Left Sidebar Menu categories
+      document.querySelectorAll('.side-nav .menu a').forEach(function(link) {
+        const span = link.querySelector('span');
+        if (!span) return;
+        if (span.getAttribute('data-i18n') === 'nav_home') {
+          span.textContent = isEn ? 'Home' : 'होम';
+          return;
+        }
+        if (!span.dataset.raw) {
+          span.dataset.raw = span.getAttribute('data-cat-raw') || span.textContent.trim();
+        }
+        const raw = span.dataset.raw;
+        span.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
+      });
+
+      // 4. Category Page Elements
+      document.querySelectorAll('.cat-page-name').forEach(function(el) {
+        if (!el.dataset.raw) el.dataset.raw = el.getAttribute('data-cat-raw') || el.textContent.trim();
+        const raw = el.dataset.raw;
+        el.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
+      });
+      document.querySelectorAll('.cat-page-sec-suffix').forEach(function(el) {
+        el.textContent = isEn ? 'Articles' : 'के लेख';
+      });
+      document.querySelectorAll('.cat-articles-word').forEach(function(el) {
+        const countEl = el.parentElement ? el.parentElement.querySelector('.cat-articles-count') : null;
+        const count = countEl ? countEl.textContent.trim() : '0';
+        el.textContent = isEn ? (count === '1' ? 'article' : 'articles') : 'लेख';
+      });
+
+      // Fallback for category page headings / breadcrumbs if not matching class
+      const breadcrumbCat = document.querySelector('main nav span:last-of-type');
+      if (breadcrumbCat && !breadcrumbCat.classList.contains('cat-page-name')) {
+        const txt = breadcrumbCat.textContent.trim();
+        if (!breadcrumbCat.dataset.raw) breadcrumbCat.dataset.raw = txt;
+        const raw = breadcrumbCat.dataset.raw;
+        breadcrumbCat.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
+      }
+      const catH1 = document.querySelector('header h1');
+      if (catH1 && !catH1.classList.contains('cat-page-name') && !catH1.closest('.article-detail-wrap')) {
+        const txt = catH1.textContent.trim();
+        if (!catH1.dataset.raw) catH1.dataset.raw = txt;
+        const raw = catH1.dataset.raw;
+        catH1.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
+      }
+      const secH2 = document.querySelector('.sec h2');
+      if (secH2 && !secH2.querySelector('.cat-page-name')) {
+        const txt = secH2.textContent.trim();
+        if (!secH2.dataset.raw) secH2.dataset.raw = txt;
+        const orig = secH2.dataset.raw;
+        Object.keys(CATEGORIES_EN).forEach(function(k) {
+          if (orig.indexOf(k) !== -1) {
+            secH2.textContent = isEn ? (CATEGORIES_EN[k] + ' Articles') : orig;
+          }
+        });
+      }
+
+      // 5. Theme toggle button label update
+      const themeBtn = document.querySelector('.theme-toggle-btn');
+      if (themeBtn) {
+        const spans = themeBtn.querySelectorAll('span');
+        if (spans.length >= 2) {
+          spans[0].textContent = isEn ? 'Dark Mode' : 'डार्क मोड';
+          spans[1].textContent = isEn ? 'Light Mode' : 'लाइट मोड';
+        }
+      }
+
+      window.updateLangSwitcherUI(lang);
+      document.documentElement.lang = isEn ? 'en' : 'hi';
+    };
+
+    window.setLanguage = function(lang) {
+      if (lang !== 'en' && lang !== 'hi') lang = 'hi';
+      try {
+        localStorage.setItem('site_lang', lang);
+        if (CURRENT_USER_EMAIL) {
+          localStorage.setItem('user_lang_' + CURRENT_USER_EMAIL, lang);
+        }
+      } catch (e) {}
+      document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      window.applySiteLanguage(lang);
+
+      if (typeof window.updateSettingsLanguageUI === 'function') {
+        window.updateSettingsLanguageUI(lang);
+      }
+    };
+    window.setSiteLanguage = window.setLanguage;
+
+    (function() {
+      const activeLang = window.getSiteLang();
+      window.applySiteLanguage(activeLang);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+          window.applySiteLanguage(window.getSiteLang());
+        });
+      }
+    })();
+
+    // Notification dropdown & API handlers
+    window.toggleNotifDropdown = function(e) {
+      if (e) e.stopPropagation();
+      const dd = document.getElementById('notif-dropdown');
+      if (!dd) return;
+      const isShown = dd.classList.contains('show');
+      if (isShown) {
+        dd.classList.remove('show');
+      } else {
+        dd.classList.add('show');
+        loadNotifications();
+      }
+    };
+
+    document.addEventListener('click', function(e) {
+      const dd = document.getElementById('notif-dropdown');
+      const container = document.getElementById('notif-container');
+      if (dd && container && !container.contains(e.target)) {
+        dd.classList.remove('show');
+      }
+    });
+
+    async function loadNotifications() {
+      if (!IS_AUTHENTICATED) return;
+      try {
+        const resp = await fetch('/api/notifications');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const badge = document.getElementById('notif-badge');
+        const list = document.getElementById('notif-list');
+        
+        if (badge) {
+          if (data.unread_count > 0) {
+            badge.style.display = 'block';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+
+        if (list && data.notifications) {
+          if (data.notifications.length === 0) {
+            list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted); font-size: 13px;">कोई नई सूचना नहीं है</div>';
+          } else {
+            list.innerHTML = data.notifications.map(function(n) {
+              const bg = n.is_read ? 'transparent' : 'var(--badge-sub-bg)';
+              const linkAttr = n.link ? 'href="' + n.link + '"' : '';
+              return '<a ' + linkAttr + ' style="display: block; padding: 10px 14px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); background: ' + bg + '; transition: background 0.15s;">' +
+                '<div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">' + (n.title || 'Notification') + '</div>' +
+                '<div style="font-size: 12px; color: var(--muted); line-height: 1.4;">' + (n.message || '') + '</div>' +
+                '<div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 4px;">' + (n.created_at || '') + '</div>' +
+              '</a>';
+            }).join('');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load notifications', e);
+      }
+    }
+
+    window.markAllNotificationsRead = async function() {
+      try {
+        const resp = await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+        if (resp.ok) {
+          const badge = document.getElementById('notif-badge');
+          if (badge) badge.style.display = 'none';
+          loadNotifications();
+        }
+      } catch (e) {}
+    };
+
+    if (IS_AUTHENTICATED) {
+      loadNotifications();
+      setInterval(loadNotifications, 45000);
+    }
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ईमेल सत्यापन — Hindi Anime Guide</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Bell MT', Georgia, 'Times New Roman', serif;
+        }
+
+        html {
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark-radial);
+            color: var(--dark-text);
+            padding: 30px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: var(--glow-crimson);
+            top: -100px;
+            right: -100px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            width: 380px;
+            height: 380px;
+            background: var(--glow-blue);
+            bottom: -100px;
+            left: -100px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 440px;
+            padding: 36px 32px;
+            box-shadow: var(--shadow-modal-dark);
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .brand-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 14px;
+            box-shadow: var(--shadow-crimson);
+            margin-bottom: 12px;
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--surface);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-subtitle {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .masked-email {
+            color: var(--dark-slate);
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .alert-error {
+            background: var(--badge-danger-bg);
+            border: 1px solid var(--badge-danger-border);
+            color: var(--badge-danger-text);
+        }
+
+        .alert-success {
+            background: var(--badge-success-bg);
+            border: 1px solid var(--badge-success-border);
+            color: var(--badge-success-text);
+        }
+
+        .otp-inputs-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 22px 0 18px 0;
+        }
+
+        .otp-digit-box {
+            width: 52px;
+            height: 58px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            font-family: monospace;
+            background: var(--glass-bg-darker);
+            border: 1.5px solid var(--glass-border-light);
+            border-radius: 10px;
+            color: var(--dark-text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .otp-digit-box:focus {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-focus-crimson);
+            background: var(--glass-bg-focus);
+        }
+
+        .trust-device-wrap {
+            margin: 16px 0 20px 0;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+        }
+
+        .trust-device-wrap label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .trust-device-wrap input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12.5px;
+            background: var(--primary);
+            color: var(--on-red);
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: var(--shadow-button-crimson);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-button-crimson-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .resend-bar {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .btn-resend-link {
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            font-size: 13px;
+        }
+
+        .btn-resend-link:disabled {
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+
+        .back {
+            text-align: center;
+            margin-top: 22px;
+            font-size: 13px;
+        }
+
+        .back a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                padding: 24px 14px;
+            }
+            .brand-title {
+                font-size: 20px;
+            }
+            .brand-subtitle {
+                font-size: 12.5px;
+            }
+            .otp-inputs-row {
+                gap: 5px;
+            }
+            .otp-digit-box {
+                width: 44px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="card" x-data="otpForm({
+        cooldown: {{ resend_cooldown or 0 }},
+        csrf: '{{ csrf_token }}',
+        nextUrl: '{{ next_url or '/' }}'
+    })">
+        <!-- Brand Header -->
+        <div class="brand-header">
+            <div class="brand-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--on-red);">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+            </div>
+            <h1 class="brand-title">ईमेल सत्यापन कोड</h1>
+            <p class="brand-subtitle">
+                हमने 6 अंकों का कोड भेजा है:<br>
+                <span class="masked-email">{{ masked_email }}</span>
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if resent %}
+        <div class="alert alert-success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>नया सत्यापन कोड आपके ईमेल पर भेज दिया गया है।</span>
+        </div>
+        {% endif %}
+
+        <!-- VERIFY OTP FORM -->
+        <form method="POST" action="/auth/verify-otp" @submit="loading = true">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="next" value="{{ next_url or '/' }}">
+            <input type="hidden" name="code" :value="digits.join('')">
+
+            <div class="otp-inputs-row" @paste="handlePaste($event)">
+                <template x-for="(d, idx) in digits" :key="idx">
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        class="otp-digit-box"
+                        :id="'otp-box-' + idx"
+                        x-model="digits[idx]"
+                        @input="handleInput(idx, $event)"
+                        @keydown.backspace="handleBackspace(idx, $event)"
+                        autocomplete="one-time-code"
+                        required
+                    >
+                </template>
+            </div>
+
+            {% if trust_device_enabled %}
+            <div class="trust-device-wrap">
+                <label>
+                    <input type="checkbox" name="remember_device" checked>
+                    <span>इस डिवाइस पर {{ trust_device_days }} दिन तक याद रखें</span>
+                </label>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn" :disabled="loading || digits.join('').length !== 6">
+                <span x-show="!loading">सत्यापित करें और आगे बढ़ें →</span>
+                <span x-show="loading" style="display:none;">सत्यापन हो रहा है...</span>
+            </button>
+        </form>
+
+        <!-- RESEND OTP SECTION -->
+        <div class="resend-bar">
+            <span>कोड नहीं मिला? </span>
+            <button
+                type="button"
+                class="btn-resend-link"
+                :disabled="resendCooldown > 0 || resending"
+                @click="resendOtp()"
+            >
+                <span x-show="resendCooldown > 0">दोबारा भेजें (<span x-text="resendCooldown"></span>s)</span>
+                <span x-show="resendCooldown <= 0 && !resending">कोड दोबारा भेजें</span>
+                <span x-show="resending" style="display:none;">भेज रहे हैं...</span>
+            </button>
+            <div x-show="resendMsg" x-text="resendMsg" style="margin-top: 8px; font-size: 12px; color: var(--badge-success-text); display:none;"></div>
+            <div x-show="resendError" x-text="resendError" style="margin-top: 8px; font-size: 12px; color: var(--badge-danger-text); display:none;"></div>
+        </div>
+
+        <div class="back">
+            <a href="/auth/login">← वापस जाएं (Return to Login)</a>
+        </div>
+    </div>
+
+    <script>
+        function otpForm(config) {
+            return {
+                digits: ['', '', '', '', '', ''],
+                loading: false,
+                resendCooldown: config.cooldown || 0,
+                resending: false,
+                resendMsg: '',
+                resendError: '',
+                timer: null,
+
+                init() {
+                    this.$nextTick(() => {
+                        const first = document.getElementById('otp-box-0');
+                        if (first) first.focus();
+                    });
+                    if (this.resendCooldown > 0) {
+                        this.startTimer();
+                    }
+                },
+
+                startTimer() {
+                    if (this.timer) clearInterval(this.timer);
+                    this.timer = setInterval(() => {
+                        if (this.resendCooldown > 0) {
+                            this.resendCooldown--;
+                        } else {
+                            clearInterval(this.timer);
+                            this.timer = null;
+                        }
+                    }, 1000);
+                },
+
+                handleInput(idx, event) {
+                    const val = event.target.value.replace(/[^0-9]/g, '');
+                    this.digits[idx] = val ? val[val.length - 1] : '';
+
+                    if (this.digits[idx] && idx < 5) {
+                        const next = document.getElementById('otp-box-' + (idx + 1));
+                        if (next) next.focus();
+                    }
+                },
+
+                handleBackspace(idx, event) {
+                    if (!this.digits[idx] && idx > 0) {
+                        const prev = document.getElementById('otp-box-' + (idx - 1));
+                        if (prev) {
+                            prev.focus();
+                            this.digits[idx - 1] = '';
+                        }
+                    }
+                },
+
+                handlePaste(event) {
+                    event.preventDefault();
+                    const pasteData = (event.clipboardData || window.clipboardData).getData('text');
+                    const cleanNums = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+                    for (let i = 0; i < 6; i++) {
+                        this.digits[i] = cleanNums[i] || '';
+                    }
+                    const lastIdx = Math.min(cleanNums.length, 5);
+                    const target = document.getElementById('otp-box-' + lastIdx);
+                    if (target) target.focus();
+                },
+
+                async resendOtp() {
+                    if (this.resendCooldown > 0 || this.resending) return;
+                    this.resending = true;
+                    this.resendMsg = '';
+                    this.resendError = '';
+
+                    const formData = new FormData();
+                    formData.append('csrf_token', config.csrf);
+
+                    try {
+                        const resp = await fetch('/auth/resend-otp', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json' },
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (resp.ok && data.success) {
+                            this.resendMsg = data.message || 'नया कोड भेज दिया गया है।';
+                            this.resendCooldown = data.cooldown || 60;
+                            this.startTimer();
+                        } else {
+                            this.resendError = data.error || 'कोड भेजने में त्रुटि हुई।';
+                            if (data.cooldown) {
+                                this.resendCooldown = data.cooldown;
+                                this.startTimer();
+                            }
+                        }
+                    } catch (e) {
+                        this.resendError = 'नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।';
+                    } finally {
+                        this.resending = false;
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>

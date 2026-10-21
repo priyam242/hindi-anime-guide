@@ -1,0 +1,228 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Comment Moderation{% endblock %}
+{% block breadcrumb_current %}Comments{% endblock %}
+
+{% block extra_head %}
+<style>
+    .comment-user-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .comment-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .comment-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .comment-content-snippet {
+        max-width: 360px;
+        font-size: 13.5px;
+        color: var(--text-primary);
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .bulk-bar {
+        background: var(--crimson-tint);
+        border: 1px solid var(--shadow-focus-crimson);
+        border-radius: var(--radius-sm);
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .bulk-bar.hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>💬</span> Comment Moderation Queue</h1>
+        <div class="page-subtitle">Review reader comments, approve pending discussions, or remove spam content.</div>
+    </div>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div id="bulk-actions-bar" class="bulk-bar hidden">
+    <div style="font-size: 13.5px; font-weight: 600; color: var(--primary);">
+        <span>✓</span> <span id="selected-count">0</span> comments selected
+    </div>
+    <form id="bulk-comment-form" action="/admin/comments/bulk-action" method="POST" style="display: flex; gap: 8px;">
+        <div id="bulk-comment-inputs"></div>
+        <button type="submit" name="bulk_action" value="approve" class="btn btn-success btn-sm">
+            ✓ Bulk Approve
+        </button>
+        <button type="submit" name="bulk_action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Permanently delete selected comments?');">
+            🗑️ Bulk Delete
+        </button>
+    </form>
+</div>
+
+<!-- Enhanced Comments Table Container -->
+<div class="table-container">
+    <div class="table-toolbar">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-secondary);">🔍</span>
+                <input type="text" id="comment-search" class="table-search-input" placeholder="Search comment content..." oninput="filterTable('comment-search', 'comments-table')">
+            </div>
+
+            <select id="comment-status-filter" class="select" style="width: auto; padding: 8px 12px; font-size: 13px;" onchange="filterCommentStatus(this.value)">
+                <option value="">All Comments</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending / Unapproved</option>
+            </select>
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            Total: <strong>{{ comments|length }}</strong> comments in queue
+        </div>
+    </div>
+
+    <table id="comments-table" class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 40px; text-align: center;">
+                    <input type="checkbox" onchange="toggleSelectAll(this, 'comment-checkbox'); syncCommentBulkInputs();" style="accent-color: var(--primary);">
+                </th>
+                <th>Author</th>
+                <th>Comment Content</th>
+                <th>Article</th>
+                <th>Status</th>
+                <th class="sortable" onclick="sortTable('comments-table', 5)">
+                    Date <span class="sort-icon">↕</span>
+                </th>
+                <th style="text-align: right;">Moderation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if comments and comments|length > 0 %}
+                {% for c in comments %}
+                    <tr data-status="{% if c.is_approved %}Approved{% else %}Pending{% endif %}">
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="comment-checkbox" value="{{ c.id }}" onchange="updateBulkSelectionCount('comment-checkbox'); syncCommentBulkInputs();" style="accent-color: var(--primary);">
+                        </td>
+                        <td>
+                            <div class="comment-user-cell">
+                                <div class="comment-avatar" style="background: {{ get_avatar_color(c.user_rel.name if c.user_rel else 'Reader') }};">
+                                    {% if c.user_rel and c.user_rel.avatar_url %}
+                                        <img src="{{ c.user_rel.avatar_url }}" alt="{{ c.user_rel.name }}">
+                                    {% else %}
+                                        {{ get_initials(c.user_rel.name if c.user_rel else 'Reader') }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 13.5px;">{{ c.user_rel.name if c.user_rel else 'Anonymous Reader' }}</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);">@{{ c.user_rel.username if c.user_rel else 'user' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="comment-content-snippet">{{ c.content }}</div>
+                        </td>
+                        <td>
+                            {% if c.article_rel %}
+                                <a href="/article/{{ c.article_rel.slug }}" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 13.5px; font-weight: 600;">
+                                    {{ c.article_rel.title[:38] }}... ↗
+                                </a>
+                            {% else %}
+                                <span style="font-size: 12.5px; color: var(--text-secondary);">Article #{{ c.article_id }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.is_approved %}
+                                <span class="badge badge-success">Approved</span>
+                            {% else %}
+                                <span class="badge badge-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 12.5px; color: var(--text-secondary); white-space: nowrap;">
+                            {{ c.created_at.strftime('%d %b %Y, %H:%M') if c.created_at else '' }}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <form action="/admin/comments/{{ c.id }}/toggle-approve" method="POST" style="display:inline;">
+                                {% if c.is_approved %}
+                                    <button type="submit" class="btn btn-outline btn-sm" title="Unapprove comment" style="color: var(--warning); border-color: var(--warning);">
+                                        Unapprove
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success btn-sm" title="Approve comment">
+                                        ✓ Approve
+                                    </button>
+                                {% endif %}
+                            </form>
+                            <form action="/admin/comments/{{ c.id }}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Permanently delete this comment?');">
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete Comment">
+                                    🗑️
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr id="comments-table-empty">
+                    <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--text-secondary);">
+                        <div style="font-size: 36px; margin-bottom: 8px;">💬</div>
+                        <div style="font-weight: 700; font-size: 16px; color: var(--text-primary);">No comments posted yet</div>
+                        <div style="margin-top: 4px; font-size: 13.5px;">User discussions from anime articles will appear here for moderation.</div>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function syncCommentBulkInputs() {
+        const checked = document.querySelectorAll('.comment-checkbox:checked');
+        const container = document.getElementById('bulk-comment-inputs');
+        container.innerHTML = '';
+        checked.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'comment_ids';
+            input.value = cb.value;
+            container.appendChild(input);
+        });
+    }
+
+    function filterCommentStatus(status) {
+        const table = document.getElementById('comments-table');
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(r => {
+            if (r.id === 'comments-table-empty') return;
+            const rStatus = r.getAttribute('data-status') || '';
+            if (!status || rStatus === status) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>खाता बनाएं — Hindi Anime Guide</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <script defer src="/static/js/alpine.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Bell MT', Georgia, 'Times New Roman', serif;
+        }
+
+        html {
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-dark-radial);
+            color: var(--dark-text);
+            padding: 30px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: var(--glow-crimson);
+            top: -100px;
+            right: -100px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            width: 380px;
+            height: 380px;
+            background: var(--glow-blue);
+            bottom: -100px;
+            left: -100px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-light);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 440px;
+            padding: 36px 32px;
+            box-shadow: var(--shadow-modal-dark);
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .brand-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 14px;
+            box-shadow: var(--shadow-crimson);
+            margin-bottom: 12px;
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--surface);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-title span {
+            color: var(--primary);
+        }
+
+        .brand-subtitle {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* ChatGPT Style Google Button */
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--glass-bg-darker);
+            border: 1px solid var(--glass-border-light);
+            border-radius: 10px;
+            color: var(--surface);
+            font-size: 14.5px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 18px;
+        }
+
+        .btn-google:hover {
+            background: var(--google-hover-bg);
+            border-color: var(--google-hover-border);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 18px 0 20px 0;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--glass-border-subtle);
+        }
+
+        .divider span {
+            padding: 0 12px;
+            text-transform: uppercase;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: var(--glass-bg-darker);
+            border: 1px solid var(--glass-border-subtle);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 7px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: var(--on-red);
+            box-shadow: var(--shadow-crimson);
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .alert-error {
+            background: var(--badge-danger-bg);
+            border: 1px solid var(--badge-danger-border);
+            color: var(--badge-danger-text);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark-slate);
+            margin-bottom: 6px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--glass-bg-darker);
+            border: 1.5px solid var(--glass-border-light);
+            border-radius: 10px;
+            color: var(--dark-text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-focus-crimson);
+            background: var(--glass-bg-focus);
+        }
+
+        .pwd-field-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .pwd-field-wrap input {
+            padding-right: 44px !important;
+        }
+
+        .eye-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color 0.2s, opacity 0.2s;
+            opacity: 0.8;
+            z-index: 2;
+        }
+
+        .eye-toggle-btn:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12.5px;
+            background: var(--primary);
+            color: var(--on-red);
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: var(--shadow-button-crimson);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-button-crimson-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .terms-note {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 18px;
+            line-height: 1.4;
+        }
+
+        .terms-note a {
+            color: var(--dark-slate);
+            text-decoration: underline;
+        }
+
+        .card-footer {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .card-footer a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                padding: 24px 16px;
+            }
+            .brand-title {
+                font-size: 21px;
+            }
+            .btn-google {
+                font-size: 13.5px;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="card">
+        <!-- Brand Header -->
+        <div class="brand-header">
+            <div class="brand-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--on-red);">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <h1 class="brand-title">Hindi Anime <span>Guide</span></h1>
+            <p class="brand-subtitle">नया खाता बनाएं — बस ईमेल और पासवर्ड से</p>
+        </div>
+
+        {% if google_enabled %}
+        <!-- Google Continue Button (ChatGPT Style) -->
+        <a href="/auth/google" class="btn-google" id="btn-google-auth">
+            <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="var(--google-blue)" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="var(--google-green)" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="var(--google-yellow)" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="var(--google-red)" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Google से जारी रखें</span>
+        </a>
+
+        <!-- OR Divider -->
+        <div class="divider">
+            <span>या</span>
+        </div>
+        {% endif %}
+
+        <!-- Mode Switcher Tabs -->
+        <div class="tabs-header">
+            <a href="/auth/login" class="tab-btn">साइन इन</a>
+            <span class="tab-btn active">खाता बनाएं</span>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <!-- SIMPLIFIED SIGN UP FORM (Just Email + Password) -->
+        <form method="POST" action="/auth/register" x-data="{ loading: false, showPassword: false }" @submit="loading = true">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="reg-email">ईमेल पता</label>
+                <input type="email" id="reg-email" name="email" autocomplete="email" required placeholder="you@example.com" value="{{ entered_email or '' }}" autofocus>
+            </div>
+            <div class="form-group">
+                <label for="reg-pwd">पासवर्ड बनाएं</label>
+                <div class="pwd-field-wrap">
+                    <input :type="showPassword ? 'text' : 'password'" type="password" id="reg-pwd" name="password" autocomplete="new-password" required placeholder="कम से कम 8 अक्षर">
+                    <button type="button" class="eye-toggle-btn" @click="showPassword = !showPassword" aria-label="Toggle password visibility">
+                        <svg x-show="!showPassword" class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg x-show="showPassword" class="eye-closed" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    </button>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">कम से कम 8 अक्षर (अक्षर, संख्या और सामान्य पासवर्ड न रखें)</div>
+            </div>
+            <button type="submit" class="btn" :disabled="loading">
+                <span x-show="!loading">ईमेल से जारी रखें →</span>
+                <span x-show="loading" style="display:none;">प्रतीक्षा करें...</span>
+            </button>
+        </form>
+
+        <div class="terms-note">
+            जारी रखकर आप हमारी <a href="/terms">शर्तों</a> और <a href="/privacy">गोपनीयता नीति</a> से सहमत हैं।
+        </div>
+
+        <div class="card-footer">
+            पहले से खाता है? <a href="/auth/login">साइन इन करें</a>
+            <div style="margin-top: 10px;">
+                <a href="/" style="color: var(--text-secondary); font-weight: normal; font-size: 12px;">← मुख्य पृष्ठ पर लौटें</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

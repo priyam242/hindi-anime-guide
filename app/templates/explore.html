@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}एक्स्प्लोर एनीमे गाइड्स | {{ site.name }}{% endblock %}
+{% block meta_description %}भारत में आधिकारिक प्लेटफॉर्म्स पर हिंदी डब और सबटाइटल के साथ एनीमे खोजें। Crunchyroll, Netflix, JioCinema आदि पर उपलब्धता फ़िल्टर करें।{% endblock %}
+
+{% block content %}
+<main class="wrap" style="padding-top: 28px; padding-bottom: 56px;">
+
+  <!-- Page Header -->
+  <header style="margin-bottom: 24px;">
+    <div style="margin-bottom: 8px;">
+      <span class="tag" style="display: inline-flex; align-items: center; gap: 6px;"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-compass"></use></svg> <span data-i18n="nav_explore">एक्सप्लोर</span></span>
+    </div>
+    <h1 style="font-size: clamp(26px, 4vw, 36px); font-weight: 700; color: var(--text); margin-bottom: 8px;">
+      एनीमे गाइड एक्सप्लोरर
+    </h1>
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 65ch;">
+      अपनी पसंदीदा एनीमे खोजें और तुरंत जानें कि वह भारत में किस आधिकारिक प्लेटफॉर्म पर हिंदी डब के साथ उपलब्ध है।
+    </p>
+  </header>
+
+  <!-- Filter & Search Controls Form -->
+  <form id="filter-form" action="/explore" method="GET" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
+    
+    <!-- Search Row -->
+    <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 240px; position: relative;">
+        <input 
+          type="search" 
+          name="q" 
+          value="{{ q }}" 
+          placeholder="एनीमे का नाम या कीवर्ड खोजें (जैसे Naruto, Demon Slayer)..." 
+          class="find" 
+          style="width: 100%; height: 44px; font-size: 14.5px; border-radius: 8px;"
+        >
+      </div>
+      <button 
+        type="submit" 
+        style="background: var(--red); color: white; border: none; padding: 0 20px; height: 44px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow-crimson);"
+      >
+        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-search"></use></svg> <span data-i18n="search_btn">खोजें</span>
+      </button>
+      {% if q or selected_platform or selected_hindi_dub or selected_category or (selected_sort and selected_sort != 'latest') %}
+      <a 
+        href="/explore" 
+        style="background: var(--bg); color: var(--muted); border: 1px solid var(--border); padding: 0 16px; height: 44px; border-radius: 8px; font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"
+      >
+        <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-x"></use></svg> <span data-i18n="reset_filters">फ़िल्टर साफ़ करें</span>
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Filters Row -->
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      
+      <!-- Hindi Dub Toggle Chip -->
+      <label style="display: inline-flex; align-items: center; gap: 6px; background: {% if selected_hindi_dub %}var(--badge-dub-bg){% else %}var(--bg){% endif %}; border: 1px solid {% if selected_hindi_dub %}var(--badge-dub-border){% else %}var(--border){% endif %}; color: {% if selected_hindi_dub %}var(--badge-dub-text){% else %}var(--text){% endif %}; padding: 8px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.15s ease;">
+        <input 
+          type="checkbox" 
+          name="hindi_dub" 
+          value="1" 
+          {% if selected_hindi_dub %}checked{% endif %} 
+          onchange="document.getElementById('filter-form').submit()"
+          style="accent-color: var(--success); cursor: pointer;"
+        >
+        <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-audio-lines"></use></svg>
+        <span data-i18n="filter_hindi_dub">केवल हिंदी डब</span>
+      </label>
+
+      <!-- Platform Dropdown Filter -->
+      <select 
+        name="platform" 
+        onchange="document.getElementById('filter-form').submit()" 
+        style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13.5px; font-family: var(--font); cursor: pointer; min-width: 140px;"
+      >
+        <option value="" data-i18n="filter_all_platforms">सभी प्लेटफॉर्म्स</option>
+        {% for p in platforms %}
+        <option value="{{ p.name }}" {% if selected_platform == p.name %}selected{% endif %}>
+          {{ p.display_name or p.name }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <!-- Category Dropdown Filter -->
+      <select 
+        name="category" 
+        onchange="document.getElementById('filter-form').submit()" 
+        style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13.5px; font-family: var(--font); cursor: pointer; min-width: 140px;"
+      >
+        <option value="" data-i18n="filter_all_categories">सभी श्रेणियां</option>
+        {% for cat in categories %}
+        <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
+          {{ cat.display_name or cat.name }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <!-- Sort Dropdown -->
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px; color: var(--muted);" data-i18n="sort_label">क्रम:</span>
+        <select 
+          name="sort" 
+          onchange="document.getElementById('filter-form').submit()" 
+          style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13.5px; font-family: var(--font); cursor: pointer;"
+        >
+          <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %} data-i18n="sort_latest">नवीनतम (Latest)</option>
+          <option value="az" {% if selected_sort == 'az' %}selected{% endif %} data-i18n="sort_az">नाम A–Z</option>
+        </select>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- Results Section Header -->
+  <div class="sec" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 20px;">
+    <h2 style="font-size: 20px;">
+      परिणाम ({% if total_count %}{{ total_count }}{% else %}0{% endif %})
+    </h2>
+    <span class="meta">{{ total_count }} गाइड उपलब्ध</span>
+  </div>
+
+  <!-- Articles Grid -->
+  {% if articles %}
+  <section class="grid">
+    {% for article in articles %}
+      {% include "components/anime_card.html" %}
+    {% endfor %}
+  </section>
+  {% else %}
+  <!-- Empty State -->
+  <div style="padding: 64px 24px; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-top: 16px;">
+    <div style="margin-bottom: 16px; color: var(--muted);">
+      <svg class="icon" width="48" height="48" aria-hidden="true"><use href="#i-search-x"></use></svg>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px;">कोई गाइड नहीं मिला</h3>
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 50ch; margin: 0 auto 20px;">
+      आपके चुने गए फ़िल्टर या खोज शब्दों के अनुसार कोई परिणाम नहीं मिला। कृपया अन्य कीवर्ड या फ़िल्टर आज़माएँ।
+    </p>
+    <a href="/explore" style="display: inline-block; font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 9px 20px; border-radius: 6px; text-decoration: none;">
+      सभी फ़िल्टर रीसेट करें
+    </a>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

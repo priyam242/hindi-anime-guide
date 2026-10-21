@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}मेरी सूची / सेव किए गए गाइड्स | {{ site.name }}{% endblock %}
+
+{% block content %}
+<main class="wrap" style="padding-top: 28px; padding-bottom: 56px;">
+
+  <!-- Page Header -->
+  <header style="margin-bottom: 28px;">
+    <div style="margin-bottom: 8px;">
+      <span class="tag" style="display: inline-flex; align-items: center; gap: 6px;"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-bookmark"></use></svg> <span data-i18n="nav_saved">मेरी सूची</span></span>
+    </div>
+    <h1 style="font-size: clamp(26px, 4vw, 36px); font-weight: 700; color: var(--text); margin-bottom: 8px;">
+      सेव किए गए एनीमे गाइड्स
+    </h1>
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 65ch;">
+      आपके द्वारा बाद में पढ़ने या देखने के लिए सहेजे गए सभी एनीमे स्ट्रीमिंग गाइड्स।
+    </p>
+  </header>
+
+  <!-- Section Divider -->
+  <div class="sec" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 20px;">
+    <h2 style="font-size: 20px;">
+      सहेजे गए लेख ({{ articles|length }})
+    </h2>
+    <span class="meta">{{ articles|length }} गाइड सहेजे गए</span>
+  </div>
+
+  <!-- Articles Grid -->
+  {% if articles %}
+  <section class="grid">
+    {% for article in articles %}
+      {% include "components/anime_card.html" %}
+    {% endfor %}
+  </section>
+  {% else %}
+  <!-- Empty State -->
+  <div style="padding: 64px 24px; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-top: 16px;">
+    <div style="margin-bottom: 16px; color: var(--muted);">
+      <svg class="icon" width="48" height="48" aria-hidden="true"><use href="#i-bookmark-x"></use></svg>
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px;">आपकी सूची अभी खाली है</h3>
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 50ch; margin: 0 auto 20px;">
+      आपने अभी तक कोई गाइड सेव नहीं किया है। किसी भी गाइड के पेज पर 'सेव करें' बटन दबाकर उसे अपनी सूची में जोड़ें।
+    </p>
+    <a href="/explore" style="display: inline-block; font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 9px 20px; border-radius: 6px; text-decoration: none;">
+      गाइड्स एक्सप्लोर करें →
+    </a>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

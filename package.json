@@ -1,0 +1,15 @@
+{
+  "name": "hindi-anime-guide",
+  "version": "1.0.0",
+  "description": "Hindi Anime Guide CSS build tooling",
+  "scripts": {
+    "build:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

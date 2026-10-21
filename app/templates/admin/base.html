@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} — Hindi Anime Guide Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <style>
+        /* ===== CSS DESIGN SYSTEM & RESET ===== */
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 64px;
+        }
+
+        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Bell MT', Georgia, 'Times New Roman', serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 15px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        /* ===== LAYOUT ===== */
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            color: var(--dark-text);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            overflow-y: auto;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--glass-border-subtle);
+            backdrop-filter: blur(12px);
+        }
+
+        .sidebar-brand {
+            padding: 24px 22px 20px 22px;
+            border-bottom: 1px solid var(--glass-border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-brand-icon {
+            font-size: 26px;
+            filter: var(--shadow-crimson-drop);
+        }
+
+        .sidebar-brand h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--surface);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-brand h1 span {
+            color: var(--primary);
+        }
+
+        .sidebar-user {
+            padding: 16px 20px;
+            background: var(--glass-white-03);
+            border-bottom: 1px solid var(--glass-border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+            border: 2px solid var(--glass-border-white20);
+            overflow: hidden;
+            background: {{ get_avatar_color(user_name or 'Admin') }};
+        }
+
+        .sidebar-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sidebar-user-info {
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .sidebar-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            padding: 12px 14px 6px;
+            font-weight: 700;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: var(--glass-border-subtle);
+            color: var(--surface);
+            transform: translateX(3px);
+        }
+
+        .nav-link.active {
+            background: var(--crimson-tint);
+            color: var(--surface);
+            font-weight: 600;
+            box-shadow: inset 3px 0 0 var(--primary);
+        }
+
+        .nav-link .icon {
+            font-size: 17px;
+            width: 22px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--glass-border-subtle);
+        }
+
+        .logout-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            color: var(--danger);
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+
+        .logout-link:hover {
+            background: var(--badge-danger-bg);
+            color: var(--badge-danger-text);
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        /* ===== TOP HEADER ===== */
+        .top-header {
+            height: var(--header-height);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: var(--shadow-sm);
+            transition: background 0.25s, border-color 0.25s;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .hamburger-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .breadcrumbs a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumbs a:hover {
+            color: var(--primary);
+        }
+
+        .breadcrumbs .separator {
+            opacity: 0.5;
+        }
+
+        .breadcrumbs .current {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Search bar in header */
+        .header-search {
+            position: relative;
+        }
+
+        .header-search input {
+            padding: 8px 14px 8px 36px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 220px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .header-search input:focus {
+            width: 280px;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-focus-crimson-subtle);
+            background: var(--card-bg);
+        }
+
+        .header-search .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        /* Icon action buttons */
+        .icon-btn {
+            position: relative;
+            background: transparent;
+            border: 1px solid var(--border);
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .icon-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--primary);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid var(--card-bg);
+        }
+
+        /* Dropdown containers */
+        .dropdown-container {
+            position: relative;
+        }
+
+        .user-dropdown-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: var(--radius-full);
+            transition: background 0.2s;
+        }
+
+        .user-dropdown-btn:hover {
+            background: var(--bg);
+        }
+
+        .user-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: {{ get_avatar_color(user_name or 'Admin') }};
+        }
+
+        .user-avatar-sm img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-meta-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .user-meta-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+
+        /* Dropdown menu */
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            width: 250px;
+            padding: 8px 0;
+            z-index: 1000;
+            animation: dropdownSlide 0.15s ease-out;
+        }
+
+        .dropdown-menu.hidden {
+            display: none;
+        }
+
+        @keyframes dropdownSlide {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-header {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dropdown-header-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .dropdown-header-email {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            word-break: break-all;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 13.5px;
+            transition: background 0.15s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 6px 0;
+        }
+
+        /* ===== PAGE CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            padding: 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-title-wrap h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ===== REUSABLE COMPONENTS ===== */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--shadow-focus-crimson);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-crimson);
+        }
+
+        .btn-secondary {
+            background: var(--admin-badge-bg);
+            color: var(--border-strong);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark-slate);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            box-shadow: var(--badge-danger-border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--admin-success);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg);
+            border-color: var(--text-secondary);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12.5px;
+            border-radius: 6px;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .input, .select, .textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--bg);
+            color: var(--text-primary);
+        }
+
+        .input:focus, .select:focus, .textarea:focus {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-focus-crimson-subtle);
+            background: var(--card-bg);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11.5px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .badge-success { background: var(--success-bg); color: var(--success-text); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger-text); }
+        .badge-info { background: var(--info-bg); color: var(--info-text); }
+        .badge-purple { background: var(--badge-purple-bg); color: var(--badge-purple-text); }
+
+        body.dark-mode .badge-success { background: var(--badge-dark-success-bg); color: var(--badge-dark-success-text); }
+        body.dark-mode .badge-warning { background: var(--badge-dark-warning-bg); color: var(--badge-dark-warning-text); }
+        body.dark-mode .badge-danger { background: var(--badge-dark-danger-bg); color: var(--badge-danger-text); }
+        body.dark-mode .badge-info { background: var(--badge-dark-info-bg); color: var(--badge-dark-info-text); }
+        body.dark-mode .badge-purple { background: var(--badge-dark-purple-bg); color: var(--badge-dark-purple-text); }
+
+        /* Alerts */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--admin-success-border);
+        }
+
+        .alert-danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid var(--danger-border);
+        }
+
+        /* Data Tables */
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .table-toolbar {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .table-search-input {
+            padding: 8px 14px 8px 34px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 13.5px;
+            outline: none;
+            width: 260px;
+            transition: all 0.2s;
+        }
+
+        .table-search-input:focus {
+            border-color: var(--primary);
+            background: var(--card-bg);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: var(--bg);
+            padding: 12px 18px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            user-select: none;
+        }
+
+        .data-table th.sortable {
+            cursor: pointer;
+        }
+
+        .data-table th.sortable:hover {
+            color: var(--primary);
+        }
+
+        .data-table td {
+            padding: 14px 18px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover td {
+            background: var(--crimson-tint-subtle);
+        }
+
+        body.dark-mode .data-table tr:hover td {
+            background: var(--glass-white-03);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Mobile Overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-backdrop);
+            z-index: 90;
+            backdrop-filter: blur(4px);
+        }
+
+        .sidebar-overlay.hidden {
+            display: none;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .hamburger-btn {
+                display: block;
+            }
+
+            .header-search {
+                display: none;
+            }
+
+            .top-header {
+                padding: 0 16px;
+            }
+
+            .content-area {
+                padding: 20px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-meta-name, .user-meta-role {
+                display: none;
+            }
+            .page-title-wrap h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% if request.cookies.get('dark_mode') == '1' %}dark-mode{% endif %}">
+    <div class="admin-wrapper">
+        <!-- Sidebar overlay for mobile -->
+        <div id="sidebar-overlay" class="sidebar-overlay hidden" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon">🎌</span>
+                <h1>Anime <span>Guide</span></h1>
+            </div>
+
+            <!-- Admin Profile preview in sidebar -->
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar">
+                    {% if admin_user and admin_user.avatar_url %}
+                        <img src="{{ admin_user.avatar_url }}" alt="{{ user_name }}">
+                    {% else %}
+                        {{ get_initials(user_name or 'Admin') }}
+                    {% endif %}
+                </div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name">{{ user_name or 'Admin' }}</div>
+                    <div class="sidebar-user-role"><span class="status-dot"></span> {{ user_email or 'Administrator' }}</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-label" data-admin-i18n="nav_label_core">Core Management</div>
+                <a href="/admin/dashboard" class="nav-link {% if request.url.path == '/admin/dashboard' %}active{% endif %}">
+                    <span class="icon">📊</span>
+                    <span data-admin-i18n="nav_dashboard">डैशबोर्ड (Dashboard)</span>
+                </a>
+                <a href="/admin/articles" class="nav-link {% if '/admin/articles' in request.url.path %}active{% endif %}">
+                    <span class="icon">📝</span>
+                    <span data-admin-i18n="nav_articles">Articles</span>
+                </a>
+                <a href="/admin/categories" class="nav-link {% if '/admin/categories' in request.url.path %}active{% endif %}">
+                    <span class="icon">📂</span>
+                    <span data-admin-i18n="nav_categories">Categories</span>
+                </a>
+                <a href="/admin/platforms" class="nav-link {% if '/admin/platforms' in request.url.path %}active{% endif %}">
+                    <span class="icon">🖥️</span>
+                    <span data-admin-i18n="nav_platforms">Platforms</span>
+                </a>
+
+                <div class="nav-label" data-admin-i18n="nav_label_community">Community & Users</div>
+                <a href="/admin/users" class="nav-link {% if '/admin/users' in request.url.path %}active{% endif %}">
+                    <span class="icon">👥</span>
+                    <span data-admin-i18n="nav_users">Users</span>
+                </a>
+                <a href="/admin/comments" class="nav-link {% if '/admin/comments' in request.url.path %}active{% endif %}">
+                    <span class="icon">💬</span>
+                    <span data-admin-i18n="nav_comments">Comments</span>
+                </a>
+
+                <div class="nav-label" data-admin-i18n="nav_label_system">System & Logs</div>
+                <a href="/admin/activity" class="nav-link {% if '/admin/activity' in request.url.path %}active{% endif %}">
+                    <span class="icon">📜</span>
+                    <span data-admin-i18n="nav_activity">Activity Logs</span>
+                </a>
+                <a href="/admin/notifications" class="nav-link {% if '/admin/notifications' in request.url.path %}active{% endif %}">
+                    <span class="icon">🔔</span>
+                    <span data-admin-i18n="nav_notifications">Notifications</span>
+                    {% if unread_count and unread_count > 0 %}
+                        <span class="nav-badge">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="/admin/account" class="nav-link {% if '/admin/account' in request.url.path %}active{% endif %}">
+                    <span class="icon">⚙️</span>
+                    <span data-admin-i18n="nav_account">Account Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="/" class="nav-link" target="_blank" style="margin-bottom: 4px;">
+                    <span class="icon">👁️</span>
+                    <span data-admin-i18n="nav_view_site">View Public Site</span>
+                </a>
+                <a href="/admin/logout" onclick="try{localStorage.removeItem('site_lang');}catch(e){}" class="logout-link">
+                    <span class="icon">🚪</span>
+                    <span data-admin-i18n="nav_logout">Log Out</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-wrapper">
+            <!-- Fixed Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle Navigation">
+                        ☰
+                    </button>
+                    <div class="breadcrumbs">
+                        <a href="/admin/dashboard" data-admin-i18n="breadcrumb_admin">Admin</a>
+                        <span class="separator">/</span>
+                        <span class="current">{% block breadcrumb_current %}Overview{% endblock %}</span>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <!-- Quick Search -->
+                    <div class="header-search">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" placeholder="Quick search..." onkeyup="if(event.key === 'Enter') window.location.href='/admin/articles?q=' + encodeURIComponent(this.value)">
+                    </div>
+
+                    <!-- Language Switcher Button -->
+                    <button class="icon-btn" onclick="toggleAdminLanguage()" title="Switch Language (भाषा बदलें)" aria-label="Switch Language" style="min-width: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; font-size: 13px;">
+                        <span>🌐</span>
+                        <span id="admin-lang-badge">HI</span>
+                    </button>
+
+                    <!-- Dark Mode Toggle Button -->
+                    <button class="icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
+                        <span id="dark-mode-icon">{% if request.cookies.get('dark_mode') == '1' %}☀️{% else %}🌙{% endif %}</span>
+                    </button>
+
+                    <!-- Notifications Bell Dropdown -->
+                    <div class="dropdown-container">
+                        <button class="icon-btn" onclick="toggleDropdown('notifications-dropdown')" title="Notifications">
+                            <span>🔔</span>
+                            {% if unread_count and unread_count > 0 %}
+                                <span class="icon-badge">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notifications-dropdown" class="dropdown-menu hidden" style="width: 320px;">
+                            <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="dropdown-header-name">Notifications</span>
+                                <a href="/admin/notifications" style="font-size: 11.5px; color: var(--primary); text-decoration: none;">View All</a>
+                            </div>
+                            <div style="padding: 12px 16px; font-size: 13px; color: var(--text-secondary); text-align: center;">
+                                {% if unread_count and unread_count > 0 %}
+                                    You have <strong>{{ unread_count }}</strong> unread notification{{ 's' if unread_count > 1 else '' }}.
+                                    <div style="margin-top: 8px;">
+                                        <a href="/admin/notifications" class="btn btn-primary btn-sm" style="display: block; text-align: center;">Review Notifications</a>
+                                    </div>
+                                {% else %}
+                                    All caught up! No unread notifications.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="dropdown-container">
+                        <button class="user-dropdown-btn" onclick="toggleDropdown('user-dropdown')">
+                            <div class="user-avatar-sm">
+                                {% if admin_user and admin_user.avatar_url %}
+                                    <img src="{{ admin_user.avatar_url }}" alt="{{ user_name }}">
+                                {% else %}
+                                    {{ get_initials(user_name or 'Admin') }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="user-meta-name">{{ user_name or 'Admin' }}</div>
+                                <div class="user-meta-role">Admin ▾</div>
+                            </div>
+                        </button>
+                        <div id="user-dropdown" class="dropdown-menu hidden">
+                            <div class="dropdown-header">
+                                <div class="dropdown-header-name">{{ user_name or 'Admin' }}</div>
+                                <div class="dropdown-header-email">{{ user_email or '' }}</div>
+                            </div>
+                            <a href="/admin/account#profile" class="dropdown-item">
+                                <span>👤</span> <span data-admin-i18n="dd_profile">My Profile</span>
+                            </a>
+                            <a href="/admin/account#security" class="dropdown-item">
+                                <span>🔒</span> <span data-admin-i18n="dd_security">Change Password</span>
+                            </a>
+                            <a href="/admin/account#preferences" class="dropdown-item">
+                                <span>⚙️</span> <span data-admin-i18n="dd_preferences">Account Settings</span>
+                            </a>
+                            <a href="/admin/activity" class="dropdown-item">
+                                <span>📜</span> <span data-admin-i18n="dd_activity">Activity Logs</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="/" class="dropdown-item" target="_blank">
+                                <span>👁️</span> <span data-admin-i18n="dd_view_site">View Website</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="toggleAdminLanguage()" class="dropdown-item">
+                                <span>🌐</span> <span data-admin-i18n="dd_lang">Switch Language</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="toggleDarkMode()" class="dropdown-item">
+                                <span>🌓</span> <span data-admin-i18n="dd_theme">Toggle Dark Mode</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="/admin/logout" onclick="try{localStorage.removeItem('site_lang');}catch(e){}" class="dropdown-item" style="color: var(--danger);">
+                                <span>🚪</span> <span data-admin-i18n="dd_logout">Log Out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Page Content -->
+            <main class="content-area">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Core Admin Javascript -->
+    <script src="/static/js/admin.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

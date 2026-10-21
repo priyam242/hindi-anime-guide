@@ -1,0 +1,231 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Articles Management{% endblock %}
+{% block breadcrumb_current %}Articles{% endblock %}
+
+{% block extra_head %}
+<style>
+    .bulk-bar {
+        background: var(--crimson-tint);
+        border: 1px solid var(--shadow-focus-crimson);
+        border-radius: var(--radius-sm);
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .bulk-bar.hidden {
+        display: none;
+    }
+
+    .action-menu-btn {
+        background: transparent;
+        border: 1px solid var(--border);
+        padding: 5px 10px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .action-menu-btn:hover {
+        background: var(--bg);
+        border-color: var(--primary);
+    }
+
+    .article-title-link {
+        font-weight: 700;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 14.5px;
+        transition: color 0.15s;
+    }
+
+    .article-title-link:hover {
+        color: var(--primary);
+    }
+
+    .article-slug {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        font-family: monospace;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>📝</span> Anime Articles & Guides</h1>
+        <div class="page-subtitle">Publish, edit, and organize anime streaming guides and recommendations.</div>
+    </div>
+    <div>
+        <a href="/admin/articles/create" class="btn btn-primary">
+            <span>+</span> Create New Article
+        </a>
+    </div>
+</div>
+
+<!-- Bulk Actions Floating Bar -->
+<div id="bulk-actions-bar" class="bulk-bar hidden">
+    <div style="font-size: 13.5px; font-weight: 600; color: var(--primary);">
+        <span>✓</span> <span id="selected-count">0</span> articles selected
+    </div>
+    <form id="bulk-delete-form" action="/admin/articles/bulk-delete" method="POST" onsubmit="return confirm('Are you sure you want to delete all selected articles?');">
+        <div id="bulk-inputs-container"></div>
+        <button type="submit" class="btn btn-danger btn-sm">Delete Selected</button>
+    </form>
+</div>
+
+<!-- Enhanced Table Container -->
+<div class="table-container">
+    <div class="table-toolbar">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-secondary);">🔍</span>
+                <input type="text" id="article-search" class="table-search-input" placeholder="Search by title or slug..." oninput="filterTable('article-search', 'articles-table')">
+            </div>
+
+            <!-- Category filter -->
+            <select id="category-filter" class="select" style="width: auto; padding: 8px 12px; font-size: 13px;" onchange="filterByCategory(this.value)">
+                <option value="">All Categories</option>
+                {% for c in categories %}
+                    <option value="{{ c.display_name or c.name }}">{{ c.display_name or c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            Total: <strong>{{ articles|length }}</strong> articles
+        </div>
+    </div>
+
+    <table id="articles-table" class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 40px; text-align: center;">
+                    <input type="checkbox" onchange="toggleSelectAll(this, 'article-checkbox'); syncBulkInputs();" style="accent-color: var(--primary);">
+                </th>
+                <th class="sortable" onclick="sortTable('articles-table', 1)">
+                    Title & Slug <span class="sort-icon">↕</span>
+                </th>
+                <th class="sortable" onclick="sortTable('articles-table', 2)">
+                    Category <span class="sort-icon">↕</span>
+                </th>
+                <th style="text-align: center;">Platforms</th>
+                <th class="sortable" onclick="sortTable('articles-table', 4)">
+                    Status <span class="sort-icon">↕</span>
+                </th>
+                <th class="sortable" onclick="sortTable('articles-table', 5)">
+                    Date <span class="sort-icon">↕</span>
+                </th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if articles and articles|length > 0 %}
+                {% for a in articles %}
+                    <tr data-category="{% if a.categories %}{% for c in a.categories %}{{ c.display_name }} {{ c.name }} {% endfor %}{% else %}{{ a.category_rel.display_name if a.category_rel else (a.category or '') }}{% endif %}">
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="article-checkbox" value="{{ a.id }}" onchange="updateBulkSelectionCount('article-checkbox'); syncBulkInputs();" style="accent-color: var(--primary);">
+                        </td>
+                        <td>
+                            <a href="/admin/articles/{{ a.id }}/edit" class="article-title-link">{{ a.title }}</a>
+                            <div class="article-slug">/article/{{ a.slug }}</div>
+                        </td>
+                        <td>
+                            {% if a.categories and a.categories|length > 0 %}
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    {% for cat in a.categories %}
+                                        <span class="badge badge-info">{{ cat.display_name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% elif a.category_rel %}
+                                <span class="badge badge-info">{{ a.category_rel.display_name }}</span>
+                            {% elif a.category %}
+                                <span class="badge badge-info">{{ a.category }}</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Uncategorized</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge badge-purple">{{ a.availabilities|length if a.availabilities else a.platform_links_count }}</span>
+                        </td>
+                        <td>
+                            {% if a.is_sample %}
+                                <span class="badge badge-warning">Sample</span>
+                            {% elif a.published_at %}
+                                <span class="badge badge-success">Published</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 13px; color: var(--text-secondary); white-space: nowrap;">
+                            {{ a.created_at.strftime('%d %b %Y') if a.created_at else '' }}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <div class="dropdown-container" style="display: inline-block;">
+                                <a href="/admin/articles/{{ a.id }}/edit" class="btn btn-outline btn-sm" title="Edit Article">
+                                    ✏️ Edit
+                                </a>
+                                <a href="/article/{{ a.slug }}" target="_blank" class="btn btn-outline btn-sm" title="View Public Article">
+                                    👁️
+                                </a>
+                                <form action="/admin/articles/{{ a.id }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('Delete article &quot;{{ a.title }}&quot; permanently?');">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr id="articles-table-empty">
+                    <td colspan="7" style="text-align: center; padding: 48px 16px; color: var(--text-secondary);">
+                        <div style="font-size: 36px; margin-bottom: 8px;">📝</div>
+                        <div style="font-weight: 700; font-size: 16px; color: var(--text-primary);">No articles found</div>
+                        <div style="margin-top: 4px; font-size: 13.5px;">Click "Create New Article" to write your first anime guide.</div>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function syncBulkInputs() {
+        const checked = document.querySelectorAll('.article-checkbox:checked');
+        const container = document.getElementById('bulk-inputs-container');
+        container.innerHTML = '';
+        checked.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'article_ids';
+            input.value = cb.value;
+            container.appendChild(input);
+        });
+    }
+
+    function filterByCategory(catName) {
+        const table = document.getElementById('articles-table');
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(r => {
+            if (r.id === 'articles-table-empty') return;
+            const rCat = r.getAttribute('data-category') || '';
+            if (!catName || rCat.toLowerCase().includes(catName.toLowerCase())) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

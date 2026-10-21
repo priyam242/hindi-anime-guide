@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}दो-चरणीय सत्यापन — Hindi Anime Guide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .verify-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .verify-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .verify-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--crimson-tint);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .verify-icon svg {
+    width: 28px;
+    height: 28px;
+    color: var(--red);
+    stroke: currentColor;
+  }
+
+  .verify-card h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .verify-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .otp-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .otp-digit {
+    width: 48px;
+    height: 56px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    caret-color: var(--red);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+    inputmode: numeric;
+  }
+
+  .otp-digit:focus {
+    border-color: var(--red);
+    box-shadow: var(--admin-focus-ring);
+  }
+
+  .otp-hint {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .backup-field {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    font-family: monospace;
+    letter-spacing: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 8px;
+  }
+
+  .backup-field:focus {
+    border-color: var(--red);
+  }
+
+  .btn-verify {
+    width: 100%;
+    padding: 14px;
+    background: var(--red);
+    color: var(--on-red);
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-bottom: 16px;
+  }
+
+  .btn-verify:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+  }
+
+  .switch-mode {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .switch-mode a {
+    color: var(--red);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .switch-mode a:hover {
+    text-decoration: underline;
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .remember-row input[type="checkbox"] {
+    accent-color: var(--red);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  .error-banner {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--danger-text);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  [data-theme="dark"] .error-banner {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+
+  .timer-text {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verify-wrapper">
+  <div class="verify-card">
+    <div class="verify-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        <circle cx="12" cy="16" r="1" fill="currentColor"/>
+      </svg>
+    </div>
+
+    {% if mode == "backup" %}
+      <h1>बैकअप कोड से लॉगिन</h1>
+      <p class="verify-subtitle">अपना 10-अंकीय बैकअप कोड दर्ज करें।<br>प्रत्येक कोड केवल एक बार काम करता है।</p>
+    {% else %}
+      <h1>दो-चरणीय सत्यापन</h1>
+      <p class="verify-subtitle">अपने ऑथेंटिकेटर ऐप में दिखाया 6-अंकीय कोड दर्ज करें।</p>
+    {% endif %}
+
+    {% if error %}
+    <div class="error-banner" role="alert">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style="flex-shrink:0;margin-top:1px">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/>
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="post" action="/auth/2fa/verify" id="verify-form">
+      <input type="hidden" name="next" value="{{ next or '/' }}">
+      <input type="hidden" name="mode" id="mode-field" value="{{ mode or 'totp' }}">
+
+      {% if mode == "backup" %}
+        <input
+          type="text"
+          name="backup_code"
+          id="backup-code-input"
+          class="backup-field"
+          placeholder="XXXX-XXXX-XX"
+          autocomplete="one-time-code"
+          maxlength="20"
+          autofocus
+          required
+          aria-label="बैकअप कोड"
+        >
+        <p class="otp-hint">बिना डैश के भी टाइप कर सकते हैं।</p>
+      {% else %}
+        <div class="otp-group" role="group" aria-label="6-digit TOTP code">
+          {% for i in range(6) %}
+          <input
+            type="text"
+            class="otp-digit"
+            maxlength="1"
+            inputmode="numeric"
+            pattern="[0-9]"
+            autocomplete="{{ 'one-time-code' if i == 0 else 'off' }}"
+            aria-label="Digit {{ i+1 }}"
+            id="d{{ i }}"
+          >
+          {% endfor %}
+        </div>
+        <input type="hidden" name="code" id="combined-code">
+        <p class="otp-hint">कोड हर 30 सेकंड में बदलता है।</p>
+        <p class="timer-text" id="totp-timer"></p>
+      {% endif %}
+
+      <label class="remember-row">
+        <input type="checkbox" name="remember_device" value="1" id="remember-device">
+        <span>यह डिवाइस याद रखें (30 दिन)</span>
+      </label>
+
+      <button type="submit" class="btn-verify" id="submit-btn">
+        {% if mode == "backup" %}सत्यापित करें{% else %}लॉगिन करें{% endif %}
+      </button>
+    </form>
+
+    <div class="switch-mode">
+      {% if mode == "backup" %}
+        <a href="/2fa/verify?next={{ next|urlencode }}" onclick="switchMode('totp', event)">← TOTP कोड से लॉगिन करें</a>
+      {% else %}
+        <a href="#" onclick="switchMode('backup', event)">बैकअप कोड से लॉगिन करें</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── TOTP digit auto-advance & paste support ────────────────────────────────
+(function() {
+  const digits = document.querySelectorAll('.otp-digit');
+  const combined = document.getElementById('combined-code');
+  const form = document.getElementById('verify-form');
+
+  if (!digits.length) return;
+
+  function collectCode() {
+    let code = '';
+    digits.forEach(d => code += d.value);
+    if (combined) combined.value = code;
+    return code;
+  }
+
+  digits.forEach((input, idx) => {
+    input.addEventListener('input', e => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val.slice(-1);
+      if (val && idx < digits.length - 1) digits[idx + 1].focus();
+      if (collectCode().length === 6) form.submit();
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+        digits[idx - 1].focus();
+        digits[idx - 1].value = '';
+      }
+    });
+
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      for (let i = 0; i < digits.length; i++) {
+        digits[i].value = text[i] || '';
+      }
+      if (text.length >= 6) { collectCode(); form.submit(); }
+      else { const next = Math.min(text.length, digits.length - 1); digits[next].focus(); }
+    });
+  });
+
+  // Timer countdown
+  const timerEl = document.getElementById('totp-timer');
+  if (timerEl) {
+    function updateTimer() {
+      const secs = 30 - (Math.floor(Date.now() / 1000) % 30);
+      timerEl.textContent = `नया कोड ${secs}s में आएगा`;
+    }
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  }
+})();
+
+// ── Mode switch ────────────────────────────────────────────────────────────────
+function switchMode(mode, e) {
+  if (e) e.preventDefault();
+  const modeField = document.getElementById('mode-field');
+  if (modeField) modeField.value = mode;
+  // Re-submit or reload with mode
+  window.location.href = '/2fa/verify?next=' + encodeURIComponent(document.querySelector('input[name="next"]')?.value || '/');
+}
+</script>
+{% endblock %}

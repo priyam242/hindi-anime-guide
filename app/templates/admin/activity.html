@@ -1,0 +1,205 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Activity Logs{% endblock %}
+{% block breadcrumb_current %}Activity Logs{% endblock %}
+
+{% block extra_head %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 10px 0 20px 24px;
+        margin-top: 16px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 7px;
+        width: 2px;
+        background: var(--border);
+    }
+
+    .timeline-node {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: -24px;
+        top: 14px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--card-bg);
+        border: 3px solid var(--primary);
+        box-shadow: 0 0 0 2px var(--card-bg);
+    }
+
+    .timeline-content {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .timeline-content:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .timeline-title {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .timeline-time {
+        font-size: 12px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .timeline-body {
+        font-size: 13.5px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .timeline-meta {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+        background: var(--card-bg);
+        padding: 14px 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>📜</span> Activity Logs</h1>
+        <div class="page-subtitle">Track and audit administrative operations across Hindi Anime Guide.</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<form method="GET" action="/admin/activity" class="filter-bar">
+    <div style="flex: 1; min-width: 200px;">
+        <input type="text" name="search" class="input" placeholder="Search by action, details, or IP..." value="{{ search_filter or '' }}">
+    </div>
+    <div style="min-width: 180px;">
+        <select name="action" class="select" onchange="this.form.submit()">
+            <option value="">All Action Types</option>
+            <option value="admin_login" {% if action_filter == 'admin_login' %}selected{% endif %}>Admin Login</option>
+            <option value="article_created" {% if action_filter == 'article_created' %}selected{% endif %}>Article Created</option>
+            <option value="article_edited" {% if action_filter == 'article_edited' %}selected{% endif %}>Article Edited</option>
+            <option value="article_deleted" {% if action_filter == 'article_deleted' %}selected{% endif %}>Article Deleted</option>
+            <option value="category_created" {% if action_filter == 'category_created' %}selected{% endif %}>Category Created</option>
+            <option value="platform_created" {% if action_filter == 'platform_created' %}selected{% endif %}>Platform Created</option>
+            <option value="user_banned" {% if action_filter == 'user_banned' %}selected{% endif %}>User Banned</option>
+            <option value="user_unbanned" {% if action_filter == 'user_unbanned' %}selected{% endif %}>User Unbanned</option>
+            <option value="comment_approved" {% if action_filter == 'comment_approved' %}selected{% endif %}>Comment Approved</option>
+            <option value="comment_deleted" {% if action_filter == 'comment_deleted' %}selected{% endif %}>Comment Deleted</option>
+            <option value="admin_password_changed" {% if action_filter == 'admin_password_changed' %}selected{% endif %}>Password Changed</option>
+            <option value="admin_profile_updated" {% if action_filter == 'admin_profile_updated' %}selected{% endif %}>Profile Updated</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if action_filter or search_filter %}
+        <a href="/admin/activity" class="btn btn-outline btn-sm">Reset</a>
+    {% endif %}
+</form>
+
+<!-- Timeline Feed -->
+{% if logs and logs|length > 0 %}
+    <div class="timeline">
+        {% for log in logs %}
+            <div class="timeline-node">
+                <div class="timeline-dot" style="{% if 'banned' in log.action or 'delete' in log.action %}border-color: var(--danger);{% elif 'create' in log.action or 'approved' in log.action %}border-color: var(--success);{% else %}border-color: var(--primary);{% endif %}"></div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span>
+                                {% if 'login' in log.action %}🔑
+                                {% elif 'article' in log.action %}📝
+                                {% elif 'user' in log.action %}👤
+                                {% elif 'comment' in log.action %}💬
+                                {% elif 'category' in log.action %}📂
+                                {% elif 'platform' in log.action %}🖥️
+                                {% elif 'password' in log.action %}🔒
+                                {% else %}⚡{% endif %}
+                            </span>
+                            <span>{{ log.action | replace('_', ' ') | title }}</span>
+                            {% if log.target_type %}
+                                <span class="badge badge-info">{{ log.target_type }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-time">
+                            <span>🕒</span>
+                            <span>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '' }}</span>
+                        </div>
+                    </div>
+                    <div class="timeline-body">
+                        {{ log.details or 'No additional details logged.' }}
+                    </div>
+                    <div class="timeline-meta">
+                        <span><strong>IP:</strong> {{ log.ip_address or 'Local / Internal' }}</span>
+                        <span><strong>Admin ID:</strong> {{ log.admin_id or 'System' }}</span>
+                        {% if log.target_id %}
+                            <span><strong>Target ID:</strong> #{{ log.target_id }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card" style="text-align: center; padding: 48px 24px;">
+        <div style="font-size: 36px; margin-bottom: 12px;">📜</div>
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">No activity logs found</h3>
+        <p style="color: var(--text-secondary); font-size: 14px;">
+            {% if action_filter or search_filter %}
+                No activity logs match the selected filters.
+            {% else %}
+                As administrators perform actions, events will be recorded here automatically.
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+{% endblock %}

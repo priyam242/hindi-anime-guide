@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {%- if lang == 'en' -%}
+    {{ page_title_en }}
+  {%- else -%}
+    {{ page_title_hi }}
+  {%- endif -%}
+  {%- if site and site.name %} | {{ site.name }}{% endif -%}
+{% endblock %}
+
+{# Legal pages are indexable — no noindex #}
+
+{% block content %}
+<style>
+  html[lang="hi"] [data-lang-block="en"],
+  html:not([lang="en"]) [data-lang-block="en"] {
+    display: none !important;
+  }
+  html[lang="en"] [data-lang-block="hi"] {
+    display: none !important;
+  }
+</style>
+
+<main class="legal-wrap">
+
+  {# ── Page Header ─────────────────────────────────────────────── #}
+  <header class="legal-header">
+    <h1 class="legal-title">
+      <span data-lang-block="hi">{{ page_title_hi }}</span>
+      <span data-lang-block="en">{{ page_title_en }}</span>
+    </h1>
+    <p class="legal-meta">
+      <span data-lang-block="hi">अंतिम अद्यतन: <time datetime="{{ last_updated_iso }}">{{ last_updated_hi }}</time></span>
+      <span data-lang-block="en">Last updated: <time datetime="{{ last_updated_iso }}">{{ last_updated_en }}</time></span>
+    </p>
+  </header>
+
+  {# ── Page Body ───────────────────────────────────────────────── #}
+  <article class="legal-body">
+    {% block legal_content %}{% endblock %}
+  </article>
+
+  {# ── Footer Nav ──────────────────────────────────────────────── #}
+  <nav class="legal-footer-nav" aria-label="अन्य नीतियाँ">
+    <a href="/">
+      <span data-lang-block="hi">← मुख्य पृष्ठ</span>
+      <span data-lang-block="en">← Home</span>
+    </a>
+    {% for link in related_links %}
+    <a href="{{ link.url }}">
+      <span data-lang-block="hi">{{ link.label_hi }}</span>
+      <span data-lang-block="en">{{ link.label_en }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+</main>
+{% endblock %}

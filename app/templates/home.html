@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}
+
+{% block content %}
+<main class="wrap" style="padding-top: 24px; padding-bottom: 56px;">
+
+  {% if not articles %}
+  <!-- Empty State when no published articles exist -->
+  <div style="padding: 96px 20px; text-align: center; max-width: 600px; margin: 0 auto;">
+    <h2 style="font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 12px; line-height: 1.35;">पहले लेख जल्द आ रहे हैं</h2>
+    <p style="font-size: 15px; color: var(--muted); line-height: 1.7;">आधिकारिक स्ट्रीमिंग गाइड और हिंदी डब संदर्भ तैयार किए जा रहे हैं।</p>
+  </div>
+  {% else %}
+
+  <!-- HERO SECTION: Lead story on the left, 3 side stories on the right -->
+  {% if featured_article %}
+  <section class="hero">
+    
+    <!-- Lead Featured Article (Typographic Cover by Category or Image) -->
+    <a class="lead" href="/article/{{ featured_article.slug }}">
+      {% if featured_article.cover_image %}
+      <div class="cover-media" style="border-radius: 8px; max-height: 380px;">
+        <img src="{{ featured_article.cover_image }}" alt="{{ featured_article.title }}" loading="eager" fetchpriority="high" width="600" height="338">
+      </div>
+      {% else %}
+      <div class="cover c-{{ featured_article.category_cover_color }}">
+        {{ featured_article.anime_title_hi if featured_article.anime_title_hi else featured_article.category_name_hi }}
+      </div>
+      {% endif %}
+      <h1>{{ featured_article.title }}</h1>
+      {% if featured_article.summary %}
+      <p>{{ featured_article.summary }}</p>
+      {% endif %}
+      <div class="meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+        {% if featured_article.categories and featured_article.categories|length > 0 %}
+          {% for cat in featured_article.categories %}
+            <span class="tag">{{ cat.display_name or cat.name_hi or cat.name }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="tag">{{ featured_article.category_name_hi }}</span>
+        {% endif %}
+        <span>{{ featured_article.reading_time_minutes or 4 }} मिनट</span>
+      </div>
+    </a>
+
+    <!-- Side Articles (Top 3 items) -->
+    <div class="side">
+      {% for a in side_articles %}
+        <a href="/article/{{ a.slug }}">
+          {% if a.cover_image %}
+          <div class="cover-media" style="aspect-ratio: 1; border-radius: 6px;">
+            <img src="{{ a.cover_image }}" alt="{{ a.title }}" loading="lazy">
+          </div>
+          {% else %}
+          <div class="cover c-{{ a.category_cover_color }}">
+            {{ a.anime_title_hi if a.anime_title_hi else a.category_name_hi }}
+          </div>
+          {% endif %}
+          <div>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;">
+              {% if a.categories and a.categories|length > 0 %}
+                {% for cat in a.categories[:2] %}
+                  <span class="tag">{{ cat.display_name or cat.name_hi or cat.name }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="tag">{{ a.category_name_hi }}</span>
+              {% endif %}
+            </div>
+            <h3>{{ a.title }}</h3>
+            <p class="meta">
+              {{ a.reading_time_minutes or 4 }} मिनट
+            </p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+  </section>
+  {% endif %}
+
+  <!-- SECTION HEADER & GRID (Excluded hero items) -->
+  {% if grid_articles %}
+  <div class="sec">
+    <h2>नवीनतम गाइड</h2>
+    <span class="meta">{{ grid_articles|length }} गाइड उपलब्ध</span>
+  </div>
+  {% endif %}
+
+  <!-- 3-COLUMN CARD GRID -->
+  <section class="grid">
+    {% for article in grid_articles %}
+      {% include "components/anime_card.html" %}
+    {% endfor %}
+  </section>
+
+  <!-- LEGAL ADVISORY (Neutral Editorial Box) -->
+  <section class="bg-theme-surface" style="margin-top: 48px; padding: 28px; border: 1px solid var(--border); border-radius: 10px;">
+    <h2 style="font-size: 22px; margin-bottom: 8px;">कानूनी एनीमे स्ट्रीमिंग मार्गदर्शिका</h2>
+    <p style="font-size: 14px; color: var(--muted); line-height: 1.8;">
+      भारत में एनीमे देखने के लिए हमेशा आधिकारिक और लाइसेंस प्राप्त स्ट्रीमिंग सेवाओं का उपयोग करें। किसी भी सेवा की वर्तमान उपलब्धता, भाषा विकल्प और कैटलॉग जानने के लिए उनकी आधिकारिक वेबसाइट या ऐप पर सीधे पुष्टि करें।
+    </p>
+  </section>
+
+  {% endif %}
+
+</main>
+{% endblock %}

@@ -1,0 +1,884 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings — Hindi Anime Guide{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-wrapper {
+        max-width: 860px;
+        margin: 32px auto 64px auto;
+        padding: 0 16px;
+    }
+
+    .settings-title-block {
+        margin-bottom: 24px;
+    }
+
+    .settings-title-block h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.5px;
+    }
+
+    .settings-title-block p {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 4px;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+
+    .settings-sidebar-nav {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .settings-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px 18px;
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .settings-nav-btn:hover {
+        background: var(--crimson-tint-subtle);
+        color: var(--text);
+    }
+
+    .settings-nav-btn.active {
+        background: var(--crimson-tint);
+        color: var(--red);
+        border-left-color: var(--red);
+    }
+
+    .settings-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .settings-tab-pane {
+        display: none;
+    }
+
+    .settings-tab-pane.active {
+        display: block;
+        animation: paneFade 0.2s ease-out;
+    }
+
+    @keyframes paneFade {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Language Switcher Cards */
+    .lang-switcher-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+        margin-bottom: 20px;
+    }
+
+    .lang-option-card {
+        background: var(--bg);
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+
+    .lang-option-card:hover {
+        border-color: var(--border-strong);
+        background: var(--surface);
+    }
+
+    .lang-option-card.active {
+        border-color: var(--red);
+        background: var(--crimson-tint-subtle);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .lang-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 14.5px;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+
+    .lang-flag {
+        font-size: 18px;
+    }
+
+    .lang-title {
+        flex: 1;
+    }
+
+    .lang-check {
+        color: var(--red);
+        font-weight: 900;
+        font-size: 15px;
+    }
+
+    .lang-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    .avatar-edit-box {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding-bottom: 24px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .avatar-wrapper-relative {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        flex-shrink: 0;
+    }
+
+    .avatar-preview-circle {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
+        font-weight: 700;
+        color: var(--on-ink);
+        overflow: hidden;
+        border: 3px solid var(--surface);
+        box-shadow: var(--shadow-md);
+        cursor: pointer;
+        background: {{ get_avatar_color(user.name or user.username) }};
+    }
+
+    .avatar-preview-circle img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-edit-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--red);
+        color: var(--on-red);
+        border: 2px solid var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .avatar-edit-badge:hover {
+        transform: scale(1.08);
+        background: var(--red-hover, var(--red));
+    }
+
+    .form-group-item {
+        margin-bottom: 18px;
+    }
+
+    .form-group-item label {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .form-control-input, .form-control-textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-control-input:focus, .form-control-textarea:focus {
+        outline: none;
+        border-color: var(--red);
+        box-shadow: var(--shadow-crimson-focus);
+    }
+
+    .strength-meter-box {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .strength-meter-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s, background-color 0.3s;
+    }
+
+    .btn-submit {
+        background: var(--red);
+        color: var(--on-crimson);
+        padding: 10px 22px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        box-shadow: var(--shadow-crimson);
+    }
+
+    .btn-submit:hover {
+        opacity: 0.92;
+    }
+
+    .alert-banner {
+        padding: 14px 18px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .alert-banner-success {
+        background: var(--badge-green-bg);
+        color: var(--badge-green-text);
+        border: 1px solid var(--badge-green-border);
+    }
+
+    .alert-banner-error {
+        background: var(--badge-danger-bg);
+        color: var(--danger);
+        border: 1px solid var(--badge-danger-border);
+    }
+
+    @media (max-width: 768px) {
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+        .settings-sidebar-nav {
+            display: flex;
+            overflow-x: auto;
+        }
+        .settings-nav-btn {
+            border-left: none;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        .settings-nav-btn.active {
+            border-left-color: transparent;
+            border-bottom-color: var(--red);
+        }
+        .avatar-edit-box {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-wrapper">
+    <div class="settings-title-block">
+        <h1 data-i18n="settings_title">खाता सेटिंग्स (Account Settings)</h1>
+        <p data-i18n="settings_desc">अपनी व्यक्तिगत जानकारी, प्रोफ़ाइल फ़ोटो, पासवर्ड और खाता प्राथमिकताएँ प्रबंधित करें।</p>
+    </div>
+
+    {% if updated %}
+        <div class="alert-banner alert-banner-success">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+                प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई!
+            </span>
+            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--text);" aria-label="Dismiss"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-x"></use></svg></button>
+        </div>
+    {% endif %}
+
+    {% if password_changed %}
+        <div class="alert-banner alert-banner-success">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+                आपका पासवर्ड सफलतापूर्वक बदल दिया गया है!
+            </span>
+            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--text);" aria-label="Dismiss"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-x"></use></svg></button>
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <div class="alert-banner alert-banner-error">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-alert-triangle"></use></svg>
+                {{ error }}
+            </span>
+            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--text);" aria-label="Dismiss"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-x"></use></svg></button>
+        </div>
+    {% endif %}
+
+    <div class="settings-grid">
+        <!-- Sidebar Tabs: Exactly 2 options as requested -->
+        <div class="settings-sidebar-nav">
+            <button type="button" id="tab-btn-profile" class="settings-nav-btn active" onclick="showSettingsTab('profile')">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-user"></use></svg> <span data-i18n="nav_profile">प्रोफ़ाइल जानकारी (Profile)</span>
+            </button>
+            <button type="button" id="tab-btn-security" class="settings-nav-btn" onclick="showSettingsTab('security')">
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-shield-check"></use></svg> <span data-i18n="nav_security">सुरक्षा और सेटिंग्स (Security)</span>
+            </button>
+        </div>
+
+        <!-- Panels -->
+        <div>
+            <!-- Tab 1: Profile -->
+            <div id="pane-profile" class="settings-tab-pane active">
+                <div class="settings-card">
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 20px;" data-i18n="public_profile">
+                        सार्वजनिक प्रोफ़ाइल (Public Profile)
+                    </h2>
+
+                    <!-- Avatar Box with 10MB upload and Remove button -->
+                    <div class="avatar-edit-box">
+                        <div class="avatar-wrapper-relative">
+                            <div class="avatar-preview-circle" onclick="document.getElementById('user-avatar-file').click()" title="Change photo">
+                                {% if user.avatar_url %}
+                                    <img id="user-avatar-img" src="{{ user.avatar_url }}" alt="{{ user.name }}" class="avatar-img" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">
+                                    <span id="user-avatar-initials" style="display:none;"></span>
+                                {% else %}
+                                    <img id="user-avatar-img" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Avatar">
+                                    <span id="user-avatar-initials">{{ get_initials(user.name or user.username) }}</span>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="avatar-edit-badge" onclick="document.getElementById('user-avatar-file').click()" title="Upload photo" aria-label="Upload photo">
+                                <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-pencil"></use></svg>
+                            </button>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 4px;" data-i18n="avatar_title">प्रोफ़ाइल फ़ोटो (Avatar Photo)</div>
+                            <div style="font-size: 12.5px; color: var(--muted); margin-bottom: 12px;" data-i18n="avatar_hint">
+                                JPG, PNG या WEBP अपलोड करें (अधिकतम 10MB)।
+                            </div>
+                            <input type="file" id="user-avatar-file" name="avatar_file" accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="uploadUserAvatar(this)">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="btn-submit" style="background: transparent; color: var(--text); border: 1.5px solid var(--border); padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="document.getElementById('user-avatar-file').click()">
+                                    <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-upload"></use></svg> <span data-i18n="btn_upload_photo">फ़ोटो अपलोड करें (Max 10MB)</span>
+                                </button>
+                                <button type="button" id="btn-remove-avatar" class="btn-submit" style="background: transparent; color: var(--danger); border: 1.5px solid var(--border); padding: 7px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; {% if not user.avatar_url %}display:none;{% endif %}" onclick="removeUserAvatar()">
+                                    <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span data-i18n="btn_remove_photo">फ़ोटो हटाएँ (Remove Photo)</span>
+                                </button>
+                            </div>
+                            <div id="avatar-upload-feedback" style="font-size: 12px; margin-top: 6px; color: var(--muted);"></div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Update Form -->
+                    <form action="/settings/update" method="POST">
+                        <input type="hidden" id="user-avatar-url" name="avatar_url" value="{{ user.avatar_url or '' }}">
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_fullname">पूरा नाम (Full Name) *</label>
+                            <input type="text" name="name" class="form-control-input" value="{{ user.name }}" required pattern="^[a-zA-Z\s]{2,50}$" title="नाम में केवल अंग्रेज़ी अक्षर होने चाहिए (2-50 वर्ण)">
+                            <div style="font-size: 11.5px; color: var(--muted); margin-top: 4px;" data-i18n="hint_fullname">English characters and spaces only.</div>
+                        </div>
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_username">यूज़रनेम (Username) *</label>
+                            <input type="text" name="username" class="form-control-input" value="{{ user.username }}" required pattern="^[a-zA-Z][a-zA-Z0-9_]{2,29}$" title="अक्षर से शुरू होना चाहिए, 3-30 वर्ण">
+                            <div style="font-size: 11.5px; color: var(--muted); margin-top: 4px;" data-i18n="hint_username">Starts with letter; letters, numbers, and underscores only.</div>
+                        </div>
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_email">ईमेल पता (Email Address) *</label>
+                            <input type="email" name="email" id="user-email-input" class="form-control-input" value="{{ user.email }}" required placeholder="अपना ईमेल पता दर्ज करें">
+                            <div style="font-size: 11.5px; color: var(--muted); margin-top: 4px;" data-i18n="hint_email">वैध ईमेल पता दर्ज करें। ईमेल बदलने पर आपका लॉगिन सत्र स्वतः अपडेट हो जाएगा।</div>
+                        </div>
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_bio">बायो (Bio)</label>
+                            <textarea name="bio" class="form-control-textarea" rows="3" data-i18n-placeholder="bio_placeholder" placeholder="अपने पसंदीदा एनीमे के बारे में कुछ बताएं...">{{ user.bio or '' }}</textarea>
+                        </div>
+
+                        <div style="margin-top: 24px;">
+                            <button type="submit" class="btn-submit" data-i18n="btn_save_changes">बदलाव सहेजें (Save Changes)</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab 2: Security (Combined Language, Password, Data Export, and Delete Account) -->
+            <div id="pane-security" class="settings-tab-pane">
+                
+                <!-- 1. Language Preference Card -->
+                <div class="settings-card" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-languages"></use></svg>
+                        <span data-i18n="sec_lang_title">भाषा प्राथमिकता (Language Preference)</span>
+                    </h2>
+                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;" data-i18n="sec_lang_subtitle">
+                        इंटरफ़ेस की भाषा चुनें। जैसे ही आप English चुनेंगे, पूरी साइट की नेविगेशन और सेटिंग्स अंग्रेज़ी में हो जाएँगी, जबकि लेख सामग्री (Articles) हमेशा हिंदी में रहेगी।
+                    </p>
+
+                    <div class="lang-switcher-grid">
+                        <div class="lang-option-card active" id="lang-card-hi" onclick="setLanguage('hi')">
+                            <div class="lang-card-header">
+                                <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-languages"></use></svg>
+                                <span class="lang-title">हिंदी (Hindi)</span>
+                                <span class="lang-check" id="lang-check-hi"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-check-circle"></use></svg></span>
+                            </div>
+                            <div class="lang-desc" data-i18n="lang_desc_hi">डिफ़ॉल्ट भाषा — पूरी साइट और गाइड्स हिंदी में।</div>
+                        </div>
+
+                        <div class="lang-option-card" id="lang-card-en" onclick="setLanguage('en')">
+                            <div class="lang-card-header">
+                                <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-globe"></use></svg>
+                                <span class="lang-title">English</span>
+                                <span class="lang-check" id="lang-check-en" style="display: none;"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-check-circle"></use></svg></span>
+                            </div>
+                            <div class="lang-desc" data-i18n="lang_desc_en">All UI, settings & menus in English; articles remain in Hindi.</div>
+                        </div>
+                    </div>
+
+                    <div id="lang-feedback-badge" style="display: none; font-size: 12.5px; font-weight: 600; color: var(--success); padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;">
+                        Language preference updated!
+                    </div>
+                </div>
+
+                <!-- 2. Change Password Form Card -->
+                <div class="settings-card" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+                        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-key-round"></use></svg>
+                        {% if user.hashed_password %}
+                        <span data-i18n="sec_pwd_title">खाता पासवर्ड बदलें (Change Password)</span>
+                        {% else %}
+                        <span>पासवर्ड सेट करें (Set Password)</span>
+                        {% endif %}
+                    </h2>
+
+                    {% if not user.hashed_password %}
+                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+                        आपने Google खाते से साइन अप किया है। आप पासवर्ड सेट करके ईमेल और पासवर्ड दोनों तरीकों से लॉगिन कर सकते हैं।
+                    </p>
+                    {% endif %}
+
+                    <form action="/settings/change-password" method="POST">
+                        {% if user.hashed_password %}
+                        <div class="form-group-item">
+                            <label data-i18n="label_curr_pwd">वर्तमान पासवर्ड (Current Password) *</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="input-curr-pwd" name="current_password" class="form-control-input" required data-i18n-placeholder="placeholder_curr_pwd" placeholder="वर्तमान पासवर्ड दर्ज करें" autocomplete="current-password" style="padding-right: 44px;">
+                                <button type="button" onclick="togglePwdVisibility('input-curr-pwd', this)" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;" aria-label="Toggle password visibility">
+                                    <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-eye"></use></svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_new_pwd">नया पासवर्ड (New Password — min 8 chars) *</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="input-new-pwd" name="new_password" class="form-control-input" required data-i18n-placeholder="placeholder_new_pwd" placeholder="नया पासवर्ड दर्ज करें (कम से कम 8 वर्ण)" autocomplete="new-password" oninput="checkUserPwdStrength(this.value)" style="padding-right: 44px;">
+                                <button type="button" onclick="togglePwdVisibility('input-new-pwd', this)" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;" aria-label="Toggle password visibility">
+                                    <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-eye"></use></svg>
+                                </button>
+                            </div>
+                            <div class="strength-meter-box">
+                                <div id="user-strength-bar" class="strength-meter-bar"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px; color: var(--muted);">
+                                <span data-i18n="pwd_strength_hint">मजबूती (Strength): कम से कम 8 वर्ण</span>
+                                <span id="user-strength-label" style="font-weight: 700;"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group-item">
+                            <label data-i18n="label_conf_pwd">नए पासवर्ड की पुष्टि करें (Confirm New Password) *</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="input-conf-pwd" name="confirm_password" class="form-control-input" required data-i18n-placeholder="placeholder_conf_pwd" placeholder="नए पासवर्ड को दोबारा दर्ज करें" autocomplete="new-password" style="padding-right: 44px;">
+                                <button type="button" onclick="togglePwdVisibility('input-conf-pwd', this)" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px;" aria-label="Toggle password visibility">
+                                    <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-eye"></use></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 12.5px; color: var(--muted);">
+                            <div style="font-weight: 700; color: var(--text); margin-bottom: 4px;" data-i18n="pwd_req_title">पासवर्ड आवश्यकताएँ (Requirements):</div>
+                            <ul style="margin-left: 18px; line-height: 1.6;">
+                                <li data-i18n="pwd_req_1">कम से कम 8 अक्षर (Minimum 8 characters)</li>
+                                <li data-i18n="pwd_req_2">अपरकेस (A-Z) और लोअरकेस (a-z) अक्षर</li>
+                                <li data-i18n="pwd_req_3">कम से कम 1 संख्या (0-9)</li>
+                                <li data-i18n="pwd_req_4">कम से कम 1 विशेष चिह्न (!@#$%^&* आदि)</li>
+                                {% if user.hashed_password %}
+                                <li data-i18n="pwd_req_5">वर्तमान पासवर्ड से भिन्न होना चाहिए</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            {% if user.hashed_password %}
+                            <span data-i18n="btn_update_pwd">पासवर्ड अपडेट करें (Update Password)</span>
+                            {% else %}
+                            <span>पासवर्ड सेट करें (Set Password)</span>
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 3. Trusted Devices Card -->
+                <div class="settings-card" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-shield-check"></use></svg>
+                        <span>विश्वसनीय डिवाइस (Trusted Devices)</span>
+                    </h2>
+                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+                        ये डिवाइस बिना ईमेल OTP सत्यापन के लॉगिन कर सकते हैं (30 दिनों तक मान्य)।
+                    </p>
+
+                    {% if trusted_devices %}
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            {% for dev in trusted_devices %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;">
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--text);">{{ dev.label[:80] or "अज्ञात डिवाइस" }}</div>
+                                    <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">
+                                        जोड़ा गया: {{ dev.created_at.strftime('%d %b %Y') }} • समाप्त: {{ dev.expires_at.strftime('%d %b %Y') }}
+                                    </div>
+                                </div>
+                                <form action="/settings/trusted-device/{{ dev.id }}/revoke" method="POST">
+                                    <button type="submit" class="btn-submit" style="background: var(--danger); border-color: var(--danger); padding: 6px 14px; font-size: 12px;">
+                                        हटाएं
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="font-size: 13px; color: var(--muted);">वर्तमान में कोई विश्वसनीय डिवाइस नहीं है।</p>
+                    {% endif %}
+                </div>
+
+                <!-- 4. Export Data Card -->
+                <div class="settings-card" style="margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: var(--text);" data-i18n="export_title">डेटा निर्यात (Export Data)</div>
+                            <div style="font-size: 12.5px; color: var(--muted); margin-top: 2px;" data-i18n="export_desc">अपनी सभी टिप्पणियाँ और प्रोफ़ाइल जानकारी JSON फ़ाइल के रूप में डाउनलोड करें।</div>
+                        </div>
+                        <a href="/settings/export-data" class="btn-submit" style="background: transparent; color: var(--text); border: 1.5px solid var(--border); padding: 8px 16px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-share-2"></use></svg> <span data-i18n="btn_export_json">Export JSON</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 4. Danger Zone Card (Integrated into Security) -->
+                <div class="settings-card" style="border-color: var(--badge-danger-border);">
+                    <h2 style="font-size: 18px; font-weight: 700; color: var(--danger); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-trash-2"></use></svg>
+                        <span data-i18n="danger_title">खाता हटाएँ (Delete My Account)</span>
+                    </h2>
+                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5;" data-i18n="danger_desc">
+                        खाता हटाने से आपकी प्रोफ़ाइल, यूज़रनेम और आपकी सभी टिप्पणियाँ स्थायी रूप से हटा दी जाएंगी। इसे वापस नहीं लाया जा सकता।
+                    </p>
+
+                    <form action="/settings/delete-account" method="POST" onsubmit="return confirm('क्या आप वाकई अपना खाता हटाना चाहते हैं? यह क्रिया वापस नहीं ली जा सकती।');">
+                        {% if user.hashed_password %}
+                        <div class="form-group-item">
+                            <label data-i18n="label_danger_pwd">हटाने की पुष्टि के लिए पासवर्ड दर्ज करें</label>
+                            <input type="password" name="password" class="form-control-input" required data-i18n-placeholder="placeholder_danger_pwd" placeholder="पासवर्ड दर्ज करें" autocomplete="current-password">
+                        </div>
+                        {% else %}
+                        <div class="form-group-item">
+                            <label>हटाने की पुष्टि के लिए <strong>DELETE</strong> या <strong>हटाएं</strong> लिखें</label>
+                            <input type="text" name="confirm_delete" class="form-control-input" required placeholder="DELETE या हटाएं" autocomplete="off">
+                            <p style="font-size: 12px; color: var(--muted); margin-top: 6px;">
+                                Google खाते से लॉगिन है, इसलिए पासवर्ड की आवश्यकता नहीं है। पुष्टि के लिए <strong>DELETE</strong> दर्ज करें।
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn-submit" style="background: var(--danger); border-color: var(--danger);" data-i18n="btn_delete_account">
+                            खाता स्थायी रूप से हटाएँ
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.showSettingsTab = function(tabId) {
+        if (tabId === 'preferences' || tabId === 'danger') tabId = 'security';
+        document.querySelectorAll('.settings-tab-pane').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        document.querySelectorAll('.settings-nav-btn').forEach(function(b) {
+            b.classList.remove('active');
+        });
+
+        const pane = document.getElementById('pane-' + tabId);
+        const btn = document.getElementById('tab-btn-' + tabId);
+        if (pane) pane.classList.add('active');
+        if (btn) btn.classList.add('active');
+
+        if (history.replaceState) {
+            history.replaceState(null, null, '#' + tabId);
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash === 'security' || hash === 'preferences' || hash === 'danger') {
+            showSettingsTab('security');
+        }
+    });
+
+    window.togglePwdVisibility = function(inputId, btn) {
+        const inp = document.getElementById(inputId);
+        if (!inp) return;
+        const isPwd = (inp.type === 'password');
+        inp.type = isPwd ? 'text' : 'password';
+        const useEl = btn.querySelector('use');
+        if (useEl) {
+            useEl.setAttribute('href', isPwd ? '#i-eye-off' : '#i-eye');
+        }
+    };
+
+    window.uploadUserAvatar = async function(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const feedback = document.getElementById('avatar-upload-feedback');
+        
+        if (file.size > 10 * 1024 * 1024) {
+            alert('फ़ोटो का आकार 10MB से अधिक नहीं होना चाहिए (Max 10MB)');
+            input.value = '';
+            if (feedback) feedback.textContent = 'फ़ाइल का आकार 10MB से अधिक है।';
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        const img = document.getElementById('user-avatar-img');
+        const initials = document.getElementById('user-avatar-initials');
+        if (img) {
+            img.src = previewUrl;
+            img.style.display = 'block';
+        }
+        if (initials) initials.style.display = 'none';
+        if (feedback) feedback.textContent = 'अपलोड और ऑप्टिमाइज़ हो रहा है...';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch('/uploads/avatar', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (resp.ok && data.url) {
+                document.getElementById('user-avatar-url').value = data.url;
+                if (img) {
+                    img.src = data.url;
+                    img.style.display = 'block';
+                }
+                if (initials) initials.style.display = 'none';
+                const removeBtn = document.getElementById('btn-remove-avatar');
+                if (removeBtn) removeBtn.style.display = 'inline-block';
+                if (feedback) feedback.textContent = 'फ़ोटो सफलतापूर्वक सहेजी गई!';
+                if (window.showToast) window.showToast('Profile photo updated successfully', 'success');
+                setTimeout(function() { if (feedback) feedback.textContent = ''; }, 4000);
+            } else {
+                alert('अपलोड विफल: ' + (data.detail || 'त्रुटि हुई'));
+                if (feedback) feedback.textContent = (data.detail || 'अपलोड विफल');
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            if (feedback) feedback.textContent = 'नेटवर्क त्रुटि';
+        }
+    };
+
+    window.removeUserAvatar = async function() {
+        if (!confirm('क्या आप अपनी प्रोफ़ाइल फ़ोटो हटाना चाहते हैं?')) return;
+        const feedback = document.getElementById('avatar-upload-feedback');
+        if (feedback) feedback.textContent = 'फ़ोटो हटाई जा रही है...';
+        
+        try {
+            const resp = await fetch('/uploads/avatar/remove', { method: 'POST' });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                document.getElementById('user-avatar-url').value = '';
+                const img = document.getElementById('user-avatar-img');
+                const initials = document.getElementById('user-avatar-initials');
+                if (img) {
+                    img.src = '';
+                    img.style.display = 'none';
+                }
+                if (initials) initials.style.display = 'block';
+                const removeBtn = document.getElementById('btn-remove-avatar');
+                if (removeBtn) removeBtn.style.display = 'none';
+                if (feedback) feedback.textContent = 'फ़ोटो हटा दी गई!';
+                if (window.showToast) window.showToast('Profile photo removed', 'success');
+                setTimeout(function() { if (feedback) feedback.textContent = ''; }, 4000);
+            } else {
+                alert('हटाने में विफलता: ' + (data.detail || 'त्रुटि हुई'));
+            }
+        } catch (err) {
+            console.error('Remove avatar error:', err);
+        }
+    };
+
+    window.checkUserPwdStrength = function(pwd) {
+        const bar = document.getElementById('user-strength-bar');
+        const label = document.getElementById('user-strength-label');
+        if (!pwd) {
+            bar.style.width = '0%';
+            label.textContent = '';
+            return;
+        }
+        let s = 0;
+        if (pwd.length >= 8) s++;
+        if (/[A-Z]/.test(pwd)) s++;
+        if (/[a-z]/.test(pwd)) s++;
+        if (/\d/.test(pwd)) s++;
+        if (/[@$!%*?&#^()_+\-=\[\]{}|;:,.<>?]/.test(pwd)) s++;
+
+        const widths = ['10%', '25%', '50%', '75%', '100%'];
+        const colors = ['var(--strength-weak)', 'var(--strength-weak)', 'var(--strength-fair)', 'var(--strength-good)', 'var(--strength-strong)'];
+        const isEnglish = (localStorage.getItem('site_lang') === 'en');
+        const labelsHi = ['कमजोर (Weak)', 'कमजोर (Weak)', 'सामान्य (Fair)', 'अच्छा (Good)', 'मजबूत (Strong)'];
+        const labelsEn = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+        const labels = isEnglish ? labelsEn : labelsHi;
+
+        const idx = Math.max(0, Math.min(s - 1, 4));
+        bar.style.width = widths[idx];
+        bar.style.backgroundColor = colors[idx];
+        label.textContent = labels[idx];
+        label.style.color = colors[idx];
+    };
+
+    window.updateSettingsLanguageUI = function(lang) {
+        const cardHi = document.getElementById('lang-card-hi');
+        const cardEn = document.getElementById('lang-card-en');
+        const checkHi = document.getElementById('lang-check-hi');
+        const checkEn = document.getElementById('lang-check-en');
+        const feedback = document.getElementById('lang-feedback-badge');
+
+        if (cardHi && cardEn) {
+            if (lang === 'en') {
+                cardHi.classList.remove('active');
+                cardEn.classList.add('active');
+                if (checkHi) checkHi.style.display = 'none';
+                if (checkEn) checkEn.style.display = 'inline';
+            } else {
+                cardEn.classList.remove('active');
+                cardHi.classList.add('active');
+                if (checkEn) checkEn.style.display = 'none';
+                if (checkHi) checkHi.style.display = 'inline';
+            }
+        }
+
+        if (feedback) {
+            feedback.textContent = (lang === 'en') ? 'Interface language set to English (Articles remain in Hindi)' : 'इंटरफ़ेस भाषा हिंदी में सेट की गई';
+            feedback.style.display = 'block';
+            setTimeout(function() { feedback.style.display = 'none'; }, 3000);
+        }
+    };
+
+    function initTabs() {
+        document.querySelectorAll('.settings-nav-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                const id = this.id.replace('tab-btn-', '');
+                window.showSettingsTab(id);
+            });
+        });
+
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            if (hash === 'preferences' || hash === 'danger') {
+                window.showSettingsTab('security');
+            } else if (document.getElementById('pane-' + hash)) {
+                window.showSettingsTab(hash);
+            }
+        }
+
+        const currentLang = (typeof window.getSiteLang === 'function') ? window.getSiteLang() : (localStorage.getItem('site_lang') || 'en');
+        const cardHi = document.getElementById('lang-card-hi');
+        const cardEn = document.getElementById('lang-card-en');
+        const checkHi = document.getElementById('lang-check-hi');
+        const checkEn = document.getElementById('lang-check-en');
+        if (cardHi && cardEn) {
+            if (currentLang === 'en') {
+                cardHi.classList.remove('active');
+                cardEn.classList.add('active');
+                if (checkHi) checkHi.style.display = 'none';
+                if (checkEn) checkEn.style.display = 'inline';
+            } else {
+                cardEn.classList.remove('active');
+                cardHi.classList.add('active');
+                if (checkEn) checkEn.style.display = 'none';
+                if (checkHi) checkHi.style.display = 'inline';
+            }
+        }
+    }
+
+    window.addEventListener('hashchange', function() {
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            if (hash === 'preferences' || hash === 'danger') {
+                window.showSettingsTab('security');
+            } else if (document.getElementById('pane-' + hash)) {
+                window.showSettingsTab(hash);
+            }
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTabs);
+    } else {
+        initTabs();
+    }
+</script>
+{% endblock %}

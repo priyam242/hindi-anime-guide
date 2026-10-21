@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Admin Account | Hindi Anime Guide</title>
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <link rel="stylesheet" href="/static/css/tailwind.css">
+    <style>
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .register-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            width: 100%;
+            max-width: 28rem;
+            padding: 2rem;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background-color: var(--bg);
+            color: var(--text);
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            margin-top: 0.35rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            background-color: var(--primary);
+            color: var(--on-primary);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: opacity 0.2s ease;
+        }
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        .alert-error {
+            background-color: var(--error-bg);
+            color: var(--error);
+            border: 1px solid var(--error-border);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-card">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Create Admin Account</h1>
+        <p style="color: var(--muted); font-size: 0.875rem; text-align: center; margin-bottom: 1.5rem;">Register a new administrative user</p>
+
+        {% if error %}
+        <div class="alert-error" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/admin/register">
+            <div style="margin-bottom: 1rem;">
+                <label for="name" style="font-size: 0.875rem; font-weight: 500;">Full Name</label>
+                <input type="text" id="name" name="name" class="form-input" required placeholder="e.g. John Doe">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="email" style="font-size: 0.875rem; font-weight: 500;">Email Address</label>
+                <input type="email" id="email" name="email" class="form-input" required placeholder="admin@example.com">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="password" style="font-size: 0.875rem; font-weight: 500;">Password</label>
+                <input type="password" id="password" name="password" class="form-input" required placeholder="••••••••">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="confirm_password" style="font-size: 0.875rem; font-weight: 500;">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-input" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn-submit">Register Admin</button>
+        </form>
+
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem;">
+            <a href="/auth/login" style="color: var(--primary); text-decoration: none;">Back to Login</a>
+        </div>
+    </div>
+</body>
+</html>

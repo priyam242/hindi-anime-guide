@@ -1,0 +1,590 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Account Settings{% endblock %}
+{% block breadcrumb_current %}Account Settings{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-container {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+
+    /* Tab navigation list */
+    .settings-nav {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px 18px;
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        text-align: left;
+        font-size: 14.5px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+        background: var(--bg);
+        color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+        background: var(--crimson-tint);
+        color: var(--primary);
+        border-left-color: var(--primary);
+        font-weight: 600;
+    }
+
+    body.dark-mode .tab-btn.active {
+        background: var(--crimson-tint);
+    }
+
+    .tab-btn.danger-tab:hover {
+        color: var(--danger);
+    }
+
+    .tab-btn.danger-tab.active {
+        background: var(--badge-danger-bg);
+        color: var(--danger);
+        border-left-color: var(--danger);
+    }
+
+    /* Tab content panes */
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Avatar section */
+    .avatar-upload-wrap {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 28px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .avatar-preview-box {
+        width: 120px;
+        height: 120px;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 44px;
+        font-weight: 700;
+        color: white;
+        box-shadow: var(--shadow-md);
+        border: 4px solid var(--card-bg);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        background: {{ get_avatar_color(user_name or 'Admin') }};
+    }
+
+    .avatar-preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-overlay-hint {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--modal-backdrop);
+        color: white;
+        font-size: 11px;
+        text-align: center;
+        padding: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .avatar-preview-box:hover .avatar-overlay-hint {
+        opacity: 1;
+    }
+
+    /* Password strength */
+    .strength-meter-wrap {
+        height: 6px;
+        width: 100%;
+        background: var(--border);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    /* Responsive */
+    @media (max-width: 860px) {
+        .settings-container {
+            grid-template-columns: 1fr;
+        }
+        .avatar-upload-wrap {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>⚙️</span> Account Settings</h1>
+        <div class="page-subtitle">Manage your personal admin profile, security, and interface preferences.</div>
+    </div>
+</div>
+
+{% if updated %}
+    <div class="alert alert-success alert-dismissible">
+        <span>✅ Profile updated successfully!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+{% endif %}
+
+{% if admin_created %}
+    <div class="alert alert-success alert-dismissible">
+        <span>✅ New administrator appointed successfully!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+{% endif %}
+
+{% if status_toggled %}
+    <div class="alert alert-success alert-dismissible">
+        <span>✅ Administrator status updated successfully!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+{% endif %}
+
+{% if password_changed %}
+    <div class="alert alert-success alert-dismissible">
+        <span>✅ Password changed successfully!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+{% endif %}
+
+{% if error %}
+    <div class="alert alert-danger alert-dismissible">
+        <span>⚠️ {{ error }}</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+{% endif %}
+
+<div class="settings-container">
+    <!-- Settings Navigation Sidebar -->
+    <div class="settings-nav">
+        <button type="button" id="btn-profile" class="tab-btn active" onclick="switchTab('profile')">
+            <span>👤</span> Profile Info
+        </button>
+        <button type="button" id="btn-admins" class="tab-btn" onclick="switchTab('admins')">
+            <span>👑</span> Administrators
+        </button>
+        <button type="button" id="btn-security" class="tab-btn" onclick="switchTab('security')">
+            <span>🔒</span> Security & Password
+        </button>
+        <button type="button" id="btn-preferences" class="tab-btn" onclick="switchTab('preferences')">
+            <span>⚙️</span> System Preferences
+        </button>
+        <button type="button" id="btn-danger" class="tab-btn danger-tab" onclick="switchTab('danger')">
+            <span>⚠️</span> Danger Zone
+        </button>
+    </div>
+
+    <!-- Tab Panels Container -->
+    <div class="settings-content-wrapper">
+        <!-- 1. Profile Tab -->
+        <div id="tab-profile" class="tab-content active">
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">Administrator Profile</h2>
+                
+                <form action="/admin/account/update" method="POST" enctype="multipart/form-data">
+                    <!-- Avatar section -->
+                    <div class="avatar-upload-wrap">
+                        <div class="avatar-preview-box" onclick="document.getElementById('avatar-file-input').click()">
+                            {% if admin_user and admin_user.avatar_url %}
+                                <img id="avatar-preview-img" src="{{ admin_user.avatar_url }}" alt="{{ user_name }}">
+                                <span id="avatar-preview-initials" class="hidden"></span>
+                            {% else %}
+                                <img id="avatar-preview-img" class="hidden" alt="Avatar">
+                                <span id="avatar-preview-initials">{{ get_initials(user_name or 'Admin') }}</span>
+                            {% endif %}
+                            <div class="avatar-overlay-hint">Change</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">Profile Photo</div>
+                            <div style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px;">
+                                JPG, PNG, or WEBP up to 2MB. Stored in high resolution.
+                            </div>
+                            <input type="file" id="avatar-file-input" name="avatar_file" accept=".jpg,.jpeg,.png,.webp" style="display:none;" onchange="uploadAvatarFile(this)">
+                            <input type="hidden" id="avatar-url-input" name="avatar_url" value="{{ admin_user.avatar_url if admin_user else '' }}">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('avatar-file-input').click()">
+                                📤 Upload New Picture
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fields -->
+                    <div class="form-group">
+                        <label class="form-label">Full Name (English letters only)</label>
+                        <input type="text" name="name" class="input" value="{{ admin_user.name if admin_user else user_name }}" required pattern="^[a-zA-Z\s]{2,50}$" title="Name must contain only English letters and spaces (2-50 chars)">
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">English characters and spaces only.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address (Login & System Notices)</label>
+                        <input type="email" name="email" class="input" value="{{ admin_user.email if admin_user else user_email }}" required>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">Primary admin sign-in email. Changing this updates your login immediately without logging you out.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bio / Administrative Notes</label>
+                        <textarea name="bio" class="textarea" rows="3" placeholder="Tell other administrators about your role...">{{ admin_user.bio if admin_user else '' }}</textarea>
+                    </div>
+
+                    <div class="form-group" style="padding-top: 8px; border-top: 1px solid var(--border);">
+                        <div style="font-size: 13px; color: var(--text-secondary);">
+                            Admin since: <strong>{{ admin_user.created_at.strftime('%d %B %Y') if (admin_user and admin_user.created_at) else 'October 2026' }}</strong>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary">Save Profile Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. Administrators Tab -->
+        <div id="tab-admins" class="tab-content">
+            <div class="card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Administrators Directory</h2>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Personnel with full administrative access to Hindi Anime Guide portal.</div>
+                    </div>
+                    <span class="badge badge-purple" style="font-size: 13px; padding: 6px 12px;">
+                        Total: {{ all_admins|length if all_admins else 1 }} Admins
+                    </span>
+                </div>
+
+                <div class="table-container" style="box-shadow: none; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-x: auto;">
+                    <table class="data-table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Administrator</th>
+                                <th>Email</th>
+                                <th>Bio / Notes</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if all_admins %}
+                                {% for adm in all_admins %}
+                                    <tr>
+                                        <td>
+                                            <div class="user-row-cell">
+                                                <div class="user-avatar-cell" style="background: {{ get_avatar_color(adm.name) }};">
+                                                    {% if adm.avatar_url %}
+                                                        <img src="{{ adm.avatar_url }}" alt="{{ adm.name }}">
+                                                    {% else %}
+                                                        {{ get_initials(adm.name) }}
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <div class="user-primary-name" style="display: flex; align-items: center; gap: 6px;">
+                                                        <span>{{ adm.name }}</span>
+                                                        {% if admin_user and adm.email == admin_user.email %}
+                                                            <span class="badge badge-purple" style="font-size: 10px; padding: 2px 6px;">You</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="font-size: 13px; color: var(--text-secondary); font-family: monospace;">
+                                            {{ adm.email }}
+                                        </td>
+                                        <td style="font-size: 12.5px; color: var(--text-secondary); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ adm.bio or '—' }}
+                                        </td>
+                                        <td>
+                                            {% if adm.is_active %}
+                                                <span class="badge badge-success">Active</span>
+                                            {% else %}
+                                                <span class="badge badge-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 12px; color: var(--text-secondary); white-space: nowrap;">
+                                            {{ adm.created_at.strftime('%d %b %Y') if adm.created_at else '' }}
+                                        </td>
+                                        <td style="text-align: right; white-space: nowrap;">
+                                            {% if not admin_user or adm.id != admin_user.id %}
+                                                <form action="/admin/admins/{{ adm.id }}/toggle-status" method="POST" style="display:inline;">
+                                                    {% if adm.is_active %}
+                                                        <button type="submit" class="btn btn-outline btn-sm" style="color: var(--warning); border-color: var(--warning);" title="Deactivate Administrator">
+                                                            Deactivate
+                                                        </button>
+                                                    {% else %}
+                                                        <button type="submit" class="btn btn-outline btn-sm" style="color: var(--success); border-color: var(--success);" title="Activate Administrator">
+                                                            Activate
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            {% else %}
+                                                <span style="font-size: 12px; color: var(--text-secondary); font-style: italic;">Primary Session</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Appoint New Administrator Form -->
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">👑 Appoint New Administrator</h2>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+                    Create a new administrator account directly with full access permissions.
+                </div>
+
+                <form action="/admin/create-admin" method="POST">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label class="form-label">Full Name (English letters only)</label>
+                            <input type="text" name="name" class="input" placeholder="e.g. Rahul Sharma" required pattern="^[a-zA-Z\s]{2,50}$" title="Name must contain only English letters and spaces (2-50 chars)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address (Login ID)</label>
+                            <input type="email" name="email" class="input" placeholder="admin@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Initial Password</label>
+                        <input type="password" name="password" class="input" required placeholder="Minimum 8 characters with uppercase, digit and symbol">
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">Must contain at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 symbol.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bio / Administrative Role</label>
+                        <textarea name="bio" class="textarea" rows="2" placeholder="e.g. Content Editor & Anime Review Lead"></textarea>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">
+                            👑 Appoint Administrator
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. Security Tab -->
+        <div id="tab-security" class="tab-content">
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">Change Password</h2>
+
+                <form action="/admin/account/change-password" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" name="current_password" class="input" required placeholder="Enter your current password">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="new-password" name="new_password" class="input" required placeholder="At least 8 chars with uppercase, number & symbol" oninput="checkPasswordStrength(this.value)">
+                        
+                        <div class="strength-meter-wrap">
+                            <div id="password-strength" class="strength-bar"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                            <span style="font-size: 11.5px; color: var(--text-secondary);">Strength requirement: Strong</span>
+                            <span id="strength-label" style="font-size: 11.5px; font-weight: 700;"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="input" required placeholder="Re-enter new password">
+                    </div>
+
+                    <div style="background: var(--bg); padding: 14px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 20px; font-size: 12.5px; color: var(--text-secondary);">
+                        <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Password Requirements:</div>
+                        <ul style="margin-left: 18px; line-height: 1.6;">
+                            <li>Minimum 8 characters</li>
+                            <li>At least 1 uppercase letter (A-Z)</li>
+                            <li>At least 1 lowercase letter (a-z)</li>
+                            <li>At least 1 numeric digit (0-9)</li>
+                            <li>At least 1 special character (!@#$%^&* etc.)</li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. Preferences Tab -->
+        <div id="tab-preferences" class="tab-content">
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">System Preferences</h2>
+
+                <div class="form-group">
+                    <label class="form-label" data-admin-i18n="pref_lang_label">Admin Interface Language (प्रशासन इंटरफ़ेस भाषा)</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 8px;">
+                        <div id="admin-lang-card-hi" class="lang-option-card" onclick="setAdminLanguage('hi')" style="border: 2px solid var(--primary); background: var(--crimson-tint); border-radius: var(--radius-md); padding: 14px; cursor: pointer; transition: all 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-weight: 700; font-size: 14px;">🇮🇳 हिन्दी (Hindi)</span>
+                                <span class="lang-check" style="font-size: 16px; display: inline;">✓</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">डिफ़ॉल्ट भाषा — व्यवस्थापक नेविगेशन और नियंत्रण हिंदी में।</div>
+                        </div>
+                        <div id="admin-lang-card-en" class="lang-option-card" onclick="setAdminLanguage('en')" style="border: 2px solid var(--border); background: transparent; border-radius: var(--radius-md); padding: 14px; cursor: pointer; transition: all 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-weight: 700; font-size: 14px;">🌐 English (Global)</span>
+                                <span class="lang-check" style="font-size: 16px; display: none;">✓</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">Admin navigation, labels, and settings in English.</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 8px;">
+                        Language preference syncs across both admin portal and public site.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">System Timezone</label>
+                    <input type="text" class="input" value="IST (Asia/Kolkata, UTC+05:30)" readonly style="opacity: 0.8; cursor: not-allowed; background: var(--bg);">
+                    <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">Timestamps on logs and articles are aligned with Indian Standard Time.</div>
+                </div>
+
+                <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600;">Dark Mode Theme</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Toggle sleek dark theme for the administrator interface.</div>
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="toggleDarkMode()">
+                        Toggle Theme 🌓
+                    </button>
+                </div>
+
+                <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600;">Email Notification Alerts</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Receive summary emails when new comments are pending.</div>
+                    </div>
+                    <span class="badge badge-success">Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Danger Zone Tab -->
+        <div id="tab-danger" class="tab-content">
+            <div class="card" style="border-color: var(--badge-danger-border);">
+                <h2 style="font-size: 18px; font-weight: 700; color: var(--danger); margin-bottom: 12px;">⚠️ Danger Zone</h2>
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px;">
+                    Actions here are irreversible. Be cautious when performing account modifications.
+                </p>
+
+                <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
+                    <div style="font-weight: 700; color: var(--danger); font-size: 14px; margin-bottom: 4px;">Primary Admin Protection</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">
+                        As the super administrator of Hindi Anime Guide, this account cannot be deleted while it is the sole active super administrator in the database.
+                    </div>
+                </div>
+
+                <a href="/admin/logout" class="btn btn-danger" onclick="return confirm('Are you sure you want to log out of your administrative session?');">
+                    Terminate All Admin Sessions & Log Out
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Automatically switch to hash tab if present in URL (e.g. #admins, #profile, #security)
+    window.addEventListener('DOMContentLoaded', function() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && document.getElementById('tab-' + hash)) {
+            switchTab(hash);
+        }
+    });
+
+    async function uploadAvatarFile(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File too large! Max 2MB.');
+            input.value = '';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch('/uploads/avatar', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.url) {
+                document.getElementById('avatar-url-input').value = data.url;
+                const img = document.getElementById('avatar-preview-img');
+                const initials = document.getElementById('avatar-preview-initials');
+                if (img) {
+                    img.src = data.url;
+                    img.classList.remove('hidden');
+                }
+                if (initials) initials.classList.add('hidden');
+            } else {
+                alert('Upload failed: ' + (data.detail || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            // Fallback: preview locally
+            previewAvatar(input);
+        }
+    }
+</script>
+{% endblock %}
