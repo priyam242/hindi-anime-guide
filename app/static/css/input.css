@@ -781,27 +781,50 @@ footer .logo {
   .topbar-left {
     gap: 8px;
     min-width: 0;
-    flex-shrink: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
   }
   .mobile-logo {
     font-size: 16px;
-    max-width: 140px;
+    font-weight: 700;
+    white-space: nowrap;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    letter-spacing: -0.2px;
   }
   .topbar-right {
     gap: 6px;
     font-size: 12.5px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
   }
   .theme-label {
     display: none !important;
   }
   .theme-toggle-btn {
     padding: 0 !important;
-    min-width: 36px !important;
-    width: 36px !important;
-    min-height: 36px !important;
-    height: 36px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    min-height: 34px !important;
+    height: 34px !important;
     justify-content: center !important;
+    border-radius: 8px !important;
+  }
+  .notif-bell-btn {
+    min-width: 34px !important;
+    width: 34px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+  .user-avatar-circle {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 13px !important;
   }
   .lang-segmented-control button {
     padding: 3px 6px !important;
@@ -846,7 +869,15 @@ footer .logo {
 @media(max-width: 440px) {
   .mobile-logo {
     font-size: 14.5px;
-    max-width: 110px;
+    white-space: nowrap;
+    max-width: none;
+    overflow: visible;
+  }
+  .topbar-btn {
+    min-width: 36px !important;
+    width: 36px !important;
+    min-height: 36px !important;
+    height: 36px !important;
   }
   .topbar-divider {
     display: none !important;
