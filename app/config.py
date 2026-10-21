@@ -65,6 +65,14 @@ class Settings(BaseSettings):
             self.google_client_secret = self.google_client_secret.replace(" ", "").strip()
         if self.public_base_url:
             self.public_base_url = self.public_base_url.strip().rstrip("/")
+        if self.smtp_host:
+            self.smtp_host = self.smtp_host.strip()
+        if self.smtp_user:
+            self.smtp_user = self.smtp_user.strip()
+        if self.smtp_password:
+            self.smtp_password = self.smtp_password.replace(" ", "").strip()
+        if self.smtp_from:
+            self.smtp_from = self.smtp_from.strip()
         # Check DB_URL override for non-test environments
         if self.db_url:
             raw_db = self.db_url

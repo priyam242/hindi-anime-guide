@@ -181,25 +181,42 @@ Hindi Anime Guide टीम
     try:
         from email.message import EmailMessage
         msg = EmailMessage()
-        msg["From"] = settings.smtp_from or "noreply@animeguide.com"
+
+        # Robust RFC 5322 From header formatting
+        from_raw = (settings.smtp_from or "").strip()
+        user_email = (settings.smtp_user or "").strip()
+        if "<" in from_raw and ">" in from_raw:
+            msg["From"] = from_raw
+        elif "@" in from_raw:
+            if " " in from_raw:
+                parts = from_raw.rsplit(" ", 1)
+                msg["From"] = f'"{parts[0]}" <{parts[1]}>'
+            else:
+                msg["From"] = f'"Hindi Anime Guide" <{from_raw}>'
+        elif user_email:
+            msg["From"] = f'"Hindi Anime Guide" <{user_email}>'
+        else:
+            msg["From"] = "noreply@animeguide.com"
+
         msg["To"] = to_email
         msg["Subject"] = subject
         msg.set_content(plain_body)
         msg.add_alternative(html_body, subtype="html")
 
         import aiosmtplib
+        clean_pass = (settings.smtp_password or "").replace(" ", "").strip()
         await aiosmtplib.send(
             msg,
-            hostname=settings.smtp_host,
+            hostname=settings.smtp_host.strip(),
             port=settings.smtp_port,
-            username=settings.smtp_user if settings.smtp_user else None,
-            password=settings.smtp_password if settings.smtp_password else None,
+            username=user_email or None,
+            password=clean_pass or None,
             start_tls=(settings.smtp_port == 587),
-            timeout=10,
+            timeout=15,
         )
         return True, None
     except Exception as exc:
-        logger.error(f"SMTP error while sending OTP: {type(exc).__name__}")
+        logger.error(f"SMTP error while sending OTP: {type(exc).__name__} - {exc}")
         return False, "ईमेल भेजने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
 
 
