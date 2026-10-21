@@ -17,7 +17,9 @@ connect_args = {"check_same_thread": False} if settings.database_url.startswith(
 engine = create_engine(
     settings.database_url,
     echo=False,
-    connect_args=connect_args
+    connect_args=connect_args,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 
@@ -97,7 +99,7 @@ def run_alembic_migrations(db_url: str | None = None) -> None:
     ini_path = str(BASE_DIR / "alembic.ini")
     alembic_cfg = AlembicConfig(ini_path)
     alembic_cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
-    target_url = db_url or settings.database_url
+    target_url = db_url or settings.database_url_unpooled or settings.database_url
     alembic_cfg.set_main_option("sqlalchemy.url", target_url)
     try:
         alembic_command.upgrade(alembic_cfg, "head")

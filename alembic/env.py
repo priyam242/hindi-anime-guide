@@ -16,7 +16,7 @@ settings = get_settings()
 config = context.config
 
 # Set the sqlalchemy.url dynamically from app settings if not already provided
-db_url = config.get_main_option("sqlalchemy.url") or settings.database_url
+db_url = config.get_main_option("sqlalchemy.url") or settings.database_url_unpooled or settings.database_url
 config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

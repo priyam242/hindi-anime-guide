@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     debug: bool = False
     secret_key: str = ""
     database_url: str = "sqlite:///./anime_hindi.db"
+    database_url_unpooled: Optional[str] = None
+    neon_branch: Optional[str] = None
     host: str = "127.0.0.1"
     port: int = 8000
     app_name: str = SITE_NAME
@@ -91,6 +93,19 @@ class Settings(BaseSettings):
                 if not p.is_absolute():
                     resolved = (BASE_DIR / p).resolve()
                     self.database_url = f"sqlite:///{resolved.as_posix()}"
+
+        # Normalize PostgreSQL driver dialect to psycopg (psycopg 3.x)
+        if self.database_url:
+            if self.database_url.startswith("postgresql://"):
+                self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+            elif self.database_url.startswith("postgres://"):
+                self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+
+        if self.database_url_unpooled:
+            if self.database_url_unpooled.startswith("postgresql://"):
+                self.database_url_unpooled = self.database_url_unpooled.replace("postgresql://", "postgresql+psycopg://", 1)
+            elif self.database_url_unpooled.startswith("postgres://"):
+                self.database_url_unpooled = self.database_url_unpooled.replace("postgres://", "postgresql+psycopg://", 1)
 
         # Dev / test secret key fallback
         normalized_env = self.env.lower()

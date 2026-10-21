@@ -61,3 +61,4 @@ desktop.ini
 
 # === Alembic auto-gen scratch ===
 alembic/versions/*.pyc
+.neon

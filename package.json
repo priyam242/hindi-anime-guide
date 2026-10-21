@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Hindi Anime Guide CSS build tooling",
   "scripts": {
+    "build": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify",
     "build:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify"
   },
   "keywords": [],
@@ -11,5 +12,9 @@
   "type": "commonjs",
   "devDependencies": {
     "tailwindcss": "3.4.17"
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.3",
+    "@neon/env": "^1.6.4"
   }
 }
