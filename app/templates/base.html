@@ -331,14 +331,14 @@
             </div>
         {% else %}
             <!-- Guest Controls: Log In & Sign Up -->
-            <a href="/auth/login" style="color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600;" data-i18n="login">लॉग इन</a>
-            <a href="/auth/register" style="background: var(--red); color: white; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-crimson);" data-i18n="signup">साइन अप</a>
+            <a href="/auth/login" class="topbar-login-link" style="color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600; white-space: nowrap;" data-i18n="login">लॉग इन</a>
+            <a href="/auth/register" class="topbar-signup-btn" style="background: var(--red); color: white; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-crimson); white-space: nowrap;" data-i18n="signup">साइन अप</a>
         {% endif %}
 
-        <span style="border-left: 1px solid var(--border); height: 18px; margin: 0 2px;"></span>
+        <span class="topbar-divider" style="border-left: 1px solid var(--border); height: 18px; margin: 0 2px;"></span>
 
         <!-- Segmented Control EN | हिंदी -->
-        <div class="lang-segmented-control" role="group" aria-label="Language selection" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); font-size: 12px; font-weight: 700;">
+        <div class="lang-segmented-control" role="group" aria-label="Language selection" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); font-size: 12px; font-weight: 700; flex-shrink: 0;">
           <button 
             type="button" 
             id="lang-btn-en" 
@@ -381,8 +381,8 @@
             <path d="m6.34 17.66-1.41 1.41"></path>
             <path d="m19.07 4.93-1.41 1.41"></path>
           </svg>
-          <span x-show="!isDark" data-i18n="dark_mode">डार्क मोड</span>
-          <span x-show="isDark" style="display: none;" data-i18n="light_mode">लाइट मोड</span>
+          <span class="theme-label" x-show="!isDark" data-i18n="dark_mode">डार्क मोड</span>
+          <span class="theme-label" x-show="isDark" style="display: none;" data-i18n="light_mode">लाइट मोड</span>
         </button>
       </div>
     </div>

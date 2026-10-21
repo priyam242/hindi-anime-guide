@@ -9,6 +9,8 @@ html {
 html, body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 body {
   margin: 0;
@@ -719,11 +721,12 @@ footer .logo {
   .main { margin-left: 0; }
   .topbar-btn {
     display: flex;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .theme-toggle-btn {
-    min-height: 44px;
+    min-width: 42px;
+    min-height: 42px;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
   }
   .side-nav .menu a {
     min-height: 44px;
@@ -732,8 +735,11 @@ footer .logo {
   }
   .mobile-logo {
     display: block;
-    font-size: 18px;
+    font-size: 17px;
     padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .wrap { padding: 0 16px; }
   .hero { grid-template-columns: 1fr; }
@@ -768,9 +774,93 @@ footer .logo {
   }
 }
 
+@media(max-width: 640px) {
+  .topbar .wrap {
+    padding: 0 10px;
+  }
+  .topbar-left {
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .mobile-logo {
+    font-size: 16px;
+    max-width: 140px;
+  }
+  .topbar-right {
+    gap: 6px;
+    font-size: 12.5px;
+    flex-shrink: 0;
+  }
+  .theme-label {
+    display: none !important;
+  }
+  .theme-toggle-btn {
+    padding: 0 !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    justify-content: center !important;
+  }
+  .lang-segmented-control button {
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
+  .topbar-signup-btn {
+    padding: 5px 9px !important;
+    font-size: 12px !important;
+  }
+  .topbar-login-link {
+    font-size: 12px !important;
+  }
+  .hero {
+    padding: 16px 0 12px;
+    gap: 18px;
+  }
+  .lead h1 {
+    font-size: 22px;
+    margin: 10px 0 6px;
+  }
+  .lead p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .prose-hindi table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @media(max-width: 560px) {
-  .grid { grid-template-columns: 1fr; }
-  .side a { grid-template-columns: 104px 1fr; }
+  .grid { grid-template-columns: 1fr; gap: 16px; }
+  .side a { grid-template-columns: 88px 1fr; gap: 12px; }
+  .side h3 { font-size: 14.5px; }
+  .wrap { padding: 0 12px; }
+  .sec { margin: 24px 0 14px; }
+  .sec h2 { font-size: 20px; }
+}
+
+@media(max-width: 440px) {
+  .mobile-logo {
+    font-size: 14.5px;
+    max-width: 110px;
+  }
+  .topbar-divider {
+    display: none !important;
+  }
+  .topbar-login-link {
+    display: none !important;
+  }
+  .side a {
+    grid-template-columns: 78px 1fr;
+    gap: 10px;
+  }
+  .side h3 {
+    font-size: 14px;
+  }
 }
 
 @media(prefers-reduced-motion: reduce) {
