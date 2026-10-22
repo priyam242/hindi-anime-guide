@@ -98,6 +98,10 @@ class SiteProxy:
     def author_name(self) -> str:
         return get_settings().author_name
 
+    @property
+    def google_site_verification(self) -> str:
+        return get_settings().google_site_verification
+
     def __getitem__(self, item: str):
         if item == "name":
             return self.name
@@ -105,6 +109,8 @@ class SiteProxy:
             return self.description
         elif item == "author_name":
             return self.author_name
+        elif item == "google_site_verification":
+            return self.google_site_verification
         raise KeyError(item)
 
     def __repr__(self) -> str:

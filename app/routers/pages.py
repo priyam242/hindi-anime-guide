@@ -567,7 +567,9 @@ def contact_page(request: Request, session: Session = Depends(get_session)):
 # ---------- SEO: ROBOTS.TXT & SITEMAP.XML ----------
 @router.get("/robots.txt", response_class=PlainTextResponse)
 def robots_txt(request: Request):
-    base_url = str(request.base_url).rstrip("/")
+    from ..config import get_settings
+    settings = get_settings()
+    base_url = (settings.public_base_url or str(request.base_url)).rstrip("/")
     lines = [
         "User-agent: *",
         "Allow: /",
@@ -581,7 +583,9 @@ def robots_txt(request: Request):
 
 @router.get("/sitemap.xml")
 def sitemap_xml(request: Request, session: Session = Depends(get_session)):
-    base_url = str(request.base_url).rstrip("/")
+    from ..config import get_settings
+    settings = get_settings()
+    base_url = (settings.public_base_url or str(request.base_url)).rstrip("/")
     raw_articles = session.exec(select(Article).where(Article.published_at.is_not(None))).all()
     articles = [a for a in raw_articles if not a.is_sample]
     categories = session.exec(select(Category)).all()

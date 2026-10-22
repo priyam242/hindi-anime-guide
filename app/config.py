@@ -36,10 +36,11 @@ class Settings(BaseSettings):
     totp_enc_key: str = "set_in_env"   # Fernet key — never commit real value
     csrf_secret: str = "set_in_env"    # CSRF signing secret
 
-    # Google OAuth
+    # Google OAuth & Verification
     google_client_id: str = ""
     google_client_secret: str = ""
     public_base_url: str = "http://127.0.0.1:8000"
+    google_site_verification: str = ""
 
     # SMTP Configuration for Email OTP
     smtp_host: str = ""
@@ -72,6 +73,8 @@ class Settings(BaseSettings):
             self.google_client_secret = self.google_client_secret.replace(" ", "").strip()
         if self.public_base_url:
             self.public_base_url = self.public_base_url.strip().rstrip("/")
+        if self.google_site_verification:
+            self.google_site_verification = self.google_site_verification.strip()
         if self.smtp_host:
             self.smtp_host = self.smtp_host.strip()
         if self.smtp_user:
