@@ -9,26 +9,26 @@
     {{ status_code }}
   </div>
 
-  <h1 style="font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 12px;">
+  <h1 class="i18n-dynamic" style="font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 12px;">
     {{ error_title }}
   </h1>
 
-  <p style="font-size: 15px; color: var(--muted); max-width: 500px; margin: 0 auto 28px; line-height: 1.7;">
+  <p class="i18n-dynamic" style="font-size: 15px; color: var(--muted); max-width: 500px; margin: 0 auto 28px; line-height: 1.7;">
     {{ error_message }}
   </p>
 
   <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 32px;">
     <a href="/" style="font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 10px 20px; border-radius: 6px; text-decoration: none;">
-      मुख्य पृष्ठ पर जाएं →
+      <span data-i18n="btn_go_home">मुख्य पृष्ठ पर जाएं →</span>
     </a>
   </div>
 
   {% if categories %}
   <div style="border-top: 1px solid var(--border); padding-top: 28px; max-width: 600px; margin: 0 auto;">
-    <p class="meta" style="margin-bottom: 16px; font-weight: 700;">श्रेणियों में खोजें:</p>
+    <p class="meta" data-i18n="browse_categories_label" style="margin-bottom: 16px; font-weight: 700;">श्रेणियों में खोजें:</p>
     <div class="cats" style="justify-content: center;">
       {% for cat in categories %}
-      <a href="/category/{{ cat.slug }}">{{ cat.name }}</a>
+      <a href="/category/{{ cat.slug }}" data-cat-tag="{{ cat.name }}">{{ cat.name }}</a>
       {% endfor %}
     </div>
   </div>

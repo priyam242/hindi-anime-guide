@@ -273,38 +273,48 @@ const ADMIN_I18N = {
         dd_preferences: "Account Settings",
         dd_activity: "Activity Logs",
         dd_view_site: "View Website",
-        dd_lang: "Switch to Hindi (हिन्दी)",
+        dd_lang: "Switch to Hindi (हिंदी)",
         dd_theme: "Toggle Dark Mode",
         dd_logout: "Log Out",
         pref_lang_label: "Admin Interface Language"
     },
     hi: {
-        nav_label_core: "मुख्य प्रबंधन (Core Management)",
-        nav_dashboard: "डैशबोर्ड (Dashboard)",
-        nav_articles: "लेख (Articles)",
-        nav_categories: "श्रेणियाँ (Categories)",
-        nav_platforms: "प्लेटफ़ॉर्म (Platforms)",
+        nav_label_core: "मुख्य प्रबंधन",
+        nav_dashboard: "डैशबोर्ड",
+        nav_articles: "लेख",
+        nav_categories: "श्रेणियाँ",
+        nav_platforms: "प्लेटफ़ॉर्म",
         nav_label_community: "समुदाय एवं उपयोगकर्ता",
-        nav_users: "उपयोगकर्ता (Users)",
-        nav_comments: "टिप्पणियाँ (Comments)",
+        nav_users: "उपयोगकर्ता",
+        nav_comments: "टिप्पणियाँ",
         nav_label_system: "सिस्टम एवं लॉग्स",
-        nav_activity: "गतिविधि लॉग्स (Activity Logs)",
-        nav_notifications: "सूचनाएं (Notifications)",
-        nav_account: "खाता सेटिंग्स (Account Settings)",
-        nav_view_site: "सार्वजनिक साइट देखें (View Site)",
-        nav_logout: "लॉग आउट (Log Out)",
+        nav_activity: "गतिविधि लॉग्स",
+        nav_notifications: "सूचनाएं",
+        nav_account: "खाता सेटिंग्स",
+        nav_view_site: "सार्वजनिक साइट देखें",
+        nav_logout: "लॉग आउट",
         search_placeholder: "त्वरित खोजें...",
-        breadcrumb_admin: "व्यवस्थापक (Admin)",
-        dd_profile: "मेरी प्रोफ़ाइल (Profile)",
-        dd_security: "पासवर्ड बदलें (Security)",
-        dd_preferences: "खाता सेटिंग्स (Settings)",
-        dd_activity: "गतिविधि लॉग्स (Logs)",
-        dd_view_site: "वेबसाइट देखें (Website)",
-        dd_lang: "अंग्रेज़ी में बदलें (Switch to EN)",
+        breadcrumb_admin: "व्यवस्थापक",
+        dd_profile: "मेरी प्रोफ़ाइल",
+        dd_security: "पासवर्ड बदलें",
+        dd_preferences: "खाता सेटिंग्स",
+        dd_activity: "गतिविधि लॉग्स",
+        dd_view_site: "वेबसाइट देखें",
+        dd_lang: "अंग्रेज़ी में बदलें (EN)",
         dd_theme: "डार्क/लाइट मोड बदलें",
-        dd_logout: "लॉग आउट (Log Out)",
-        pref_lang_label: "प्रशासन इंटरफ़ेस भाषा (Admin Interface Language)"
+        dd_logout: "लॉग आउट",
+        pref_lang_label: "प्रशासन इंटरफ़ेस भाषा"
     }
+};
+
+const ADMIN_TEXT_MAP_HI = {
+    "Overview": "अवलोकन",
+    "Notifications": "सूचनाएं",
+    "View All": "सभी देखें",
+    "All caught up! No unread notifications.": "कोई नई अपठित सूचना नहीं है।",
+    "Review Notifications": "सूचनाएं देखें",
+    "Admin": "व्यवस्थापक",
+    "Administrator": "प्रशासक"
 };
 
 function getAdminLang() {
@@ -314,7 +324,6 @@ function getAdminLang() {
     } catch (e) {}
     const match = document.cookie.match(/(?:^|;\s*)site_lang=([^;]+)/);
     if (match && (match[1] === 'en' || match[1] === 'hi')) return match[1];
-    // Default language is strictly Hindi ('hi')
     return 'hi';
 }
 
@@ -322,7 +331,6 @@ function applyAdminLanguage(lang) {
     if (lang !== 'en' && lang !== 'hi') lang = 'hi';
     const dict = ADMIN_I18N[lang] || ADMIN_I18N.hi;
 
-    // 1. All elements with data-admin-i18n
     document.querySelectorAll('[data-admin-i18n]').forEach(el => {
         const key = el.getAttribute('data-admin-i18n');
         if (dict[key]) {
@@ -330,19 +338,16 @@ function applyAdminLanguage(lang) {
         }
     });
 
-    // 2. Language badge in top header
     const badge = document.getElementById('admin-lang-badge');
     if (badge) {
         badge.textContent = lang.toUpperCase();
     }
 
-    // 3. Search placeholder
     const searchInput = document.querySelector('.header-search input');
     if (searchInput && dict.search_placeholder) {
         searchInput.placeholder = dict.search_placeholder;
     }
 
-    // 4. Update Preferences Cards (in account settings)
     const cardHi = document.getElementById('admin-lang-card-hi');
     const cardEn = document.getElementById('admin-lang-card-en');
     if (cardHi && cardEn) {
@@ -370,10 +375,11 @@ function applyAdminLanguage(lang) {
     }
 
     document.documentElement.lang = lang;
+    translateAdminDynamicNodes(lang);
 }
 
 function setAdminLanguage(lang) {
-    if (lang !== 'en' && lang !== 'hi') lang = 'en';
+    if (lang !== 'en' && lang !== 'hi') lang = 'hi';
     try { localStorage.setItem('site_lang', lang); } catch (e) {}
     document.cookie = `site_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
     applyAdminLanguage(lang);
@@ -383,4 +389,94 @@ function toggleAdminLanguage() {
     const cur = getAdminLang();
     const next = (cur === 'en') ? 'hi' : 'en';
     setAdminLanguage(next);
+}
+
+
+const _adminTxCache = {};
+async function fetchAdminTx(text, sl, tl) {
+    const clean = text.trim();
+    if (!clean) return text;
+    const key = sl + "_" + tl + "_" + clean;
+    if (_adminTxCache[key]) return _adminTxCache[key];
+    try {
+        const cached = sessionStorage.getItem("atx_" + key);
+        if (cached) { _adminTxCache[key] = cached; return cached; }
+    } catch (e) {}
+    try {
+        const resp = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + sl + "&tl=" + tl + "&dt=t&q=" + encodeURIComponent(clean));
+        if (!resp.ok) return text;
+        const data = await resp.json();
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+            const out = data[0].map(p => (p && p[0]) ? p[0] : "").join("");
+            if (out) {
+                _adminTxCache[key] = out;
+                try { sessionStorage.setItem("atx_" + key, out); } catch (e) {}
+                return out;
+            }
+        }
+    } catch (e) {}
+    return text;
+}
+
+let _adminTxVer = 0;
+async function translateAdminDynamicNodes(lang) {
+    const myVer = ++_adminTxVer;
+    const isEn = (lang === "en");
+    const root = document.querySelector(".main-wrapper") || document.body;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) {
+        const p = n.parentElement;
+        if (!p || p.tagName === "SCRIPT" || p.tagName === "STYLE" || p.hasAttribute("data-admin-i18n") || p.id === "admin-lang-badge") continue;
+        if (!n.nodeValue || !n.nodeValue.trim()) continue;
+        if (n._origText === undefined) n._origText = n.nodeValue;
+        nodes.push(n);
+    }
+
+    const targets = nodes.filter(node => {
+        const orig = node._origText.trim();
+        if (isEn) {
+            return /[\u0900-\u097F]/.test(orig);
+        } else {
+            return /[A-Za-z]{3,}/.test(orig) && !/[\u0900-\u097F]/.test(orig) && !/^(https?:|@[a-zA-Z0-9_]+|[0-9\s\/:.,+-]+)$/.test(orig);
+        }
+    });
+
+    // First restore originals before translating opposite direction
+    nodes.forEach(node => {
+        const orig = node._origText;
+        // Strip bilingual parentheses if present
+        const bilingualMatch = orig.match(/^(.+?)\s*\(([A-Za-z0-9\s,&/-]+)\)\s*$/);
+        if (bilingualMatch && /[\u0900-\u097F]/.test(bilingualMatch[1])) {
+            node.nodeValue = isEn ? bilingualMatch[2] : bilingualMatch[1];
+            node._handledBilingual = true;
+        } else {
+            node._handledBilingual = false;
+            node.nodeValue = orig;
+        }
+    });
+
+    const remaining = targets.filter(node => !node._handledBilingual);
+    const sl = isEn ? "hi" : "en";
+    const tl = isEn ? "en" : "hi";
+    for (let i = 0; i < remaining.length; i += 8) {
+        if (myVer !== _adminTxVer) return;
+        const batch = remaining.slice(i, i + 8);
+        await Promise.all(batch.map(async node => {
+            const orig = node._origText;
+            const cacheProp = isEn ? "_enVal" : "_hiVal";
+            if (node[cacheProp]) {
+                if (myVer === _adminTxVer) node.nodeValue = node[cacheProp];
+                return;
+            }
+            const lead = (orig.match(/^\s*/) || [""])[0];
+            const trail = (orig.match(/\s*$/) || [""])[0];
+            const tr = await fetchAdminTx(orig, sl, tl);
+            if (tr && tr !== orig.trim()) {
+                node[cacheProp] = lead + tr + trail;
+                if (myVer === _adminTxVer) node.nodeValue = node[cacheProp];
+            }
+        }));
+    }
 }

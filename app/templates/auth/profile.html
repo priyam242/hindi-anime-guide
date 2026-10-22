@@ -172,7 +172,7 @@
                     <strong>@{{ user.username }}</strong> • {{ user.email }}
                 </div>
                 <div class="profile-meta" style="font-size: 12.5px; margin-top: 2px;">
-                    Member since {{ user.created_at.strftime('%B %Y') if user.created_at else '2026' }}
+                    <span data-i18n="profile_member_since">सदस्यता:</span> {{ user.created_at.strftime('%b %Y') if user.created_at else '2026' }}
                 </div>
                 {% if user.bio %}
                     <div class="profile-bio-box">
@@ -184,7 +184,7 @@
 
         <div>
             <a href="/settings" class="btn-edit-profile">
-                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-settings"></use></svg> Edit Profile & Settings
+                <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-settings"></use></svg> <span data-i18n="profile_edit_btn">प्रोफ़ाइल और सेटिंग्स संपादित करें</span>
             </a>
         </div>
     </div>
@@ -192,29 +192,29 @@
     <!-- Stats Snapshot -->
     <div class="profile-stats-grid">
         <div class="stat-box">
-            <div class="stat-box-title">Comments Posted</div>
+            <div class="stat-box-title" data-i18n="profile_stat_comments">कुल टिप्पणियाँ</div>
             <div class="stat-box-val">{{ comments|length if comments else 0 }}</div>
         </div>
         <div class="stat-box">
-            <div class="stat-box-title">Account Status</div>
+            <div class="stat-box-title" data-i18n="profile_stat_status">खाता स्थिति</div>
             <div class="stat-box-val" style="font-size: 20px; color: var(--success); margin-top: 8px;">
                 {% if user.is_banned %}
-                    <span style="color: var(--danger);">Suspended</span>
+                    <span data-i18n="profile_status_suspended" style="color: var(--danger);">निलंबित</span>
                 {% else %}
-                    Active Reader
+                    <span data-i18n="profile_status_active">सक्रिय पाठक</span>
                 {% endif %}
             </div>
         </div>
         <div class="stat-box">
-            <div class="stat-box-title">Language</div>
-            <div class="stat-box-val" style="font-size: 20px; margin-top: 8px;">English</div>
+            <div class="stat-box-title" data-i18n="profile_stat_lang">भाषा</div>
+            <div class="stat-box-val" data-i18n="profile_lang_val" style="font-size: 20px; margin-top: 8px;">हिंदी</div>
         </div>
     </div>
 
     <!-- Recent Comments Section -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
         <h2 style="font-size: 22px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px;">
-            <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-message-square"></use></svg> Your Comments & Discussions ({{ comments|length if comments else 0 }})
+            <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-message-square"></use></svg> <span data-i18n="profile_comments_heading">आपकी टिप्पणियाँ और चर्चाएँ</span> ({{ comments|length if comments else 0 }})
         </h2>
     </div>
 
@@ -228,7 +228,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 10px;">
                         <span>
                             {% if c.article_rel %}
-                                On article: <a href="/article/{{ c.article_rel.slug }}" style="color: var(--red); text-decoration: none; font-weight: 600;">{{ c.article_rel.title }} ↗</a>
+                                <span data-i18n="profile_on_article">लेख पर:</span> <a href="/article/{{ c.article_rel.slug }}" style="color: var(--red); text-decoration: none; font-weight: 600;">{{ c.article_rel.title }} ↗</a>
                             {% else %}
                                 On article #{{ c.article_id }}
                             {% endif %}
@@ -236,7 +236,7 @@
                         </span>
                         <form method="POST" action="/comment/{{ c.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this comment permanently?');">
                             <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                                <svg class="icon" width="12" height="12" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span>Delete</span>
+                                <svg class="icon" width="12" height="12" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span data-i18n="btn_delete">हटाएं</span>
                             </button>
                         </form>
                     </div>
@@ -246,8 +246,8 @@
     {% else %}
         <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--muted);">
             <div style="margin-bottom: 12px; color: var(--muted);"><svg class="icon" width="36" height="36" aria-hidden="true"><use href="#i-message-square"></use></svg></div>
-            <div style="font-weight: 600; font-size: 15px; color: var(--text);">You haven't posted any comments yet</div>
-            <p style="font-size: 13.5px; margin-top: 4px;">Visit any anime guide on the homepage to join the community discussion!</p>
+            <div data-i18n="profile_no_comments_title" style="font-weight: 600; font-size: 15px; color: var(--text);">आपने अभी तक कोई टिप्पणी नहीं की है</div>
+            <p data-i18n="profile_no_comments_desc" style="font-size: 13.5px; margin-top: 4px;">समुदाय चर्चा में भाग लेने के लिए होमपेज पर किसी भी एनीमे गाइड पर जाएँ!</p>
         </div>
     {% endif %}
 </div>

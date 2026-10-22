@@ -9,26 +9,26 @@
     404
   </div>
 
-  <h1 style="font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 12px;">
+  <h1 data-i18n="nf_title" style="font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 12px;">
     पृष्ठ नहीं मिला
   </h1>
 
-  <p style="font-size: 15px; color: var(--muted); max-width: 500px; margin: 0 auto 28px; line-height: 1.7;">
+  <p data-i18n="nf_desc" style="font-size: 15px; color: var(--muted); max-width: 500px; margin: 0 auto 28px; line-height: 1.7;">
     शायद यह एनीमे गाइड किसी अन्य पते पर स्थानांतरित हो गई है या लिंक बदल दिया गया है। आप मुख्य पृष्ठ या नीचे दी गई श्रेणियों से खोज जारी रख सकते हैं।
   </p>
 
   <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 32px;">
     <a href="/" style="font-size: 14px; font-weight: 700; color: white; background: var(--red); padding: 10px 20px; border-radius: 6px; text-decoration: none;">
-      मुख्य पृष्ठ पर जाएं →
+      <span data-i18n="btn_go_home">मुख्य पृष्ठ पर जाएं →</span>
     </a>
   </div>
 
   {% if categories %}
   <div style="border-top: 1px solid var(--border); padding-top: 28px; max-width: 600px; margin: 0 auto;">
-    <p style="margin-bottom: 16px; font-weight: 700; color: var(--muted);">श्रेणियों में खोजें:</p>
+    <p data-i18n="browse_categories_label" style="margin-bottom: 16px; font-weight: 700; color: var(--muted);">श्रेणियों में खोजें:</p>
     <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
       {% for cat in categories %}
-      <a href="/category/{{ cat.name }}" style="padding: 4px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-decoration: none; color: var(--text); font-size: 13px;">{{ cat.display_name or cat.name }}</a>
+      <a href="/category/{{ cat.name }}" style="padding: 4px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-decoration: none; color: var(--text); font-size: 13px;"><span data-cat-tag="{{ cat.display_name or cat.name }}">{{ cat.display_name or cat.name }}</span></a>
       {% endfor %}
     </div>
   </div>

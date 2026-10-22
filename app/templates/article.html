@@ -172,15 +172,15 @@
 
   <!-- Breadcrumbs -->
   <nav class="article-rail-item" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); margin-bottom: 20px; flex-wrap: wrap;">
-    <a href="/" style="color: var(--muted); text-decoration: none;">होम</a>
+    <a href="/" data-i18n="nav_home" style="color: var(--muted); text-decoration: none;">होम</a>
     {% if article.category_name_hi %}
     <span>›</span>
-    <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" style="color: var(--muted); text-decoration: none;">
+    <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" data-cat-tag="{{ article.category_name_hi }}" style="color: var(--muted); text-decoration: none;">
       {{ article.category_name_hi }}
     </a>
     {% endif %}
     <span>›</span>
-    <span style="color: var(--text); font-weight: 500;">
+    <span class="i18n-dynamic" data-title-hi="{{ article.anime_title_hi or article.title }}" data-title-en="{{ article.anime_title_en or '' }}" style="color: var(--text); font-weight: 500;">
       {{ article.anime_title_hi or article.title }}
     </span>
   </nav>
@@ -199,18 +199,18 @@
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
       {% if article.categories and article.categories|length > 0 %}
         {% for cat in article.categories %}
-        <a href="/category/{{ cat.slug or cat.name }}" class="tag">
+        <a href="/category/{{ cat.slug or cat.name }}" class="tag" data-cat-tag="{{ cat.display_name or cat.name_hi or cat.name }}">
           {{ cat.display_name or cat.name_hi or cat.name }}
         </a>
         {% endfor %}
       {% elif article.category_name_hi %}
-      <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" class="tag">
+      <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" class="tag" data-cat-tag="{{ article.category_name_hi }}">
         {{ article.category_name_hi }}
       </a>
       {% endif %}
 
       {% if article.article_type == 'guide' %}
-      <span class="tag">
+      <span class="tag" data-i18n="badge_guide">
         मार्गदर्शिका
       </span>
       {% endif %}
@@ -218,24 +218,24 @@
       {% if article.has_hindi_dub %}
       <span class="badge-dub" style="display: inline-flex; align-items: center; gap: 5px;">
         <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-audio-lines"></use></svg>
-        <span>हिंदी डब उपलब्ध</span>
+        <span data-i18n="badge_hindi_dub_avail">हिंदी डब उपलब्ध</span>
       </span>
       {% endif %}
 
       <span class="meta" style="margin-left: auto; display: inline-flex; align-items: center; gap: 4px;">
         <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-clock"></use></svg>
-        <span>{{ article.reading_time_minutes or 4 }} मिनट पाठ</span>
+        <span data-reading-mins-full="{{ article.reading_time_minutes or 4 }}">{{ article.reading_time_minutes or 4 }} मिनट पाठ</span>
       </span>
     </div>
 
     <!-- Main Editorial Title -->
-    <h1 style="font-size: clamp(26px, 4vw, 40px); font-weight: 700; line-height: 1.35; margin-bottom: 12px; color: var(--text);">
+    <h1 class="i18n-dynamic" style="font-size: clamp(26px, 4vw, 40px); font-weight: 700; line-height: 1.35; margin-bottom: 12px; color: var(--text);">
       {{ article.title }}
     </h1>
 
     {% if article.article_type != 'guide' and article.anime_title_en %}
     <div style="font-size: 15px; color: var(--muted); margin-bottom: 16px;">
-      मूल शीर्षक: <strong style="color: var(--text);">{{ article.anime_title_en }}</strong>
+      <span data-i18n="label_orig_title">मूल शीर्षक:</span> <strong class="notranslate" style="color: var(--text);">{{ article.anime_title_en }}</strong>
     </div>
     {% endif %}
 
@@ -244,13 +244,13 @@
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         {% set pub_date = article.published_at or article.created_at %}
         {% if pub_date %}
-        <span>प्रकाशित: <strong style="color: var(--text);">{{ pub_date | hindi_date }}</strong></span>
+        <span><span data-i18n="label_published">प्रकाशित:</span> <strong class="i18n-date" data-raw-date="{{ pub_date | hindi_date }}" style="color: var(--text);">{{ pub_date | hindi_date }}</strong></span>
         {% if site.author_name %}
         <span>•</span>
         {% endif %}
         {% endif %}
         {% if site.author_name %}
-        <span>लेखक: <strong style="color: var(--text);">{{ site.author_name }}</strong></span>
+        <span><span data-i18n="label_author">लेखक:</span> <strong class="i18n-dynamic" style="color: var(--text);">{{ site.author_name }}</strong></span>
         {% endif %}
       </div>
       <div style="display: flex; align-items: center; gap: 10px;">
@@ -264,12 +264,12 @@
           <span id="bookmark-icon">
             <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-bookmark{% if is_bookmarked %}-filled{% endif %}"></use></svg>
           </span>
-          <span id="bookmark-text">{% if is_bookmarked %}सेव किया गया{% else %}सेव करें{% endif %}</span>
+          <span id="bookmark-text" data-i18n="{% if is_bookmarked %}bookmarked_state{% else %}bookmark_action{% endif %}">{% if is_bookmarked %}सेव किया गया{% else %}सेव करें{% endif %}</span>
         </button>
 
         {% if user and (user.user_type == 'admin' or user.is_superuser or user.is_staff) %}
         <a href="/admin/articles/{{ article.id }}/edit" style="color: var(--red); text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);">
-          <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-pencil"></use></svg> <span>संपादित करें</span>
+          <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-pencil"></use></svg> <span data-i18n="btn_edit">संपादित करें</span>
         </a>
         {% endif %}
       </div>
@@ -281,9 +281,9 @@
   <div class="article-rail-item" style="padding: 22px 26px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: 12px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--text);">
       <span style="width: 8px; height: 8px; border-radius: 99px; background: var(--red);"></span>
-      <span>संक्षेप में</span>
+      <span data-i18n="summary_heading">संक्षेप में</span>
     </div>
-    <p style="font-size: 16px; line-height: 1.8; color: var(--text); margin: 0;">
+    <p class="i18n-dynamic" style="font-size: 16px; line-height: 1.8; color: var(--text); margin: 0;">
       {{ article.summary }}
     </p>
   </div>
@@ -294,10 +294,10 @@
   <div class="toc-wrapper article-rail-item" x-data="{ open: true }" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin-bottom: 32px; box-shadow: var(--shadow-sm);">
     <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;" @click="open = !open">
       <span style="font-weight: 700; font-size: 15px; color: var(--text); display: flex; align-items: center; gap: 8px;">
-        <svg class="icon" width="15" height="15" aria-hidden="true"><use href="#i-compass"></use></svg> विषय सूची
+        <svg class="icon" width="15" height="15" aria-hidden="true"><use href="#i-compass"></use></svg> <span data-i18n="toc_heading">विषय सूची</span>
       </span>
       <button type="button" style="background: none; border: none; font-size: 13px; font-weight: 600; color: var(--red); cursor: pointer; display: flex; align-items: center; gap: 4px;" aria-label="विषय सूची बदलें">
-        <span x-text="open ? 'छुपाएँ ▲' : 'दिखाएँ ▼'">छुपाएँ ▲</span>
+        <span id="toc-toggle-label" x-text="open ? (window.getSiteLang && window.getSiteLang() === 'en' ? 'Hide ▲' : 'छुपाएँ ▲') : (window.getSiteLang && window.getSiteLang() === 'en' ? 'Show ▼' : 'दिखाएँ ▼')">छुपाएँ ▲</span>
       </button>
     </div>
     <div x-show="open" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);">
@@ -316,14 +316,14 @@
   <section class="article-rail-item" style="margin-top: 36px; padding: 26px 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
       <h2 style="font-size: 22px; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px;">
-        <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-tv"></use></svg> कहाँ देखें (Where to Watch)
+        <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-tv"></use></svg> <span data-i18n="where_to_watch_heading">कहाँ देखें</span>
       </h2>
       <button 
         type="button" 
         onclick="document.getElementById('report-modal').style.display='flex'" 
         style="background: transparent; border: 1px dashed var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;"
       >
-        <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-alert-triangle"></use></svg> <span>स्ट्रीमिंग जानकारी अपडेट रिपोर्ट करें</span>
+        <svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-alert-triangle"></use></svg> <span data-i18n="btn_report_streaming">स्ट्रीमिंग जानकारी अपडेट रिपोर्ट करें</span>
       </button>
     </div>
 
@@ -337,33 +337,33 @@
           <div style="font-size: 14px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span style="font-weight: 600; color: var(--text);">
               {% if row.status == 'available' or row.status.value == 'available' %}
-                उपलब्ध
+                <span data-i18n="status_available">उपलब्ध</span>
               {% elif row.status == 'not_available' or row.status.value == 'not_available' %}
-                उपलब्ध नहीं
+                <span data-i18n="status_not_available">उपलब्ध नहीं</span>
               {% endif %}
             </span>
             {% if row.hindi_dub != 'unknown' and (not row.hindi_dub.value or row.hindi_dub.value != 'unknown') %}
             <span>•</span>
             <span>
               {% if row.hindi_dub == 'yes' or row.hindi_dub.value == 'yes' %}
-                हिंदी डब: उपलब्ध
+                <span data-i18n="dub_yes">हिंदी डब: उपलब्ध</span>
               {% elif row.hindi_dub == 'no' or row.hindi_dub.value == 'no' %}
-                हिंदी डब: नहीं
+                <span data-i18n="dub_no">हिंदी डब: नहीं</span>
               {% endif %}
             </span>
             {% endif %}
             {% if row.last_checked %}
             <span>•</span>
-            <span>अंतिम जाँच: {{ row.last_checked | hindi_date }}</span>
+            <span><span data-i18n="label_last_checked">अंतिम जाँच:</span> <span class="i18n-date" data-raw-date="{{ row.last_checked | hindi_date }}">{{ row.last_checked | hindi_date }}</span></span>
             {% endif %}
           </div>
           {% if row.note %}
-          <div style="font-size: 14px; color: var(--muted); margin-top: 4px;">{{ row.note }}</div>
+          <div class="i18n-dynamic" style="font-size: 14px; color: var(--muted); margin-top: 4px;">{{ row.note }}</div>
           {% endif %}
         </div>
         <div>
           <a href="{{ row.platform.official_url }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 8px 16px; border-radius: 6px; text-decoration: none;">
-            आधिकारिक साइट देखें →
+            <span data-i18n="btn_visit_official">आधिकारिक साइट देखें →</span>
           </a>
         </div>
       </div>
@@ -375,7 +375,7 @@
   <!-- Tags (Guarded) -->
   {% if article.tags_list %}
   <div class="article-rail-item" style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-    <span class="meta" style="font-weight: 700;">टैग्स:</span>
+    <span class="meta" data-i18n="label_tags" style="font-weight: 700;">टैग्स:</span>
     {% for tag in article.tags_list %}
       {% if tag and tag.strip() %}
       <span class="tag"># {{ tag.strip() }}</span>
@@ -386,7 +386,7 @@
 
   <!-- Compact Legal Disclaimer Box (Flush 100%) -->
   <div class="article-rail-item" style="margin-top: 28px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--muted); line-height: 1.7;">
-    <strong style="color: var(--text);">कानूनी सूचना:</strong> Hindi Anime Guide केवल आधिकारिक एवं वैध स्ट्रीमिंग प्लेटफॉर्म्स का संदर्भ देता है और किसी भी अनधिकृत स्रोत का समर्थन नहीं करता।
+    <strong data-i18n="legal_notice_label" style="color: var(--text);">कानूनी सूचना:</strong> <span data-i18n="legal_notice_text">Hindi Anime Guide केवल आधिकारिक एवं वैध स्ट्रीमिंग प्लेटफॉर्म्स का संदर्भ देता है और किसी भी अनधिकृत स्रोत का समर्थन नहीं करता।</span>
   </div>
 
   <!-- RELATED GUIDES SECTION (Exact 820px rail, Between Disclaimer & Comments) -->
@@ -394,9 +394,9 @@
   <section class="article-rail-item" style="margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
       <h2 style="font-family: 'Bell MT', Georgia, serif; font-size: 20px; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px;">
-        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-sparkles"></use></svg> <span>संबंधित एनीमे गाइड्स (Related Guides)</span>
+        <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-sparkles"></use></svg> <span data-i18n="related_guides_heading">संबंधित एनीमे गाइड्स</span>
       </h2>
-      <a href="/explore" style="font-size: 13.5px; font-weight: 600; color: var(--red); text-decoration: none;">सभी देखें →</a>
+      <a href="/explore" data-i18n="view_all_arrow" style="font-size: 13.5px; font-weight: 600; color: var(--red); text-decoration: none;">सभी देखें →</a>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px;">
       {% for rel_art in related_articles %}
@@ -413,13 +413,13 @@
           {% endif %}
           <div class="body" style="padding: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span class="tag" style="font-size: 11px; padding: 2px 7px;">{{ rel_art.category_name_hi }}</span>
-              <span class="meta" style="font-size: 11.5px;">{{ rel_art.reading_time_minutes or 4 }} मिनट</span>
+              <span class="tag" data-cat-tag="{{ rel_art.category_name_hi }}" style="font-size: 11px; padding: 2px 7px;">{{ rel_art.category_name_hi }}</span>
+              <span class="meta" data-reading-mins="{{ rel_art.reading_time_minutes or 4 }}" style="font-size: 11.5px;">{{ rel_art.reading_time_minutes or 4 }} मिनट</span>
             </div>
-            <h4 style="font-size: 14.5px; line-height: 1.35; margin: 4px 0 8px 0; color: var(--text);">{{ rel_art.title }}</h4>
+            <h4 class="i18n-dynamic" style="font-size: 14.5px; line-height: 1.35; margin: 4px 0 8px 0; color: var(--text);">{{ rel_art.title }}</h4>
             {% if rel_art.has_hindi_dub %}
             <span class="badge-dub" style="margin-top: auto; display: inline-flex; align-items: center; gap: 4px;">
-              <svg class="icon" width="11" height="11" aria-hidden="true"><use href="#i-audio-lines"></use></svg> हिंदी डब
+              <svg class="icon" width="11" height="11" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="badge_hindi_dub">हिंदी डब</span>
             </span>
             {% endif %}
           </div>
@@ -432,7 +432,7 @@
   <!-- COMMUNITY DISCUSSIONS SECTION (100% Flush, Composer First, Comments Below) -->
   <section id="comments" class="article-rail-item" style="margin-top: 44px; border-top: 1px solid var(--border); padding-top: 32px; scroll-margin-top: 90px;">
       <h2 style="font-family: 'Bell MT', Georgia, serif; font-size: 24px; font-weight: 700; margin-bottom: 22px; color: var(--text); display: flex; align-items: center; gap: 10px;">
-          <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-message-square"></use></svg> <span>समुदाय चर्चा ({{ comments|length if comments else 0 }})</span>
+          <svg class="icon" width="20" height="20" aria-hidden="true"><use href="#i-message-square"></use></svg> <span data-comments-heading-count="{{ comments|length if comments else 0 }}">समुदाय चर्चा ({{ comments|length if comments else 0 }})</span>
       </h2>
 
       {% if request.query_params.get('comment_success') %}
@@ -459,14 +459,14 @@
       <!-- Comment Composer Card FIRST -->
       <div style="background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 28px;">
           <h3 style="font-family: 'Bell MT', Georgia, serif; font-size: 18px; font-weight: 700; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; gap: 8px;">
-              <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-pencil"></use></svg> चर्चा में शामिल हों
+              <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-pencil"></use></svg> <span data-i18n="join_discussion">चर्चा में शामिल हों</span>
           </h3>
           {% if user %}
           <form id="comment-post-form" method="POST" action="/comment/{{ article.id }}" onsubmit="const btn = document.getElementById('comment-submit-btn'); if(btn){ btn.disabled = true; btn.innerText = 'पोस्ट हो रहा है...'; }">
               <!-- Honeypot anti-spam -->
               <input type="text" name="website" style="display:none !important;" tabindex="-1" autocomplete="off">
               <div style="position: relative;">
-                  <textarea id="comment-box" name="content" rows="4" required maxlength="2000" placeholder="इस एनीमे गाइड के बारे में अपने विचार या सवाल लिखें..." style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Bell MT', Georgia, serif; font-size: 15px; box-sizing: border-box; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s;" oninput="updateCommentCount(this)">{{ request.query_params.get('content_draft', '') }}</textarea>
+                  <textarea id="comment-box" name="content" rows="4" required maxlength="2000" placeholder="इस एनीमे गाइड के बारे में अपने विचार या सवाल लिखें..." data-i18n-placeholder="comment_placeholder" style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Bell MT', Georgia, serif; font-size: 15px; box-sizing: border-box; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s;" oninput="updateCommentCount(this)">{{ request.query_params.get('content_draft', '') }}</textarea>
                   <div id="comment-char-counter" style="text-align: right; font-size: 11.5px; color: var(--muted); margin-top: 4px;">0 / 2000</div>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
@@ -476,14 +476,14 @@
                       {% endif %}
                       <span>
                           {% if user.username %}
-                              <strong>{{ user.name }}</strong> (@{{ user.username }}) के रूप में टिप्पणी कर रहे हैं
+                              <strong>{{ user.name }}</strong> (@{{ user.username }}) <span data-i18n="commenting_as">के रूप में टिप्पणी कर रहे हैं</span>
                           {% else %}
-                              <strong>{{ user.name }}</strong> के रूप में टिप्पणी कर रहे हैं
+                              <strong>{{ user.name }}</strong> <span data-i18n="commenting_as">के रूप में टिप्पणी कर रहे हैं</span>
                           {% endif %}
                       </span>
                   </div>
                   <button type="submit" id="comment-submit-btn" style="background: var(--red); color: white; padding: 9px 24px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: var(--shadow-crimson);">
-                      टिप्पणी पोस्ट करें →
+                      <span data-i18n="btn_post_comment">टिप्पणी पोस्ट करें →</span>
                   </button>
               </div>
           </form>
@@ -504,10 +504,10 @@
               }
           </script>
           {% else %}
-          <p style="color: var(--muted); margin-bottom: 16px; font-size: 14px;">चर्चा में भाग लेने के लिए कृपया लॉग इन करें और अपनी राय साझा करें।</p>
+          <p data-i18n="comment_login_prompt" style="color: var(--muted); margin-bottom: 16px; font-size: 14px;">चर्चा में भाग लेने के लिए कृपया लॉग इन करें और अपनी राय साझा करें।</p>
           <div style="display: flex; gap: 12px;">
-              <a href="/auth/login?next=/article/{{ article.slug }}%23comments" style="background: var(--red); color: white; padding: 8px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">लॉग इन</a>
-              <a href="/auth/register?next=/article/{{ article.slug }}%23comments" style="border: 1px solid var(--border); padding: 8px 20px; border-radius: 8px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 14px;">साइन अप</a>
+              <a href="/auth/login?next=/article/{{ article.slug }}%23comments" data-i18n="login" style="background: var(--red); color: white; padding: 8px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">लॉग इन</a>
+              <a href="/auth/register?next=/article/{{ article.slug }}%23comments" data-i18n="signup" style="border: 1px solid var(--border); padding: 8px 20px; border-radius: 8px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 14px;">साइन अप</a>
           </div>
           {% endif %}
       </div>
@@ -537,7 +537,7 @@
                   {% if user and (user.email == (c.user_rel.email if c.user_rel else '') or user.user_type == 'admin') %}
                   <form method="POST" action="/comment/{{ c.id }}/delete" onsubmit="return confirm('टिप्पणी हटाएं?');">
                       <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
-                          <svg class="icon" width="12" height="12" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span>हटाएं</span>
+                          <svg class="icon" width="12" height="12" aria-hidden="true"><use href="#i-trash-2"></use></svg> <span data-i18n="btn_delete">हटाएं</span>
                       </button>
                   </form>
                   {% endif %}
@@ -548,8 +548,8 @@
       </div>
       {% else %}
       <div style="background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center; color: var(--muted); margin-bottom: 28px;">
-          <div style="font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 4px;">अभी तक कोई टिप्पणी नहीं — पहली टिप्पणी आप करें!</div>
-          <div style="font-size: 13px; color: var(--muted);">इस एनीमे के बारे में अपनी राय, डब की गुणवत्ता या सुझाव साझा करें।</div>
+          <div data-i18n="no_comments_title" style="font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 4px;">अभी तक कोई टिप्पणी नहीं — पहली टिप्पणी आप करें!</div>
+          <div data-i18n="no_comments_subtitle" style="font-size: 13px; color: var(--muted);">इस एनीमे के बारे में अपनी राय, डब की गुणवत्ता या सुझाव साझा करें।</div>
       </div>
       {% endif %}
   </section>
@@ -561,29 +561,29 @@
   <div class="report-modal-box">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
       <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px;">
-        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-alert-triangle"></use></svg> <span>स्ट्रीमिंग अपडेट रिपोर्ट करें</span>
+        <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-alert-triangle"></use></svg> <span data-i18n="modal_report_title">स्ट्रीमिंग अपडेट रिपोर्ट करें</span>
       </h3>
       <button type="button" onclick="document.getElementById('report-modal').style.display='none'" style="background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer;" aria-label="Close modal"><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-x"></use></svg></button>
     </div>
     <form id="report-form" onsubmit="submitOutdatedReport(event)">
       <div style="margin-bottom: 12px;">
         <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px;">
-          संबंधित प्लेटफॉर्म (वैकल्पिक)
+          <span data-i18n="modal_platform_label">संबंधित प्लेटफॉर्म (वैकल्पिक)</span>
         </label>
-        <input type="text" name="platform_name" placeholder="उदा. प्लेटफॉर्म का नाम" style="width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: 14px; background: var(--bg); color: var(--text); box-sizing: border-box;">
+        <input type="text" name="platform_name" placeholder="उदा. प्लेटफॉर्म का नाम" data-i18n-placeholder="modal_platform_placeholder" style="width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 6px; padding: 0 10px; font-size: 14px; background: var(--bg); color: var(--text); box-sizing: border-box;">
       </div>
       <div style="margin-bottom: 16px;">
         <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px;">
-          क्या बदलाव आया है? *
+          <span data-i18n="modal_change_label">क्या बदलाव आया है? *</span>
         </label>
-        <textarea name="note" rows="3" required placeholder="जैसे: अब नेटफ्लिक्स पर हिंदी डब उपलब्ध है, या लिंक काम नहीं कर रहा..." style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; background: var(--bg); color: var(--text); box-sizing: border-box;"></textarea>
+        <textarea name="note" rows="3" required placeholder="जैसे: अब नेटफ्लिक्स पर हिंदी डब उपलब्ध है, या लिंक काम नहीं कर रहा..." data-i18n-placeholder="modal_change_placeholder" style="width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; background: var(--bg); color: var(--text); box-sizing: border-box;"></textarea>
       </div>
       <div id="report-msg" style="display: none; font-size: 13px; margin-bottom: 12px;"></div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" onclick="document.getElementById('report-modal').style.display='none'" style="background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;">
-          रद्द करें
+          <span data-i18n="btn_cancel">रद्द करें</span>
         </button>
-        <button type="submit" id="report-submit-btn" style="background: var(--red); color: white; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow-crimson);">
+        <button type="submit" id="report-submit-btn" data-i18n="btn_send_report" style="background: var(--red); color: white; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow-crimson);">
           रिपोर्ट भेजें
         </button>
       </div>
@@ -623,12 +623,16 @@
         const useEl = icon.querySelector('use');
         if (data.bookmarked) {
           if (useEl) useEl.setAttribute('href', '#i-bookmark-filled');
-          text.textContent = 'सेव किया गया';
-          if (typeof window.showToast === 'function') window.showToast('गाइड आपकी सूची में सेव किया गया', 'success');
+          const isEn = window.getSiteLang && window.getSiteLang() === 'en';
+          text.setAttribute('data-i18n', 'bookmarked_state');
+          text.textContent = isEn ? 'Saved' : 'सेव किया गया';
+          if (typeof window.showToast === 'function') window.showToast(isEn ? 'Guide saved to your list' : 'गाइड आपकी सूची में सेव किया गया', 'success');
         } else {
           if (useEl) useEl.setAttribute('href', '#i-bookmark');
-          text.textContent = 'सेव करें';
-          if (typeof window.showToast === 'function') window.showToast('गाइड आपकी सूची से हटाया गया', 'info');
+          const isEn = window.getSiteLang && window.getSiteLang() === 'en';
+          text.setAttribute('data-i18n', 'bookmark_action');
+          text.textContent = isEn ? 'Save' : 'सेव करें';
+          if (typeof window.showToast === 'function') window.showToast(isEn ? 'Guide removed from your list' : 'गाइड आपकी सूची से हटाया गया', 'info');
         }
       }
     } catch (e) {

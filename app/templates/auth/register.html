@@ -425,5 +425,164 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function() {
+            const AUTH_DICT = {
+                hi: {
+                    "साइन इन करें या तुरंत नया खाता बनाएं": "साइन इन करें या तुरंत नया खाता बनाएं",
+                    "Sign in or create a new account instantly": "साइन इन करें या तुरंत नया खाता बनाएं",
+                    "नया खाता बनाएं — बस ईमेल और पासवर्ड से": "नया खाता बनाएं — बस ईमेल और पासवर्ड से",
+                    "Create a new account — with just email and password": "नया खाता बनाएं — बस ईमेल और पासवर्ड से",
+                    "Google से जारी रखें": "Google से जारी रखें",
+                    "Continue with Google": "Google से जारी रखें",
+                    "या": "या",
+                    "OR": "या",
+                    "साइन इन": "साइन इन",
+                    "Sign In": "साइन इन",
+                    "खाता बनाएं": "खाता बनाएं",
+                    "Create Account": "खाता बनाएं",
+                    "ईमेल पता": "ईमेल पता",
+                    "Email Address": "ईमेल पता",
+                    "पासवर्ड": "पासवर्ड",
+                    "Password": "पासवर्ड",
+                    "मुझे लॉग इन रखें": "मुझे लॉग इन रखें",
+                    "Keep me signed in": "मुझे लॉग इन रखें",
+                    "ईमेल से जारी रखें →": "ईमेल से जारी रखें →",
+                    "Continue with Email →": "ईमेल से जारी रखें →",
+                    "प्रतीक्षा करें...": "प्रतीक्षा करें...",
+                    "Please wait...": "प्रतीक्षा करें...",
+                    "पासवर्ड बनाएं": "पासवर्ड बनाएं",
+                    "Create Password": "पासवर्ड बनाएं",
+                    "कम से कम 8 अक्षर (अक्षर, संख्या और सामान्य पासवर्ड न रखें)": "कम से कम 8 अक्षर (अक्षर, संख्या और सामान्य पासवर्ड न रखें)",
+                    "At least 8 characters (use letters, numbers & avoid common passwords)": "कम से कम 8 अक्षर (अक्षर, संख्या और सामान्य पासवर्ड न रखें)",
+                    "← मुख्य पृष्ठ पर लौटें": "← मुख्य पृष्ठ पर लौटें",
+                    "← Back to Home": "← मुख्य पृष्ठ पर लौटें",
+                    "ईमेल सत्यापन कोड": "ईमेल सत्यापन कोड",
+                    "Email Verification Code": "ईमेल सत्यापन कोड",
+                    "हमने 6 अंकों का कोड भेजा है:": "हमने 6 अंकों का कोड भेजा है:",
+                    "We sent a 6-digit code to:": "हमने 6 अंकों का कोड भेजा है:",
+                    "सत्यापित करें और आगे बढ़ें →": "सत्यापित करें और आगे बढ़ें →",
+                    "Verify & Continue →": "सत्यापित करें और आगे बढ़ें →",
+                    "सत्यापन हो रहा है...": "सत्यापन हो रहा है...",
+                    "Verifying...": "सत्यापन हो रहा है...",
+                    "कोड नहीं मिला?": "कोड नहीं मिला?",
+                    "Didn't receive code?": "कोड नहीं मिला?",
+                    "कोड दोबारा भेजें": "कोड दोबारा भेजें",
+                    "Resend Code": "कोड दोबारा भेजें",
+                    "भेज रहे हैं...": "भेज रहे हैं...",
+                    "Sending...": "भेज रहे हैं...",
+                    "← वापस जाएं (Return to Login)": "← लॉगिन पर वापस जाएं",
+                    "← Return to Login": "← लॉगिन पर वापस जाएं",
+                    "← लॉगिन पर वापस जाएं": "← लॉगिन पर वापस जाएं",
+                    "साइन इन करें": "साइन इन करें"
+                },
+                en: {
+                    "साइन इन करें या तुरंत नया खाता बनाएं": "Sign in or create a new account instantly",
+                    "नया खाता बनाएं — बस ईमेल और पासवर्ड से": "Create a new account — with just email and password",
+                    "Google से जारी रखें": "Continue with Google",
+                    "या": "OR",
+                    "साइन इन": "Sign In",
+                    "खाता बनाएं": "Create Account",
+                    "ईमेल पता": "Email Address",
+                    "पासवर्ड": "Password",
+                    "मुझे लॉग इन रखें": "Keep me signed in",
+                    "ईमेल से जारी रखें →": "Continue with Email →",
+                    "प्रतीक्षा करें...": "Please wait...",
+                    "पासवर्ड बनाएं": "Create Password",
+                    "कम से कम 8 अक्षर (अक्षर, संख्या और सामान्य पासवर्ड न रखें)": "At least 8 characters (use letters, numbers & avoid common passwords)",
+                    "← मुख्य पृष्ठ पर लौटें": "← Back to Home",
+                    "ईमेल सत्यापन कोड": "Email Verification Code",
+                    "हमने 6 अंकों का कोड भेजा है:": "We sent a 6-digit code to:",
+                    "सत्यापित करें और आगे बढ़ें →": "Verify & Continue →",
+                    "सत्यापन हो रहा है...": "Verifying...",
+                    "कोड नहीं मिला?": "Didn't receive code?",
+                    "कोड दोबारा भेजें": "Resend Code",
+                    "भेज रहे हैं...": "Sending...",
+                    "← वापस जाएं (Return to Login)": "← Return to Login",
+                    "← लॉगिन पर वापस जाएं": "← Return to Login",
+                    "साइन इन करें": "Sign In"
+                }
+            };
+
+            function getAuthLang() {
+                try {
+                    const loc = localStorage.getItem('site_lang');
+                    if (loc === 'en' || loc === 'hi') return loc;
+                } catch (e) {}
+                const m = document.cookie.match(/(?:^|;\s*)site_lang=([^;]+)/);
+                if (m && (m[1] === 'en' || m[1] === 'hi')) return m[1];
+                return 'hi';
+            }
+
+            window.setAuthLang = function(lang) {
+                if (lang !== 'en' && lang !== 'hi') lang = 'hi';
+                try { localStorage.setItem('site_lang', lang); } catch (e) {}
+                document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+                applyAuthLang(lang);
+            };
+
+            function applyAuthLang(lang) {
+                const isEn = (lang === 'en');
+                document.documentElement.lang = lang;
+                const map = AUTH_DICT[lang] || AUTH_DICT.hi;
+
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+                let node;
+                while ((node = walker.nextNode())) {
+                    if (node.parentElement && (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE' || node.parentElement.closest('.notranslate'))) continue;
+                    const trimmed = node.nodeValue.trim();
+                    if (!trimmed) continue;
+                    if (!node._origText) node._origText = trimmed;
+                    const orig = node._origText;
+                    if (map[orig]) {
+                        node.nodeValue = node.nodeValue.replace(trimmed, map[orig]);
+                    } else if (map[trimmed]) {
+                        node.nodeValue = node.nodeValue.replace(trimmed, map[trimmed]);
+                    } else if (!isEn && node._origText) {
+                        node.nodeValue = node.nodeValue.replace(trimmed, node._origText);
+                    }
+                }
+
+                document.querySelectorAll('input[placeholder]').forEach(function(inp) {
+                    if (!inp.dataset.origPh) inp.dataset.origPh = inp.getAttribute('placeholder');
+                    const ph = inp.dataset.origPh;
+                    if (ph === 'पासवर्ड दर्ज करें') inp.setAttribute('placeholder', isEn ? 'Enter password' : 'पासवर्ड दर्ज करें');
+                    if (ph === 'कम से कम 8 अक्षर') inp.setAttribute('placeholder', isEn ? 'At least 8 characters' : 'कम से कम 8 अक्षर');
+                });
+
+                const termsEl = document.querySelector('.terms-note');
+                if (termsEl) {
+                    if (!termsEl.dataset.origHtml) termsEl.dataset.origHtml = termsEl.innerHTML;
+                    if (isEn) {
+                        termsEl.innerHTML = 'By continuing, you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.';
+                    } else {
+                        termsEl.innerHTML = termsEl.dataset.origHtml;
+                    }
+                }
+
+                const btnEn = document.getElementById('auth-lang-en');
+                const btnHi = document.getElementById('auth-lang-hi');
+                if (btnEn && btnHi) {
+                    btnEn.style.color = isEn ? 'var(--primary)' : 'var(--text-secondary)';
+                    btnHi.style.color = isEn ? 'var(--text-secondary)' : 'var(--primary)';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const card = document.querySelector('.card');
+                if (card && !document.getElementById('auth-lang-switcher')) {
+                    const sw = document.createElement('div');
+                    sw.id = 'auth-lang-switcher';
+                    sw.className = 'notranslate';
+                    sw.style.cssText = 'position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;border:1px solid var(--glass-border-light);border-radius:6px;background:var(--glass-bg-darker);font-size:11.5px;font-weight:700;overflow:hidden;';
+                    sw.innerHTML = '<button type="button" id="auth-lang-en" onclick="setAuthLang(\'en\')" style="padding:4px 8px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);">EN</button><span style="width:1px;height:12px;background:var(--glass-border-subtle);"></span><button type="button" id="auth-lang-hi" onclick="setAuthLang(\'hi\')" style="padding:4px 8px;border:none;background:transparent;cursor:pointer;color:var(--primary);">हिंदी</button>';
+                    card.appendChild(sw);
+                }
+                applyAuthLang(getAuthLang());
+            });
+        })();
+    </script>
+
 </body>
 </html>

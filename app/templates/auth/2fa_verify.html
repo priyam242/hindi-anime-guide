@@ -203,11 +203,11 @@
     </div>
 
     {% if mode == "backup" %}
-      <h1>बैकअप कोड से लॉगिन</h1>
-      <p class="verify-subtitle">अपना 10-अंकीय बैकअप कोड दर्ज करें।<br>प्रत्येक कोड केवल एक बार काम करता है।</p>
+      <h1 data-i18n="twofa_backup_title">बैकअप कोड से लॉगिन</h1>
+      <p class="verify-subtitle" data-i18n="twofa_backup_subtitle">अपना 10-अंकीय बैकअप कोड दर्ज करें। प्रत्येक कोड केवल एक बार काम करता है।</p>
     {% else %}
-      <h1>दो-चरणीय सत्यापन</h1>
-      <p class="verify-subtitle">अपने ऑथेंटिकेटर ऐप में दिखाया 6-अंकीय कोड दर्ज करें।</p>
+      <h1 data-i18n="twofa_title">दो-चरणीय सत्यापन</h1>
+      <p class="verify-subtitle" data-i18n="twofa_subtitle">अपने ऑथेंटिकेटर ऐप में दिखाया 6-अंकीय कोड दर्ज करें।</p>
     {% endif %}
 
     {% if error %}
@@ -236,7 +236,7 @@
           required
           aria-label="बैकअप कोड"
         >
-        <p class="otp-hint">बिना डैश के भी टाइप कर सकते हैं।</p>
+        <p class="otp-hint" data-i18n="twofa_backup_hint">बिना डैश के भी टाइप कर सकते हैं।</p>
       {% else %}
         <div class="otp-group" role="group" aria-label="6-digit TOTP code">
           {% for i in range(6) %}
@@ -253,25 +253,25 @@
           {% endfor %}
         </div>
         <input type="hidden" name="code" id="combined-code">
-        <p class="otp-hint">कोड हर 30 सेकंड में बदलता है।</p>
+        <p class="otp-hint" data-i18n="twofa_totp_hint">कोड हर 30 सेकंड में बदलता है।</p>
         <p class="timer-text" id="totp-timer"></p>
       {% endif %}
 
       <label class="remember-row">
         <input type="checkbox" name="remember_device" value="1" id="remember-device">
-        <span>यह डिवाइस याद रखें (30 दिन)</span>
+        <span data-i18n="twofa_remember_device">यह डिवाइस याद रखें (30 दिन)</span>
       </label>
 
       <button type="submit" class="btn-verify" id="submit-btn">
-        {% if mode == "backup" %}सत्यापित करें{% else %}लॉगिन करें{% endif %}
+        {% if mode == "backup" %}<span data-i18n="twofa_verify_btn">सत्यापित करें</span>{% else %}<span data-i18n="twofa_login_btn">लॉगिन करें</span>{% endif %}
       </button>
     </form>
 
     <div class="switch-mode">
       {% if mode == "backup" %}
-        <a href="/2fa/verify?next={{ next|urlencode }}" onclick="switchMode('totp', event)">← TOTP कोड से लॉगिन करें</a>
+        <a href="/2fa/verify?next={{ next|urlencode }}" onclick="switchMode('totp', event)"><span data-i18n="twofa_use_totp">← TOTP कोड से लॉगिन करें</span></a>
       {% else %}
-        <a href="#" onclick="switchMode('backup', event)">बैकअप कोड से लॉगिन करें</a>
+        <a href="#" onclick="switchMode('backup', event)" data-i18n="twofa_use_backup">बैकअप कोड से लॉगिन करें</a>
       {% endif %}
     </div>
   </div>
@@ -326,7 +326,8 @@
   if (timerEl) {
     function updateTimer() {
       const secs = 30 - (Math.floor(Date.now() / 1000) % 30);
-      timerEl.textContent = `नया कोड ${secs}s में आएगा`;
+      const isEn = window.getSiteLang && window.getSiteLang() === "en";
+      timerEl.textContent = isEn ? `New code in ${secs}s` : `नया कोड ${secs}s में आएगा`;
     }
     updateTimer();
     setInterval(updateTimer, 1000);

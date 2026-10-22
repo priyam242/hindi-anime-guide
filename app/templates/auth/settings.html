@@ -458,10 +458,10 @@
                         <span data-i18n="sec_lang_title">भाषा प्राथमिकता (Language Preference)</span>
                     </h2>
                     <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;" data-i18n="sec_lang_subtitle">
-                        इंटरफ़ेस की भाषा चुनें। जैसे ही आप English चुनेंगे, पूरी साइट की नेविगेशन और सेटिंग्स अंग्रेज़ी में हो जाएँगी, जबकि लेख सामग्री (Articles) हमेशा हिंदी में रहेगी।
+                        इंटरफ़ेस और लेखों की भाषा चुनें। जैसे ही आप English चुनेंगे, पूरी साइट की नेविगेशन, सेटिंग्स और सभी लेख सामग्री (Articles) अंग्रेज़ी में अनुवादित हो जाएँगे।
                     </p>
 
-                    <div class="lang-switcher-grid">
+                    <div class="lang-switcher-grid notranslate">
                         <div class="lang-option-card active" id="lang-card-hi" onclick="setLanguage('hi')">
                             <div class="lang-card-header">
                                 <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-languages"></use></svg>
@@ -477,7 +477,7 @@
                                 <span class="lang-title">English</span>
                                 <span class="lang-check" id="lang-check-en" style="display: none;"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-check-circle"></use></svg></span>
                             </div>
-                            <div class="lang-desc" data-i18n="lang_desc_en">All UI, settings & menus in English; articles remain in Hindi.</div>
+                            <div class="lang-desc" data-i18n="lang_desc_en">All UI, settings, menus & articles translated to English.</div>
                         </div>
                     </div>
 
@@ -493,12 +493,12 @@
                         {% if user.hashed_password %}
                         <span data-i18n="sec_pwd_title">खाता पासवर्ड बदलें (Change Password)</span>
                         {% else %}
-                        <span>पासवर्ड सेट करें (Set Password)</span>
+                        <span data-i18n="sec_set_pwd_title">पासवर्ड सेट करें</span>
                         {% endif %}
                     </h2>
 
                     {% if not user.hashed_password %}
-                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+                    <p data-i18n="sec_google_pwd_note" style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
                         आपने Google खाते से साइन अप किया है। आप पासवर्ड सेट करके ईमेल और पासवर्ड दोनों तरीकों से लॉगिन कर सकते हैं।
                     </p>
                     {% endif %}
@@ -560,7 +560,7 @@
                             {% if user.hashed_password %}
                             <span data-i18n="btn_update_pwd">पासवर्ड अपडेट करें (Update Password)</span>
                             {% else %}
-                            <span>पासवर्ड सेट करें (Set Password)</span>
+                            <span data-i18n="sec_set_pwd_title">पासवर्ड सेट करें</span>
                             {% endif %}
                         </button>
                     </form>
@@ -570,9 +570,9 @@
                 <div class="settings-card" style="margin-bottom: 24px;">
                     <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                         <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-shield-check"></use></svg>
-                        <span>विश्वसनीय डिवाइस (Trusted Devices)</span>
+                        <span data-i18n="trusted_devices_title">विश्वसनीय डिवाइस</span>
                     </h2>
-                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+                    <p data-i18n="trusted_devices_desc" style="font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
                         ये डिवाइस बिना ईमेल OTP सत्यापन के लॉगिन कर सकते हैं (30 दिनों तक मान्य)।
                     </p>
 
@@ -588,14 +588,14 @@
                                 </div>
                                 <form action="/settings/trusted-device/{{ dev.id }}/revoke" method="POST">
                                     <button type="submit" class="btn-submit" style="background: var(--danger); border-color: var(--danger); padding: 6px 14px; font-size: 12px;">
-                                        हटाएं
+                                        <span data-i18n="btn_remove_device">हटाएं</span>
                                     </button>
                                 </form>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p style="font-size: 13px; color: var(--muted);">वर्तमान में कोई विश्वसनीय डिवाइस नहीं है।</p>
+                        <p data-i18n="no_trusted_devices" style="font-size: 13px; color: var(--muted);">वर्तमान में कोई विश्वसनीय डिवाइस नहीं है।</p>
                     {% endif %}
                 </div>
 
@@ -630,10 +630,10 @@
                         </div>
                         {% else %}
                         <div class="form-group-item">
-                            <label>हटाने की पुष्टि के लिए <strong>DELETE</strong> या <strong>हटाएं</strong> लिखें</label>
+                            <label data-i18n="label_confirm_delete_text">हटाने की पुष्टि के लिए DELETE या हटाएं लिखें</label>
                             <input type="text" name="confirm_delete" class="form-control-input" required placeholder="DELETE या हटाएं" autocomplete="off">
-                            <p style="font-size: 12px; color: var(--muted); margin-top: 6px;">
-                                Google खाते से लॉगिन है, इसलिए पासवर्ड की आवश्यकता नहीं है। पुष्टि के लिए <strong>DELETE</strong> दर्ज करें।
+                            <p data-i18n="hint_google_delete" style="font-size: 12px; color: var(--muted); margin-top: 6px;">
+                                Google खाते से लॉगिन है, इसलिए पासवर्ड की आवश्यकता नहीं है। पुष्टि के लिए DELETE दर्ज करें।
                             </p>
                         </div>
                         {% endif %}
@@ -788,7 +788,7 @@
         const widths = ['10%', '25%', '50%', '75%', '100%'];
         const colors = ['var(--strength-weak)', 'var(--strength-weak)', 'var(--strength-fair)', 'var(--strength-good)', 'var(--strength-strong)'];
         const isEnglish = (localStorage.getItem('site_lang') === 'en');
-        const labelsHi = ['कमजोर (Weak)', 'कमजोर (Weak)', 'सामान्य (Fair)', 'अच्छा (Good)', 'मजबूत (Strong)'];
+        const labelsHi = ['कमज़ोर', 'कमज़ोर', 'सामान्य', 'अच्छा', 'मज़बूत'];
         const labelsEn = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
         const labels = isEnglish ? labelsEn : labelsHi;
 
@@ -821,7 +821,7 @@
         }
 
         if (feedback) {
-            feedback.textContent = (lang === 'en') ? 'Interface language set to English (Articles remain in Hindi)' : 'इंटरफ़ेस भाषा हिंदी में सेट की गई';
+            feedback.textContent = (lang === 'en') ? 'Language switched to English — entire site translated!' : 'भाषा हिंदी में सेट की गई — पूरी साइट हिंदी में!';
             feedback.style.display = 'block';
             setTimeout(function() { feedback.style.display = 'none'; }, 3000);
         }

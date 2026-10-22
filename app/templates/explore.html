@@ -11,10 +11,10 @@
     <div style="margin-bottom: 8px;">
       <span class="tag" style="display: inline-flex; align-items: center; gap: 6px;"><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-compass"></use></svg> <span data-i18n="nav_explore">एक्सप्लोर</span></span>
     </div>
-    <h1 style="font-size: clamp(26px, 4vw, 36px); font-weight: 700; color: var(--text); margin-bottom: 8px;">
+    <h1 data-i18n="explore_heading" style="font-size: clamp(26px, 4vw, 36px); font-weight: 700; color: var(--text); margin-bottom: 8px;">
       एनीमे गाइड एक्सप्लोरर
     </h1>
-    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 65ch;">
+    <p data-i18n="explore_subtitle" style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 65ch;">
       अपनी पसंदीदा एनीमे खोजें और तुरंत जानें कि वह भारत में किस आधिकारिक प्लेटफॉर्म पर हिंदी डब के साथ उपलब्ध है।
     </p>
   </header>
@@ -29,7 +29,7 @@
           type="search" 
           name="q" 
           value="{{ q }}" 
-          placeholder="एनीमे का नाम या कीवर्ड खोजें (जैसे Naruto, Demon Slayer)..." 
+          placeholder="एनीमे का नाम या कीवर्ड खोजें (जैसे Naruto, Demon Slayer)..." data-i18n-placeholder="explore_search_placeholder" 
           class="find" 
           style="width: 100%; height: 44px; font-size: 14.5px; border-radius: 8px;"
         >
@@ -89,7 +89,7 @@
       >
         <option value="" data-i18n="filter_all_categories">सभी श्रेणियां</option>
         {% for cat in categories %}
-        <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
+        <option value="{{ cat.name }}" data-cat-tag="{{ cat.display_name or cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
           {{ cat.display_name or cat.name }}
         </option>
         {% endfor %}
@@ -113,10 +113,10 @@
 
   <!-- Results Section Header -->
   <div class="sec" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 20px;">
-    <h2 style="font-size: 20px;">
+    <h2 style="font-size: 20px;" data-results-count="{% if total_count %}{{ total_count }}{% else %}0{% endif %}">
       परिणाम ({% if total_count %}{{ total_count }}{% else %}0{% endif %})
     </h2>
-    <span class="meta">{{ total_count }} गाइड उपलब्ध</span>
+    <span class="meta" data-guides-count="{{ total_count }}">{{ total_count }} गाइड उपलब्ध</span>
   </div>
 
   <!-- Articles Grid -->
@@ -132,12 +132,12 @@
     <div style="margin-bottom: 16px; color: var(--muted);">
       <svg class="icon" width="48" height="48" aria-hidden="true"><use href="#i-search-x"></use></svg>
     </div>
-    <h3 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px;">कोई गाइड नहीं मिला</h3>
-    <p style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 50ch; margin: 0 auto 20px;">
+    <h3 data-i18n="explore_empty_title" style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px;">कोई गाइड नहीं मिला</h3>
+    <p data-i18n="explore_empty_desc" style="font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 50ch; margin: 0 auto 20px;">
       आपके चुने गए फ़िल्टर या खोज शब्दों के अनुसार कोई परिणाम नहीं मिला। कृपया अन्य कीवर्ड या फ़िल्टर आज़माएँ।
     </p>
     <a href="/explore" style="display: inline-block; font-size: 14px; font-weight: 700; color: var(--on-red); background: var(--red); padding: 9px 20px; border-radius: 6px; text-decoration: none;">
-      सभी फ़िल्टर रीसेट करें
+      <span data-i18n="explore_reset_all">सभी फ़िल्टर रीसेट करें</span>
     </a>
   </div>
   {% endif %}

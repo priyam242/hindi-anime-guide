@@ -215,7 +215,7 @@
     :inert="isMobile && !mobileOpen"
     :style="isMobile && !mobileOpen ? 'visibility: hidden;' : 'visibility: visible;'"
   >
-    <a class="logo" href="/">Hindi Anime <span>Guide</span></a>
+    <a class="logo notranslate" href="/">Hindi Anime <span>Guide</span></a>
     <input class="find" type="search" placeholder="खोजें" aria-label="खोजें" data-i18n-placeholder="search_placeholder" onkeyup="if(event.key === 'Enter') window.location.href='/explore?q=' + encodeURIComponent(this.value)">
     
     <nav class="menu">
@@ -260,7 +260,7 @@
           @click="toggleMobile()" 
           class="topbar-btn"
         ><svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-menu"></use></svg></button>
-        <a class="logo mobile-logo" href="/">Hindi Anime <span>Guide</span></a>
+        <a class="logo mobile-logo notranslate" href="/">Hindi Anime <span>Guide</span></a>
       </div>
       
       <div class="topbar-right">
@@ -309,10 +309,10 @@
                     </div>
                     {% if user.user_type == 'admin' or user.is_superuser or user.is_staff %}
                         <a href="/admin/dashboard" class="public-dropdown-item" style="color: var(--red); font-weight: 700;">
-                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-shield-check"></use></svg> Admin Portal
+                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-shield-check"></use></svg> <span data-i18n="admin_portal">Admin Portal</span>
                         </a>
                         <a href="/admin/articles" class="public-dropdown-item" style="color: var(--red); font-weight: 600;">
-                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-pencil"></use></svg> Articles Management
+                            <svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-pencil"></use></svg> <span data-i18n="articles_mgmt">Articles Management</span>
                         </a>
                         <div class="public-dropdown-divider"></div>
                     {% endif %}
@@ -340,7 +340,7 @@
         <span class="topbar-divider" style="border-left: 1px solid var(--border); height: 18px; margin: 0 2px;"></span>
 
         <!-- Segmented Control EN | हिंदी -->
-        <div class="lang-segmented-control" role="group" aria-label="Language selection" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); font-size: 12px; font-weight: 700; flex-shrink: 0;">
+        <div class="lang-segmented-control notranslate" role="group" aria-label="Language selection" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--bg); font-size: 12px; font-weight: 700; flex-shrink: 0;">
           <button 
             type="button" 
             id="lang-btn-en" 
@@ -392,7 +392,7 @@
 
     <!-- Top Announcement Notice -->
     {% if (article and article.is_sample) or is_sample or (featured_article and featured_article.is_sample) or (articles and (articles | selectattr('is_sample') | list | length > 0)) or (related_articles and (related_articles | selectattr('is_sample') | list | length > 0)) %}
-    <div class="note">
+    <div class="note" data-i18n="sample_notice">
       नमूना सामग्री — यह सार्वजनिक साइट के लिए नहीं है
     </div>
     {% endif %}
@@ -449,10 +449,10 @@
       <div class="wrap">
         <div class="footer-top">
           <div class="footer-brand">
-            <a class="logo" href="/">Hindi Anime <span>Guide</span></a>
+            <a class="logo notranslate" href="/">Hindi Anime <span>Guide</span></a>
             <p class="footer-tagline" data-i18n="footer_tagline">भारतीय पाठकों के लिए एनीमे कहाँ देखें, हिंदी डब और शुरुआती गाइड।</p>
             <!-- Secondary Language Switcher in Footer -->
-            <div class="footer-lang-control" role="group" aria-label="Language selection">
+            <div class="footer-lang-control notranslate" role="group" aria-label="Language selection">
               <button 
                 type="button" 
                 class="footer-lang-btn footer-lang-btn-en" 
@@ -526,52 +526,63 @@
         "light_mode": "लाइट मोड",
         "login": "लॉग इन",
         "signup": "साइन अप",
-        "logout": "लॉग आउट (Sign Out)",
-        "my_profile": "My Profile",
-        "settings_title": "खाता सेटिंग्स (Account Settings)",
+        "logout": "लॉग आउट",
+        "my_profile": "मेरी प्रोफ़ाइल",
+        "admin_portal": "एडमिन पोर्टल",
+        "articles_mgmt": "लेख प्रबंधन",
+        "sample_notice": "नमूना सामग्री — यह सार्वजनिक साइट के लिए नहीं है",
+        "settings_title": "खाता सेटिंग्स",
         "settings_desc": "अपनी व्यक्तिगत जानकारी, प्रोफ़ाइल फ़ोटो, पासवर्ड और खाता प्राथमिकताएँ प्रबंधित करें।",
-        "nav_profile": "प्रोफ़ाइल जानकारी (Profile)",
-        "nav_security": "सुरक्षा और सेटिंग्स (Security)",
-        "public_profile": "सार्वजनिक प्रोफ़ाइल (Public Profile)",
-        "avatar_title": "प्रोफ़ाइल फ़ोटो (Avatar Photo)",
+        "nav_profile": "प्रोफ़ाइल जानकारी",
+        "nav_security": "सुरक्षा और सेटिंग्स",
+        "public_profile": "सार्वजनिक प्रोफ़ाइल",
+        "avatar_title": "प्रोफ़ाइल फ़ोटो",
         "avatar_hint": "JPG, PNG या WEBP अपलोड करें (अधिकतम 10MB)।",
-        "btn_upload_photo": "फ़ोटो अपलोड करें (Max 10MB)",
-        "btn_remove_photo": "फ़ोटो हटाएँ (Remove Photo)",
-        "label_fullname": "पूरा नाम (Full Name) *",
-        "hint_fullname": "English characters and spaces only.",
-        "label_username": "यूज़रनेम (Username) *",
-        "hint_username": "Starts with letter; letters, numbers, and underscores only.",
-        "label_email": "ईमेल पता (Email Address) *",
+        "btn_upload_photo": "फ़ोटो अपलोड करें (अधिकतम 10MB)",
+        "btn_remove_photo": "फ़ोटो हटाएँ",
+        "label_fullname": "पूरा नाम *",
+        "hint_fullname": "केवल अंग्रेज़ी अक्षर और स्पेस मान्य हैं।",
+        "label_username": "यूज़रनेम *",
+        "hint_username": "अक्षर से शुरू करें; केवल अक्षर, संख्या और अंडरस्कोर मान्य हैं।",
+        "label_email": "ईमेल पता *",
         "hint_email": "वैध ईमेल पता दर्ज करें। ईमेल बदलने पर आपका लॉगिन सत्र स्वतः अपडेट हो जाएगा।",
-        "label_bio": "बायो (Bio)",
+        "label_bio": "बायो",
         "bio_placeholder": "अपने पसंदीदा एनीमे के बारे में कुछ बताएं...",
-        "btn_save_changes": "बदलाव सहेजें (Save Changes)",
-        "sec_lang_title": "भाषा प्राथमिकता (Language Preference)",
-        "sec_lang_subtitle": "इंटरफ़ेस की भाषा चुनें। अंग्रेज़ी चुनने पर नेविगेशन और सेटिंग्स अंग्रेज़ी में हो जाएँगे, जबकि लेख सामग्री (Articles) हमेशा हिंदी में रहेगी।",
+        "btn_save_changes": "बदलाव सहेजें",
+        "sec_lang_title": "भाषा प्राथमिकता",
+        "sec_lang_subtitle": "इंटरफ़ेस और लेखों की भाषा चुनें। अंग्रेज़ी चुनने पर पूरी साइट और सभी लेख सामग्री अंग्रेज़ी में हो जाएँगे।",
         "lang_desc_hi": "डिफ़ॉल्ट भाषा — पूरी साइट और गाइड्स हिंदी में।",
-        "lang_desc_en": "All UI, settings & menus in English; articles remain in Hindi.",
-        "sec_pwd_title": "खाता पासवर्ड बदलें (Change Password)",
-        "label_curr_pwd": "वर्तमान पासवर्ड (Current Password) *",
+        "lang_desc_en": "सभी मेनू, सेटिंग्स और लेख अंग्रेज़ी में अनुवादित।",
+        "sec_pwd_title": "खाता पासवर्ड बदलें",
+        "sec_set_pwd_title": "पासवर्ड सेट करें",
+        "sec_google_pwd_note": "आपने Google खाते से साइन अप किया है। आप पासवर्ड सेट करके ईमेल और पासवर्ड दोनों तरीकों से लॉगिन कर सकते हैं।",
+        "label_curr_pwd": "वर्तमान पासवर्ड *",
         "placeholder_curr_pwd": "वर्तमान पासवर्ड दर्ज करें",
-        "label_new_pwd": "नया पासवर्ड (New Password — min 8 chars) *",
+        "label_new_pwd": "नया पासवर्ड (कम से कम 8 वर्ण) *",
         "placeholder_new_pwd": "नया पासवर्ड दर्ज करें (कम से कम 8 वर्ण)",
-        "pwd_strength_hint": "मजबूती (Strength): कम से कम 8 वर्ण",
-        "label_conf_pwd": "नए पासवर्ड की पुष्टि करें (Confirm New Password) *",
+        "pwd_strength_hint": "मजबूती: कम से कम 8 वर्ण",
+        "label_conf_pwd": "नए पासवर्ड की पुष्टि करें *",
         "placeholder_conf_pwd": "नए पासवर्ड को दोबारा दर्ज करें",
-        "pwd_req_title": "पासवर्ड आवश्यकताएँ (Requirements):",
-        "pwd_req_1": "कम से कम 8 अक्षर (Minimum 8 characters)",
+        "pwd_req_title": "पासवर्ड आवश्यकताएँ:",
+        "pwd_req_1": "कम से कम 8 अक्षर",
         "pwd_req_2": "अपरकेस (A-Z) और लोअरकेस (a-z) अक्षर",
         "pwd_req_3": "कम से कम 1 संख्या (0-9)",
         "pwd_req_4": "कम से कम 1 विशेष चिह्न (!@#$%^&* आदि)",
         "pwd_req_5": "वर्तमान पासवर्ड से भिन्न होना चाहिए",
-        "btn_update_pwd": "पासवर्ड अपडेट करें (Update Password)",
-        "export_title": "डेटा निर्यात (Export Data)",
+        "btn_update_pwd": "पासवर्ड अपडेट करें",
+        "trusted_devices_title": "विश्वसनीय डिवाइस",
+        "trusted_devices_desc": "ये डिवाइस बिना ईमेल OTP सत्यापन के लॉगिन कर सकते हैं (30 दिनों तक मान्य)।",
+        "no_trusted_devices": "वर्तमान में कोई विश्वसनीय डिवाइस नहीं है।",
+        "btn_remove_device": "हटाएं",
+        "export_title": "डेटा निर्यात",
         "export_desc": "अपनी सभी टिप्पणियाँ और प्रोफ़ाइल जानकारी JSON फ़ाइल के रूप में डाउनलोड करें।",
-        "btn_export_json": "Export JSON",
-        "danger_title": "खाता हटाएँ (Delete My Account)",
+        "btn_export_json": "JSON डाउनलोड करें",
+        "danger_title": "खाता हटाएँ",
         "danger_desc": "खाता हटाने से आपकी प्रोफ़ाइल, यूज़रनेम और आपकी सभी टिप्पणियाँ स्थायी रूप से हटा दी जाएंगी। इसे वापस नहीं लाया जा सकता।",
         "label_danger_pwd": "हटाने की पुष्टि के लिए पासवर्ड दर्ज करें",
         "placeholder_danger_pwd": "पासवर्ड दर्ज करें",
+        "label_confirm_delete_text": "हटाने की पुष्टि के लिए DELETE या हटाएं लिखें",
+        "hint_google_delete": "Google खाते से लॉगिन है, इसलिए पासवर्ड की आवश्यकता नहीं है। पुष्टि के लिए DELETE दर्ज करें।",
         "btn_delete_account": "खाता स्थायी रूप से हटाएँ",
         "tag_category": "श्रेणी",
         "empty_cat_msg": "इस श्रेणी में लेख जल्द आएँगे।",
@@ -607,19 +618,100 @@
         "nav_explore": "एक्सप्लोर",
         "nav_saved": "मेरी सूची",
         "my_saved": "सेव किए गए गाइड्स",
-        "settings_title": "खाता सेटिंग्स",
-        "logout": "लॉग आउट",
         "notifications": "सूचनाएं",
         "mark_all_read": "सभी पढ़े हुए मार्क करें",
         "no_notifications": "कोई नई सूचना नहीं है",
         "search_btn": "खोजें",
         "reset_filters": "फ़िल्टर साफ़ करें",
         "filter_hindi_dub": "केवल हिंदी डब",
+        "badge_hindi_dub": "हिंदी डब",
+        " badge_hindi_dub_avail": "हिंदी डब उपलब्ध",
+        "badge_hindi_dub_avail": "हिंदी डब उपलब्ध",
+        "badge_guide": "मार्गदर्शिका",
         "filter_all_platforms": "सभी प्लेटफॉर्म्स",
         "filter_all_categories": "सभी श्रेणियां",
         "sort_label": "क्रम:",
         "sort_latest": "नवीनतम",
-        "sort_az": "नाम A–Z"
+        "sort_az": "नाम A–Z",
+        "home_empty_title": "पहले लेख जल्द आ रहे हैं",
+        "home_empty_desc": "आधिकारिक स्ट्रीमिंग गाइड और हिंदी डब संदर्भ तैयार किए जा रहे हैं।",
+        "latest_guides": "नवीनतम गाइड",
+        "home_legal_title": "कानूनी एनीमे स्ट्रीमिंग मार्गदर्शिका",
+        "home_legal_desc": "भारत में एनीमे देखने के लिए हमेशा आधिकारिक और लाइसेंस प्राप्त स्ट्रीमिंग सेवाओं का उपयोग करें। किसी भी सेवा की वर्तमान उपलब्धता, भाषा विकल्प और कैटलॉग जानने के लिए उनकी आधिकारिक वेबसाइट या ऐप पर सीधे पुष्टि करें।",
+        "explore_heading": "एनीमे गाइड एक्सप्लोरर",
+        "explore_subtitle": "अपनी पसंदीदा एनीमे खोजें और तुरंत जानें कि वह भारत में किस आधिकारिक प्लेटफॉर्म पर हिंदी डब के साथ उपलब्ध है।",
+        "explore_search_placeholder": "एनीमे का नाम या कीवर्ड खोजें (जैसे Naruto, Demon Slayer)...",
+        "explore_empty_title": "कोई गाइड नहीं मिला",
+        "explore_empty_desc": "आपके चुने गए फ़िल्टर या खोज शब्दों के अनुसार कोई परिणाम नहीं मिला। कृपया अन्य कीवर्ड या फ़िल्टर आज़माएँ।",
+        "explore_reset_all": "सभी फ़िल्टर रीसेट करें",
+        "saved_heading": "सेव किए गए एनीमे गाइड्स",
+        "saved_subtitle": "आपके द्वारा बाद में पढ़ने या देखने के लिए सहेजे गए सभी एनीमे स्ट्रीमिंग गाइड्स।",
+        "saved_empty_title": "आपकी सूची अभी खाली है",
+        "saved_empty_desc": "आपने अभी तक कोई गाइड सेव नहीं किया है। किसी भी गाइड के पेज पर 'सेव करें' बटन दबाकर उसे अपनी सूची में जोड़ें।",
+        "saved_explore_btn": "गाइड्स एक्सप्लोर करें →",
+        "label_orig_title": "मूल शीर्षक:",
+        "label_published": "प्रकाशित:",
+        "label_author": "लेखक:",
+        "bookmarked_state": "सेव किया गया",
+        "bookmark_action": "सेव करें",
+        "btn_edit": "संपादित करें",
+        "summary_heading": "संक्षेप में",
+        "toc_heading": "विषय सूची",
+        "where_to_watch_heading": "कहाँ देखें",
+        "btn_report_streaming": "स्ट्रीमिंग जानकारी अपडेट रिपोर्ट करें",
+        "status_available": "उपलब्ध",
+        "status_not_available": "उपलब्ध नहीं",
+        "dub_yes": "हिंदी डब: उपलब्ध",
+        "dub_no": "हिंदी डब: नहीं",
+        "label_last_checked": "अंतिम जाँच:",
+        "btn_visit_official": "आधिकारिक साइट देखें →",
+        "label_tags": "टैग्स:",
+        "legal_notice_label": "कानूनी सूचना:",
+        "legal_notice_text": "Hindi Anime Guide केवल आधिकारिक एवं वैध स्ट्रीमिंग प्लेटफॉर्म्स का संदर्भ देता है और किसी भी अनधिकृत स्रोत का समर्थन नहीं करता।",
+        "related_guides_heading": "संबंधित एनीमे गाइड्स",
+        "view_all_arrow": "सभी देखें →",
+        "join_discussion": "चर्चा में शामिल हों",
+        "comment_placeholder": "इस एनीमे गाइड के बारे में अपने विचार या सवाल लिखें...",
+        "commenting_as": "के रूप में टिप्पणी कर रहे हैं",
+        "btn_post_comment": "टिप्पणी पोस्ट करें →",
+        "comment_login_prompt": "चर्चा में भाग लेने के लिए कृपया लॉग इन करें और अपनी राय साझा करें।",
+        "btn_delete": "हटाएं",
+        "no_comments_title": "अभी तक कोई टिप्पणी नहीं — पहली टिप्पणी आप करें!",
+        "no_comments_subtitle": "इस एनीमे के बारे में अपनी राय, डब की गुणवत्ता या सुझाव साझा करें।",
+        "modal_report_title": "स्ट्रीमिंग अपडेट रिपोर्ट करें",
+        "modal_platform_label": "संबंधित प्लेटफॉर्म (वैकल्पिक)",
+        "modal_platform_placeholder": "उदा. प्लेटफॉर्म का नाम",
+        "modal_change_label": "क्या बदलाव आया है? *",
+        "modal_change_placeholder": "जैसे: अब नेटफ्लिक्स पर हिंदी डब उपलब्ध है, या लिंक काम नहीं कर रहा...",
+        "btn_cancel": "रद्द करें",
+        "btn_send_report": "रिपोर्ट भेजें",
+        "btn_go_home": "मुख्य पृष्ठ पर जाएं →",
+        "browse_categories_label": "श्रेणियों में खोजें:",
+        "nf_title": "पृष्ठ नहीं मिला",
+        "nf_desc": "शायद यह एनीमे गाइड किसी अन्य पते पर स्थानांतरित हो गई है या लिंक बदल दिया गया है। आप मुख्य पृष्ठ या नीचे दी गई श्रेणियों से खोज जारी रख सकते हैं।",
+        "profile_member_since": "सदस्यता:",
+        "profile_edit_btn": "प्रोफ़ाइल और सेटिंग्स संपादित करें",
+        "profile_stat_comments": "कुल टिप्पणियाँ",
+        "profile_stat_status": "खाता स्थिति",
+        "profile_status_suspended": "निलंबित",
+        "profile_status_active": "सक्रिय पाठक",
+        "profile_stat_lang": "भाषा",
+        "profile_lang_val": "हिंदी",
+        "profile_comments_heading": "आपकी टिप्पणियाँ और चर्चाएँ",
+        "profile_on_article": "लेख पर:",
+        "profile_no_comments_title": "आपने अभी तक कोई टिप्पणी नहीं की है",
+        "profile_no_comments_desc": "समुदाय चर्चा में भाग लेने के लिए होमपेज पर किसी भी एनीमे गाइड पर जाएँ!",
+        "twofa_backup_title": "बैकअप कोड से लॉगिन",
+        "twofa_backup_subtitle": "अपना 10-अंकीय बैकअप कोड दर्ज करें। प्रत्येक कोड केवल एक बार काम करता है।",
+        "twofa_title": "दो-चरणीय सत्यापन",
+        "twofa_subtitle": "अपने ऑथेंटिकेटर ऐप में दिखाया 6-अंकीय कोड दर्ज करें।",
+        "twofa_backup_hint": "बिना डैश के भी टाइप कर सकते हैं।",
+        "twofa_totp_hint": "कोड हर 30 सेकंड में बदलता है।",
+        "twofa_remember_device": "यह डिवाइस याद रखें (30 दिन)",
+        "twofa_verify_btn": "सत्यापित करें",
+        "twofa_login_btn": "लॉगिन करें",
+        "twofa_use_totp": "← TOTP कोड से लॉगिन करें",
+        "twofa_use_backup": "बैकअप कोड से लॉगिन करें"
       },
       en: {
         "nav_home": "Home",
@@ -630,6 +722,9 @@
         "signup": "Sign Up",
         "logout": "Sign Out",
         "my_profile": "My Profile",
+        "admin_portal": "Admin Portal",
+        "articles_mgmt": "Articles Management",
+        "sample_notice": "Sample Content — Not for public distribution",
         "settings_title": "Account Settings",
         "settings_desc": "Manage your personal information, profile photo, password, and security preferences.",
         "nav_profile": "Profile Info",
@@ -649,10 +744,12 @@
         "bio_placeholder": "Tell us about your favorite anime...",
         "btn_save_changes": "Save Changes",
         "sec_lang_title": "Language Preference",
-        "sec_lang_subtitle": "Choose interface language. Selecting English changes navigation and settings to English, while articles remain in Hindi.",
+        "sec_lang_subtitle": "Choose interface and content language. Selecting English translates all navigation, settings, and articles to English.",
         "lang_desc_hi": "Default language — site and guides in Hindi.",
-        "lang_desc_en": "All UI, settings & menus in English; articles remain in Hindi.",
+        "lang_desc_en": "All UI, settings, menus & articles translated to English.",
         "sec_pwd_title": "Change Account Password",
+        "sec_set_pwd_title": "Set Password",
+        "sec_google_pwd_note": "You signed up with Google. You can set a password to log in with either Google or email and password.",
         "label_curr_pwd": "Current Password *",
         "placeholder_curr_pwd": "Enter current password",
         "label_new_pwd": "New Password (min 8 chars) *",
@@ -667,6 +764,10 @@
         "pwd_req_4": "At least 1 special character (!@#$%^&* etc.)",
         "pwd_req_5": "Must differ from current password",
         "btn_update_pwd": "Update Password",
+        "trusted_devices_title": "Trusted Devices",
+        "trusted_devices_desc": "These devices can sign in without email OTP verification (valid for 30 days).",
+        "no_trusted_devices": "No trusted devices currently saved.",
+        "btn_remove_device": "Remove",
         "export_title": "Export Data",
         "export_desc": "Download your comments and profile info as a JSON file.",
         "btn_export_json": "Export JSON",
@@ -674,6 +775,8 @@
         "danger_desc": "Permanently delete your profile, username, and comments. This action cannot be undone.",
         "label_danger_pwd": "Enter your password to confirm deletion",
         "placeholder_danger_pwd": "Enter password",
+        "label_confirm_delete_text": "Type DELETE to confirm account deletion",
+        "hint_google_delete": "Logged in with Google, so no password is required. Enter DELETE to confirm.",
         "btn_delete_account": "Permanently Delete Account",
         "tag_category": "Category",
         "empty_cat_msg": "Articles in this category coming soon.",
@@ -715,11 +818,93 @@
         "search_btn": "Search",
         "reset_filters": "Clear Filters",
         "filter_hindi_dub": "Hindi Dub Only",
+        "badge_hindi_dub": "Hindi Dub",
+        "badge_hindi_dub_avail": "Hindi Dub Available",
+        "badge_guide": "Guide",
         "filter_all_platforms": "All Platforms",
         "filter_all_categories": "All Categories",
         "sort_label": "Sort:",
         "sort_latest": "Latest",
-        "sort_az": "Name A–Z"
+        "sort_az": "Name A–Z",
+        "home_empty_title": "First Articles Coming Soon",
+        "home_empty_desc": "Official streaming guides and Hindi dub references are being prepared.",
+        "latest_guides": "Latest Guides",
+        "home_legal_title": "Legal Anime Streaming Guide",
+        "home_legal_desc": "Always use official and licensed streaming services to watch anime in India. Verify current availability, audio languages, and catalog directly on the official platform website or app.",
+        "explore_heading": "Anime Guide Explorer",
+        "explore_subtitle": "Find your favorite anime and quickly check which official platform streams it in India with Hindi dub.",
+        "explore_search_placeholder": "Search anime title or keyword (e.g., Naruto, Demon Slayer)...",
+        "explore_empty_title": "No Guides Found",
+        "explore_empty_desc": "No results matched your selected filters or search keywords. Please try another keyword or clear filters.",
+        "explore_reset_all": "Reset All Filters",
+        "saved_heading": "Saved Anime Guides",
+        "saved_subtitle": "All anime streaming guides bookmarked by you to read or watch later.",
+        "saved_empty_title": "Your Saved List is Empty",
+        "saved_empty_desc": "You haven't saved any guides yet. Click the 'Save' button on any guide page to add it to your list.",
+        "saved_explore_btn": "Explore Guides →",
+        "label_orig_title": "Original Title:",
+        "label_published": "Published:",
+        "label_author": "Author:",
+        "bookmarked_state": "Saved",
+        "bookmark_action": "Save",
+        "btn_edit": "Edit",
+        "summary_heading": "In Brief",
+        "toc_heading": "Table of Contents",
+        "where_to_watch_heading": "Where to Watch",
+        "btn_report_streaming": "Report Streaming Info Update",
+        "status_available": "Available",
+        "status_not_available": "Not Available",
+        "dub_yes": "Hindi Dub: Available",
+        "dub_no": "Hindi Dub: Not Available",
+        "label_last_checked": "Last Checked:",
+        "btn_visit_official": "Visit Official Site →",
+        "label_tags": "Tags:",
+        "legal_notice_label": "Legal Notice:",
+        "legal_notice_text": "Hindi Anime Guide only references official and legal streaming platforms and does not endorse any unauthorized sources.",
+        "related_guides_heading": "Related Anime Guides",
+        "view_all_arrow": "View All →",
+        "join_discussion": "Join the Discussion",
+        "comment_placeholder": "Share your thoughts or questions about this anime guide...",
+        "commenting_as": "Commenting as",
+        "btn_post_comment": "Post Comment →",
+        "comment_login_prompt": "Please log in to join the discussion and share your thoughts.",
+        "btn_delete": "Delete",
+        "no_comments_title": "No comments yet — be the first to comment!",
+        "no_comments_subtitle": "Share your thoughts, dub quality feedback, or suggestions about this anime.",
+        "modal_report_title": "Report Streaming Update",
+        "modal_platform_label": "Related Platform (Optional)",
+        "modal_platform_placeholder": "e.g., Platform Name",
+        "modal_change_label": "What has changed? *",
+        "modal_change_placeholder": "e.g., Hindi dub is now available on Netflix, or link is broken...",
+        "btn_cancel": "Cancel",
+        "btn_send_report": "Send Report",
+        "btn_go_home": "Go to Homepage →",
+        "browse_categories_label": "Browse Categories:",
+        "nf_title": "Page Not Found",
+        "nf_desc": "This anime guide may have moved to another address or its link has changed. You can continue exploring from the homepage or categories below.",
+        "profile_member_since": "Member since",
+        "profile_edit_btn": "Edit Profile & Settings",
+        "profile_stat_comments": "Comments Posted",
+        "profile_stat_status": "Account Status",
+        "profile_status_suspended": "Suspended",
+        "profile_status_active": "Active Reader",
+        "profile_stat_lang": "Language",
+        "profile_lang_val": "English",
+        "profile_comments_heading": "Your Comments & Discussions",
+        "profile_on_article": "On article:",
+        "profile_no_comments_title": "You haven't posted any comments yet",
+        "profile_no_comments_desc": "Visit any anime guide on the homepage to join the community discussion!",
+        "twofa_backup_title": "Login with Backup Code",
+        "twofa_backup_subtitle": "Enter your 10-digit backup code. Each code works only once.",
+        "twofa_title": "Two-Factor Verification",
+        "twofa_subtitle": "Enter the 6-digit code shown in your authenticator app.",
+        "twofa_backup_hint": "You can also type without dashes.",
+        "twofa_totp_hint": "Code refreshes every 30 seconds.",
+        "twofa_remember_device": "Remember this device (30 days)",
+        "twofa_verify_btn": "Verify",
+        "twofa_login_btn": "Log In",
+        "twofa_use_totp": "← Login with TOTP Code",
+        "twofa_use_backup": "Login with Backup Code"
       }
     };
 
@@ -757,6 +942,27 @@
       'dub-vs-sub': 'डब vs सब'
     };
 
+    const HINDI_MONTH_INDEX = {
+      'जनवरी': 0, 'फ़रवरी': 1, 'फरवरी': 1, 'मार्च': 2, 'अप्रैल': 3,
+      'मई': 4, 'जून': 5, 'जुलाई': 6, 'अगस्त': 7,
+      'सितंबर': 8, 'अक्टूबर': 9, 'नवंबर': 10, 'दिसंबर': 11
+    };
+
+    function formatDateForLang(rawHindiDate, lang) {
+      if (!rawHindiDate || lang !== 'en') return rawHindiDate;
+      const parts = rawHindiDate.trim().split(/\s+/);
+      if (parts.length === 3 && HINDI_MONTH_INDEX[parts[1]] !== undefined) {
+        const day = parseInt(parts[0], 10);
+        const monthIdx = HINDI_MONTH_INDEX[parts[1]];
+        const year = parseInt(parts[2], 10);
+        try {
+          const monthEn = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(year, monthIdx, 1));
+          return day + ' ' + monthEn + ' ' + year;
+        } catch (e) {}
+      }
+      return rawHindiDate;
+    }
+
     const IS_AUTHENTICATED = {{ 'true' if user else 'false' }};
     const CURRENT_USER_EMAIL = "{{ user.email if user else '' }}";
 
@@ -781,7 +987,6 @@
     };
 
     window.getSiteLang = function() {
-      // 1. Check URL query param ?lang=en or ?lang=hi first
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const langParam = urlParams.get('lang');
@@ -792,7 +997,6 @@
         }
       } catch (e) {}
 
-      // 2. Check stored preference
       try {
         const userPref = (CURRENT_USER_EMAIL ? localStorage.getItem('user_lang_' + CURRENT_USER_EMAIL) : null) || localStorage.getItem('site_lang');
         if (userPref === 'en' || userPref === 'hi') return userPref;
@@ -801,7 +1005,6 @@
       const match = document.cookie.match(/(?:^|;\s*)site_lang=([^;]+)/);
       if (match && (match[1] === 'en' || match[1] === 'hi')) return match[1];
 
-      // Default for every visitor is Hindi
       return 'hi';
     };
 
@@ -825,12 +1028,135 @@
       });
     };
 
+    // Fast Client-Side Neural Translation for Dynamic Content (Articles, Summaries, Markdown Body, Notes)
+    const _txCache = {};
+    async function fetchTranslation(text, sl, tl) {
+      const clean = text.trim();
+      if (!clean) return text;
+      const cacheKey = sl + '_' + tl + '_' + clean;
+      if (_txCache[cacheKey]) return _txCache[cacheKey];
+      try {
+        const stored = sessionStorage.getItem('tx_' + cacheKey);
+        if (stored) {
+          _txCache[cacheKey] = stored;
+          return stored;
+        }
+      } catch (e) {}
+
+      try {
+        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + sl + '&tl=' + tl + '&dt=t&q=' + encodeURIComponent(clean);
+        const resp = await fetch(url);
+        if (!resp.ok) return text;
+        const data = await resp.json();
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+          const translated = data[0].map(function(part) { return part && part[0] ? part[0] : ''; }).join('');
+          if (translated) {
+            _txCache[cacheKey] = translated;
+            try { sessionStorage.setItem('tx_' + cacheKey, translated); } catch (e) {}
+            return translated;
+          }
+        }
+      } catch (e) {}
+      return text;
+    }
+
+    let _txVersion = 0;
+    window.translateDynamicContent = async function(lang) {
+      const myVersion = ++_txVersion;
+      const isEn = (lang === 'en');
+
+      // Handle elements with data-i18n-hi and data-i18n-en (e.g., security.html)
+      document.querySelectorAll('[data-i18n-hi], [data-i18n-en]').forEach(function(el) {
+        const val = isEn ? el.getAttribute('data-i18n-en') : el.getAttribute('data-i18n-hi');
+        if (val) el.textContent = val;
+      });
+
+      // Gather all text nodes across the entire page (#main-content, modals, notifications)
+      const containers = document.querySelectorAll('#main-content, #report-modal, #notif-list, .i18n-dynamic, .prose-hindi, .toc-wrapper');
+      const textNodes = [];
+
+      containers.forEach(function(container) {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+        let n;
+        while ((n = walker.nextNode())) {
+          if (n.parentElement && (n.parentElement.tagName === 'SCRIPT' || n.parentElement.tagName === 'STYLE' || n.parentElement.closest('.notranslate') || n.parentElement.hasAttribute('data-i18n'))) {
+            continue;
+          }
+          const val = n.nodeValue;
+          if (!val || !val.trim()) continue;
+          if (n._origText === undefined) {
+            n._origText = val;
+          }
+          textNodes.push(n);
+        }
+      });
+
+      if (!isEn) {
+        // Restore original Hindi text immediately in 0ms, and translate any English-only text nodes to Hindi!
+        textNodes.forEach(function(n) {
+          if (n._origText !== undefined) {
+            n.nodeValue = n._origText;
+          }
+        });
+        const enNodesToHi = textNodes.filter(function(n) {
+          const t = n._origText ? n._origText.trim() : "";
+          return t.length > 2 && /[A-Za-z]{3,}/.test(t) && !/[\u0900-\u097F]/.test(t) && !/^(https?:|@[a-zA-Z0-9_]+|[0-9\s\/:.,+-]+)$/.test(t);
+        });
+        for (let j = 0; j < enNodesToHi.length; j += 8) {
+          if (myVersion !== _txVersion) return;
+          const batchHi = enNodesToHi.slice(j, j + 8);
+          await Promise.all(batchHi.map(async function(node) {
+            const orig = node._origText;
+            if (node._hiText) {
+              if (myVersion === _txVersion) node.nodeValue = node._hiText;
+              return;
+            }
+            const leading = (orig.match(/^\s*/) || [''])[0];
+            const trailing = (orig.match(/\s*$/) || [''])[0];
+            const translated = await fetchTranslation(orig, 'en', 'hi');
+            if (translated && translated !== orig.trim()) {
+              node._hiText = leading + translated + trailing;
+              if (myVersion === _txVersion) node.nodeValue = node._hiText;
+            }
+          }));
+        }
+        return;
+      }
+
+      // Translate Hindi text nodes to English in parallel batches
+      const nodesToTranslate = textNodes.filter(function(n) {
+        return /[\u0900-\u097F]/.test(n._origText);
+      });
+
+      const batchSize = 8;
+      for (let i = 0; i < nodesToTranslate.length; i += batchSize) {
+        if (myVersion !== _txVersion) return;
+        const batch = nodesToTranslate.slice(i, i + batchSize);
+        await Promise.all(batch.map(async function(node) {
+          const orig = node._origText;
+          if (node._enText) {
+            if (myVersion === _txVersion) node.nodeValue = node._enText;
+            return;
+          }
+          const leading = (orig.match(/^\s*/) || [''])[0];
+          const trailing = (orig.match(/\s*$/) || [''])[0];
+          const translated = await fetchTranslation(orig, 'hi', 'en');
+          if (translated && translated !== orig.trim()) {
+            node._enText = leading + translated + trailing;
+            if (myVersion === _txVersion) {
+              node.nodeValue = node._enText;
+            }
+          }
+        }));
+      }
+    };
+
     window.applySiteLanguage = function(lang) {
       if (lang !== 'en' && lang !== 'hi') lang = 'hi';
       const isEn = (lang === 'en');
-      const dict = window.I18N[lang] || window.I18N.hi || window.I18N.en;
+      const dict = window.I18N[lang] || window.I18N.hi;
 
-      // Toggle multi-language blocks (like on legal/footer pages)
+      // Toggle multi-language blocks (like on legal pages)
       document.querySelectorAll('[data-lang-block]').forEach(function(el) {
         if (el.getAttribute('data-lang-block') === lang) {
           el.removeAttribute('hidden');
@@ -847,11 +1173,8 @@
         document.title = legalTitleSpan.textContent.trim() + " | {{ site.name }}";
       }
 
-      // 1. Text elements with data-i18n
+      // 1. All elements with data-i18n
       document.querySelectorAll('[data-i18n]').forEach(function(el) {
-        // Strict guard: NEVER translate inside article body, title, dek, or user comments
-        if (el.closest('.article-main-col') && !el.closest('.comments-header')) return;
-        if (el.closest('.article-detail-wrap') && !el.closest('.comments-header')) return;
         const key = el.getAttribute('data-i18n');
         if (dict[key]) {
           if (dict[key].indexOf('<') !== -1) {
@@ -870,12 +1193,78 @@
         }
       });
 
-      // 3. Left Sidebar Menu categories
+      // 3. Category tags & pills across all pages ([data-cat-tag])
+      document.querySelectorAll('[data-cat-tag]').forEach(function(el) {
+        const raw = el.getAttribute('data-cat-tag') || el.textContent.trim();
+        el.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
+      });
+
+      // 4. Typographic Covers with data-title-hi / data-title-en
+      document.querySelectorAll('[data-title-hi]').forEach(function(el) {
+        const hiTitle = el.getAttribute('data-title-hi') || '';
+        const enTitle = el.getAttribute('data-title-en') || '';
+        const catFallback = el.getAttribute('data-cat-fallback') || '';
+        if (isEn) {
+          if (enTitle) {
+            el.textContent = enTitle;
+          } else if (catFallback && CATEGORIES_EN[catFallback]) {
+            el.textContent = CATEGORIES_EN[catFallback];
+          }
+        } else if (hiTitle) {
+          el.textContent = hiTitle;
+        }
+      });
+
+      // 5. Formatted Dates (.i18n-date)
+      document.querySelectorAll('.i18n-date').forEach(function(el) {
+        const rawDate = el.getAttribute('data-raw-date') || el.textContent.trim();
+        el.textContent = formatDateForLang(rawDate, lang);
+      });
+
+      // 6. Dynamic counters & reading times
+      document.querySelectorAll('[data-reading-mins]').forEach(function(el) {
+        const mins = el.getAttribute('data-reading-mins') || '4';
+        el.textContent = isEn ? (mins + ' min read') : (mins + ' मिनट');
+      });
+      document.querySelectorAll('[data-reading-mins-full]').forEach(function(el) {
+        const mins = el.getAttribute('data-reading-mins-full') || '4';
+        el.textContent = isEn ? (mins + ' min read') : (mins + ' मिनट पाठ');
+      });
+      document.querySelectorAll('[data-guides-count]').forEach(function(el) {
+        const cnt = el.getAttribute('data-guides-count') || '0';
+        el.textContent = isEn ? (cnt + (cnt === '1' ? ' guide available' : ' guides available')) : (cnt + ' गाइड उपलब्ध');
+      });
+      document.querySelectorAll('[data-results-count]').forEach(function(el) {
+        const cnt = el.getAttribute('data-results-count') || '0';
+        el.textContent = isEn ? ('Results (' + cnt + ')') : ('परिणाम (' + cnt + ')');
+      });
+      document.querySelectorAll('[data-saved-articles-count]').forEach(function(el) {
+        const cnt = el.getAttribute('data-saved-articles-count') || '0';
+        el.textContent = isEn ? ('Saved Articles (' + cnt + ')') : ('सहेजे गए लेख (' + cnt + ')');
+      });
+      document.querySelectorAll('[data-saved-guides-count]').forEach(function(el) {
+        const cnt = el.getAttribute('data-saved-guides-count') || '0';
+        el.textContent = isEn ? (cnt + (cnt === '1' ? ' guide saved' : ' guides saved')) : (cnt + ' गाइड सहेजे गए');
+      });
+      document.querySelectorAll('[data-comments-heading-count]').forEach(function(el) {
+        const cnt = el.getAttribute('data-comments-heading-count') || '0';
+        el.textContent = isEn ? ('Community Discussion (' + cnt + ')') : ('समुदाय चर्चा (' + cnt + ')');
+      });
+
+      // 7. TOC toggle button label on article page
+      const tocToggle = document.getElementById('toc-toggle-label');
+      if (tocToggle) {
+        const isHidden = tocToggle.textContent.indexOf('▼') !== -1;
+        tocToggle.textContent = isEn ? (isHidden ? 'Show ▼' : 'Hide ▲') : (isHidden ? 'दिखाएँ ▼' : 'छुपाएँ ▲');
+      }
+
+      // 8. Left Sidebar Menu categories
       document.querySelectorAll('.side-nav .menu a').forEach(function(link) {
         const span = link.querySelector('span');
         if (!span) return;
-        if (span.getAttribute('data-i18n') === 'nav_home') {
-          span.textContent = isEn ? 'Home' : 'होम';
+        const i18nKey = span.getAttribute('data-i18n');
+        if (i18nKey && dict[i18nKey] && !span.classList.contains('sidebar-cat-label')) {
+          span.textContent = dict[i18nKey];
           return;
         }
         if (!span.dataset.raw) {
@@ -885,7 +1274,7 @@
         span.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
       });
 
-      // 4. Category Page Elements
+      // 9. Category Page Elements
       document.querySelectorAll('.cat-page-name').forEach(function(el) {
         if (!el.dataset.raw) el.dataset.raw = el.getAttribute('data-cat-raw') || el.textContent.trim();
         const raw = el.dataset.raw;
@@ -900,34 +1289,7 @@
         el.textContent = isEn ? (count === '1' ? 'article' : 'articles') : 'लेख';
       });
 
-      // Fallback for category page headings / breadcrumbs if not matching class
-      const breadcrumbCat = document.querySelector('main nav span:last-of-type');
-      if (breadcrumbCat && !breadcrumbCat.classList.contains('cat-page-name')) {
-        const txt = breadcrumbCat.textContent.trim();
-        if (!breadcrumbCat.dataset.raw) breadcrumbCat.dataset.raw = txt;
-        const raw = breadcrumbCat.dataset.raw;
-        breadcrumbCat.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
-      }
-      const catH1 = document.querySelector('header h1');
-      if (catH1 && !catH1.classList.contains('cat-page-name') && !catH1.closest('.article-detail-wrap')) {
-        const txt = catH1.textContent.trim();
-        if (!catH1.dataset.raw) catH1.dataset.raw = txt;
-        const raw = catH1.dataset.raw;
-        catH1.textContent = isEn ? (CATEGORIES_EN[raw] || raw) : (CATEGORIES_HI[raw] || raw);
-      }
-      const secH2 = document.querySelector('.sec h2');
-      if (secH2 && !secH2.querySelector('.cat-page-name')) {
-        const txt = secH2.textContent.trim();
-        if (!secH2.dataset.raw) secH2.dataset.raw = txt;
-        const orig = secH2.dataset.raw;
-        Object.keys(CATEGORIES_EN).forEach(function(k) {
-          if (orig.indexOf(k) !== -1) {
-            secH2.textContent = isEn ? (CATEGORIES_EN[k] + ' Articles') : orig;
-          }
-        });
-      }
-
-      // 5. Theme toggle button label update
+      // 10. Theme toggle button label update
       const themeBtn = document.querySelector('.theme-toggle-btn');
       if (themeBtn) {
         const spans = themeBtn.querySelectorAll('span');
@@ -939,6 +1301,42 @@
 
       window.updateLangSwitcherUI(lang);
       document.documentElement.lang = isEn ? 'en' : 'hi';
+
+      // 11. Translate dynamic content (Article titles, summaries, body, TOC, etc.)
+      window.translateDynamicContent(lang);
+    };
+
+    function loadGoogleTranslate() {
+      if (window._gtLoaded) return;
+      window._gtLoaded = true;
+      const s = document.createElement('script');
+      s.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      s.async = true;
+      document.head.appendChild(s);
+    }
+
+    window.googleTranslateElementInit = function() {
+      try {
+        new google.translate.TranslateElement({
+          pageLanguage: 'hi',
+          includedLanguages: 'en,hi',
+          autoDisplay: false
+        }, 'google_translate_element');
+      } catch (e) {}
+
+      if (window.getSiteLang() === 'en') {
+        const checkInterval = setInterval(function() {
+          const combo = document.querySelector('.goog-te-combo');
+          if (combo) {
+            clearInterval(checkInterval);
+            if (combo.value !== 'en') {
+              combo.value = 'en';
+              combo.dispatchEvent(new Event('change'));
+            }
+          }
+        }, 120);
+        setTimeout(function() { clearInterval(checkInterval); }, 5000);
+      }
     };
 
     window.setLanguage = function(lang) {
@@ -952,6 +1350,36 @@
       document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
       window.applySiteLanguage(lang);
 
+      if (lang === 'en') {
+        document.cookie = "googtrans=/hi/en; path=/;";
+        document.cookie = "googtrans=/hi/en; path=/; domain=" + window.location.hostname + ";";
+        const parts = window.location.hostname.split('.');
+        if (parts.length > 2) {
+          document.cookie = "googtrans=/hi/en; path=/; domain=." + parts.slice(-2).join('.') + ";";
+        }
+        loadGoogleTranslate();
+        const combo = document.querySelector('.goog-te-combo');
+        if (combo && combo.value !== 'en') {
+          combo.value = 'en';
+          combo.dispatchEvent(new Event('change'));
+        }
+      } else {
+        document.cookie = "googtrans=; path=/; max-age=0;";
+        document.cookie = "googtrans=/hi/hi; path=/;";
+        document.cookie = "googtrans=; path=/; domain=" + window.location.hostname + "; max-age=0;";
+        document.cookie = "googtrans=/hi/hi; path=/; domain=" + window.location.hostname + ";";
+
+        const combo = document.querySelector('.goog-te-combo');
+        if (combo && combo.value !== 'hi') {
+          combo.value = 'hi';
+          combo.dispatchEvent(new Event('change'));
+        }
+        if (document.documentElement.classList.contains('translated-ltr') || document.documentElement.classList.contains('translated-rtl')) {
+          window.location.reload();
+          return;
+        }
+      }
+
       if (typeof window.updateSettingsLanguageUI === 'function') {
         window.updateSettingsLanguageUI(lang);
       }
@@ -961,9 +1389,17 @@
     (function() {
       const activeLang = window.getSiteLang();
       window.applySiteLanguage(activeLang);
+      if (activeLang === 'en') {
+        document.cookie = "googtrans=/hi/en; path=/;";
+        loadGoogleTranslate();
+      }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-          window.applySiteLanguage(window.getSiteLang());
+          const cur = window.getSiteLang();
+          window.applySiteLanguage(cur);
+          if (cur === 'en') {
+            loadGoogleTranslate();
+          }
         });
       }
     })();
@@ -1008,18 +1444,21 @@
         }
 
         if (list && data.notifications) {
+          const isEn = window.getSiteLang() === 'en';
           if (data.notifications.length === 0) {
-            list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted); font-size: 13px;">कोई नई सूचना नहीं है</div>';
+            const emptyMsg = isEn ? 'No new notifications' : 'कोई नई सूचना नहीं है';
+            list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted); font-size: 13px;" data-i18n="no_notifications">' + emptyMsg + '</div>';
           } else {
             list.innerHTML = data.notifications.map(function(n) {
               const bg = n.is_read ? 'transparent' : 'var(--badge-sub-bg)';
               const linkAttr = n.link ? 'href="' + n.link + '"' : '';
-              return '<a ' + linkAttr + ' style="display: block; padding: 10px 14px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); background: ' + bg + '; transition: background 0.15s;">' +
+              return '<a ' + linkAttr + ' class="i18n-dynamic" style="display: block; padding: 10px 14px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); background: ' + bg + '; transition: background 0.15s;">' +
                 '<div style="font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px;">' + (n.title || 'Notification') + '</div>' +
                 '<div style="font-size: 12px; color: var(--muted); line-height: 1.4;">' + (n.message || '') + '</div>' +
                 '<div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 4px;">' + (n.created_at || '') + '</div>' +
               '</a>';
             }).join('');
+            if (isEn) window.translateDynamicContent('en');
           }
         }
       } catch (e) {
@@ -1043,6 +1482,8 @@
       setInterval(loadNotifications, 45000);
     }
   </script>
+  <!-- Hidden Google Translate Element -->
+  <div id="google_translate_element" aria-hidden="true"></div>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
