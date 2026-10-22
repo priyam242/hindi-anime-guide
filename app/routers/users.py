@@ -1,5 +1,6 @@
 """Public user registration, login, profile, settings, comments."""
 from __future__ import annotations
+import logging
 import os
 import re
 import time
@@ -34,6 +35,7 @@ from ..utils import (
 from .admin import create_notification
 
 router = APIRouter(tags=["users"])
+_auth_log = logging.getLogger(__name__)
 
 
 # ---------- RATE LIMITING & SECURITY HELPERS ----------
@@ -392,7 +394,8 @@ async def auth_google_callback(request: Request):
     client = get_oauth_client()
     try:
         token = await client.google.authorize_access_token(request)
-    except Exception:
+    except Exception as exc:
+        _auth_log.error("Google authorize_access_token failed: %s - %s", type(exc).__name__, exc)
         return RedirectResponse(
             url=f"/auth/login?error={quote('Google प्रमाणीकरण विफल रहा। कृपया पुनः प्रयास करें।')}",
             status_code=303
@@ -402,7 +405,8 @@ async def auth_google_callback(request: Request):
     if not user_info:
         try:
             user_info = await client.google.parse_id_token(request, token)
-        except Exception:
+        except Exception as exc:
+            _auth_log.error("Google parse_id_token failed: %s - %s", type(exc).__name__, exc)
             user_info = None
 
     if not user_info:

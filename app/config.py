@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "noreply@animeguide.com"
 
+    # HTTPS Email APIs & Provider Selection
+    email_provider: str = ""        # "", "brevo", "resend", "smtp"; empty = auto-detect
+    brevo_api_key: str = ""
+    resend_api_key: str = ""
+    mail_from_email: str = ""
+    mail_from_name: str = "Hindi Anime Guide"
+
     # Device Trust (days to remember device and skip email OTP; 0 disables)
     otp_trust_device_days: int = 30
 
@@ -73,6 +80,16 @@ class Settings(BaseSettings):
             self.smtp_password = self.smtp_password.replace(" ", "").strip()
         if self.smtp_from:
             self.smtp_from = self.smtp_from.strip()
+        if self.email_provider:
+            self.email_provider = self.email_provider.strip().lower()
+        if self.brevo_api_key:
+            self.brevo_api_key = self.brevo_api_key.strip()
+        if self.resend_api_key:
+            self.resend_api_key = self.resend_api_key.strip()
+        if self.mail_from_email:
+            self.mail_from_email = self.mail_from_email.strip()
+        if self.mail_from_name:
+            self.mail_from_name = self.mail_from_name.strip()
         # Check DB_URL override for non-test environments
         if self.db_url:
             raw_db = self.db_url
@@ -127,6 +144,8 @@ class Settings(BaseSettings):
             self.smtp_password = ""
             self.google_client_id = ""
             self.google_client_secret = ""
+            self.brevo_api_key = ""
+            self.resend_api_key = ""
 
         return self
 

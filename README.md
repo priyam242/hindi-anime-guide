@@ -154,3 +154,32 @@ python -m pytest
    GOOGLE_CLIENT_SECRET="your-client-secret"
    PUBLIC_BASE_URL="http://127.0.0.1:8000"
    ```
+
+---
+
+## ☁️ Render Deployment (रेंडर पर डिप्लॉयमेंट)
+
+वेबसाइट को [Render](https://render.com/) (Web Service) पर डिप्लॉय करने के लिए आवश्यक सेटिंग्स:
+
+### 1. स्टार्ट कमांड (Start Command)
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+```
+
+### 2. पर्यावरण चर (Environment Variables)
+Render डैशबोर्ड में Environment टैब के अंतर्गत निम्न वेरिएबल्स सेट करें:
+- `ENV`: `production`
+- `APP_ENV`: `production`
+- `PUBLIC_BASE_URL`: `https://hindi-anime-guide.onrender.com`
+- `BREVO_API_KEY`: आपकी Brevo API Key
+- `MAIL_FROM_EMAIL`: आपका सत्यापित प्रेषक ईमेल (उदा. `contact@yourdomain.com`)
+- `GOOGLE_CLIENT_ID`: आपका Google OAuth क्लाइंट आईडी
+- `GOOGLE_CLIENT_SECRET`: आपका Google OAuth क्लाइंट सीक्रेट
+
+> **महत्वपूर्ण सूचना (SMTP ब्लॉकेज):** Render का फ्री प्लान आउटबाउंड SMTP पोर्ट्स (25, 465, 587) को ब्लॉक करता है। इसलिए ईमेल OTP और Google लॉगिन डिवाइस सत्यापन के लिए HTTPS API (पोर्ट 443) आधारित प्रदाता जैसे **Brevo** या **Resend** का उपयोग अनिवार्य है।
+
+### 3. Google OAuth Redirect URI
+[Google Cloud Console](https://console.cloud.google.com/) के Authorized redirect URIs में निम्न URL जोड़ें:
+```
+https://hindi-anime-guide.onrender.com/auth/google/callback
+```

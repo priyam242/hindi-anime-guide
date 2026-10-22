@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -104,6 +105,107 @@ def check_otp_rate_limits(
     return True, None, 0
 
 
+def resolve_email_provider(settings) -> str:
+    """Determine email provider ('brevo', 'resend', 'smtp', or '')."""
+    ep = (settings.email_provider or "").strip().lower()
+    if ep in ("brevo", "resend", "smtp"):
+        return ep
+    if (settings.brevo_api_key or "").strip():
+        return "brevo"
+    if (settings.resend_api_key or "").strip():
+        return "resend"
+    if (settings.smtp_host or "").strip():
+        return "smtp"
+    return ""
+
+
+def _sender_address(settings) -> tuple[str, str]:
+    """Resolve (sender_name, sender_email) from settings."""
+    sender_name = (settings.mail_from_name or "Hindi Anime Guide").strip()
+
+    if getattr(settings, "mail_from_email", None) and settings.mail_from_email.strip():
+        return sender_name, settings.mail_from_email.strip()
+
+    smtp_from = (settings.smtp_from or "").strip()
+    if smtp_from:
+        match = re.search(r'^(?:["\']?(.*?)["\']?\s+)?<([^>]+)>$', smtp_from)
+        if match:
+            parsed_name = match.group(1).strip() if match.group(1) else sender_name
+            parsed_email = match.group(2).strip()
+            return parsed_name or sender_name, parsed_email
+        if "@" in smtp_from:
+            return sender_name, smtp_from
+
+    smtp_user = (settings.smtp_user or "").strip()
+    if smtp_user and "@" in smtp_user:
+        return sender_name, smtp_user
+
+    return sender_name, smtp_user
+
+
+async def _send_via_http_api(
+    provider: str,
+    to_email: str,
+    subject: str,
+    plain_body: str,
+    html_body: str,
+) -> tuple[bool, Optional[str]]:
+    """Send transactional email via Brevo or Resend HTTP REST API."""
+    settings = get_settings()
+    sender_name, sender_email = _sender_address(settings)
+
+    if not sender_email:
+        logger.error(f"Cannot send email via {provider}: No sender email configured.")
+        return False, "ईमेल भेजने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            if provider == "brevo":
+                url = "https://api.brevo.com/v3/smtp/email"
+                headers = {
+                    "api-key": (settings.brevo_api_key or "").strip(),
+                    "accept": "application/json",
+                }
+                payload = {
+                    "sender": {"name": sender_name, "email": sender_email},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_body,
+                    "textContent": plain_body,
+                }
+                resp = await client.post(url, headers=headers, json=payload)
+            elif provider == "resend":
+                url = "https://api.resend.com/emails"
+                headers = {
+                    "Authorization": f"Bearer {(settings.resend_api_key or '').strip()}",
+                }
+                payload = {
+                    "from": f"{sender_name} <{sender_email}>",
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html_body,
+                    "text": plain_body,
+                }
+                resp = await client.post(url, headers=headers, json=payload)
+            else:
+                logger.error(f"Unknown HTTP email provider: {provider}")
+                return False, "ईमेल सेवा कॉन्फ़िगर नहीं है। कृपया एडमिन से संपर्क करें।"
+
+            if resp.status_code in (200, 201, 202):
+                return True, None
+
+            logger.error(
+                f"HTTP email delivery failed via {provider} (status {resp.status_code}): {resp.text[:300]}"
+            )
+            return False, "ईमेल भेजने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+
+    except Exception as exc:
+        logger.error(f"HTTP email delivery exception via {provider}: {type(exc).__name__} - {exc}")
+        return False, "ईमेल भेजने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+
+
+
 async def send_otp_email(to_email: str, code: str, purpose: str = "login") -> tuple[bool, Optional[str]]:
     """
     Send OTP email.
@@ -127,8 +229,10 @@ async def send_otp_email(to_email: str, code: str, purpose: str = "login") -> tu
         EMAIL_OUTBOX.append(record)
         return True, None
 
-    # 1. Dev Mode: print code to console when SMTP not configured
-    if not settings.smtp_host and not is_prod:
+    provider = resolve_email_provider(settings)
+
+    # 1. Dev Mode: print code to console when no provider configured
+    if not provider and not is_prod:
         print("\n" + "=" * 55)
         print(f" [DEV MODE OTP] Hindi Anime Guide")
         print(f" To: {to_email}")
@@ -138,10 +242,10 @@ async def send_otp_email(to_email: str, code: str, purpose: str = "login") -> tu
         print("=" * 55 + "\n", flush=True)
         return True, None
 
-    # 2. Production mode without SMTP: refuse to send
-    if not settings.smtp_host:
-        logger.error("Production mode: SMTP_HOST is not configured.")
-        return False, "ईमेल सेवा (SMTP) कॉन्फ़िगर नहीं है। कृपया एडमिन से संपर्क करें।"
+    # 2. Production mode without provider: refuse to send
+    if not provider:
+        logger.error("Production mode: No email provider configured.")
+        return False, "ईमेल सेवा कॉन्फ़िगर नहीं है। कृपया एडमिन से संपर्क करें।"
 
     # 3. Real SMTP transmission
     subject = f"{code} — Hindi Anime Guide सत्यापन कोड"
@@ -178,6 +282,10 @@ Hindi Anime Guide टीम
 </body>
 </html>"""
 
+    if provider in ("brevo", "resend"):
+        return await _send_via_http_api(provider, to_email, subject, plain_body, html_body)
+
+    # 3. Real SMTP transmission
     try:
         from email.message import EmailMessage
         msg = EmailMessage()
