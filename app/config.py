@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     public_base_url: str = "http://127.0.0.1:8000"
-    google_site_verification: str = ""
+    google_site_verification: str = "YV5XGsvZulzaCWZilyv4eJFv6yo_wpJTm963Uxk43lI"
 
     # SMTP Configuration for Email OTP
     smtp_host: str = ""
