@@ -450,7 +450,7 @@
                             body: formData
                         });
                         const data = await resp.json();
-                        if (resp.ok && data.success) {
+                        if (resp.ok && (data.success || data.ok)) {
                             this.resendMsg = data.message || 'नया कोड भेज दिया गया है।';
                             this.resendCooldown = data.cooldown || 60;
                             this.startTimer();

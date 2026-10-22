@@ -949,7 +949,7 @@ async def resend_otp(request: Request, csrf_token: Optional[str] = Form(None)):
             return RedirectResponse(url=f"/auth/verify-otp?error={quote(err_msg or 'कोड भेजने में विफल')}", status_code=303)
 
     if is_ajax:
-        return JSONResponse(content={"ok": True, "message": "सत्यापन कोड दोबारा भेज दिया गया है!"})
+        return JSONResponse(content={"ok": True, "success": True, "cooldown": 60, "message": "सत्यापन कोड दोबारा भेज दिया गया है!"})
     return RedirectResponse(url="/auth/verify-otp", status_code=303)
 
 
