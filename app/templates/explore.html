@@ -1,6 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Explore Anime - Hindi Anime Guide{% endblock %}
+{% block title %}Explore Anime Directory — Hindi Dubbed & Legal Streaming Platforms{% endblock %}
+
+{% block meta_description %}Filter and search all anime guides available in Hindi in India. Search by genre, platform (Crunchyroll, Netflix, JioCinema), and Hindi audio availability.{% endblock %}
+
+{% block extra_head %}
+<!-- OpenGraph / Social Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Anime Directory & Search — Hindi Anime Guide">
+<meta property="og:description" content="Discover anime streaming guides in Hindi across official platforms in India.">
+<meta property="og:url" content="{{ request.url }}">
+
+<!-- JSON-LD CollectionPage Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Anime Guide Explorer",
+  "description": "Discover legal anime streaming availability and Hindi dubbed titles in India.",
+  "url": "{{ request.url }}",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "{{ site.name }}",
+    "url": "{{ request.base_url }}"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
@@ -8,7 +34,7 @@
     <!-- Page Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-extrabold text-white mb-2">Discovery Hub</h1>
-        <p class="text-gray-400">Find your next favorite anime with Hindi filters.</p>
+        <p class="text-gray-400">Find your next favorite anime with Hindi dub & official streaming filters.</p>
     </div>
 
     <!-- Enhanced Filter Card -->
@@ -18,13 +44,13 @@
             <div class="explore-search-input-wrap">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <input type="text" name="search" value="{{ search_query }}" 
-                       placeholder="Search anime title or keywords..." 
+                       placeholder="Search anime title or keywords (e.g. Naruto, Solo Leveling)..." 
                        class="w-full bg-transparent border-none focus:ring-0 text-white pl-12 pr-4 py-3">
             </div>
 
             <!-- Filters Grid -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Category Select (Fixed Python Object Print Bug) -->
+                <!-- Category Select -->
                 <select name="category" class="bg-gray-800 border-gray-700 text-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">All Categories</option>
                     {% for cat in categories %}
@@ -64,14 +90,14 @@
                 <label class="flex items-center justify-center gap-3 bg-gray-800 border border-gray-700 rounded-xl cursor-pointer hover:bg-gray-750 transition-colors">
                     <input type="checkbox" name="hindi_dub" value="true" {% if hindi_dub_only %}checked{% endif %}
                            class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 bg-gray-900 border-gray-700">
-                    <span class="text-gray-300 font-medium">Hindi Dub Only</span>
+                    <span class="text-gray-300 font-medium text-sm">Hindi Dub Only</span>
                 </label>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex justify-end gap-3 pt-2">
-                <a href="/explore" class="px-6 py-2 text-gray-400 hover:text-white transition-colors">Reset</a>
-                <button type="submit" class="px-8 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-transform active:scale-95">
+                <a href="/explore" class="px-6 py-2 text-gray-400 hover:text-white transition-colors text-sm font-medium">Reset</a>
+                <button type="submit" class="px-8 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-transform active:scale-95 text-sm shadow-lg">
                     Apply Filters
                 </button>
             </div>
@@ -120,9 +146,9 @@
                     </div>
                     <h3 class="card-title">{{ anime.title }}</h3>
                     <div class="card-meta">
-                        <span><i class="far fa-star text-yellow-500 mr-1"></i> New</span>
+                        <span><i class="far fa-star text-yellow-500 mr-1"></i> Guide</span>
                         <span class="text-gray-600">|</span>
-                        <span>Guide Available</span>
+                        <span>Legal Stream</span>
                     </div>
                 </div>
             </div>

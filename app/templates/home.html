@@ -1,16 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Hindi Anime Guide{% endblock %}
+{% block title %}Hindi Anime Guide — India's Legal Anime Streaming & Hindi Dub Directory{% endblock %}
+
+{% block meta_description %}Find where to legally watch anime in Hindi in India. Complete list of Hindi dubbed anime on Crunchyroll, Netflix, JioCinema & YouTube with watch orders and guides.{% endblock %}
+
+{% block extra_head %}
+<!-- OpenGraph / Social Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hindi Anime Guide — Watch Anime in Hindi in India">
+<meta property="og:description" content="India's most trusted source for Hindi dubbed anime news, watch orders, and official streaming references.">
+<meta property="og:url" content="{{ request.url }}">
+
+<!-- JSON-LD Structured Data for Google Search Sitelinks & Organization -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.base_url }}#website",
+      "url": "{{ request.base_url }}",
+      "name": "{{ site.name }}",
+      "description": "India's Legal Anime Streaming & Hindi Dub Directory",
+      "inLanguage": "hi-IN",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ request.base_url }}explore?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ request.base_url }}#organization",
+      "name": "{{ site.name }}",
+      "url": "{{ request.base_url }}",
+      "logo": "{{ request.base_url }}favicon.ico",
+      "sameAs": [
+        "https://t.me/hindianimeguide"
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-12 pb-12">
     
     <!-- Hero Section -->
-    <section class="relative h-[500px] flex items-center justify-center overflow-hidden rounded-3xl mx-4 mt-6">
+    <section class="relative h-[500px] flex items-center justify-center overflow-hidden rounded-3xl mx-4 mt-6 shadow-2xl border border-gray-800">
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.alphacoders.com/131/1311545.jpeg');"></div>
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-black/60 to-black/40 backdrop-blur-[2px]"></div>
         <div class="relative z-10 text-center px-6 max-w-3xl">
-            <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4 inline-block">Premium Guides</span>
+            <span class="bg-indigo-600/90 backdrop-blur-md text-white text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-4 inline-block shadow-lg border border-indigo-400/30">
+                Premium Guides
+            </span>
             <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
                 Explore Anime in <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Hindi</span>
             </h1>
@@ -18,7 +65,7 @@
                 India's most trusted source for Hindi dubbed anime news, watch orders, and exclusive streaming guides.
             </p>
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="/explore" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full transition-all transform hover:scale-105">
+                <a href="/explore" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full transition-all transform hover:scale-105 shadow-lg shadow-indigo-600/30">
                     Start Exploring
                 </a>
                 <a href="/auth/register" class="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full backdrop-blur-sm border border-white/20 transition-all">
@@ -33,7 +80,7 @@
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-white">Popular Categories</h2>
         </div>
-        <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+        <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide smooth-touch-scroll">
             <a href="/explore" class="category-pill bg-indigo-600 border-indigo-600">All Anime</a>
             <a href="/explore?category=Action" class="category-pill">Action</a>
             <a href="/explore?category=Romance" class="category-pill">Romance</a>
@@ -44,12 +91,12 @@
         </div>
     </div>
 
-    <!-- Latest Guides Section (Updated Cards with Group class) -->
+    <!-- Latest Guides Section -->
     <section class="px-4">
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h2 class="text-2xl font-bold text-white">Latest Anime Guides</h2>
-                <p class="text-gray-400 text-sm">Fresh updates from the anime world</p>
+                <p class="text-gray-400 text-sm">Fresh updates from the anime world in India</p>
             </div>
             <a href="/explore" class="text-indigo-400 hover:text-indigo-300 font-medium text-sm flex items-center gap-1">
                 View All <i class="fas fa-arrow-right text-xs"></i>
@@ -88,13 +135,13 @@
         </div>
     </section>
 
-    <!-- Telegram Banner -->
-    <div class="mx-4 p-8 rounded-2xl bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 text-center">
+    <!-- Legal Advisory Banner -->
+    <div class="mx-4 p-8 rounded-2xl bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/20 text-center shadow-xl">
         <h3 class="text-xl font-bold text-white mb-2">Never miss a Hindi update!</h3>
-        <p class="text-gray-400 mb-6">Join 5,000+ fans on our official telegram channel.</p>
-        <button class="px-6 py-2 bg-[#229ED9] text-white rounded-lg font-bold hover:bg-[#1e8ec4] transition-colors">
-            Join Telegram
-        </button>
+        <p class="text-gray-400 mb-6 max-w-xl mx-auto text-sm">Get instant alerts when new anime episodes release with Hindi dubbing on official platforms.</p>
+        <a href="https://t.me/hindianimeguide" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#229ED9] hover:bg-[#1e8ec4] text-white rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg">
+            <i class="fab fa-telegram-plane"></i> Join Telegram
+        </a>
     </div>
 
 </div>
