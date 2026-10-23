@@ -1,8 +1,10 @@
 from __future__ import annotations
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session
 from .config import settings, STATIC_DIR, get_settings
 from .db import engine, init_db
@@ -24,8 +26,6 @@ async def lifespan(app: FastAPI):
     yield
 
 
-from starlette.middleware.sessions import SessionMiddleware
-
 app = FastAPI(
     title=settings.app_name,
     description=settings.app_description,
@@ -35,13 +35,70 @@ app = FastAPI(
     redoc_url=None,
 )
 
-# SessionMiddleware only for OAuth state/nonce management
+# ---------------------------------------------------------
+# PHASE 9: Performance Middleware (Order matters: last added = first executed)
+# ---------------------------------------------------------
+
+# 1. GZip Compression — HTML/CSS/JS size ~60-70% kam
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# 2. SessionMiddleware (OAuth state/nonce — existing, preserved)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key or "session-secret-key-fallback-32chars",
     same_site="lax",
     https_only=(settings.env.lower() == "production"),
 )
+
+
+@app.middleware("http")
+async def performance_and_security_headers(request: Request, call_next):
+    """
+    Phase 9:
+    - Long-term browser cache for static assets (CSS, JS, fonts, images)
+    - No-cache for dynamic HTML pages
+    - Lightweight security headers (AdSense + SEO friendly)
+    """
+    response = await call_next(request)
+    path = request.url.path.lower()
+
+    # --- Cache-Control for static / media assets ---
+    if path.startswith("/static/") or path.startswith("/media/"):
+        # Fonts, CSS, JS, images — 30 days immutable-style cache
+        if any(path.endswith(ext) for ext in (
+            ".css", ".js", ".woff2", ".woff", ".ttf", ".otf",
+            ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"
+        )):
+            response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=86400"
+    elif path in ("/favicon.ico", "/health"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    else:
+        # Dynamic HTML pages — always revalidate
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+
+    # --- Security / AdSense-friendly headers ---
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # Allow AdSense + own origin scripts; keep reasonably strict
+    # (Do not set a blocking CSP that breaks AdSense or Alpine.js)
+    if "Content-Security-Policy" not in response.headers:
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    return response
+
+
+@app.middleware("http")
+async def inject_user_context(request: Request, call_next):
+    """Make current user info available to all templates."""
+    user = await get_current_user(request)
+    request.state.user = user
+    response = await call_next(request)
+    return response
 
 
 @app.get("/docs", include_in_schema=False)
@@ -60,17 +117,6 @@ def get_openapi_endpoint():
         raise HTTPException(status_code=404, detail="Not Found")
     from fastapi.openapi.utils import get_openapi
     return get_openapi(title=cur.app_name, version="1.0.0", routes=app.routes)
-
-
-@app.middleware("http")
-async def inject_user_context(request: Request, call_next):
-    """Make current user info available to all templates."""
-    user = await get_current_user(request)
-    request.state.user = user
-    response = await call_next(request)
-    return response
-
-
 
 
 async def _custom_http_exception_handler(request: Request, exc):
@@ -101,6 +147,8 @@ async def _custom_http_exception_handler(request: Request, exc):
 app.add_exception_handler(404, _custom_http_exception_handler)
 app.add_exception_handler(500, _custom_http_exception_handler)
 app.add_exception_handler(Exception, _custom_http_exception_handler)
+
+# Static & Media mounts
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 from .storage import MEDIA_DIR
@@ -114,10 +162,11 @@ def favicon():
 
 @app.get("/health", tags=["System"])
 def health_check():
-    """Health check endpoint for monitoring."""
+    """Health check endpoint for monitoring (UptimeRobot / Render)."""
     return {"status": "healthy", "app": settings.app_name, "version": "1.0.0"}
 
 
+# Routers — all existing features preserved
 app.include_router(pages.router)
 app.include_router(admin.router)
 app.include_router(users.router)
