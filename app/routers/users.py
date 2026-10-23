@@ -796,8 +796,9 @@ async def post_verify_otp(
         session.add(otp_row)
         session.commit()
 
-        # Step 2: Handle user creation (signup) or lookup (login)
+        # Step 2: Handle user creation (signup), email update (email_change), or lookup (login)
         user: Optional[User1] = None
+
         if purpose == "signup":
             import json
             payload_data = {}
@@ -844,6 +845,73 @@ async def post_verify_otp(
                     notification_type="success",
                     link="/admin/users"
                 )
+
+        elif purpose == "email_change":
+            # ---------- EMAIL CHANGE: अनिवार्य OTP सत्यापन के बाद ही असली ईमेल अपडेट होता है ----------
+            import json
+            payload_data = {}
+            if otp_row.pending_payload:
+                try:
+                    payload_data = json.loads(otp_row.pending_payload)
+                except Exception:
+                    pass
+
+            owner_kind = payload_data.get("owner_kind", "user")
+            owner_id = payload_data.get("owner_id")
+
+            if not owner_id:
+                return RedirectResponse(
+                    url="/settings?error=" + quote("सत्र अमान्य है। कृपया पुनः प्रयास करें।") + "#profile",
+                    status_code=303,
+                )
+
+            account = session.get(Admin1, owner_id) if owner_kind == "admin" else session.get(User1, owner_id)
+            if not account:
+                return RedirectResponse(
+                    url="/settings?error=" + quote("खाता नहीं मिला।") + "#profile",
+                    status_code=303,
+                )
+
+            # Race-condition सुरक्षा: दोबारा uniqueness जाँचें
+            dup_user = session.exec(
+                select(User1).where(
+                    func.lower(User1.email) == email_clean,
+                    User1.id != (account.id if owner_kind == "user" else -1),
+                )
+            ).first()
+            dup_admin = session.exec(
+                select(Admin1).where(
+                    func.lower(Admin1.email) == email_clean,
+                    Admin1.id != (account.id if owner_kind == "admin" else -1),
+                )
+            ).first()
+            if dup_user or dup_admin:
+                return RedirectResponse(
+                    url="/settings?error=" + quote("यह ईमेल अब किसी और के द्वारा उपयोग में है।") + "#profile",
+                    status_code=303,
+                )
+
+            account.email = email_clean
+            account.updated_at = datetime.now(timezone.utc)
+            if owner_kind == "user":
+                account.email_verified = True
+            session.add(account)
+            session.commit()
+            session.refresh(account)
+
+            tv = getattr(account, "token_version", 1) or 1
+            token = create_access_token(
+                data={"sub": account.email, "name": account.name, "user_type": owner_kind},
+                expires_delta=timedelta(hours=24 * 7 if owner_kind == "user" else 24),
+                token_version=tv,
+            )
+            response = RedirectResponse(url="/settings?updated=1#profile", status_code=303)
+            clear_auth_cookie(response, "pre_2fa_token")
+            if owner_kind == "admin":
+                set_auth_cookie(response, token, cookie_name="admin_token", max_age=86400)
+            set_auth_cookie(response, token, cookie_name="auth_token", max_age=604800)
+            return response
+
         else:
             # login
             user = session.exec(select(User1).where(func.lower(User1.email) == email_clean)).first()
@@ -854,7 +922,7 @@ async def post_verify_otp(
             if not user.is_active:
                 return render_error_page("आपका खाता निष्क्रिय है", status_code=403)
 
-        # Step 3: Check if TOTP 2FA is enabled
+        # Step 3: Check if TOTP 2FA is enabled (signup / login only — email_change पहले ही return हो चुका है)
         if getattr(user, "totp_enabled", False):
             pre_token = create_pre2fa_token("user", user.id, user.email, scope="2fa_pending", next_url=target_next)
             response = RedirectResponse(url="/2fa/verify", status_code=303)
@@ -929,10 +997,10 @@ async def resend_otp(request: Request, csrf_token: Optional[str] = Form(None)):
 
     with Session(db.engine) as session:
         pending_payload = None
-        if purpose == "signup":
+        if purpose in ("signup", "email_change"):
             prev_row = session.exec(
                 select(EmailOtp)
-                .where(EmailOtp.email == email, EmailOtp.purpose == "signup")
+                .where(EmailOtp.email == email, EmailOtp.purpose == purpose)
                 .order_by(EmailOtp.created_at.desc())
             ).first()
             if prev_row:
@@ -1053,15 +1121,15 @@ async def user_settings_update(
     user_info = await require_user(request)
     if not user_info:
         return RedirectResponse(url="/auth/login", status_code=303)
-    
+
     clean_name = name.strip()
     clean_username = username.strip() if username else ""
     clean_email = email.strip().lower() if email else None
-    
+
     valid_name, err_name = validate_english_name(clean_name)
     if not valid_name:
         return RedirectResponse(url=f"/settings?error={quote(err_name)}#profile", status_code=303)
-    
+
     with Session(db.engine) as session:
         user = session.exec(select(User1).where(User1.email == user_info["email"])).first()
         is_regular_user = True
@@ -1070,33 +1138,19 @@ async def user_settings_update(
             is_regular_user = False
         if not user:
             return RedirectResponse(url="/auth/login", status_code=303)
-        
+
         if is_regular_user:
             valid_u, err_u = validate_username(clean_username)
             if not valid_u:
                 return RedirectResponse(url=f"/settings?error={quote(err_u)}#profile", status_code=303)
-            
+
             if clean_username != user.username:
                 existing = session.exec(select(User1).where(User1.username == clean_username, User1.id != user.id)).first()
                 if existing:
                     return RedirectResponse(url=f"/settings?error={quote('Username already taken')}#profile", status_code=303)
             user.username = clean_username
-        
-        # Email change validation
-        if clean_email and clean_email != user.email:
-            if "@" not in clean_email or "." not in clean_email or len(clean_email) < 5:
-                return RedirectResponse(url=f"/settings?error={quote('अमान्य ईमेल प्रारूप (Invalid email format)')}#profile", status_code=303)
-            
-            # Check unique email across users and admin
-            existing_user = session.exec(select(User1).where(User1.email == clean_email, User1.id != user.id)).first()
-            if existing_user:
-                return RedirectResponse(url=f"/settings?error={quote('यह ईमेल पता पहले से पंजीकृत है (Email already in use)')}#profile", status_code=303)
-            existing_admin = session.exec(select(Admin1).where(Admin1.email == clean_email)).first()
-            if existing_admin and (is_regular_user or existing_admin.id != user.id):
-                return RedirectResponse(url=f"/settings?error={quote('यह ईमेल पता पहले से पंजीकृत है (Email already in use)')}#profile", status_code=303)
-            
-            user.email = clean_email
 
+        # नाम / bio / avatar तुरंत अपडेट होते हैं — इनमें OTP की ज़रूरत नहीं
         user.name = clean_name
         user.bio = bio.strip()
         if avatar_url is not None:
@@ -1104,8 +1158,68 @@ async def user_settings_update(
         user.updated_at = datetime.now(timezone.utc)
         session.add(user)
         session.commit()
+        session.refresh(user)
 
-        # Refresh auth token cookie so user stays authenticated even if email was changed
+        email_change_requested = bool(clean_email and clean_email != user.email)
+
+        # ---------- ईमेल बदलने के लिए अनिवार्य OTP सत्यापन (बग फिक्स) ----------
+        if email_change_requested:
+            if "@" not in clean_email or "." not in clean_email or len(clean_email) < 5:
+                return RedirectResponse(
+                    url=f"/settings?error={quote('अमान्य ईमेल प्रारूप (Invalid email format)')}#profile",
+                    status_code=303,
+                )
+
+            owner_kind = "user" if is_regular_user else "admin"
+
+            existing_user = session.exec(
+                select(User1).where(
+                    func.lower(User1.email) == clean_email,
+                    User1.id != (user.id if is_regular_user else -1),
+                )
+            ).first()
+            existing_admin = session.exec(
+                select(Admin1).where(
+                    func.lower(Admin1.email) == clean_email,
+                    Admin1.id != (user.id if not is_regular_user else -1),
+                )
+            ).first()
+            if existing_user or existing_admin:
+                return RedirectResponse(
+                    url=f"/settings?error={quote('यह ईमेल पता पहले से पंजीकृत है (Email already in use)')}#profile",
+                    status_code=303,
+                )
+
+            import json
+            pending_payload = json.dumps({"owner_kind": owner_kind, "owner_id": user.id})
+
+            from ..email_otp import create_and_send_email_otp
+            from ..totp import create_pre2fa_token
+            client_ip = get_client_ip(request)
+            ok, err_msg, otp_row, code = await create_and_send_email_otp(
+                session, clean_email, purpose="email_change", pending_payload=pending_payload, ip=client_ip
+            )
+            if not ok:
+                return RedirectResponse(
+                    url=f"/settings?error={quote(err_msg or 'सत्यापन कोड भेजने में त्रुटि हुई')}#profile",
+                    status_code=303,
+                )
+
+            pre_token = create_pre2fa_token(
+                owner_kind,
+                user.id,
+                clean_email,
+                scope="otp_pending",
+                purpose="email_change",
+                next_url="/settings?updated=1#profile",
+            )
+            response = RedirectResponse(url="/auth/verify-otp", status_code=303)
+            set_auth_cookie(response, pre_token, cookie_name="pre_2fa_token", max_age=600)
+            # नोट: पुराना auth_token/admin_token cookie यहाँ बिल्कुल नहीं छेड़ा जा रहा —
+            # इसलिए OTP डिलीवर न होने की स्थिति में भी यूज़र लॉक आउट नहीं होगा।
+            return response
+
+        # ईमेल नहीं बदला गया — सिर्फ़ टोकन रिफ्रेश करें (नाम/username बदला हो सकता है)
         user_type = user_info.get("user_type", "user")
         tv = getattr(user, "token_version", 1) or 1
         token = create_access_token(
