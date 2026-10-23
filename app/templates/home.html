@@ -27,7 +27,7 @@
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "{{ request.base_url }}explore?search={search_term_string}"
+          "urlTemplate": "{{ request.base_url }}explore?q={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
@@ -81,13 +81,10 @@
             <h2 class="text-xl font-bold text-white">Popular Categories</h2>
         </div>
         <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide smooth-touch-scroll">
-            <a href="/explore" class="category-pill bg-indigo-600 border-indigo-600">All Anime</a>
-            <a href="/explore?category=Action" class="category-pill">Action</a>
-            <a href="/explore?category=Romance" class="category-pill">Romance</a>
-            <a href="/explore?category=Adventure" class="category-pill">Adventure</a>
-            <a href="/explore?category=Sci-Fi" class="category-pill">Sci-Fi</a>
-            <a href="/explore?category=Fantasy" class="category-pill">Fantasy</a>
-            <a href="/explore?category=Comedy" class="category-pill">Comedy</a>
+            <a href="/explore" class="category-pill bg-indigo-600 border-indigo-600 text-white">All Anime</a>
+            {% for cat in categories %}
+            <a href="/explore?category={{ cat.slug }}" class="category-pill">{{ cat.name_hi or cat.display_name or cat.name }}</a>
+            {% endfor %}
         </div>
     </div>
 
@@ -99,20 +96,20 @@
                 <p class="text-gray-400 text-sm">Fresh updates from the anime world in India</p>
             </div>
             <a href="/explore" class="text-indigo-400 hover:text-indigo-300 font-medium text-sm flex items-center gap-1">
-                View All <i class="fas fa-arrow-right text-xs"></i>
+                View All <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {% for anime in latest_animes %}
-            <a href="/anime/{{ anime.slug }}" class="anime-card group">
+            {% for article in articles %}
+            <a href="/article/{{ article.slug }}" class="anime-card group">
                 <div class="anime-card-image-wrap">
-                    {% if anime.is_hindi_dubbed %}
+                    {% if article.has_hindi_dub %}
                     <span class="badge-hindi">Hindi Dub</span>
                     {% endif %}
                     
-                    <img src="{{ anime.thumbnail_url or 'https://via.placeholder.com/300x400?text=No+Image' }}" 
-                         alt="{{ anime.title }}" 
+                    <img src="{{ article.cover_image or 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&h=400&fit=crop' }}" 
+                         alt="{{ article.title }}" 
                          class="anime-card-image"
                          loading="lazy">
                     
@@ -120,18 +117,22 @@
                     
                     <div class="card-content">
                         <div class="flex gap-1 mb-2">
-                            <span class="category-tag">{{ anime.category }}</span>
+                            <span class="category-tag">{{ article.category_name_hi or 'गाइड' }}</span>
                         </div>
-                        <h3 class="card-title">{{ anime.title }}</h3>
+                        <h3 class="card-title">{{ article.title }}</h3>
                         <div class="card-meta">
-                            <span><i class="far fa-calendar-alt mr-1"></i> {{ anime.created_at.strftime('%b %Y') }}</span>
-                            <span class="text-gray-600">|</span>
-                            <span><i class="fas fa-closed-captioning mr-1"></i> Sub/Dub</span>
+                            <span><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> {{ article.published_at.strftime('%b %Y') if article.published_at else '' }}</span>
                         </div>
                     </div>
                 </div>
             </a>
             {% endfor %}
+            
+            {% if not articles %}
+            <div class="col-span-full py-12 text-center text-gray-500">
+                <p>No guides published yet.</p>
+            </div>
+            {% endif %}
         </div>
     </section>
 
@@ -140,7 +141,8 @@
         <h3 class="text-xl font-bold text-white mb-2">Never miss a Hindi update!</h3>
         <p class="text-gray-400 mb-6 max-w-xl mx-auto text-sm">Get instant alerts when new anime episodes release with Hindi dubbing on official platforms.</p>
         <a href="https://t.me/hindianimeguide" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#229ED9] hover:bg-[#1e8ec4] text-white rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg">
-            <i class="fab fa-telegram-plane"></i> Join Telegram
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.21-1.12-.33-1.08-.7.02-.19.27-.39.75-.6 2.95-1.29 4.92-2.14 5.9-2.55 2.81-1.18 3.39-1.38 3.77-1.39.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/></svg>
+            Join Telegram
         </a>
     </div>
 
