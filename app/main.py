@@ -36,13 +36,11 @@ app = FastAPI(
 )
 
 # ---------------------------------------------------------
-# PHASE 9: Performance Middleware (Order matters: last added = first executed)
+# Performance & Security Middleware
 # ---------------------------------------------------------
 
-# 1. GZip Compression — HTML/CSS/JS size ~60-70% kam
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-# 2. SessionMiddleware (OAuth state/nonce — existing, preserved)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key or "session-secret-key-fallback-32chars",
@@ -54,17 +52,12 @@ app.add_middleware(
 @app.middleware("http")
 async def performance_and_security_headers(request: Request, call_next):
     """
-    Phase 9:
-    - Long-term browser cache for static assets (CSS, JS, fonts, images)
-    - No-cache for dynamic HTML pages
-    - Lightweight security headers (AdSense + SEO friendly)
+    Phase 9 & 10: Performance & AdSense Verification Headers
     """
     response = await call_next(request)
     path = request.url.path.lower()
 
-    # --- Cache-Control for static / media assets ---
     if path.startswith("/static/") or path.startswith("/media/"):
-        # Fonts, CSS, JS, images — 30 days immutable-style cache
         if any(path.endswith(ext) for ext in (
             ".css", ".js", ".woff2", ".woff", ".ttf", ".otf",
             ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"
@@ -72,20 +65,16 @@ async def performance_and_security_headers(request: Request, call_next):
             response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=86400"
-    elif path in ("/favicon.ico", "/health"):
+    elif path in ("/favicon.ico", "/health", "/ads.txt"):
         response.headers["Cache-Control"] = "public, max-age=86400"
     else:
-        # Dynamic HTML pages — always revalidate
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
 
-    # --- Security / AdSense-friendly headers ---
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    # Allow AdSense + own origin scripts; keep reasonably strict
-    # (Do not set a blocking CSP that breaks AdSense or Alpine.js)
     if "Content-Security-Policy" not in response.headers:
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
@@ -160,13 +149,22 @@ def favicon():
     return FileResponse(str(STATIC_DIR / "favicon.svg"), media_type="image/svg+xml")
 
 
+@app.get("/ads.txt", include_in_schema=False)
+def ads_txt():
+    """Serves ads.txt for Google AdSense Crawler Verification."""
+    ads_file = STATIC_DIR / "ads.txt"
+    if ads_file.exists():
+        return FileResponse(str(ads_file), media_type="text/plain")
+    return Response(content="google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0\n", media_type="text/plain")
+
+
 @app.get("/health", tags=["System"])
 def health_check():
-    """Health check endpoint for monitoring (UptimeRobot / Render)."""
+    """Health check endpoint for UptimeRobot keep-alive."""
     return {"status": "healthy", "app": settings.app_name, "version": "1.0.0"}
 
 
-# Routers — all existing features preserved
+# Routers
 app.include_router(pages.router)
 app.include_router(admin.router)
 app.include_router(users.router)
