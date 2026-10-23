@@ -1,167 +1,101 @@
 {% extends "base.html" %}
 
-{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}
+{% block title %}Home - Hindi Anime Guide{% endblock %}
 
 {% block content %}
-<main class="wrap" style="padding-top: 0; padding-bottom: 56px;">
-
-  {% if not articles %}
-  <!-- ═══ EMPTY STATE ═══ -->
-  <div class="home-empty-state">
-    <div class="home-empty-icon">🎌</div>
-    <h2 data-i18n="home_empty_title">पहले लेख जल्द आ रहे हैं</h2>
-    <p data-i18n="home_empty_desc">आधिकारिक स्ट्रीमिंग गाइड और हिंदी डब संदर्भ तैयार किए जा रहे हैं।</p>
-    <a href="/explore" class="home-cta-btn" data-i18n="nav_explore">एक्सप्लोर करें →</a>
-  </div>
-  {% else %}
-
-  <!-- ═══ HERO SECTION ═══ -->
-  {% if featured_article %}
-  <section class="hero hero-premium">
-
-    <!-- Lead Featured Article -->
-    <a class="lead" href="/article/{{ featured_article.slug }}">
-      {% if featured_article.cover_image %}
-      <div class="cover-media hero-cover-main" style="position: relative;">
-        <img src="{{ featured_article.cover_image }}" alt="{{ featured_article.title }}" loading="eager" fetchpriority="high" width="600" height="338">
-        <div class="hero-cover-overlay"></div>
-      </div>
-      {% else %}
-      <div class="cover c-{{ featured_article.category_cover_color }} hero-typographic" data-title-hi="{{ featured_article.anime_title_hi if featured_article.anime_title_hi else featured_article.category_name_hi }}" data-title-en="{{ featured_article.anime_title_en if featured_article.anime_title_en else '' }}" data-cat-fallback="{{ featured_article.category_name_hi }}">
-        {{ featured_article.anime_title_hi if featured_article.anime_title_hi else featured_article.category_name_hi }}
-      </div>
-      {% endif %}
-
-      <div class="hero-lead-content">
-        {% if featured_article.is_featured %}
-        <span class="hero-featured-badge">⭐ फीचर्ड गाइड</span>
-        {% endif %}
-        <h1 class="i18n-dynamic">{{ featured_article.title }}</h1>
-        {% if featured_article.summary %}
-        <p class="hero-summary i18n-dynamic">{{ featured_article.summary }}</p>
-        {% endif %}
-        <div class="meta hero-meta">
-          {% if featured_article.categories and featured_article.categories|length > 0 %}
-            {% for cat in featured_article.categories %}
-              <span class="tag" data-cat-tag="{{ cat.display_name or cat.name_hi or cat.name }}">{{ cat.display_name or cat.name_hi or cat.name }}</span>
-            {% endfor %}
-          {% else %}
-            <span class="tag" data-cat-tag="{{ featured_article.category_name_hi }}">{{ featured_article.category_name_hi }}</span>
-          {% endif %}
-          {% if featured_article.has_hindi_dub %}
-          <span class="badge-dub"><svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="badge_hindi_dub">हिंदी डब</span></span>
-          {% endif %}
-          <span data-reading-mins="{{ featured_article.reading_time_minutes or 4 }}">{{ featured_article.reading_time_minutes or 4 }} मिनट</span>
-        </div>
-      </div>
-    </a>
-
-    <!-- Side Articles -->
-    <div class="side">
-      {% for a in side_articles %}
-        <a href="/article/{{ a.slug }}">
-          {% if a.cover_image %}
-          <div class="cover-media" style="aspect-ratio: 1; border-radius: 6px;">
-            <img src="{{ a.cover_image }}" alt="{{ a.title }}" loading="lazy">
-          </div>
-          {% else %}
-          <div class="cover c-{{ a.category_cover_color }}" data-title-hi="{{ a.anime_title_hi if a.anime_title_hi else a.category_name_hi }}" data-title-en="{{ a.anime_title_en if a.anime_title_en else '' }}" data-cat-fallback="{{ a.category_name_hi }}">
-            {{ a.anime_title_hi if a.anime_title_hi else a.category_name_hi }}
-          </div>
-          {% endif %}
-          <div>
-            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;">
-              {% if a.categories and a.categories|length > 0 %}
-                {% for cat in a.categories[:2] %}
-                  <span class="tag" data-cat-tag="{{ cat.display_name or cat.name_hi or cat.name }}">{{ cat.display_name or cat.name_hi or cat.name }}</span>
-                {% endfor %}
-              {% else %}
-                <span class="tag" data-cat-tag="{{ a.category_name_hi }}">{{ a.category_name_hi }}</span>
-              {% endif %}
-              {% if a.has_hindi_dub %}
-              <span class="badge-dub" style="font-size: 10px; padding: 2px 6px;"><svg class="icon" width="11" height="11" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="badge_hindi_dub">हिंदी डब</span></span>
-              {% endif %}
-            </div>
-            <h3 class="i18n-dynamic">{{ a.title }}</h3>
-            <p class="meta" data-reading-mins="{{ a.reading_time_minutes or 4 }}">
-              {{ a.reading_time_minutes or 4 }} मिनट
+<div class="space-y-12 pb-12">
+    
+    <!-- Hero Section -->
+    <section class="relative h-[500px] flex items-center justify-center overflow-hidden rounded-3xl mx-4 mt-6">
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.alphacoders.com/131/1311545.jpeg');"></div>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+        <div class="relative z-10 text-center px-6 max-w-3xl">
+            <span class="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4 inline-block">Premium Guides</span>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
+                Explore Anime in <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Hindi</span>
+            </h1>
+            <p class="text-lg text-gray-300 mb-8 leading-relaxed">
+                India's most trusted source for Hindi dubbed anime news, watch orders, and exclusive streaming guides.
             </p>
-          </div>
-        </a>
-      {% endfor %}
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="/explore" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full transition-all transform hover:scale-105">
+                    Start Exploring
+                </a>
+                <a href="/auth/register" class="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full backdrop-blur-sm border border-white/20 transition-all">
+                    Join Community
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Quick Links -->
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-white">Popular Categories</h2>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+            <a href="/explore" class="category-pill bg-indigo-600 border-indigo-600">All Anime</a>
+            <a href="/explore?category=Action" class="category-pill">Action</a>
+            <a href="/explore?category=Romance" class="category-pill">Romance</a>
+            <a href="/explore?category=Adventure" class="category-pill">Adventure</a>
+            <a href="/explore?category=Sci-Fi" class="category-pill">Sci-Fi</a>
+            <a href="/explore?category=Fantasy" class="category-pill">Fantasy</a>
+            <a href="/explore?category=Comedy" class="category-pill">Comedy</a>
+        </div>
     </div>
 
-  </section>
-  {% endif %}
+    <!-- Latest Guides Section (Updated Cards with Group class) -->
+    <section class="px-4">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-white">Latest Anime Guides</h2>
+                <p class="text-gray-400 text-sm">Fresh updates from the anime world</p>
+            </div>
+            <a href="/explore" class="text-indigo-400 hover:text-indigo-300 font-medium text-sm flex items-center gap-1">
+                View All <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+        </div>
 
-  <!-- ═══ CATEGORY PILLS ROW ═══ -->
-  {% if categories and categories|length > 0 %}
-  <section class="home-categories-row">
-    <div class="home-categories-scroll">
-      {% for cat in categories %}
-      <a href="/category/{{ cat.slug }}" class="home-cat-pill {% if active_nav == cat.slug %}on{% endif %}">
-        <span data-cat-tag="{{ cat.name_hi }}">{{ cat.name_hi }}</span>
-      </a>
-      {% endfor %}
-      <a href="/explore" class="home-cat-pill home-cat-pill-explore">
-        <span data-i18n="nav_explore">एक्सप्लोर →</span>
-      </a>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {% for anime in latest_animes %}
+            <a href="/anime/{{ anime.slug }}" class="anime-card group">
+                <div class="anime-card-image-wrap">
+                    {% if anime.is_hindi_dubbed %}
+                    <span class="badge-hindi">Hindi Dub</span>
+                    {% endif %}
+                    
+                    <img src="{{ anime.thumbnail_url or 'https://via.placeholder.com/300x400?text=No+Image' }}" 
+                         alt="{{ anime.title }}" 
+                         class="anime-card-image"
+                         loading="lazy">
+                    
+                    <div class="card-overlay"></div>
+                    
+                    <div class="card-content">
+                        <div class="flex gap-1 mb-2">
+                            <span class="category-tag">{{ anime.category }}</span>
+                        </div>
+                        <h3 class="card-title">{{ anime.title }}</h3>
+                        <div class="card-meta">
+                            <span><i class="far fa-calendar-alt mr-1"></i> {{ anime.created_at.strftime('%b %Y') }}</span>
+                            <span class="text-gray-600">|</span>
+                            <span><i class="fas fa-closed-captioning mr-1"></i> Sub/Dub</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Telegram Banner -->
+    <div class="mx-4 p-8 rounded-2xl bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 text-center">
+        <h3 class="text-xl font-bold text-white mb-2">Never miss a Hindi update!</h3>
+        <p class="text-gray-400 mb-6">Join 5,000+ fans on our official telegram channel.</p>
+        <button class="px-6 py-2 bg-[#229ED9] text-white rounded-lg font-bold hover:bg-[#1e8ec4] transition-colors">
+            Join Telegram
+        </button>
     </div>
-  </section>
-  {% endif %}
 
-  <!-- ═══ LATEST GUIDES GRID ═══ -->
-  {% if grid_articles %}
-  <div class="sec sec-premium">
-    <div>
-      <h2 data-i18n="latest_guides">नवीनतम गाइड</h2>
-      <span class="meta" data-guides-count="{{ grid_articles|length }}">{{ grid_articles|length }} गाइड उपलब्ध</span>
-    </div>
-    <a href="/explore" class="sec-view-all" data-i18n="view_all_arrow">सभी देखें →</a>
-  </div>
-
-  <section class="grid">
-    {% for article in grid_articles %}
-      {% include "components/anime_card.html" %}
-    {% endfor %}
-  </section>
-  {% endif %}
-
-  <!-- ═══ HINDI DUB SPOTLIGHT ═══ -->
-  {% set dub_articles = articles | selectattr('has_hindi_dub') | list %}
-  {% if dub_articles and dub_articles|length >= 2 %}
-  <section class="home-dub-spotlight">
-    <div class="home-dub-header">
-      <div class="home-dub-icon">🎙️</div>
-      <div>
-        <h2 data-i18n="badge_hindi_dub_avail">हिंदी डब में उपलब्ध</h2>
-        <p class="meta">ये एनीमे गाइड हिंदी डब के साथ आधिकारिक प्लेटफॉर्म्स पर उपलब्ध हैं</p>
-      </div>
-    </div>
-    <div class="home-dub-grid">
-      {% for article in dub_articles[:4] %}
-        {% include "components/anime_card.html" %}
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- ═══ EXPLORE CTA ═══ -->
-  <section class="home-cta-section">
-    <h2>और एनीमे गाइड खोजें</h2>
-    <p class="meta">प्लेटफॉर्म, हिंदी डब और श्रेणी के अनुसार फ़िल्टर करें</p>
-    <a href="/explore" class="home-cta-btn" data-i18n="nav_explore">एक्सप्लोर करें →</a>
-  </section>
-
-  <!-- ═══ LEGAL ADVISORY ═══ -->
-  <section class="bg-theme-surface home-legal-box">
-    <h2 data-i18n="home_legal_title">कानूनी एनीमे स्ट्रीमिंग मार्गदर्शिका</h2>
-    <p data-i18n="home_legal_desc">
-      भारत में एनीमे देखने के लिए हमेशा आधिकारिक और लाइसेंस प्राप्त स्ट्रीमिंग सेवाओं का उपयोग करें। किसी भी सेवा की वर्तमान उपलब्धता, भाषा विकल्प और कैटलॉग जानने के लिए उनकी आधिकारिक वेबसाइट या ऐप पर सीधे पुष्टि करें।
-    </p>
-  </section>
-
-  {% endif %}
-
-</main>
+</div>
 {% endblock %}
