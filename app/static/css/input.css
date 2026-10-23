@@ -2,16 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
 @layer components {
     /* --- Phase 2 & 3 Styles --- */
     .hero-gradient {
         background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%);
     }
     .category-pill {
-        @apply px-4 py-2 rounded-full border border-gray-700 text-sm font-medium transition-all duration-300 hover:bg-indigo-600 hover:border-indigo-600 whitespace-nowrap;
+        @apply px-4 py-2 rounded-full border border-gray-700 text-sm font-medium transition-all duration-300 hover:bg-indigo-600 hover:border-indigo-600 whitespace-nowrap min-h-[44px] flex items-center justify-center;
     }
     .explore-filter-card {
-        @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6;
+        @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 sm:p-6;
     }
     .explore-search-input-wrap {
         @apply relative bg-gray-900/80 border border-gray-700 rounded-xl text-white overflow-hidden focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all;
@@ -29,7 +36,7 @@
         @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-orange-600/20 text-orange-400 border border-orange-500/30;
     }
     .explore-empty-box {
-        @apply text-center py-16 bg-gray-900/30 rounded-2xl border border-dashed border-gray-800 my-8;
+        @apply text-center py-12 sm:py-16 bg-gray-900/30 rounded-2xl border border-dashed border-gray-800 my-8 px-4;
     }
 
     /* --- Phase 4: Premium Anime Card Styles --- */
@@ -50,7 +57,7 @@
     }
 
     .badge-hindi {
-        @apply absolute top-3 left-3 bg-orange-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-wider z-10;
+        @apply absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-orange-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:py-1 rounded shadow-lg uppercase tracking-wider z-10;
     }
 
     .platform-indicator {
@@ -58,18 +65,40 @@
     }
 
     .card-content {
-        @apply p-4 absolute bottom-0 w-full;
+        @apply p-3 sm:p-4 absolute bottom-0 w-full;
     }
 
     .card-title {
-        @apply text-white font-bold text-lg leading-tight line-clamp-2 group-hover:text-indigo-400 transition-colors;
+        @apply text-white font-bold text-sm sm:text-lg leading-tight line-clamp-2 group-hover:text-indigo-400 transition-colors;
     }
 
     .card-meta {
-        @apply flex items-center gap-2 mt-2 text-xs text-gray-400 font-medium;
+        @apply flex items-center gap-2 mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-gray-400 font-medium;
     }
 
     .category-tag {
-        @apply text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded uppercase;
+        @apply text-[9px] sm:text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded uppercase;
+    }
+
+    /* --- Phase 6: Mobile Touch & Scroll Utilities --- */
+    .touch-target {
+        min-height: 48px;
+        min-width: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .smooth-touch-scroll {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 }
