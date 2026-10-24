@@ -837,6 +837,87 @@
       return 'hi';
     };
 
+    // ---- Live page-content translator (same pattern as admin.js) ----
+    const _pageTxCache = {};
+    async function fetchPageTx(text, sl, tl) {
+      const clean = text.trim();
+      if (!clean) return text;
+      const key = sl + "_" + tl + "_" + clean;
+      if (_pageTxCache[key]) return _pageTxCache[key];
+      try {
+        const cached = sessionStorage.getItem("ptx_" + key);
+        if (cached) { _pageTxCache[key] = cached; return cached; }
+      } catch (e) {}
+      try {
+        const resp = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + sl + "&tl=" + tl + "&dt=t&q=" + encodeURIComponent(clean));
+        if (!resp.ok) return text;
+        const data = await resp.json();
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+          const out = data[0].map(function(p) { return (p && p[0]) ? p[0] : ""; }).join("");
+          if (out) {
+            _pageTxCache[key] = out;
+            try { sessionStorage.setItem("ptx_" + key, out); } catch (e) {}
+            return out;
+          }
+        }
+      } catch (e) {}
+      return text;
+    }
+
+    let _pageTxVer = 0;
+    window.translatePageDynamicNodes = async function(lang) {
+      const myVer = ++_pageTxVer;
+      const isEn = (lang === "en");
+      const root = document.getElementById('main-content') || document.body;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+      const nodes = [];
+      let n;
+      while ((n = walker.nextNode())) {
+        const p = n.parentElement;
+        if (!p) continue;
+        if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE' || p.hasAttribute('data-i18n')) continue;
+        if (p.closest('.notranslate')) continue;
+        if (!n.nodeValue || !n.nodeValue.trim()) continue;
+        if (n._origText === undefined) n._origText = n.nodeValue;
+        nodes.push(n);
+      }
+
+      const targets = nodes.filter(function(node) {
+        const orig = node._origText.trim();
+        if (isEn) {
+          return /[\u0900-\u097F]/.test(orig);
+        } else {
+          return /[A-Za-z]{3,}/.test(orig) && !/[\u0900-\u097F]/.test(orig) && !/^(https?:|@[a-zA-Z0-9_]+|[0-9\s\/:.,+-]+)$/.test(orig);
+        }
+      });
+
+      nodes.forEach(function(node) {
+        if (!targets.includes(node)) node.nodeValue = node._origText;
+      });
+
+      const sl = isEn ? "hi" : "en";
+      const tl = isEn ? "en" : "hi";
+      for (let i = 0; i < targets.length; i += 8) {
+        if (myVer !== _pageTxVer) return;
+        const batch = targets.slice(i, i + 8);
+        await Promise.all(batch.map(async function(node) {
+          const orig = node._origText;
+          const cacheProp = isEn ? "_enVal" : "_hiVal";
+          if (node[cacheProp]) {
+            if (myVer === _pageTxVer) node.nodeValue = node[cacheProp];
+            return;
+          }
+          const lead = (orig.match(/^\s*/) || [""])[0];
+          const trail = (orig.match(/\s*$/) || [""])[0];
+          const tr = await fetchPageTx(orig, sl, tl);
+          if (tr && tr !== orig.trim()) {
+            node[cacheProp] = lead + tr + trail;
+            if (myVer === _pageTxVer) node.nodeValue = node[cacheProp];
+          }
+        }));
+      }
+    };
+
     window.applySiteLanguage = function(lang) {
       if (lang !== 'en' && lang !== 'hi') lang = 'hi';
       const dict = window.I18N[lang] || window.I18N.hi;
@@ -857,6 +938,8 @@
         btnEn.style.color = (lang === 'en') ? '#dc2626' : '#9ca3af';
         btnHi.style.color = (lang === 'hi') ? '#dc2626' : '#9ca3af';
       }
+
+      window.translatePageDynamicNodes(lang);
     };
 
     window.setLanguage = function(lang) {
