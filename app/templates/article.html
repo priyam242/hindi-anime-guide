@@ -1,746 +1,304 @@
 {% extends "base.html" %}
 
-{% block title %}{{ article.title }} | {{ site.name }}{% endblock %}
-{% block meta_description %}{{ article.meta_description or article.summary }}{% endblock %}
+{% block title %}{{ article.title }} - {{ site.name }}{% endblock %}
 
-{% block extra_head %}
-<!-- OpenGraph & Twitter Cards -->
+{% block meta_description %}{{ article.meta_description or article.summary or article.title }}{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}/article/{{ article.slug }}">
+{% endblock %}
+
+{% block og_tags %}
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ article.title }}">
-<meta property="og:description" content="{{ article.meta_description or article.summary }}">
+<meta property="og:description" content="{{ article.meta_description or article.summary or article.title }}">
+{% if article.cover_image %}<meta property="og:image" content="{{ article.cover_image }}">{% endif %}
 <meta property="og:url" content="{{ request.url }}">
-{% if article.cover_image %}
-<meta property="og:image" content="{{ request.base_url }}{{ article.cover_image.lstrip('/') }}">
-{% endif %}
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ article.title }}">
-<meta name="twitter:description" content="{{ article.meta_description or article.summary }}">
+{% endblock %}
 
-<!-- JSON-LD Structured Data -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": {{ article.title | tojson }},
-  "description": {{ (article.meta_description or article.summary or '') | tojson }},
-  "inLanguage": "hi",
-  "datePublished": "{{ article.published_at.isoformat() if article.published_at else article.created_at.isoformat() }}",
-  "dateModified": "{{ article.updated_at.isoformat() if article.updated_at else article.created_at.isoformat() }}",
-  {% if article.cover_image %}
-  "image": "{{ request.base_url }}{{ article.cover_image.lstrip('/') }}",
-  {% endif %}
-  "publisher": {
-    "@type": "Organization",
-    "name": "{{ site.name }}",
-    "url": "{{ request.base_url }}"
-  }
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "होम",
-      "item": "{{ request.base_url }}"
-    },
-    {% if article.category_name_hi %}
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": {{ article.category_name_hi | tojson }},
-      "item": "{{ request.base_url }}category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": {{ article.title | tojson }}
-    }
-    {% else %}
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": {{ article.title | tojson }}
-    }
-    {% endif %}
-  ]
-}
-</script>
-
+{% block extra_head %}
 <style>
-  /* Markdown Content Styling for Dark Theme */
-  .prose-hindi {
-    font-size: 1.125rem;
-    line-height: 1.85;
-    color: #e5e7eb; /* text-gray-200 */
-  }
-  .prose-hindi h2 {
-    font-size: 1.875rem;
-    font-weight: 800;
-    color: #ffffff;
-    margin-top: 2.5rem;
-    margin-bottom: 1rem;
-    scroll-margin-top: 100px;
-    border-bottom: 1px solid #1f2937;
-    padding-bottom: 0.5rem;
-  }
-  .prose-hindi h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #f3f4f6;
-    margin-top: 2rem;
-    margin-bottom: 0.75rem;
-    scroll-margin-top: 100px;
-  }
-  .prose-hindi p {
-    margin-bottom: 1.25rem;
-  }
-  .prose-hindi a {
-    color: #818cf8; /* text-indigo-400 */
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    transition: color 0.2s;
-  }
-  .prose-hindi a:hover {
-    color: #a5b4fc; /* text-indigo-300 */
-  }
-  .prose-hindi ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .prose-hindi ol {
-    list-style-type: decimal;
-    padding-left: 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .prose-hindi li {
-    margin-bottom: 0.5rem;
-  }
-  .prose-hindi blockquote {
-    border-left: 4px solid #4f46e5; /* border-indigo-600 */
-    padding-left: 1rem;
-    font-style: italic;
-    color: #9ca3af; /* text-gray-400 */
-    background: #111827; /* bg-gray-900 */
-    padding: 1rem;
-    border-radius: 0 0.5rem 0.5rem 0;
-    margin-bottom: 1.5rem;
-  }
-  .prose-hindi strong {
-    color: #ffffff;
-    font-weight: 700;
-  }
+  .article-body h2 { font-size: 1.4rem; font-weight: 800; margin-top: 2rem; margin-bottom: 0.75rem; color: #111827; }
+  .article-body h3 { font-size: 1.15rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111827; }
+  .article-body p { margin-bottom: 1rem; line-height: 1.8; color: #374151; }
+  .article-body ul, .article-body ol { margin: 0 0 1rem 1.25rem; line-height: 1.8; color: #374151; }
+  .article-body ul { list-style: disc; }
+  .article-body ol { list-style: decimal; }
+  .article-body a { color: #dc2626; text-decoration: underline; }
+  .article-body blockquote { border-left: 4px solid #dc2626; padding: 0.5rem 1rem; margin: 1rem 0; background: #fef2f2; color: #374151; border-radius: 0 0.5rem 0.5rem 0; }
+  .article-body img { border-radius: 0.75rem; margin: 1rem 0; max-width: 100%; }
+  .article-body code { background: #f3f4f6; color: #dc2626; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; }
+  .article-body pre { background: #111827; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+  .article-body pre code { background: transparent; color: inherit; padding: 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  .article-body th, .article-body td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
 
-  /* TOC Styling overrides */
-  .toc-wrapper .toc { display: none !important; }
-  .toc-wrapper ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    counter-reset: toc-counter;
-  }
-  .toc-wrapper > ul > li {
-    position: relative;
-    padding-left: 28px;
-    margin-bottom: 10px;
-  }
-  .toc-wrapper > ul > li::before {
-    counter-increment: toc-counter;
-    content: counter(toc-counter) ".";
-    position: absolute;
-    left: 0;
-    color: #6366f1; /* text-indigo-500 */
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-  .toc-wrapper li a {
-    color: #d1d5db; /* text-gray-300 */
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-  .toc-wrapper li a:hover {
-    color: #818cf8; /* text-indigo-400 */
-    text-decoration: underline;
-  }
-  .toc-wrapper ul ul {
-    list-style-type: none;
-    padding-left: 20px;
-    margin-top: 6px;
-  }
-  .toc-wrapper ul ul li::before {
-    content: "↳";
-    color: #4b5563; /* text-gray-600 */
-    position: absolute;
-    left: 0;
-  }
+  html.dark .article-body h2, html.dark .article-body h3 { color: #ffffff; }
+  html.dark .article-body p, html.dark .article-body ul, html.dark .article-body ol { color: #d1d5db; }
+  html.dark .article-body blockquote { background: rgba(220,38,38,0.1); color: #d1d5db; }
+  html.dark .article-body code { background: #1f2937; }
+  html.dark .article-body th, html.dark .article-body td { border-color: #374151; }
+
+  .toc-nav ul { list-style: none; margin: 0; padding: 0; }
+  .toc-nav ul ul { padding-left: 0.9rem; }
+  .toc-nav a { display: block; padding: 0.35rem 0; font-size: 0.875rem; color: #6b7280; text-decoration: none; border-left: 2px solid transparent; padding-left: 0.6rem; }
+  .toc-nav a:hover { color: #dc2626; border-left-color: #dc2626; }
+  html.dark .toc-nav a { color: #9ca3af; }
+  html.dark .toc-nav a:hover { color: #f87171; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Reading Progress Bar -->
-<div id="reading-progress-bar" class="fixed top-0 left-0 h-1 bg-indigo-600 z-[9999] transition-all duration-100 ease-out pointer-events-none" style="width: 0%;" aria-hidden="true"></div>
+<div x-data="{ reportOpen: false, tocOpen: false }">
 
-<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<section class="max-w-7xl mx-auto px-4 py-6">
 
-  <!-- Breadcrumbs -->
-  <nav class="flex items-center gap-2 text-sm text-gray-400 mb-6 flex-wrap">
-    <a href="/" data-i18n="nav_home" class="hover:text-white transition-colors">होम</a>
-    <span>›</span>
-    {% if article.category_name_hi %}
-    <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" data-cat-tag="{{ article.category_name_hi }}" class="hover:text-white transition-colors">
-      {{ article.category_name_hi }}
-    </a>
-    <span>›</span>
-    {% endif %}
-    <span class="text-gray-200 font-semibold i18n-dynamic" data-title-hi="{{ article.anime_title_hi or article.title }}" data-title-en="{{ article.anime_title_en or '' }}">
-      {{ article.anime_title_hi or article.title }}
-    </span>
+  <!-- ब्रेडक्रम -->
+  <nav class="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1 flex-wrap">
+    <a href="/" class="hover:text-red-600"><i class="fas fa-home"></i></a>
+    <i class="fas fa-chevron-right text-[10px]"></i>
+    <a href="/explore?category={{ article.category }}" class="hover:text-red-600">{{ article.category_name_hi }}</a>
+    <i class="fas fa-chevron-right text-[10px]"></i>
+    <span class="text-gray-700 dark:text-gray-300 truncate">{{ article.title }}</span>
   </nav>
 
-  <!-- Hero Cover Banner -->
-  {% if article.cover_image %}
-  <div class="relative w-full aspect-video rounded-3xl overflow-hidden mb-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.7)] border border-gray-800">
-    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-full object-cover" loading="eager" width="820" height="461">
-    <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent opacity-80"></div>
-  </div>
-  {% endif %}
-
-  <!-- Article Header Block -->
-  <header class="mb-10">
-    <!-- Meta badges -->
-    <div class="flex items-center gap-3 flex-wrap mb-5">
-      {% if article.categories and article.categories|length > 0 %}
-        {% for cat in article.categories %}
-        <a href="/category/{{ cat.slug or cat.name }}" class="px-3 py-1 bg-gray-800 text-gray-300 text-xs font-bold rounded uppercase tracking-wider hover:bg-gray-700 transition-colors" data-cat-tag="{{ cat.display_name or cat.name_hi or cat.name }}">
-          {{ cat.display_name or cat.name_hi or cat.name }}
-        </a>
-        {% endfor %}
-      {% elif article.category_name_hi %}
-      <a href="/category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}" class="px-3 py-1 bg-gray-800 text-gray-300 text-xs font-bold rounded uppercase tracking-wider hover:bg-gray-700 transition-colors" data-cat-tag="{{ article.category_name_hi }}">
-        {{ article.category_name_hi }}
-      </a>
-      {% endif %}
-
-      {% if article.article_type == 'guide' %}
-      <span class="px-3 py-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-bold rounded uppercase tracking-wider" data-i18n="badge_guide">
-        मार्गदर्शिका
-      </span>
-      {% endif %}
-
+  <!-- हेडर -->
+  <div class="mb-6">
+    <div class="flex items-center gap-2 flex-wrap mb-3">
+      <span class="category-tag">{{ article.category_name_hi }}</span>
       {% if article.has_hindi_dub %}
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-600/20 text-orange-400 border border-orange-500/30 text-xs font-bold rounded uppercase tracking-wider">
-        <i class="fas fa-microphone-alt"></i> <span data-i18n="badge_hindi_dub_avail">हिंदी डब उपलब्ध</span>
-      </span>
+      <span class="badge-hindi"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब उपलब्ध</span>
       {% endif %}
-
-      <span class="ml-auto inline-flex items-center gap-1.5 text-sm text-gray-400 font-medium">
-        <i class="far fa-clock"></i>
-        <span data-reading-mins-full="{{ article.reading_time_minutes or 4 }}">{{ article.reading_time_minutes or 4 }} मिनट पाठ</span>
-      </span>
     </div>
-
-    <!-- Main Editorial Title -->
-    <h1 class="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4 i18n-dynamic">
-      {{ article.title }}
-    </h1>
-
-    {% if article.article_type != 'guide' and article.anime_title_en %}
-    <div class="text-gray-400 text-sm md:text-base mb-6">
-      <span data-i18n="label_orig_title">मूल शीर्षक:</span> <strong class="text-gray-200 notranslate font-semibold">{{ article.anime_title_en }}</strong>
-    </div>
+    <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-3 leading-tight">{{ article.title }}</h1>
+    {% if article.meta_description %}
+    <p class="text-gray-500 dark:text-gray-400 text-sm md:text-base mb-4">{{ article.meta_description }}</p>
     {% endif %}
-
-    <!-- Meta Bar (Author, Date, Actions) -->
-    <div class="flex items-center justify-between flex-wrap gap-4 py-4 border-t border-b border-gray-800 text-sm text-gray-400">
-      <div class="flex items-center gap-3 flex-wrap">
-        {% set pub_date = article.published_at or article.created_at %}
-        {% if pub_date %}
-        <span><span data-i18n="label_published">प्रकाशित:</span> <strong class="text-gray-200 font-semibold i18n-date" data-raw-date="{{ pub_date | hindi_date }}">{{ pub_date | hindi_date }}</strong></span>
-        {% if site.author_name %}
-        <span class="text-gray-600">•</span>
-        {% endif %}
-        {% endif %}
-        {% if site.author_name %}
-        <span><span data-i18n="label_author">लेखक:</span> <strong class="text-gray-200 font-semibold i18n-dynamic">{{ site.author_name }}</strong></span>
-        {% endif %}
-      </div>
-      
-      <div class="flex items-center gap-3">
-        <!-- Bookmark Button -->
-        <button 
-          id="bookmark-btn" 
-          type="button" 
-          onclick="toggleBookmark()"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all transform active:scale-95 {% if is_bookmarked %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}bg-gray-800 text-white hover:bg-gray-700{% endif %}"
-        >
-          <span id="bookmark-icon">
-            <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-bookmark"></i>
-          </span>
-          <span id="bookmark-text" data-i18n="{% if is_bookmarked %}bookmarked_state{% else %}bookmark_action{% endif %}">{% if is_bookmarked %}सेव किया गया{% else %}सेव करें{% endif %}</span>
-        </button>
-
-        {% if user and (user.user_type == 'admin' or user.is_superuser or user.is_staff) %}
-        <a href="/admin/articles/{{ article.id }}/edit" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold text-sm transition-colors border border-gray-700">
-          <i class="fas fa-edit"></i> <span data-i18n="btn_edit">संपादित करें</span>
-        </a>
-        {% endif %}
-      </div>
+    <div class="flex items-center gap-4 flex-wrap text-sm text-gray-500 dark:text-gray-400">
+      <span><i class="far fa-calendar mr-1"></i>{{ article.display_date | hindi_date }}</span>
+      {% if article.reading_time_minutes %}
+      <span><i class="far fa-clock mr-1"></i>{{ article.reading_time_minutes }} मिनट रीड</span>
+      {% endif %}
+      <span><i class="far fa-comment mr-1"></i>{{ comments|length }} टिप्पणियाँ</span>
     </div>
-  </header>
+  </div>
 
-  <!-- Summary Box -->
-  {% if article.summary %}
-  <div class="bg-indigo-900/20 border-l-4 border-indigo-500 rounded-r-xl p-6 mb-10 shadow-lg">
-    <div class="flex items-center gap-2 font-bold text-indigo-400 mb-3 text-sm uppercase tracking-wider">
-      <i class="fas fa-info-circle"></i> <span data-i18n="summary_heading">संक्षेप में</span>
-    </div>
-    <p class="text-lg text-gray-200 leading-relaxed font-medium i18n-dynamic m-0">
-      {{ article.summary }}
-    </p>
+  {% if article.cover_image %}
+  <div class="rounded-2xl overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
+    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-auto object-cover max-h-[420px]">
   </div>
   {% endif %}
 
-  <!-- Collapsible Table of Contents -->
+  <!-- बुकमार्क बटन -->
+  <div x-data="{ bookmarked: {{ 'true' if is_bookmarked else 'false' }}, loading: false }" class="flex items-center gap-3 mb-6">
+    <button
+      @click="
+        loading = true;
+        fetch('/article/{{ article.slug }}/bookmark', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(r => {
+            if (r.status === 401) { return r.json().then(d => { window.location.href = d.login_url; }); }
+            return r.json();
+          })
+          .then(d => { if (d && typeof d.bookmarked !== 'undefined') { bookmarked = d.bookmarked; } loading = false; })
+          .catch(() => { loading = false; });
+      "
+      :disabled="loading"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg border font-semibold text-sm transition"
+      :class="bookmarked ? 'bg-red-600 border-red-600 text-white' : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-red-600 hover:text-red-600'">
+      <i class="fas fa-bookmark" :class="loading ? 'fa-spin' : ''"></i>
+      <span x-text="bookmarked ? 'सेव किया गया' : 'सेव करें'"></span>
+    </button>
+
+    <button @click="reportOpen = true" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-600 hover:text-red-600 text-sm font-semibold transition">
+      <i class="fas fa-flag"></i> रिपोर्ट करें
+    </button>
+  </div>
+
+  <!-- मोबाइल TOC एकॉर्डियन -->
   {% if toc_html %}
-  <div class="toc-wrapper bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-10 shadow-lg" x-data="{ open: true }">
-    <div class="flex items-center justify-between cursor-pointer select-none" @click="open = !open">
-      <span class="font-extrabold text-lg text-white flex items-center gap-3">
-        <i class="fas fa-list-ul text-indigo-500"></i> <span data-i18n="toc_heading">विषय सूची</span>
-      </span>
-      <button type="button" class="text-sm font-bold text-indigo-400 flex items-center gap-2 bg-gray-800 px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors" aria-label="Toggle TOC">
-        <span id="toc-toggle-label" x-text="open ? (window.getSiteLang && window.getSiteLang() === 'en' ? 'Hide ▲' : 'छुपाएँ ▲') : (window.getSiteLang && window.getSiteLang() === 'en' ? 'Show ▼' : 'दिखाएँ ▼')">छुपाएँ ▲</span>
-      </button>
-    </div>
-    <div x-show="open" x-transition.opacity class="mt-4 pt-4 border-t border-gray-800">
+  <div class="lg:hidden mb-6 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+    <button @click="tocOpen = !tocOpen" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-[#111] font-semibold text-sm text-gray-800 dark:text-gray-200">
+      <span><i class="fas fa-list-ul text-red-600 mr-2"></i>इस गाइड में क्या है</span>
+      <i class="fas fa-chevron-down transition" :class="tocOpen ? 'rotate-180' : ''"></i>
+    </button>
+    <div x-show="tocOpen" x-collapse class="toc-nav px-4 py-3 border-t border-gray-200 dark:border-gray-800">
       {{ toc_html | safe }}
     </div>
   </div>
   {% endif %}
 
-  <!-- Main Article Content Body -->
-  <div class="prose-hindi w-full max-w-none mb-12">
-    {{ content_html | safe }}
-  </div>
+  <!-- मुख्य दो-कॉलम लेआउट -->
+  <div class="grid lg:grid-cols-[1fr_280px] gap-8">
 
-  <!-- WHERE TO WATCH SECTION -->
-  {% if valid_availabilities %}
-  <section class="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800 rounded-2xl p-6 md:p-8 mb-12 shadow-xl">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-      <h2 class="text-2xl font-extrabold text-white flex items-center gap-3 m-0">
-        <i class="fas fa-tv text-indigo-500"></i> <span data-i18n="where_to_watch_heading">कहाँ देखें</span>
-      </h2>
-      <button 
-        type="button" 
-        onclick="document.getElementById('report-modal').style.display='flex'" 
-        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-dashed border-gray-600 text-gray-300 rounded-lg text-xs font-bold transition-colors"
-      >
-        <i class="fas fa-exclamation-triangle"></i> <span data-i18n="btn_report_streaming">स्ट्रीमिंग जानकारी अपडेट रिपोर्ट करें</span>
-      </button>
-    </div>
-
-    <div class="space-y-4">
-      {% for row in valid_availabilities %}
-      <div class="bg-gray-800/40 border border-gray-700 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors">
-        <div>
-          <h3 class="text-xl font-bold text-white mb-2">{{ row.platform.name }}</h3>
-          <div class="flex items-center flex-wrap gap-2 text-sm">
-            
-            {% if row.status == 'available' or row.status.value == 'available' %}
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-900/30 text-green-400 border border-green-800 rounded font-bold text-xs"><i class="fas fa-check-circle"></i> <span data-i18n="status_available">उपलब्ध</span></span>
-            {% elif row.status == 'not_available' or row.status.value == 'not_available' %}
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-900/30 text-red-400 border border-red-800 rounded font-bold text-xs"><i class="fas fa-times-circle"></i> <span data-i18n="status_not_available">उपलब्ध नहीं</span></span>
-            {% endif %}
-
-            {% if row.hindi_dub != 'unknown' and (not row.hindi_dub.value or row.hindi_dub.value != 'unknown') %}
-              {% if row.hindi_dub == 'yes' or row.hindi_dub.value == 'yes' %}
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-600/20 text-orange-400 border border-orange-500/30 rounded font-bold text-xs" data-i18n="dub_yes">हिंदी डब: उपलब्ध</span>
-              {% elif row.hindi_dub == 'no' or row.hindi_dub.value == 'no' %}
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-800 text-gray-400 border border-gray-700 rounded font-bold text-xs" data-i18n="dub_no">हिंदी डब: नहीं</span>
-              {% endif %}
-            {% endif %}
-
-            {% if row.last_checked %}
-            <span class="text-gray-500 ml-2 text-xs"><span data-i18n="label_last_checked">अंतिम जाँच:</span> <span class="i18n-date font-medium" data-raw-date="{{ row.last_checked | hindi_date }}">{{ row.last_checked | hindi_date }}</span></span>
-            {% endif %}
-
-          </div>
-          {% if row.note %}
-          <p class="text-sm text-gray-400 mt-3 i18n-dynamic"><i class="fas fa-info-circle mr-1"></i> {{ row.note }}</p>
-          {% endif %}
-        </div>
-        <a href="{{ row.platform.official_url }}" target="_blank" rel="noopener noreferrer" class="w-full md:w-auto text-center inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg shadow-indigo-600/20">
-          <span data-i18n="btn_visit_official">आधिकारिक साइट देखें</span> <i class="fas fa-external-link-alt text-xs"></i>
-        </a>
+    <!-- लेख सामग्री -->
+    <div>
+      <div class="article-body">
+        {{ content_html | safe }}
       </div>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
 
-  <!-- Tags -->
-  {% if article.tags_list %}
-  <div class="flex flex-wrap items-center gap-3 pt-6 border-t border-gray-800 mb-8">
-    <span class="text-sm font-bold text-gray-500 uppercase tracking-wider" data-i18n="label_tags">टैग्स:</span>
-    {% for tag in article.tags_list %}
-      {% if tag and tag.strip() %}
-      <span class="px-3 py-1 bg-gray-800 text-gray-300 text-xs font-medium rounded-full border border-gray-700">#{{ tag.strip() }}</span>
-      {% endif %}
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- Compact Legal Disclaimer Box -->
-  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 text-sm text-gray-400 leading-relaxed mb-12">
-    <i class="fas fa-shield-alt text-gray-500 mr-2"></i> <strong class="text-gray-300" data-i18n="legal_notice_label">कानूनी सूचना:</strong> <span data-i18n="legal_notice_text">Hindi Anime Guide केवल आधिकारिक एवं वैध स्ट्रीमिंग प्लेटफॉर्म्स का संदर्भ देता है और किसी भी अनधिकृत स्रोत का समर्थन नहीं करता।</span>
-  </div>
-
-  <!-- RELATED GUIDES SECTION -->
-  {% if related_articles %}
-  <section class="pt-10 border-t border-gray-800 mb-12">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
-        <i class="fas fa-layer-group text-indigo-500"></i> <span data-i18n="related_guides_heading">संबंधित एनीमे गाइड्स</span>
-      </h2>
-      <a href="/explore" class="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1" data-i18n="view_all_arrow">सभी देखें <i class="fas fa-arrow-right text-xs"></i></a>
-    </div>
-    
-    <!-- Render Premium Anime Cards (Like Phase 4) -->
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-      {% for rel_art in related_articles %}
-      <a href="/article/{{ rel_art.slug }}" class="anime-card group">
-          <div class="anime-card-image-wrap">
-              {% if rel_art.has_hindi_dub %}
-              <span class="badge-hindi">Hindi Dub</span>
-              {% endif %}
-              
-              <img src="{{ rel_art.cover_image or 'https://via.placeholder.com/300x400?text=No+Image' }}" 
-                   alt="{{ rel_art.title }}" 
-                   class="anime-card-image"
-                   loading="lazy">
-              
-              <div class="card-overlay"></div>
-              
-              <div class="card-content">
-                  <div class="flex gap-1 mb-2">
-                      <span class="category-tag" data-cat-tag="{{ rel_art.category_name_hi }}">{{ rel_art.category_name_hi }}</span>
-                  </div>
-                  <h3 class="card-title i18n-dynamic">{{ rel_art.title }}</h3>
-                  <div class="card-meta">
-                      <span><i class="far fa-clock mr-1"></i> {{ rel_art.reading_time_minutes or 4 }} min</span>
-                  </div>
+      <!-- कहाँ देखें -->
+      <section class="mt-10">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-tv text-red-600 mr-2"></i>कहाँ देखें</h2>
+        {% if valid_availabilities %}
+        <div class="grid sm:grid-cols-2 gap-4">
+          {% for a in valid_availabilities %}
+          <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-[#111]">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-play-circle text-red-600 text-xl"></i>
+                <span class="font-bold text-gray-900 dark:text-white">{{ a.platform_rel.display_name }}</span>
               </div>
-          </div>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- COMMUNITY DISCUSSIONS SECTION -->
-  <section id="comments" class="pt-12 border-t border-gray-800 scroll-mt-24">
-      <h2 class="text-2xl font-extrabold text-white flex items-center gap-3 mb-8">
-          <i class="fas fa-comments text-indigo-500"></i> <span data-comments-heading-count="{{ comments|length if comments else 0 }}">समुदाय चर्चा ({{ comments|length if comments else 0 }})</span>
-      </h2>
-
-      {% if request.query_params.get('comment_success') %}
-      <div class="bg-green-900/30 border border-green-800 text-green-400 p-4 rounded-xl mb-6 flex justify-between items-center">
-          <span class="font-medium"><i class="fas fa-check-circle mr-2"></i> टिप्पणी पोस्ट हो गई! चर्चा में भाग लेने के लिए धन्यवाद।</span>
-          <button type="button" onclick="this.parentElement.remove()" class="text-green-500 hover:text-green-300"><i class="fas fa-times"></i></button>
-      </div>
-      {% endif %}
-
-      {% if request.query_params.get('comment_deleted') %}
-      <div class="bg-green-900/30 border border-green-800 text-green-400 p-4 rounded-xl mb-6 flex justify-between items-center">
-          <span class="font-medium"><i class="fas fa-check-circle mr-2"></i> टिप्पणी सफलतापूर्वक हटा दी गई।</span>
-          <button type="button" onclick="this.parentElement.remove()" class="text-green-500 hover:text-green-300"><i class="fas fa-times"></i></button>
-      </div>
-      {% endif %}
-
-      <!-- Comment Composer Card -->
-      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-10 shadow-lg">
-          <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <i class="fas fa-pen text-gray-500"></i> <span data-i18n="join_discussion">चर्चा में शामिल हों</span>
-          </h3>
-          
-          {% if user %}
-          <form id="comment-post-form" method="POST" action="/comment/{{ article.id }}" onsubmit="const btn = document.getElementById('comment-submit-btn'); if(btn){ btn.disabled = true; btn.innerHTML = '<i class=\'fas fa-spinner fa-spin\'></i> पोस्ट हो रहा है...'; }">
-              <input type="text" name="website" style="display:none !important;" tabindex="-1" autocomplete="off">
-              <div class="relative mb-4">
-                  <textarea id="comment-box" name="content" rows="4" required maxlength="2000" placeholder="इस एनीमे गाइड के बारे में अपने विचार या सवाल लिखें..." data-i18n-placeholder="comment_placeholder" class="w-full bg-gray-950 border border-gray-700 text-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none resize-y" oninput="updateCommentCount(this)">{{ request.query_params.get('content_draft', '') }}</textarea>
-                  <div id="comment-char-counter" class="absolute bottom-3 right-3 text-xs text-gray-500 font-medium bg-gray-950 px-2 py-1 rounded">0 / 2000</div>
-              </div>
-              <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                  <div class="flex items-center gap-3 text-sm text-gray-400">
-                      {% if user.avatar_url %}
-                          <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-8 h-8 rounded-full object-cover border border-gray-700" loading="lazy">
-                      {% else %}
-                          <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-gray-700">{{ get_initials(user.name) }}</div>
-                      {% endif %}
-                      <span>
-                          <strong class="text-gray-200">{{ user.name }}</strong> {% if user.username %}(@{{ user.username }}){% endif %} <span data-i18n="commenting_as">के रूप में</span>
-                      </span>
-                  </div>
-                  <button type="submit" id="comment-submit-btn" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95">
-                      <span data-i18n="btn_post_comment">टिप्पणी पोस्ट करें</span> <i class="fas fa-paper-plane ml-1 text-xs"></i>
-                  </button>
-              </div>
-          </form>
-          <script>
-              function updateCommentCount(el) {
-                  const counter = document.getElementById('comment-char-counter');
-                  if (counter) {
-                      const len = el.value.length;
-                      counter.textContent = len + ' / 2000';
-                      if (len >= 1800) {
-                          counter.classList.add('text-red-400');
-                          counter.classList.remove('text-gray-500');
-                      } else {
-                          counter.classList.remove('text-red-400');
-                          counter.classList.add('text-gray-500');
-                      }
-                  }
-              }
-          </script>
-          {% else %}
-          <div class="text-center py-6">
-            <p class="text-gray-400 mb-4" data-i18n="comment_login_prompt">चर्चा में भाग लेने के लिए कृपया लॉग इन करें और अपनी राय साझा करें।</p>
-            <div class="flex justify-center gap-3">
-                <a href="/auth/login?next=/article/{{ article.slug }}%23comments" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors" data-i18n="login">लॉग इन</a>
-                <a href="/auth/register?next=/article/{{ article.slug }}%23comments" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold border border-gray-700 rounded-xl transition-colors" data-i18n="signup">साइन अप</a>
+              {% if a.hindi_dub %}<span class="badge-hindi text-xs">हिंदी डब</span>{% endif %}
             </div>
-          </div>
-          {% endif %}
-      </div>
-
-      <!-- Comments List -->
-      {% if comments and comments|length > 0 %}
-      <div class="space-y-6">
-          {% for c in comments %}
-          <div id="comment-{{ c.id }}" class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 md:p-6 scroll-mt-24 transition-colors hover:bg-gray-900/80">
-              <div class="flex justify-between items-start mb-4">
-                  <div class="flex items-center gap-3 md:gap-4">
-                      <div class="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-white shadow-inner border border-gray-700 overflow-hidden flex-shrink-0" style="background: {{ get_avatar_color(c.user_rel.name if c.user_rel else 'Reader') }};">
-                          {% if c.user_rel and c.user_rel.avatar_url %}
-                              <img src="{{ c.user_rel.avatar_url }}" alt="{{ c.user_rel.name }}" class="w-full h-full object-cover" loading="lazy">
-                          {% else %}
-                              {{ get_initials(c.user_rel.name if c.user_rel else 'Reader') }}
-                          {% endif %}
-                      </div>
-                      <div>
-                          <p class="font-bold text-white text-base m-0 leading-tight">{{ c.user_rel.name if c.user_rel else 'Reader' }}</p>
-                          <p class="text-xs text-gray-500 m-0 mt-1" title="{{ c.created_at.strftime('%d %B %Y, %I:%M %p UTC') }}">
-                              {% if c.user_rel and c.user_rel.username %}<span class="text-gray-400">@{{ c.user_rel.username }}</span> • {% endif %}{{ c.created_at.strftime('%d %b %Y, %I:%M %p') }}
-                          </p>
-                      </div>
-                  </div>
-
-                  {% if user and (user.email == (c.user_rel.email if c.user_rel else '') or user.user_type == 'admin') %}
-                  <form method="POST" action="/comment/{{ c.id }}/delete" onsubmit="return confirm('टिप्पणी हटाएं?');">
-                      <button type="submit" class="text-gray-500 hover:text-red-400 bg-gray-800 hover:bg-red-900/20 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5">
-                          <i class="fas fa-trash-alt"></i> <span class="hidden md:inline" data-i18n="btn_delete">हटाएं</span>
-                      </button>
-                  </form>
-                  {% endif %}
-              </div>
-              <p class="text-gray-300 leading-relaxed text-base md:text-lg m-0 whitespace-pre-wrap ml-0 md:ml-16">{{ c.content }}</p>
+            <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-3">
+              {% if a.languages %}<p><i class="fas fa-language w-4 mr-1"></i>भाषा: {{ a.languages }}</p>{% endif %}
+              {% if a.subtitle_languages %}<p><i class="fas fa-closed-captioning w-4 mr-1"></i>सबटाइटल: {{ a.subtitle_languages }}</p>{% endif %}
+              {% if a.requires_subscription %}<p><i class="fas fa-crown w-4 mr-1 text-yellow-500"></i>सब्सक्रिप्शन आवश्यक</p>{% endif %}
+              {% if a.notes %}<p class="italic">{{ a.notes }}</p>{% endif %}
+              {% if a.last_checked %}<p class="text-xs text-gray-400"><i class="fas fa-check-circle mr-1"></i>जाँचा गया: {{ a.last_checked | hindi_date }}</p>{% endif %}
+            </div>
+            {% if a.platform_rel.official_url %}
+            <a href="{{ a.platform_rel.official_url }}" target="_blank" rel="noopener noreferrer nofollow" class="block text-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition">
+              देखें <i class="fas fa-external-link-alt ml-1"></i>
+            </a>
+            {% endif %}
           </div>
           {% endfor %}
-      </div>
-      {% else %}
-      <div class="bg-gray-900/30 border border-dashed border-gray-700 rounded-2xl p-10 text-center">
-          <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl text-gray-500">
-            <i class="far fa-comments"></i>
+        </div>
+        {% else %}
+        <p class="text-gray-500 dark:text-gray-400 text-sm">अभी तक कोई स्ट्रीमिंग जानकारी उपलब्ध नहीं है।</p>
+        {% endif %}
+      </section>
+
+      <!-- टिप्पणियाँ -->
+      <section id="comments" class="mt-10">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          <i class="fas fa-comments text-red-600 mr-2"></i>टिप्पणियाँ ({{ comments|length }})
+        </h2>
+
+        {% if request.query_params.get('comment_success') %}
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mb-4 text-sm">
+          <i class="fas fa-check-circle mr-1"></i>आपकी टिप्पणी सफलतापूर्वक जोड़ दी गई है!
+        </div>
+        {% endif %}
+        {% if request.query_params.get('comment_deleted') %}
+        <div class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg mb-4 text-sm">
+          <i class="fas fa-trash mr-1"></i>टिप्पणी हटा दी गई है।
+        </div>
+        {% endif %}
+        {% if request.query_params.get('reported') %}
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mb-4 text-sm">
+          <i class="fas fa-check-circle mr-1"></i>रिपोर्ट दर्ज कर ली गई है। धन्यवाद!
+        </div>
+        {% endif %}
+
+        {% if user %}
+        <form method="post" action="/comment/{{ article.id }}" class="mb-8">
+          <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+          <textarea name="content" rows="3" minlength="2" maxlength="2000" required placeholder="अपनी टिप्पणी लिखें..." class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-[#111] text-gray-900 dark:text-white"></textarea>
+          <div class="flex justify-end mt-2">
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition">
+              <i class="fas fa-paper-plane mr-1"></i>टिप्पणी भेजें
+            </button>
           </div>
-          <div class="text-lg text-white font-bold mb-2" data-i18n="no_comments_title">अभी तक कोई टिप्पणी नहीं — पहली टिप्पणी आप करें!</div>
-          <p class="text-gray-400 text-sm" data-i18n="no_comments_subtitle">इस एनीमे के बारे में अपनी राय, डब की गुणवत्ता या सुझाव साझा करें।</p>
-      </div>
+        </form>
+        {% else %}
+        <div class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-8 text-center text-sm text-gray-600 dark:text-gray-300">
+          टिप्पणी करने के लिए <a href="/login?next=/article/{{ article.slug }}" class="text-red-600 font-semibold hover:underline">लॉगिन करें</a>
+        </div>
+        {% endif %}
+
+        <div class="space-y-5">
+          {% for c in comments %}
+          <div id="comment-{{ c.id }}" class="flex gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style="background-color: {{ get_avatar_color(c.user_rel.display_name if c.user_rel else '?') }};">
+              {{ get_initials(c.user_rel.display_name if c.user_rel else '?') }}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-semibold text-gray-900 dark:text-white text-sm">{{ c.user_rel.display_name if c.user_rel else 'उपयोगकर्ता' }}</span>
+                <span class="text-xs text-gray-400">{{ c.created_at | hindi_date }}</span>
+              </div>
+              <p class="text-sm text-gray-700 dark:text-gray-300">{{ c.content }}</p>
+              {% if user and ((c.user_rel and user.email == c.user_rel.email) or user.user_type == 'admin') %}
+              <form method="post" action="/comment/{{ c.id }}/delete" onsubmit="return confirm('क्या आप वाकई इस टिप्पणी को हटाना चाहते हैं?');" class="mt-1">
+                <button type="submit" class="text-xs text-gray-400 hover:text-red-600">
+                  <i class="fas fa-trash-alt mr-1"></i>हटाएँ
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <p class="text-gray-500 dark:text-gray-400 text-sm">अभी तक कोई टिप्पणी नहीं है। सबसे पहले टिप्पणी करें!</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- संबंधित लेख -->
+      {% if related_articles %}
+      <section class="mt-10">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-layer-group text-red-600 mr-2"></i>संबंधित गाइड</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {% for rel in related_articles %}
+          <a href="/article/{{ rel.slug }}" class="anime-card group">
+            <div class="anime-card-image-wrap">
+              <img src="{{ rel.cover_image }}" alt="{{ rel.title }}" class="anime-card-image" loading="lazy">
+              {% if rel.has_hindi_dub %}<span class="badge-hindi"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>{% endif %}
+              <div class="card-overlay"></div>
+            </div>
+            <div class="card-content">
+              <span class="category-tag">{{ rel.category_name_hi }}</span>
+              <h3 class="card-title">{{ rel.title }}</h3>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
       {% endif %}
-  </section>
-
-</main>
-
-<!-- OUTDATED STREAMING INFO REPORT MODAL -->
-<div id="report-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000] hidden items-center justify-center p-4" onclick="if(event.target === this) this.style.display='none'">
-  <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative">
-    <div class="flex justify-between items-center mb-6">
-      <h3 class="text-xl font-extrabold text-white flex items-center gap-2 m-0">
-        <i class="fas fa-exclamation-triangle text-orange-500"></i> <span data-i18n="modal_report_title">स्ट्रीमिंग अपडेट रिपोर्ट करें</span>
-      </h3>
-      <button type="button" onclick="document.getElementById('report-modal').style.display='none'" class="text-gray-500 hover:text-white transition-colors">
-        <i class="fas fa-times text-xl"></i>
-      </button>
     </div>
-    
-    <form id="report-form" onsubmit="submitOutdatedReport(event)">
-      <div class="mb-4">
-        <label class="block text-sm font-bold text-gray-300 mb-2">
-          <span data-i18n="modal_platform_label">संबंधित प्लेटफॉर्म (वैकल्पिक)</span>
-        </label>
-        <input type="text" name="platform_name" placeholder="उदा. प्लेटफॉर्म का नाम" data-i18n-placeholder="modal_platform_placeholder" class="w-full bg-gray-950 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+
+    <!-- साइडबार -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-20 space-y-6">
+        {% if toc_html %}
+        <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+          <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200 mb-2"><i class="fas fa-list-ul text-red-600 mr-2"></i>इस गाइड में क्या है</h3>
+          <div class="toc-nav">{{ toc_html | safe }}</div>
+        </div>
+        {% endif %}
+
+        {% if categories %}
+        <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+          <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200 mb-3"><i class="fas fa-th-large text-red-600 mr-2"></i>कैटेगरी</h3>
+          <div class="flex flex-wrap gap-2">
+            {% for cat in categories %}
+            <a href="/explore?category={{ cat.id }}" class="category-pill">{{ cat.display_name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
       </div>
-      <div class="mb-6">
-        <label class="block text-sm font-bold text-gray-300 mb-2">
-          <span data-i18n="modal_change_label">क्या बदलाव आया है? *</span>
-        </label>
-        <textarea name="note" rows="3" required placeholder="जैसे: अब नेटफ्लिक्स पर हिंदी डब उपलब्ध है, या लिंक काम नहीं कर रहा..." data-i18n-placeholder="modal_change_placeholder" class="w-full bg-gray-950 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-y"></textarea>
-      </div>
-      <div id="report-msg" class="text-sm font-medium mb-4 hidden"></div>
-      <div class="flex justify-end gap-3">
-        <button type="button" onclick="document.getElementById('report-modal').style.display='none'" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl transition-colors text-sm">
-          <span data-i18n="btn_cancel">रद्द करें</span>
-        </button>
-        <button type="submit" id="report-submit-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-colors text-sm">
-          <span data-i18n="btn_send_report">रिपोर्ट भेजें</span>
-        </button>
+    </aside>
+
+  </div>
+</section>
+
+<!-- रिपोर्ट मॉडल -->
+<div x-show="reportOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="reportOpen = false">
+  <div class="bg-white dark:bg-[#111] rounded-xl p-6 max-w-md w-full" @click.stop>
+    <h3 class="text-lg font-bold mb-3 text-gray-900 dark:text-white"><i class="fas fa-flag text-red-600 mr-2"></i>जानकारी रिपोर्ट करें</h3>
+    <form method="post" action="/article/{{ article.slug }}/report-outdated">
+      <textarea name="note" rows="4" required maxlength="1000" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 mb-3 bg-transparent text-gray-900 dark:text-white" placeholder="क्या गलत/पुराना है? विवरण लिखें..."></textarea>
+      <input type="text" name="platform_name" placeholder="प्लेटफ़ॉर्म का नाम (वैकल्पिक)" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 mb-3 text-sm bg-transparent text-gray-900 dark:text-white">
+      <div class="flex gap-2 justify-end">
+        <button type="button" @click="reportOpen = false" class="px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300">रद्द करें</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold">सबमिट करें</button>
       </div>
     </form>
   </div>
 </div>
 
-<script>
-  function getArticleSlug() {
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    return parts[parts.length - 1] || '';
-  }
-
-  async function toggleBookmark(slug) {
-    if (!slug) slug = getArticleSlug();
-    const btn = document.getElementById('bookmark-btn');
-    const icon = document.getElementById('bookmark-icon').querySelector('i');
-    const text = document.getElementById('bookmark-text');
-    
-    try {
-      const resp = await fetch('/article/' + encodeURIComponent(slug) + '/bookmark', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (resp.status === 401) {
-        const data = await resp.json();
-        window.location.href = data.login_url || '/auth/login';
-        return;
-      }
-      
-      const data = await resp.json();
-      if (data.success) {
-        if (data.bookmarked) {
-          icon.className = 'fas fa-bookmark';
-          btn.classList.remove('bg-gray-800', 'text-white', 'hover:bg-gray-700');
-          btn.classList.add('bg-indigo-600/20', 'text-indigo-400', 'border', 'border-indigo-500/30');
-          
-          const isEn = window.getSiteLang && window.getSiteLang() === 'en';
-          text.setAttribute('data-i18n', 'bookmarked_state');
-          text.textContent = isEn ? 'Saved' : 'सेव किया गया';
-          if (typeof window.showToast === 'function') window.showToast(isEn ? 'Guide saved to your list' : 'गाइड आपकी सूची में सेव किया गया', 'success');
-        } else {
-          icon.className = 'far fa-bookmark';
-          btn.classList.remove('bg-indigo-600/20', 'text-indigo-400', 'border', 'border-indigo-500/30');
-          btn.classList.add('bg-gray-800', 'text-white', 'hover:bg-gray-700');
-
-          const isEn = window.getSiteLang && window.getSiteLang() === 'en';
-          text.setAttribute('data-i18n', 'bookmark_action');
-          text.textContent = isEn ? 'Save' : 'सेव करें';
-          if (typeof window.showToast === 'function') window.showToast(isEn ? 'Guide removed from your list' : 'गाइड आपकी सूची से हटाया गया', 'info');
-        }
-      }
-    } catch (e) {
-      console.error('Bookmark toggle failed:', e);
-    }
-  }
-
-  async function submitOutdatedReport(e, slug) {
-    e.preventDefault();
-    if (!slug) slug = getArticleSlug();
-    const form = e.target;
-    const formData = new FormData(form);
-    const msgEl = document.getElementById('report-msg');
-    const submitBtn = document.getElementById('report-submit-btn');
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> भेज रहे हैं...';
-    
-    try {
-      const resp = await fetch('/article/' + encodeURIComponent(slug) + '/report-outdated', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        },
-        body: formData
-      });
-      
-      const data = await resp.json();
-      msgEl.style.display = 'block';
-      if (resp.ok && data.success) {
-        msgEl.className = 'text-sm font-medium mb-4 text-green-400';
-        msgEl.innerHTML = '<i class="fas fa-check-circle mr-1"></i> ' + data.message;
-        form.reset();
-        setTimeout(() => {
-          document.getElementById('report-modal').style.display = 'none';
-          msgEl.style.display = 'none';
-        }, 1800);
-      } else {
-        msgEl.className = 'text-sm font-medium mb-4 text-red-400';
-        msgEl.innerHTML = '<i class="fas fa-times-circle mr-1"></i> ' + (data.error || 'त्रुटि हुई। कृपया पुनः प्रयास करें।');
-      }
-    } catch (err) {
-      msgEl.style.display = 'block';
-      msgEl.className = 'text-sm font-medium mb-4 text-red-400';
-      msgEl.innerHTML = '<i class="fas fa-times-circle mr-1"></i> सर्वर से संपर्क नहीं हो सका।';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span data-i18n="btn_send_report">रिपोर्ट भेजें</span>';
-    }
-  }
-</script>
-
-<!-- Floating Scroll-To-Top Button -->
-<button 
-  id="back-to-top" 
-  type="button" 
-  onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-  class="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-gray-800 hover:bg-indigo-600 text-white border border-gray-700 hover:border-indigo-500 shadow-xl items-center justify-center cursor-pointer z-[90] transition-all duration-300 transform hover:-translate-y-1 hidden"
-  aria-label="ऊपर स्क्रॉल करें"
-  title="ऊपर जाएँ"
->
-  <i class="fas fa-arrow-up"></i>
-</button>
-
-<script>
-  (function() {
-    const bar = document.getElementById('reading-progress-bar');
-    const btt = document.getElementById('back-to-top');
-
-    function onScroll() {
-      const doc = document.documentElement;
-      const scrollTop = doc.scrollTop || document.body.scrollTop;
-      const scrollHeight = doc.scrollHeight || document.body.scrollHeight;
-      const clientHeight = doc.clientHeight;
-      const max = scrollHeight - clientHeight;
-      
-      if (bar) {
-        const percent = max > 0 ? (scrollTop / max) * 100 : 0;
-        bar.style.width = Math.min(100, Math.max(0, percent)) + '%';
-      }
-      if (btt) {
-        if (scrollTop > 450) {
-          btt.style.display = 'flex';
-        } else {
-          btt.style.display = 'none';
-        }
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  })();
-</script>
+</div>
 {% endblock %}

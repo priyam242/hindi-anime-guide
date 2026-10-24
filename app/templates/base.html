@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#090d16">
+  <meta name="theme-color" content="#ffffff">
   <meta name="google-site-verification" content="YV5XGsvZulzaCWZilyv4eJFv6yo_wpJTm963Uxk43lI">
   <title>{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ site.description }}{% endblock %}">
-  
+
   {% if (article and article.is_sample) or is_sample %}
   <meta name="robots" content="noindex,nofollow">
   {% endif %}
-  
+
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
   <link rel="canonical" href="{% block canonical %}{{ canonical_url or request.url }}{% endblock %}">
   {% if not article %}
@@ -27,19 +27,53 @@
   <meta name="twitter:description" content="{% block twitter_description %}{{ site.description }}{% endblock %}">
   {% endblock %}
   {% endif %}
-  
-  <!-- Inline Light/Dark Theme Controller -->
-  <script>try { if (localStorage.getItem('theme') === 'light') document.documentElement.classList.remove('dark'); else document.documentElement.classList.add('dark'); } catch (e) {}</script>
+
+  <!-- Inline Light/Dark Theme Controller: LIGHT IS DEFAULT -->
+  <script>
+    try {
+      if (localStorage.getItem('theme') === 'dark' || document.cookie.includes('dark_mode=1')) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  </script>
 
   <!-- Fonts & Design Tokens -->
   <link rel="preload" as="font" type="font/woff2" href="/static/fonts/noto-serif-devanagari-variable.woff2" crossorigin>
   <link rel="stylesheet" href="/static/css/fonts.css">
   <link rel="stylesheet" href="/static/css/tokens.css">
-  <link rel="stylesheet" href="/static/css/tailwind.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
+  <!-- Tailwind CDN JIT (replaces static tailwind.css to avoid missing-class bugs) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#fef2f2',
+              100: '#fee2e2',
+              200: '#fecaca',
+              300: '#fca5a5',
+              400: '#f87171',
+              500: '#ef4444',
+              600: '#dc2626',
+              700: '#b91c1c',
+              800: '#991b1b',
+              900: '#7f1d1d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- Alpine.js -->
   <script defer src="/static/js/alpine.min.js"></script>
+
   <style>
     * {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, 'Times New Roman', serif !important;
@@ -47,11 +81,15 @@
     }
     body {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, serif !important;
-      background-color: #030712;
-      color: #f3f4f6;
+      background-color: #ffffff;
+      color: #111827;
       min-height: 100vh;
       font-weight: 400;
       line-height: 1.8;
+    }
+    html.dark body {
+      background-color: #0a0a0a;
+      color: #f3f4f6;
     }
     h1, h2, h3, h4, h5, h6 {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, serif !important;
@@ -62,15 +100,20 @@
       text-decoration: none;
       color: inherit;
     }
+    [x-cloak] { display: none !important; }
 
     /* Topbar Glassmorphic Design */
     .topbar-header {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(3, 7, 18, 0.85);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    html.dark .topbar-header {
+      background: rgba(10, 10, 10, 0.85);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -90,29 +133,34 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
-      border: 2px solid rgba(255, 255, 255, 0.15);
-      background: #4f46e5;
+      border: 2px solid rgba(220, 38, 38, 0.2);
+      background: #dc2626;
       overflow: hidden;
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .user-avatar-circle:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
 
     .public-dropdown {
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      background: #111827;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 12px;
       width: 240px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
       padding: 8px 0;
       z-index: 1000;
       animation: dropIn 0.15s ease-out;
+    }
+    html.dark .public-dropdown {
+      background: #111111;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
     }
 
     @keyframes dropIn {
@@ -122,21 +170,30 @@
 
     .public-dropdown-header {
       padding: 12px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    html.dark .public-dropdown-header {
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .public-dropdown-name {
       font-weight: 700;
       font-size: 14px;
+      color: #111827;
+    }
+    html.dark .public-dropdown-name {
       color: #ffffff;
     }
 
     .public-dropdown-email {
       font-size: 12px;
-      color: #9ca3af;
+      color: #6b7280;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    html.dark .public-dropdown-email {
+      color: #9ca3af;
     }
 
     .public-dropdown-item {
@@ -145,9 +202,12 @@
       gap: 12px;
       padding: 10px 16px;
       font-size: 14px;
-      color: #d1d5db;
+      color: #374151;
       text-decoration: none;
       transition: background 0.15s, color 0.15s;
+    }
+    html.dark .public-dropdown-item {
+      color: #d1d5db;
     }
 
     .public-dropdown-item svg {
@@ -157,8 +217,8 @@
     }
 
     .public-dropdown-item:hover {
-      background: rgba(79, 70, 229, 0.15);
-      color: #818cf8;
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
     }
     .public-dropdown-item:hover svg {
       opacity: 1;
@@ -166,8 +226,11 @@
 
     .public-dropdown-divider {
       height: 1px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       margin: 6px 0;
+    }
+    html.dark .public-dropdown-divider {
+      background: rgba(255, 255, 255, 0.08);
     }
 
     /* Notification Bell Dropdown */
@@ -176,21 +239,26 @@
       top: calc(100% + 10px);
       right: 0;
       width: 300px;
-      background: #111827;
-      border: 1px solid rgba(255,255,255,0.1);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.1);
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
       display: none;
       z-index: 100;
+    }
+    html.dark .notif-dropdown {
+      background: #111111;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .notif-dropdown.show {
       display: block;
     }
     .notif-bell-btn {
       position: relative;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #d1d5db;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.1);
+      color: #4b5563;
       padding: 8px;
       border-radius: 10px;
       cursor: pointer;
@@ -199,9 +267,14 @@
       justify-content: center;
       transition: all 0.2s;
     }
+    html.dark .notif-bell-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #d1d5db;
+    }
     .notif-bell-btn:hover {
-      background: rgba(255,255,255,0.1);
-      color: #ffffff;
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
     }
     .notif-badge-dot {
       position: absolute;
@@ -209,19 +282,192 @@
       right: 4px;
       width: 8px;
       height: 8px;
-      background: #ef4444;
+      background: #dc2626;
       border-radius: 50%;
+    }
+
+    /* Anime Cards */
+    .anime-card {
+      display: block;
+      position: relative;
+    }
+    .anime-card-image-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 3/4;
+      background: #f3f4f6;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    html.dark .anime-card-image-wrap {
+      background: #111111;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .anime-card:hover .anime-card-image-wrap {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(220, 38, 38, 0.2);
+    }
+    .anime-card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+    .anime-card:hover .anime-card-image {
+      transform: scale(1.05);
+    }
+    .badge-hindi {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #dc2626;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+    }
+    .card-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 14px;
+      z-index: 5;
+    }
+    .category-tag {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      display: inline-block;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: rgba(255,255,255,0.8);
+      font-size: 11px;
+    }
+
+    /* Category Pills */
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.1);
+      color: #374151;
+      font-size: 13px;
+      font-weight: 600;
+      background: #ffffff;
+      transition: all 0.2s;
+    }
+    html.dark .category-pill {
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #d1d5db;
+      background: #111111;
+    }
+    .category-pill:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+    }
+    .category-pill-active {
+      background: #dc2626 !important;
+      border-color: #dc2626 !important;
+      color: #ffffff !important;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Explore Page Components */
+    .explore-filter-card {
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    html.dark .explore-filter-card {
+      background: #111111;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: none;
+    }
+    .explore-search-input-wrap {
+      background: #f9fafb;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    html.dark .explore-search-input-wrap {
+      background: #0a0a0a;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .active-filter-chips {
+      padding: 12px 0;
+    }
+    .chip-item {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(220, 38, 38, 0.08);
+      color: #dc2626;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+    html.dark .chip-item {
+      background: rgba(220, 38, 38, 0.15);
+    }
+    .chip-dub {
+      background: #dc2626;
+      color: white;
+    }
+    .explore-empty-box {
+      background: #f9fafb;
+      border: 1px dashed rgba(0,0,0,0.12);
+    }
+    html.dark .explore-empty-box {
+      background: #111111;
+      border: 1px dashed rgba(255,255,255,0.12);
     }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body 
+<body
   x-data="{
     mobileOpen: false,
     userMenuOpen: false,
     isMobile: window.innerWidth <= 860,
     isDark: (() => {
-      try { return document.cookie.includes('dark_mode=1') || localStorage.getItem('theme') !== 'light'; } catch (e) { return true; }
+      try { return document.cookie.includes('dark_mode=1') || localStorage.getItem('theme') === 'dark'; } catch (e) { return false; }
     })(),
     init() {
       try {
@@ -231,7 +477,7 @@
           document.documentElement.classList.remove('dark');
         }
       } catch (e) {
-        this.isDark = true;
+        this.isDark = false;
       }
       window.addEventListener('resize', () => {
         this.isMobile = window.innerWidth <= 860;
@@ -265,75 +511,82 @@
   }"
   @keydown.escape.window="closeMobile()"
   @click.away="userMenuOpen = false"
-  class="bg-gray-950 text-gray-100 antialiased"
+  class="bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 antialiased"
 >
   <!-- Inline SVG Sprite & A11y Skip Link -->
   {% include "partials/icons.html" %}
-  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-indigo-600 focus:text-white focus:z-50">Skip to main content</a>
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-red-600 focus:text-white focus:z-50">Skip to main content</a>
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
   <!-- Header / Topbar -->
   <header class="topbar-header">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      
+
       <!-- Brand Logo & Mobile Trigger -->
       <div class="flex items-center gap-3">
-        <button 
+        <button
           id="hamburger-btn"
-          type="button" 
-          aria-label="मेन्यू" 
-          @click="toggleMobile()" 
-          class="md:hidden p-2 text-gray-400 hover:text-white focus:outline-none"
+          type="button"
+          aria-label="मेन्यू"
+          @click="toggleMobile()"
+          class="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
-        <a class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2 notranslate" href="/">
-          <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm flex items-center justify-center">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6z"></path></svg>
+        <a class="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2 notranslate" href="/">
+          <span class="bg-red-600 text-white p-1.5 rounded-lg text-sm flex items-center justify-center">
+            <i class="fas fa-play text-xs"></i>
           </span>
-          Hindi Anime <span class="text-indigo-400">Guide</span>
+          Hindi Anime <span class="text-red-600">Guide</span>
         </a>
       </div>
 
       <!-- Quick Search Bar (Desktop) -->
       <div class="hidden md:flex items-center flex-1 max-w-md mx-4">
         <div class="relative w-full">
-          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          <input type="search" placeholder="Search anime..." 
-                 class="w-full bg-gray-900/80 border border-gray-800 text-sm text-gray-200 pl-10 pr-4 py-1.5 rounded-full focus:outline-none focus:border-indigo-500 transition-colors"
-                 data-i18n-placeholder="search_placeholder" 
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="search" placeholder="Search anime..."
+                 class="w-full bg-gray-50 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 text-sm text-gray-700 dark:text-gray-200 pl-10 pr-4 py-1.5 rounded-full focus:outline-none focus:border-red-500 transition-colors"
+                 data-i18n-placeholder="search_placeholder"
                  onkeyup="if(event.key === 'Enter') window.location.href='/explore?q=' + encodeURIComponent(this.value)">
         </div>
       </div>
 
       <!-- Navigation Links & User Controls -->
       <div class="flex items-center gap-3">
-        
-        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-300 mr-2">
-          <a href="/" class="hover:text-indigo-400 transition-colors" data-i18n="nav_home">Home</a>
-          <a href="/explore" class="hover:text-indigo-400 transition-colors" data-i18n="nav_explore">Explore</a>
+
+        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300 mr-2">
+          <a href="/" class="hover:text-red-600 transition-colors" data-i18n="nav_home">Home</a>
+          <a href="/explore" class="hover:text-red-600 transition-colors" data-i18n="nav_explore">Explore</a>
           {% if user %}
-          <a href="/saved" class="hover:text-indigo-400 transition-colors" data-i18n="nav_saved">Saved</a>
+          <a href="/saved" class="hover:text-red-600 transition-colors" data-i18n="nav_saved">Saved</a>
           {% endif %}
         </nav>
+
+        <!-- Theme Toggle -->
+        <button type="button" @click="toggleTheme()" aria-label="Toggle theme"
+                class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+          <svg x-show="!isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          <svg x-show="isDark" style="display:none" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </button>
 
         {% if user %}
             <!-- Notification Bell -->
             <div style="position: relative;" id="notif-container">
-                <button 
-                  type="button" 
-                  class="notif-bell-btn" 
-                  aria-label="Notifications" 
+                <button
+                  type="button"
+                  class="notif-bell-btn"
+                  aria-label="Notifications"
                   onclick="toggleNotifDropdown(event)"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                   <span id="notif-badge" class="notif-badge-dot" style="display: none;"></span>
                 </button>
-                
+
                 <div id="notif-dropdown" class="notif-dropdown" onclick="event.stopPropagation()">
-                  <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 700; font-size: 13.5px; color: #ffffff;" data-i18n="notifications">सूचनाएं</span>
-                    <button type="button" onclick="markAllNotificationsRead()" style="background: none; border: none; font-size: 11.5px; color: #818cf8; cursor: pointer; font-weight: 600;" data-i18n="mark_all_read">Mark all read</button>
+                  <div style="padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; font-size: 13.5px;" class="text-gray-900 dark:text-white" data-i18n="notifications">सूचनाएं</span>
+                    <button type="button" onclick="markAllNotificationsRead()" style="background: none; border: none; font-size: 11.5px; color: #dc2626; cursor: pointer; font-weight: 600;" data-i18n="mark_all_read">Mark all read</button>
                   </div>
                   <div id="notif-list" style="max-height: 320px; overflow-y: auto;">
                     <div style="padding: 20px; text-align: center; color: #9ca3af; font-size: 13px;" data-i18n="no_notifications">कोई नई सूचना नहीं है</div>
@@ -351,24 +604,24 @@
                             <span class="uppercase">{{ user.name[0] if user.name else 'U' }}</span>
                         {% endif %}
                     </div>
-                    <span class="hidden sm:inline-flex items-center font-semibold text-gray-200 text-xs">
+                    <span class="hidden sm:inline-flex items-center font-semibold text-gray-700 dark:text-gray-200 text-xs">
                         {{ user.name }}
                         <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </span>
                 </button>
 
-                <!-- Dropdown Menu (With Master Icons) -->
+                <!-- Dropdown Menu -->
                 <div class="public-dropdown" x-show="userMenuOpen" style="display: none;" @click.stop>
                     <div class="public-dropdown-header">
                         <div class="public-dropdown-name">{{ user.name }}</div>
                         <div class="public-dropdown-email">{{ user.email or ('@' + user.username if user.username else '') }}</div>
                     </div>
                     {% if user.user_type == 'admin' or user.is_superuser or user.is_staff or true %}
-                        <a href="/admin/dashboard" class="public-dropdown-item text-indigo-400 font-bold">
+                        <a href="/admin/dashboard" class="public-dropdown-item text-red-600 font-bold">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                             <span data-i18n="admin_portal">Admin Portal</span>
                         </a>
-                        <a href="/admin/articles" class="public-dropdown-item text-indigo-400 font-medium">
+                        <a href="/admin/articles" class="public-dropdown-item text-red-600 font-medium">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             <span data-i18n="articles_mgmt">Manage Articles</span>
                         </a>
@@ -387,7 +640,7 @@
                         <span data-i18n="settings_title">Account Settings</span>
                     </a>
                     <div class="public-dropdown-divider"></div>
-                    <a href="/auth/logout" onclick="try{localStorage.removeItem('site_lang');}catch(e){}" class="public-dropdown-item text-red-400 hover:text-red-300">
+                    <a href="/auth/logout" onclick="try{localStorage.removeItem('site_lang');}catch(e){}" class="public-dropdown-item text-red-600 hover:text-red-700">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         <span data-i18n="logout">Log Out</span>
                     </a>
@@ -395,17 +648,17 @@
             </div>
         {% else %}
             <!-- Guest Controls: Log In & Sign Up -->
-            <a href="/auth/login" class="text-xs font-semibold text-gray-300 hover:text-white px-3 py-1.5 transition-colors" data-i18n="login">Log In</a>
-            <a href="/auth/register" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-full transition-all shadow-md hover:shadow-indigo-500/20" data-i18n="signup">Sign Up</a>
+            <a href="/auth/login" class="text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 px-3 py-1.5 transition-colors" data-i18n="login">Log In</a>
+            <a href="/auth/register" class="text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-full transition-all shadow-md hover:shadow-red-500/20" data-i18n="signup">Sign Up</a>
         {% endif %}
 
-        <div class="h-4 w-px bg-gray-800 mx-1"></div>
+        <div class="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1"></div>
 
         <!-- Language Segmented Control EN | हिंदी -->
-        <div class="inline-flex items-center rounded-lg border border-gray-800 bg-gray-900 p-0.5 text-xs font-bold notranslate">
-          <button type="button" id="lang-btn-en" onclick="setLanguage('en')" class="px-2 py-1 rounded text-gray-400 hover:text-white transition-colors">EN</button>
-          <span class="h-3 w-px bg-gray-800"></span>
-          <button type="button" id="lang-btn-hi" onclick="setLanguage('hi')" class="px-2 py-1 rounded text-indigo-400 transition-colors">हिंदी</button>
+        <div class="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-0.5 text-xs font-bold notranslate">
+          <button type="button" id="lang-btn-en" onclick="setLanguage('en')" class="px-2 py-1 rounded text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors">EN</button>
+          <span class="h-3 w-px bg-gray-200 dark:bg-gray-800"></span>
+          <button type="button" id="lang-btn-hi" onclick="setLanguage('hi')" class="px-2 py-1 rounded text-red-600 transition-colors">हिंदी</button>
         </div>
 
       </div>
@@ -414,30 +667,30 @@
 
   <!-- Mobile Drawer Menu -->
   <div x-show="mobileOpen" class="fixed inset-0 z-50 flex md:hidden" style="display: none;">
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" @click="closeMobile()"></div>
-    <div class="relative bg-gray-900 w-4/5 max-w-xs p-6 shadow-2xl flex flex-col justify-between border-r border-gray-800 z-10">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="closeMobile()"></div>
+    <div class="relative bg-white dark:bg-gray-900 w-4/5 max-w-xs p-6 shadow-2xl flex flex-col justify-between border-r border-gray-200 dark:border-gray-800 z-10">
       <div>
         <div class="flex items-center justify-between mb-8">
-          <a class="text-lg font-extrabold text-white tracking-tight notranslate" href="/">
-            Hindi Anime <span class="text-indigo-400">Guide</span>
+          <a class="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
+            Hindi Anime <span class="text-red-600">Guide</span>
           </a>
-          <button @click="closeMobile()" class="text-gray-400 hover:text-white">
+          <button @click="closeMobile()" class="text-gray-500 dark:text-gray-400 hover:text-red-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
         <nav class="space-y-4">
-          <a href="/" class="block text-gray-200 font-medium hover:text-indigo-400 py-2 border-b border-gray-800" data-i18n="nav_home">Home</a>
-          <a href="/explore" class="block text-gray-200 font-medium hover:text-indigo-400 py-2 border-b border-gray-800" data-i18n="nav_explore">Explore</a>
+          <a href="/" class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="nav_home">Home</a>
+          <a href="/explore" class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="nav_explore">Explore</a>
           {% if user %}
-          <a href="/saved" class="block text-gray-200 font-medium hover:text-indigo-400 py-2 border-b border-gray-800" data-i18n="nav_saved">Saved Guides</a>
-          <a href="/profile" class="block text-gray-200 font-medium hover:text-indigo-400 py-2 border-b border-gray-800" data-i18n="my_profile">My Profile</a>
+          <a href="/saved" class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="nav_saved">Saved Guides</a>
+          <a href="/profile" class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="my_profile">My Profile</a>
           {% else %}
-          <a href="/auth/login" class="block text-gray-200 font-medium hover:text-indigo-400 py-2 border-b border-gray-800" data-i18n="login">Log In</a>
-          <a href="/auth/register" class="block text-indigo-400 font-bold py-2 border-b border-gray-800" data-i18n="signup">Sign Up</a>
+          <a href="/auth/login" class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="login">Log In</a>
+          <a href="/auth/register" class="block text-red-600 font-bold py-2 border-b border-gray-200 dark:border-gray-800" data-i18n="signup">Sign Up</a>
           {% endif %}
         </nav>
       </div>
-      <div class="text-xs text-gray-500 pt-6 border-t border-gray-800">
+      <div class="text-xs text-gray-400 dark:text-gray-500 pt-6 border-t border-gray-200 dark:border-gray-800">
         © {{ current_year() }} {{ site.name }}
       </div>
     </div>
@@ -449,46 +702,46 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="bg-gray-950 border-t border-gray-900 mt-20 text-gray-400 text-sm">
+  <footer class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-gray-900 mt-20 text-gray-500 dark:text-gray-400 text-sm">
     <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div class="space-y-4 md:col-span-1">
-          <a class="text-xl font-extrabold text-white tracking-tight notranslate" href="/">
-            Hindi Anime <span class="text-indigo-400">Guide</span>
+          <a class="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
+            Hindi Anime <span class="text-red-600">Guide</span>
           </a>
-          <p class="text-xs text-gray-400 leading-relaxed" data-i18n="footer_tagline">
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed" data-i18n="footer_tagline">
             India's legal streaming guide for Hindi dubbed anime, news & recommendations.
           </p>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4" data-i18n="footer_guides">Guides</h4>
+          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_guides">Guides</h4>
           <ul class="space-y-2 text-xs">
-            <li><a href="/explore?category=Action" class="hover:text-indigo-400 transition-colors">Action Anime</a></li>
-            <li><a href="/explore?category=Romance" class="hover:text-indigo-400 transition-colors">Romance Anime</a></li>
-            <li><a href="/explore?hindi_dub=true" class="hover:text-indigo-400 transition-colors">Hindi Dubbed Only</a></li>
+            <li><a href="/explore?category=Action" class="hover:text-red-600 transition-colors">Action Anime</a></li>
+            <li><a href="/explore?category=Romance" class="hover:text-red-600 transition-colors">Romance Anime</a></li>
+            <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">Hindi Dubbed Only</a></li>
           </ul>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4" data-i18n="footer_site">Site</h4>
+          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_site">Site</h4>
           <ul class="space-y-2 text-xs">
-            <li><a href="/about" class="hover:text-indigo-400 transition-colors" data-i18n="about_us">About Us</a></li>
-            <li><a href="/editorial-policy" class="hover:text-indigo-400 transition-colors" data-i18n="editorial_policy">Editorial Policy</a></li>
-            <li><a href="/contact" class="hover:text-indigo-400 transition-colors" data-i18n="contact">Contact</a></li>
+            <li><a href="/about" class="hover:text-red-600 transition-colors" data-i18n="about_us">About Us</a></li>
+            <li><a href="/editorial-policy" class="hover:text-red-600 transition-colors" data-i18n="editorial_policy">Editorial Policy</a></li>
+            <li><a href="/contact" class="hover:text-red-600 transition-colors" data-i18n="contact">Contact</a></li>
           </ul>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4" data-i18n="footer_legal">Legal</h4>
+          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_legal">Legal</h4>
           <ul class="space-y-2 text-xs">
-            <li><a href="/privacy" class="hover:text-indigo-400 transition-colors" data-i18n="privacy">Privacy Policy</a></li>
-            <li><a href="/disclaimer" class="hover:text-indigo-400 transition-colors" data-i18n="disclaimer">Disclaimer</a></li>
+            <li><a href="/privacy" class="hover:text-red-600 transition-colors" data-i18n="privacy">Privacy Policy</a></li>
+            <li><a href="/disclaimer" class="hover:text-red-600 transition-colors" data-i18n="disclaimer">Disclaimer</a></li>
           </ul>
         </div>
       </div>
 
-      <div class="pt-8 border-t border-gray-900 text-center md:flex md:justify-between md:text-left text-xs text-gray-500">
+      <div class="pt-8 border-t border-gray-200 dark:border-gray-900 text-center md:flex md:justify-between md:text-left text-xs text-gray-400 dark:text-gray-500">
         <p>© {{ current_year() }} {{ site.name }}. <span data-i18n="footer_rights">All rights reserved.</span></p>
         <p class="mt-2 md:mt-0" data-i18n="footer_disclaimer_text">All trademarks belong to their respective owners. We reference official streaming platforms only.</p>
       </div>
@@ -583,8 +836,8 @@
       const btnEn = document.getElementById('lang-btn-en');
       const btnHi = document.getElementById('lang-btn-hi');
       if (btnEn && btnHi) {
-        btnEn.style.color = (lang === 'en') ? '#818cf8' : '#9ca3af';
-        btnHi.style.color = (lang === 'hi') ? '#818cf8' : '#9ca3af';
+        btnEn.style.color = (lang === 'en') ? '#dc2626' : '#9ca3af';
+        btnHi.style.color = (lang === 'hi') ? '#dc2626' : '#9ca3af';
       }
     };
 
@@ -624,7 +877,7 @@
         const data = await resp.json();
         const badge = document.getElementById('notif-badge');
         const list = document.getElementById('notif-list');
-        
+
         if (badge) badge.style.display = (data.unread_count > 0) ? 'block' : 'none';
 
         if (list && data.notifications) {
@@ -632,7 +885,7 @@
             list.innerHTML = '<div style="padding: 20px; text-align: center; color: #9ca3af; font-size: 13px;">No new notifications</div>';
           } else {
             list.innerHTML = data.notifications.map(function(n) {
-              return '<a href="' + (n.link || '#') + '" style="display: block; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); text-decoration: none; color: #ffffff;">' +
+              return '<a href="' + (n.link || '#') + '" style="display: block; padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.08); text-decoration: none;" class="text-gray-900 dark:text-white">' +
                 '<div style="font-weight: 600; font-size: 13px;">' + (n.title || 'Notification') + '</div>' +
                 '<div style="font-size: 12px; color: #9ca3af;">' + (n.message || '') + '</div>' +
               '</a>';
