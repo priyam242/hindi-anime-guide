@@ -74,10 +74,23 @@
   <!-- Alpine.js -->
   <script defer src="/static/js/alpine.min.js"></script>
 
-  <style>
+    <style>
     * {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, 'Times New Roman', serif !important;
       box-sizing: border-box;
+    }
+    .fa, .fas, .far, .fal, .fab,
+    [class^="fa-"], [class*=" fa-"] {
+      font-family: "Font Awesome 6 Free" !important;
+    }
+    .fab {
+      font-family: "Font Awesome 6 Brands" !important;
+    }
+    .far {
+      font-weight: 400 !important;
+    }
+    .fas, .fa {
+      font-weight: 900 !important;
     }
     body {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, serif !important;
@@ -597,11 +610,14 @@
             <!-- User Avatar Dropdown -->
             <div class="user-profile-menu-container" @click.stop="userMenuOpen = !userMenuOpen">
                 <button type="button" class="flex items-center gap-2 focus:outline-none">
-                    <div class="user-avatar-circle">
+                                        <div class="user-avatar-circle">
                         {% if user.avatar_url %}
-                            <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover rounded-full" loading="lazy">
+                        <img src="{{ user.avatar_url }}" alt="{{ user.name }}" class="w-full h-full object-cover rounded-full"
+                             loading="lazy"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                        <span class="uppercase" style="display:none; align-items:center; justify-content:center; width:100%; height:100%;">{{ get_initials(user.name or 'U') }}</span>
                         {% else %}
-                            <span class="uppercase">{{ user.name[0] if user.name else 'U' }}</span>
+                        <span class="uppercase">{{ get_initials(user.name or 'U') }}</span>
                         {% endif %}
                     </div>
                     <span class="hidden sm:inline-flex items-center font-semibold text-gray-700 dark:text-gray-200 text-xs">
