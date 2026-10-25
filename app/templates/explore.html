@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% macro filter_url(remove='') %}/explore?{%- if q and remove != 'q' -%}q={{ q|urlencode }}&{%- endif -%}{%- if selected_category and remove != 'category' -%}category={{ selected_category|urlencode }}&{%- endif -%}{%- if selected_platform and remove != 'platform' -%}platform={{ selected_platform|urlencode }}&{%- endif -%}{%- if selected_hindi_dub and remove != 'hindi_dub' -%}hindi_dub=1&{%- endif -%}{%- if selected_sort and selected_sort != 'latest' and remove != 'sort' -%}sort={{ selected_sort }}&{%- endif -%}{% endmacro %}
@@ -8,9 +9,7 @@
 
 {% block meta_description %}हिंदी डब और सबटाइटल के साथ एनीमे देखने की सभी गाइड खोजें, फ़िल्टर करें और एक्सप्लोर करें - {{ site.name }} पर।{% endblock %}
 
-{% block canonical %}
-<link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}/explore">
-{% endblock %}
+{% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/explore{% endblock %}
 
 {% block content %}
 <section class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 py-8 md:py-10">
