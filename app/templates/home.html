@@ -1,108 +1,170 @@
+
 {% extends "base.html" %}
 
-{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}
+{% block title %}Hindi Anime Guide — India's Legal Anime Streaming & Hindi Dub Directory{% endblock %}
+
+{% block meta_description %}Find where to legally watch anime in Hindi in India. Complete list of Hindi dubbed anime on Crunchyroll, Netflix, JioCinema & YouTube with watch orders and guides.{% endblock %}
+
+{% block extra_head %}
+<!-- OpenGraph / Social Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hindi Anime Guide — Watch Anime in Hindi in India">
+<meta property="og:description" content="India's most trusted source for Hindi dubbed anime news, watch orders, and official streaming references.">
+<meta property="og:url" content="{{ request.url }}">
+
+<!-- JSON-LD Structured Data for Google Search Sitelinks & Organization -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.base_url }}#website",
+      "url": "{{ request.base_url }}",
+      "name": "{{ site.name }}",
+      "description": "India's Legal Anime Streaming & Hindi Dub Directory",
+      "inLanguage": "hi-IN",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ request.base_url }}explore?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ request.base_url }}#organization",
+      "name": "{{ site.name }}",
+      "url": "{{ request.base_url }}",
+      "logo": "{{ request.base_url }}favicon.ico",
+      "sameAs": [
+        "https://t.me/hindianimeguide"
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
-<main class="wrap" style="padding-top: 24px; padding-bottom: 56px;">
-
-  {% if not articles %}
-  <!-- Empty State when no published articles exist -->
-  <div style="padding: 96px 20px; text-align: center; max-width: 600px; margin: 0 auto;">
-    <h2 style="font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 12px; line-height: 1.35;">पहले लेख जल्द आ रहे हैं</h2>
-    <p style="font-size: 15px; color: var(--muted); line-height: 1.7;">आधिकारिक स्ट्रीमिंग गाइड और हिंदी डब संदर्भ तैयार किए जा रहे हैं।</p>
-  </div>
-  {% else %}
-
-  <!-- HERO SECTION: Lead story on the left, 3 side stories on the right -->
-  {% if featured_article %}
-  <section class="hero">
+<div class="space-y-12 pb-12">
     
-    <!-- Lead Featured Article (Typographic Cover by Category or Image) -->
-    <a class="lead" href="/article/{{ featured_article.slug }}">
-      {% if featured_article.cover_image %}
-      <div class="cover-media" style="border-radius: 8px; max-height: 380px;">
-        <img src="{{ featured_article.cover_image }}" alt="{{ featured_article.title }}" loading="eager" fetchpriority="high" width="600" height="338">
-      </div>
-      {% else %}
-      <div class="cover c-{{ featured_article.category_cover_color }}">
-        {{ featured_article.anime_title_hi if featured_article.anime_title_hi else featured_article.category_name_hi }}
-      </div>
-      {% endif %}
-      <h1>{{ featured_article.title }}</h1>
-      {% if featured_article.summary %}
-      <p>{{ featured_article.summary }}</p>
-      {% endif %}
-      <div class="meta" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-        {% if featured_article.categories and featured_article.categories|length > 0 %}
-          {% for cat in featured_article.categories %}
-            <span class="tag">{{ cat.display_name or cat.name_hi or cat.name }}</span>
-          {% endfor %}
-        {% else %}
-          <span class="tag">{{ featured_article.category_name_hi }}</span>
-        {% endif %}
-        <span>{{ featured_article.reading_time_minutes or 4 }} मिनट</span>
-      </div>
-    </a>
-
-    <!-- Side Articles (Top 3 items) -->
-    <div class="side">
-      {% for a in side_articles %}
-        <a href="/article/{{ a.slug }}">
-          {% if a.cover_image %}
-          <div class="cover-media" style="aspect-ratio: 1; border-radius: 6px;">
-            <img src="{{ a.cover_image }}" alt="{{ a.title }}" loading="lazy">
-          </div>
-          {% else %}
-          <div class="cover c-{{ a.category_cover_color }}">
-            {{ a.anime_title_hi if a.anime_title_hi else a.category_name_hi }}
-          </div>
-          {% endif %}
-          <div>
-            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;">
-              {% if a.categories and a.categories|length > 0 %}
-                {% for cat in a.categories[:2] %}
-                  <span class="tag">{{ cat.display_name or cat.name_hi or cat.name }}</span>
-                {% endfor %}
-              {% else %}
-                <span class="tag">{{ a.category_name_hi }}</span>
-              {% endif %}
-            </div>
-            <h3>{{ a.title }}</h3>
-            <p class="meta">
-              {{ a.reading_time_minutes or 4 }} मिनट
+    <!-- Hero Section -->
+    <section class="notranslate relative h-[480px] md:h-[520px] flex items-center justify-center overflow-hidden rounded-3xl mx-4 mt-6 shadow-xl border border-gray-200 dark:border-gray-800">
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.alphacoders.com/131/1311545.jpeg');"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40"></div>
+        <div class="relative z-10 text-center px-6 max-w-3xl">
+            <span class="bg-red-600/90 backdrop-blur-md text-white text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-4 inline-flex items-center gap-2 shadow-lg border border-red-400/30">
+                <i class="fas fa-crown"></i> Premium Guides
+            </span>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
+                Explore Anime in <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-300">Hindi</span>
+            </h1>
+            <p class="text-lg text-gray-200 mb-8 leading-relaxed">
+                India's most trusted source for Hindi dubbed anime news, watch orders, and exclusive streaming guides.
             </p>
-          </div>
-        </a>
-      {% endfor %}
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="/explore" class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all transform hover:scale-105 shadow-lg shadow-red-600/30 inline-flex items-center gap-2">
+                    <i class="fas fa-compass"></i> Start Exploring
+                </a>
+                <a href="/auth/register" class="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full backdrop-blur-sm border border-white/30 transition-all inline-flex items-center gap-2">
+                    <i class="fas fa-user-plus"></i> Join Community
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Quick Links -->
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fas fa-th-large text-red-600"></i> Popular Categories
+            </h2>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-4 scrollbar-hide smooth-touch-scroll">
+            <a href="/explore" class="category-pill bg-red-600 border-red-600 text-white hover:text-white">All Anime</a>
+            {% for cat in categories %}
+            <a href="/explore?category={{ cat.slug }}" class="category-pill">{{ cat.name_hi or cat.display_name or cat.name }}</a>
+            {% endfor %}
+        </div>
     </div>
 
-  </section>
-  {% endif %}
+    <!-- Latest Guides Section -->
+    <section class="px-4">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-fire text-red-600"></i> Latest Anime Guides
+                </h2>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Fresh updates from the anime world in India</p>
+            </div>
+            <a href="/explore" class="text-red-600 hover:text-red-700 font-bold text-sm flex items-center gap-1.5">
+                View All <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+        </div>
 
-  <!-- SECTION HEADER & GRID (Excluded hero items) -->
-  {% if grid_articles %}
-  <div class="sec">
-    <h2>नवीनतम गाइड</h2>
-    <span class="meta">{{ grid_articles|length }} गाइड उपलब्ध</span>
-  </div>
-  {% endif %}
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {% for article in articles %}
+            <a href="/article/{{ article.slug }}" class="anime-card group">
+                <div class="anime-card-image-wrap">
+                    {% if article.has_hindi_dub %}
+                    <span class="badge-hindi"><i class="fas fa-microphone-alt"></i> Hindi Dub</span>
+                    {% endif %}
+                    
+                    <img src="{{ article.cover_image or 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&h=400&fit=crop' }}" 
+                         alt="{{ article.title }}" 
+                         class="anime-card-image"
+                         loading="lazy">
+                    
+                    <div class="card-overlay"></div>
+                    
+                    <div class="card-content">
+                        <div class="flex gap-1 mb-2">
+                            <span class="category-tag">{{ article.category_name_hi or 'गाइड' }}</span>
+                        </div>
+                        <h3 class="card-title">{{ article.title }}</h3>
+                        <div class="card-meta">
+                            <i class="far fa-calendar-alt"></i>
+                            <span>{{ (article.published_at | hindi_date) if article.published_at else 'हाल ही में' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+            
+            {% if not articles %}
+            <div class="col-span-full py-16 text-center">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl text-gray-400">
+                    <i class="far fa-folder-open"></i>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">No guides published yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
 
-  <!-- 3-COLUMN CARD GRID -->
-  <section class="grid">
-    {% for article in grid_articles %}
-      {% include "components/anime_card.html" %}
-    {% endfor %}
-  </section>
+    <!-- Legal Advisory Banner -->
+       <!-- Updates CTA Banner -->
+    <div class="mx-4 p-8 rounded-2xl bg-gradient-to-r from-red-50 to-white dark:from-red-950/30 dark:to-gray-900 border border-red-200 dark:border-red-500/20 text-center shadow-sm">
+        <div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl shadow-lg shadow-red-600/30">
+            <i class="fas fa-bell"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Never miss a Hindi update!</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-xl mx-auto text-sm">Get instant alerts when new anime episodes release with Hindi dubbing on official platforms.</p>
+        {% if user %}
+        <span class="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-600/20">
+            <i class="fas fa-check-circle text-lg"></i>
+            You're Subscribed
+        </span>
+        {% else %}
+        <a href="/auth/register" class="inline-flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-transform transform active:scale-95 shadow-lg shadow-red-600/20">
+            <i class="fas fa-user-plus text-lg"></i>
+            Sign Up for Updates
+        </a>
+        {% endif %}
+    </div>
 
-  <!-- LEGAL ADVISORY (Neutral Editorial Box) -->
-  <section class="bg-theme-surface" style="margin-top: 48px; padding: 28px; border: 1px solid var(--border); border-radius: 10px;">
-    <h2 style="font-size: 22px; margin-bottom: 8px;">कानूनी एनीमे स्ट्रीमिंग मार्गदर्शिका</h2>
-    <p style="font-size: 14px; color: var(--muted); line-height: 1.8;">
-      भारत में एनीमे देखने के लिए हमेशा आधिकारिक और लाइसेंस प्राप्त स्ट्रीमिंग सेवाओं का उपयोग करें। किसी भी सेवा की वर्तमान उपलब्धता, भाषा विकल्प और कैटलॉग जानने के लिए उनकी आधिकारिक वेबसाइट या ऐप पर सीधे पुष्टि करें।
-    </p>
-  </section>
-
-  {% endif %}
-
-</main>
+</div>
 {% endblock %}

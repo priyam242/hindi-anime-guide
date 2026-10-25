@@ -4,7 +4,7 @@
 {% block title %}{{ article.title }} | {{ site.name }}{% endblock %}
 
 {% block meta_description %}{{ article.meta_description or article.summary or article.title }}{% endblock %}
-
+{% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/article/{{ article.slug }}{% endblock %}
 
 {% block og_tags %}
 <meta property="og:type" content="article">
