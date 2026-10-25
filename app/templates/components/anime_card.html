@@ -6,7 +6,7 @@
     <img src="{{ article.cover_image }}" alt="{{ article.title }}" loading="lazy">
   </div>
   {% else %}
-  <div class="cover c-{{ article.category_cover_color }}" data-title-hi="{{ article.anime_title_hi if article.anime_title_hi else article.category_name_hi }}" data-title-en="{{ article.anime_title_en if article.anime_title_en else '' }}" data-cat-fallback="{{ article.category_name_hi }}">
+  <div class="cover c-{{ article.category_cover_color }}">
     {{ article.anime_title_hi if article.anime_title_hi else article.category_name_hi }}
   </div>
   {% endif %}
@@ -15,32 +15,32 @@
       <div style="display: flex; gap: 4px; flex-wrap: wrap;">
         {% if article.categories and article.categories|length > 0 %}
           {% for cat in article.categories[:2] %}
-            <span class="tag" data-cat-tag="{{ cat.display_name or cat.name_hi or cat.name }}">{{ cat.display_name or cat.name_hi or cat.name }}</span>
+            <span class="tag">{{ cat.display_name or cat.name_hi or cat.name }}</span>
           {% endfor %}
         {% else %}
-          <span class="tag" data-cat-tag="{{ article.category_name_hi }}">{{ article.category_name_hi }}</span>
+          <span class="tag">{{ article.category_name_hi }}</span>
         {% endif %}
       </div>
-      <span class="meta" style="font-size: 12.5px;" data-reading-mins="{{ article.reading_time_minutes or 4 }}">{{ article.reading_time_minutes or 4 }} मिनट</span>
+      <span class="meta" style="font-size: 12.5px;">{{ article.reading_time_minutes or 4 }} मिनट</span>
     </div>
 
-    <h3 class="i18n-dynamic">{{ article.title }}</h3>
+    <h3>{{ article.title }}</h3>
 
     {% if article.summary %}
-    <p class="i18n-dynamic">{{ article.summary }}</p>
+    <p>{{ article.summary }}</p>
     {% elif article.meta_description %}
-    <p class="i18n-dynamic">{{ article.meta_description }}</p>
+    <p>{{ article.meta_description }}</p>
     {% endif %}
 
     <div class="card-badges">
       {% if article.has_hindi_dub %}
-      <span class="badge-dub"><svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="badge_hindi_dub">हिंदी डब</span></span>
+      <span class="badge-dub"><svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="filter_hindi_dub">हिंदी डब</span></span>
       {% endif %}
       {% for p in article.platform_names[:3] %}
-      <span class="platform-pill notranslate"><svg class="icon" width="11" height="11" style="margin-right: 3px;" aria-hidden="true"><use href="#i-tv"></use></svg>{{ p }}</span>
+      <span class="platform-pill"><svg class="icon" width="11" height="11" style="margin-right: 3px;" aria-hidden="true"><use href="#i-tv"></use></svg>{{ p }}</span>
       {% endfor %}
       {% if article.platform_names|length > 3 %}
-      <span class="platform-pill notranslate">+{{ article.platform_names|length - 3 }}</span>
+      <span class="platform-pill">+{{ article.platform_names|length - 3 }}</span>
       {% endif %}
     </div>
   </div>

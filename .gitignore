@@ -23,6 +23,7 @@ __pycache__/
 *.pyd
 .Python
 .pytest_cache/
+.pytest_temp/
 .mypy_cache/
 .ruff_cache/
 htmlcov/

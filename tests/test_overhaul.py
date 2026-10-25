@@ -372,6 +372,19 @@ def test_user_email_change_and_settings_tabs():
         follow_redirects=False
     )
     assert resp_update.status_code == 303
+    if "/auth/verify-otp" in resp_update.headers["location"]:
+        pre_token = resp_update.cookies.get("pre_2fa_token")
+        if pre_token:
+            client.cookies.set("pre_2fa_token", pre_token)
+        from app.email_otp import EMAIL_OUTBOX
+        otp_code = EMAIL_OUTBOX[-1]["code"]
+        resp_update = client.post(
+            "/auth/verify-otp",
+            data={"code": otp_code},
+            follow_redirects=False
+        )
+        assert resp_update.status_code == 303
+
     assert "updated=1" in resp_update.headers["location"]
     # Check that new token cookie was set
     assert "auth_token" in resp_update.cookies or "auth_token" in resp_update.headers.get("set-cookie", "")

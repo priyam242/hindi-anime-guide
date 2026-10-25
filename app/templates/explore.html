@@ -12,7 +12,7 @@
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/explore{% endblock %}
 
 {% block content %}
-<section class="bg-white dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 py-8 md:py-10">
+<section class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-8 md:py-10">
   <div class="max-w-7xl mx-auto px-4">
     <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
       <i class="fas fa-compass text-red-600 mr-2"></i>
@@ -32,14 +32,14 @@
         <input type="text" name="q" value="{{ q or '' }}" placeholder="एनीमे का नाम खोजें..." class="w-full">
       </div>
 
-      <select name="platform" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#111] text-gray-700 dark:text-gray-300">
+      <select name="platform" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
         <option value="">सभी प्लेटफ़ॉर्म</option>
         {% for p in platforms %}
         <option value="{{ p.id }}" {% if selected_platform == p.id %}selected{% endif %}>{{ p.display_name }}</option>
         {% endfor %}
       </select>
 
-      <select name="sort" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#111] text-gray-700 dark:text-gray-300">
+      <select name="sort" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
         <option value="latest" {% if selected_sort == 'latest' or not selected_sort %}selected{% endif %}>नवीनतम पहले</option>
         <option value="az" {% if selected_sort == 'az' %}selected{% endif %}>नाम (A-Z)</option>
       </select>
@@ -108,7 +108,7 @@
       <div class="anime-card-image-wrap">
         <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="anime-card-image" loading="lazy">
         {% if article.has_hindi_dub %}
-        <span class="badge-hindi"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>
+        <span class="badge-hindi badge-dub"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>
         {% endif %}
         <div class="card-overlay"></div>
       </div>

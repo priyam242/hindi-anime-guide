@@ -1,11 +1,10 @@
 
 {% extends "base.html" %}
 
-{% block title %}{{ article.title }} - {{ site.name }}{% endblock %}
+{% block title %}{{ article.title }} | {{ site.name }}{% endblock %}
 
 {% block meta_description %}{{ article.meta_description or article.summary or article.title }}{% endblock %}
 
-{% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/article/{{ article.slug }}{% endblock %}
 
 {% block og_tags %}
 <meta property="og:type" content="article">
@@ -17,49 +16,106 @@
 {% endblock %}
 
 {% block extra_head %}
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ article.title | tojson }},
+  "description": {{ (article.meta_description or article.summary or '') | tojson }},
+  "inLanguage": "hi",
+  "datePublished": "{{ article.published_at.isoformat() if article.published_at else (article.created_at.isoformat() if article.created_at else '') }}",
+  "dateModified": "{{ article.updated_at.isoformat() if article.updated_at else (article.created_at.isoformat() if article.created_at else '') }}",
+  {% if article.cover_image %}
+  "image": "{{ request.base_url }}{{ article.cover_image.lstrip('/') }}",
+  {% endif %}
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site.name }}",
+    "url": "{{ request.base_url }}"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "होम",
+      "item": "{{ request.base_url }}"
+    },
+    {% if article.category_name_hi %}
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ article.category_name_hi | tojson }},
+      "item": "{{ request.base_url }}category/{{ article.category or (article.category_rel.slug if article.category_rel else '') }}"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ article.title | tojson }}
+    }
+    {% else %}
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ article.title | tojson }}
+    }
+    {% endif %}
+  ]
+}
+</script>
+
 <style>
-  .article-body h2 { font-size: 1.4rem; font-weight: 800; margin-top: 2rem; margin-bottom: 0.75rem; color: #111827; }
-  .article-body h3 { font-size: 1.15rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111827; }
-  .article-body p { margin-bottom: 1rem; line-height: 1.8; color: #374151; }
-  .article-body ul, .article-body ol { margin: 0 0 1rem 1.25rem; line-height: 1.8; color: #374151; }
+  .article-container {
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+  .article-body h2 { font-size: 1.4rem; font-weight: 800; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--text); scroll-margin-top: 84px; }
+  .article-body h3 { font-size: 1.15rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text); scroll-margin-top: 84px; }
+  .article-body p { margin-bottom: 1rem; line-height: 1.8; color: var(--text); }
+  .article-body ul, .article-body ol { margin: 0 0 1rem 1.25rem; line-height: 1.8; color: var(--text); }
   .article-body ul { list-style: disc; }
   .article-body ol { list-style: decimal; }
-  .article-body a { color: #dc2626; text-decoration: underline; }
-  .article-body blockquote { border-left: 4px solid #dc2626; padding: 0.5rem 1rem; margin: 1rem 0; background: #fef2f2; color: #374151; border-radius: 0 0.5rem 0.5rem 0; }
+  .article-body a { color: var(--red); text-decoration: underline; }
+  .article-body blockquote { border-left: 4px solid var(--red); padding: 0.5rem 1rem; margin: 1rem 0; background: var(--surface); color: var(--muted); border-radius: 0 0.5rem 0.5rem 0; border: 1px solid var(--border); border-left: 4px solid var(--red); }
   .article-body img { border-radius: 0.75rem; margin: 1rem 0; max-width: 100%; }
-  .article-body code { background: #f3f4f6; color: #dc2626; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; }
-  .article-body pre { background: #111827; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
-  .article-body pre code { background: transparent; color: inherit; padding: 0; }
+  .article-body code { background: var(--surface); color: var(--red); padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.9em; border: 1px solid var(--border); }
+  .article-body pre { background: var(--surface); color: var(--text); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); }
+  .article-body pre code { background: transparent; color: inherit; padding: 0; border: none; }
   .article-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-  .article-body th, .article-body td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
-
-  html.dark .article-body h2, html.dark .article-body h3 { color: #ffffff; }
-  html.dark .article-body p, html.dark .article-body ul, html.dark .article-body ol { color: #d1d5db; }
-  html.dark .article-body blockquote { background: rgba(220,38,38,0.1); color: #d1d5db; }
-  html.dark .article-body code { background: #1f2937; }
-  html.dark .article-body th, html.dark .article-body td { border-color: #374151; }
+  .article-body th, .article-body td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
 
   .toc-nav ul { list-style: none; margin: 0; padding: 0; }
   .toc-nav ul ul { padding-left: 0.9rem; }
-  .toc-nav a { display: block; padding: 0.35rem 0; font-size: 0.875rem; color: #6b7280; text-decoration: none; border-left: 2px solid transparent; padding-left: 0.6rem; }
-  .toc-nav a:hover { color: #dc2626; border-left-color: #dc2626; }
-  html.dark .toc-nav a { color: #9ca3af; }
-  html.dark .toc-nav a:hover { color: #f87171; }
+  .toc-nav a { display: block; padding: 0.35rem 0; font-size: 0.875rem; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; padding-left: 0.6rem; }
+  .toc-nav a:hover { color: var(--red); border-left-color: var(--red); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div x-data="{ reportOpen: false, tocOpen: false }">
 
-<section class="max-w-7xl mx-auto px-4 py-6">
+<section class="article-container max-w-7xl mx-auto px-4 py-6">
 
   <!-- ब्रेडक्रम -->
   <nav class="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1 flex-wrap">
-    <a href="/" class="hover:text-red-600"><i class="fas fa-home"></i></a>
-    <i class="fas fa-chevron-right text-[10px]"></i>
+    <a href="/" class="hover:text-red-600"><i class="fas fa-home"></i> होम</a>
+    {% if article.category_name_hi %}
+    <span>›</span>
     <a href="/explore?category={{ article.category }}" class="hover:text-red-600">{{ article.category_name_hi }}</a>
-    <i class="fas fa-chevron-right text-[10px]"></i>
+    <span>›</span>
     <span class="text-gray-700 dark:text-gray-300 truncate">{{ article.title }}</span>
+    {% else %}
+    <span>›</span>
+    <span class="text-gray-700 dark:text-gray-300 truncate">{{ article.title }}</span>
+    {% endif %}
   </nav>
 
   <!-- हेडर -->
@@ -80,12 +136,15 @@
       <span><i class="far fa-clock mr-1"></i>{{ article.reading_time_minutes }} मिनट रीड</span>
       {% endif %}
       <span><i class="far fa-comment mr-1"></i>{{ comments|length }} टिप्पणियाँ</span>
+      {% if site.author_name %}
+      <span><i class="far fa-user mr-1"></i>लेखक: {{ site.author_name }}</span>
+      {% endif %}
     </div>
   </div>
 
   {% if article.cover_image %}
   <div class="rounded-2xl overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
-    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-auto object-cover max-h-[420px]">
+    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-auto object-cover max-h-[420px]" loading="lazy">
   </div>
   {% endif %}
 
@@ -117,9 +176,9 @@
   <!-- मोबाइल TOC एकॉर्डियन -->
   {% if toc_html %}
   <div class="lg:hidden mb-6 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-    <button @click="tocOpen = !tocOpen" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-[#111] font-semibold text-sm text-gray-800 dark:text-gray-200">
-      <span><i class="fas fa-list-ul text-red-600 mr-2"></i>इस गाइड में क्या है</span>
-      <i class="fas fa-chevron-down transition" :class="tocOpen ? 'rotate-180' : ''"></i>
+    <button @click="tocOpen = !tocOpen" class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 font-semibold text-sm text-gray-800 dark:text-gray-200">
+      <span><i class="fas fa-list-ul text-red-600 mr-2"></i>विषय सूची</span>
+      <span class="text-xs text-red-600 font-semibold" x-text="tocOpen ? 'छुपाएँ ▲' : 'दिखाएँ ▼'">छुपाएँ ▲</span>
     </button>
     <div x-show="tocOpen" x-collapse class="toc-nav px-4 py-3 border-t border-gray-200 dark:border-gray-800">
       {{ toc_html | safe }}
@@ -137,43 +196,56 @@
       </div>
 
       <!-- कहाँ देखें -->
+      {% if valid_availabilities %}
       <section class="mt-10">
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-tv text-red-600 mr-2"></i>कहाँ देखें</h2>
-        {% if valid_availabilities %}
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-tv text-red-600 mr-2"></i>कहाँ देखें (Where to Watch)</h2>
         <div class="grid sm:grid-cols-2 gap-4">
           {% for a in valid_availabilities %}
-          <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-[#111]">
+          <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-white dark:bg-gray-800">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <i class="fas fa-play-circle text-red-600 text-xl"></i>
-                <span class="font-bold text-gray-900 dark:text-white">{{ a.platform_rel.display_name }}</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ a.platform.name if a.platform and a.platform.name else (a.platform_rel.name if a.platform_rel and a.platform_rel.name else (a.platform_rel.display_name if a.platform_rel else '')) }}</span>
               </div>
-              {% if a.hindi_dub %}<span class="badge-hindi text-xs">हिंदी डब</span>{% endif %}
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                {% if a.status == 'available' or a.status.value == 'available' or a.status == 'AVAILABLE' %}
+                  उपलब्ध
+                {% elif a.status == 'not_available' or a.status.value == 'not_available' %}
+                  उपलब्ध नहीं
+                {% endif %}
+              </span>
             </div>
             <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-3">
+              {% if a.hindi_dub != 'unknown' and (not a.hindi_dub.value or a.hindi_dub.value != 'unknown') %}
+              <p>
+                {% if a.hindi_dub == 'yes' or a.hindi_dub.value == 'yes' or a.hindi_dub == 'YES' %}
+                  <span class="badge-hindi text-xs">हिंदी डब</span>
+                {% elif a.hindi_dub == 'no' or a.hindi_dub.value == 'no' or a.hindi_dub == 'NO' %}
+                  हिंदी डब: नहीं
+                {% endif %}
+              </p>
+              {% endif %}
               {% if a.languages %}<p><i class="fas fa-language w-4 mr-1"></i>भाषा: {{ a.languages }}</p>{% endif %}
               {% if a.subtitle_languages %}<p><i class="fas fa-closed-captioning w-4 mr-1"></i>सबटाइटल: {{ a.subtitle_languages }}</p>{% endif %}
-              {% if a.requires_subscription %}<p><i class="fas fa-crown w-4 mr-1 text-yellow-500"></i>सब्सक्रिप्शन आवश्यक</p>{% endif %}
-              {% if a.notes %}<p class="italic">{{ a.notes }}</p>{% endif %}
-              {% if a.last_checked %}<p class="text-xs text-gray-400"><i class="fas fa-check-circle mr-1"></i>जाँचा गया: {{ a.last_checked | hindi_date }}</p>{% endif %}
+              {% if a.notes or a.note %}<p class="italic">{{ a.notes or a.note }}</p>{% endif %}
+              {% if a.last_checked %}<p class="text-xs text-gray-400"><i class="fas fa-check-circle mr-1"></i>अंतिम जाँच: {{ a.last_checked | hindi_date }}</p>{% endif %}
             </div>
-            {% if a.platform_rel.official_url %}
-            <a href="{{ a.platform_rel.official_url }}" target="_blank" rel="noopener noreferrer nofollow" class="block text-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition">
+            {% set p_url = (a.platform.affiliate_url if a.platform and a.platform.affiliate_url else (a.platform.url if a.platform and a.platform.url else (a.platform_rel.official_url if a.platform_rel and a.platform_rel.official_url else (a.platform_rel.url if a.platform_rel else '')))) %}
+            {% if p_url %}
+            <a href="{{ p_url }}" target="_blank" rel="noopener noreferrer" class="block text-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition">
               देखें <i class="fas fa-external-link-alt ml-1"></i>
             </a>
             {% endif %}
           </div>
           {% endfor %}
         </div>
-        {% else %}
-        <p class="text-gray-500 dark:text-gray-400 text-sm">अभी तक कोई स्ट्रीमिंग जानकारी उपलब्ध नहीं है।</p>
-        {% endif %}
       </section>
+      {% endif %}
 
       <!-- टिप्पणियाँ -->
       <section id="comments" class="mt-10">
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          <i class="fas fa-comments text-red-600 mr-2"></i>टिप्पणियाँ ({{ comments|length }})
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fas fa-comments text-red-600 mr-2"></i>समुदाय चर्चा ({{ comments|length }})
         </h2>
 
         {% if request.query_params.get('comment_success') %}
@@ -192,21 +264,31 @@
         </div>
         {% endif %}
 
-        {% if user %}
-        <form method="post" action="/comment/{{ article.id }}" class="mb-8">
-          <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
-          <textarea name="content" rows="3" minlength="2" maxlength="2000" required placeholder="अपनी टिप्पणी लिखें..." class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-[#111] text-gray-900 dark:text-white"></textarea>
-          <div class="flex justify-end mt-2">
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition">
-              <i class="fas fa-paper-plane mr-1"></i>टिप्पणी भेजें
-            </button>
+        <!-- Composer Card FIRST -->
+        <div class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-8">
+          <h3 class="text-base font-bold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+            <i class="fas fa-pencil text-red-600"></i> चर्चा में शामिल हों
+          </h3>
+          {% if user %}
+          <form method="post" action="/comment/{{ article.id }}" id="comment-post-form">
+            <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              <strong>{{ user.name }}</strong> के रूप में टिप्पणी कर रहे हैं
+            </div>
+            <textarea name="content" rows="3" minlength="2" maxlength="2000" required placeholder="अपनी टिप्पणी लिखें..." class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"></textarea>
+            <div class="flex justify-end mt-2">
+              <button type="submit" id="comment-submit-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition">
+                टिप्पणी पोस्ट करें →
+              </button>
+            </div>
+          </form>
+          {% else %}
+          <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">चर्चा में भाग लेने के लिए कृपया लॉग इन करें और अपनी राय साझा करें।</p>
+          <div class="flex gap-2">
+            <a href="/auth/login?next=/article/{{ article.slug }}" class="inline-block bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">लॉग इन करें</a>
           </div>
-        </form>
-        {% else %}
-        <div class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-8 text-center text-sm text-gray-600 dark:text-gray-300">
-          टिप्पणी करने के लिए <a href="/login?next=/article/{{ article.slug }}" class="text-red-600 font-semibold hover:underline">लॉगिन करें</a>
+          {% endif %}
         </div>
-        {% endif %}
 
         <div class="space-y-5">
           {% for c in comments %}
@@ -238,12 +320,18 @@
       <!-- संबंधित लेख -->
       {% if related_articles %}
       <section class="mt-10">
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-layer-group text-red-600 mr-2"></i>संबंधित गाइड</h2>
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white"><i class="fas fa-layer-group text-red-600 mr-2"></i>संबंधित एनीमे गाइड्स</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {% for rel in related_articles %}
           <a href="/article/{{ rel.slug }}" class="anime-card group">
             <div class="anime-card-image-wrap">
+              {% if rel.cover_image %}
               <img src="{{ rel.cover_image }}" alt="{{ rel.title }}" class="anime-card-image" loading="lazy">
+              {% else %}
+              <div class="cover c-{{ rel.category_cover_color }}" style="height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; font-weight: 700;">
+                {{ rel.anime_title_hi if rel.anime_title_hi else rel.category_name_hi }}
+              </div>
+              {% endif %}
               {% if rel.has_hindi_dub %}<span class="badge-hindi"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>{% endif %}
               <div class="card-overlay"></div>
             </div>
@@ -286,9 +374,9 @@
 
 <!-- रिपोर्ट मॉडल -->
 <div x-show="reportOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="reportOpen = false">
-  <div class="bg-white dark:bg-[#111] rounded-xl p-6 max-w-md w-full" @click.stop>
+  <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full" @click.stop>
     <h3 class="text-lg font-bold mb-3 text-gray-900 dark:text-white"><i class="fas fa-flag text-red-600 mr-2"></i>जानकारी रिपोर्ट करें</h3>
-    <form method="post" action="/article/{{ article.slug }}/report-outdated">
+    <form method="post" :action="window.location.pathname + '/report-outdated'">
       <textarea name="note" rows="4" required maxlength="1000" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 mb-3 bg-transparent text-gray-900 dark:text-white" placeholder="क्या गलत/पुराना है? विवरण लिखें..."></textarea>
       <input type="text" name="platform_name" placeholder="प्लेटफ़ॉर्म का नाम (वैकल्पिक)" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 mb-3 text-sm bg-transparent text-gray-900 dark:text-white">
       <div class="flex gap-2 justify-end">
