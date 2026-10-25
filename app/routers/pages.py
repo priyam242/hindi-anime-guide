@@ -1,3 +1,4 @@
+
 """Public pages router: Home, Explore/Search, Article, Category, Info pages, Sitemap, Robots."""
 from __future__ import annotations
 from datetime import datetime, timezone
@@ -139,11 +140,11 @@ def explore_page(
         )
 
     if category and category.strip():
-        c_clean = category.strip()
+        c_clean = category.strip().lower()
         query = query.where(
             or_(
-                Article.category == c_clean,
-                Article.categories.any(Category.name == c_clean)
+                func.lower(Article.category) == c_clean,
+                Article.categories.any(func.lower(Category.name) == c_clean)
             )
         )
 
@@ -315,7 +316,7 @@ async def report_outdated_info(
 # ---------- CATEGORY PAGE ----------
 @router.get("/category/{slug}", response_class=HTMLResponse)
 def category_page(request: Request, slug: str, session: Session = Depends(get_session)):
-    category = session.exec(select(Category).where(Category.name == slug)).first()
+    category = session.exec(select(Category).where(func.lower(Category.name) == slug.strip().lower())).first()
     categories = get_categories(session)
     if not category:
         raise HTTPException(status_code=404, detail="श्रेणी नहीं मिली")
@@ -649,3 +650,5 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
 </urlset>"""
 
     return Response(content=xml_content, media_type="application/xml")
+
+
