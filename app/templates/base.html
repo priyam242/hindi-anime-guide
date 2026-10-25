@@ -122,14 +122,23 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(255, 255, 255, 0.85);
+      background: #ffffff;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
     html.dark .topbar-header {
-      background: rgba(10, 10, 10, 0.85);
+      background: #0a0a0a;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Compact header on narrow phones so nothing gets clipped off-screen */
+    @media (max-width: 420px) {
+      .topbar-header .notif-bell-btn { padding: 6px; }
+      .topbar-header button[aria-label="Toggle theme"] { padding: 6px !important; }
+      .topbar-header .user-avatar-circle { width: 30px !important; height: 30px !important; font-size: 13px !important; }
+      .topbar-header > div { gap: 0.4rem !important; padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
+      .topbar-header > div > div { gap: 0.35rem !important; }
     }
 
     /* Public user dropdown styling */
