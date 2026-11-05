@@ -1,19 +1,27 @@
-
 {% extends "base.html" %}
 
-{% macro filter_url(remove='') %}/explore?{%- if q and remove != 'q' -%}q={{ q|urlencode }}&{%- endif -%}{%- if selected_category and remove != 'category' -%}category={{ selected_category|urlencode }}&{%- endif -%}{%- if selected_platform and remove != 'platform' -%}platform={{ selected_platform|urlencode }}&{%- endif -%}{%- if selected_hindi_dub and remove != 'hindi_dub' -%}hindi_dub=1&{%- endif -%}{%- if selected_sort and selected_sort != 'latest' and remove != 'sort' -%}sort={{ selected_sort }}&{%- endif -%}{% endmacro %}
+{% macro filter_url(remove='') %}/explore?{%- if q and remove != 'q' -%}q={{ q|urlencode }}&{%- endif -%}{%- if
+selected_category and remove != 'category' -%}category={{ selected_category|urlencode }}&{%- endif -%}{%- if
+selected_platform and remove != 'platform' -%}platform={{ selected_platform|urlencode }}&{%- endif -%}{%- if
+selected_hindi_dub and remove != 'hindi_dub' -%}hindi_dub=1&{%- endif -%}{%- if selected_sort and selected_sort !=
+'latest' and remove != 'sort' -%}sort={{ selected_sort }}&{%- endif -%}{% endmacro %}
 
-{% macro category_url(cat_id) %}/explore?{%- if q -%}q={{ q|urlencode }}&{%- endif -%}category={{ cat_id|urlencode }}{%- if selected_platform -%}&platform={{ selected_platform|urlencode }}{%- endif -%}{%- if selected_hindi_dub -%}&hindi_dub=1{%- endif -%}{%- if selected_sort and selected_sort != 'latest' -%}&sort={{ selected_sort }}{%- endif -%}{% endmacro %}
+{% macro category_url(cat_id) %}/explore?{%- if q -%}q={{ q|urlencode }}&{%- endif -%}category={{ cat_id|urlencode }}{%-
+if selected_platform -%}&platform={{ selected_platform|urlencode }}{%- endif -%}{%- if selected_hindi_dub
+-%}&hindi_dub=1{%- endif -%}{%- if selected_sort and selected_sort != 'latest' -%}&sort={{ selected_sort }}{%- endif
+-%}{% endmacro %}
 
-{% block title %}{% if q %}"{{ q }}" के लिए खोज परिणाम{% else %}सभी गाइड एक्सप्लोर करें{% endif %} - {{ site.name }}{% endblock %}
+{% block title %}{% if q %}"{{ q }}" के लिए खोज परिणाम{% else %}सभी गाइड एक्सप्लोर करें{% endif %} - {{ site.name }}{%
+endblock %}
 
-{% block meta_description %}हिंदी डब और सबटाइटल के साथ एनीमे देखने की सभी गाइड खोजें, फ़िल्टर करें और एक्सप्लोर करें - {{ site.name }} पर।{% endblock %}
+{% block meta_description %}हिंदी डब और सबटाइटल के साथ एनीमे देखने की सभी गाइड खोजें, फ़िल्टर करें और एक्सप्लोर करें -
+{{ site.name }} पर।{% endblock %}
 
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/explore{% endblock %}
 
 {% block content %}
 <section class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-8 md:py-10">
-  <div class="max-w-7xl mx-auto px-4">
+  <div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16">
     <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
       <i class="fas fa-compass text-red-600 mr-2"></i>
       {% if q %}"{{ q }}" के लिए परिणाम{% else %}एक्सप्लोर करें{% endif %}
@@ -22,7 +30,7 @@
   </div>
 </section>
 
-<section class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+<section class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-6 md:py-8">
 
   <!-- फ़िल्टर फॉर्म -->
   <form method="get" action="/explore" class="explore-filter-card mb-6">
@@ -32,26 +40,32 @@
         <input type="text" name="q" value="{{ q or '' }}" placeholder="एनीमे का नाम खोजें..." class="w-full">
       </div>
 
-      <select name="platform" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+      <select name="platform"
+        class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
         <option value="">सभी प्लेटफ़ॉर्म</option>
         {% for p in platforms %}
-        <option value="{{ p.id }}" {% if selected_platform == p.id %}selected{% endif %}>{{ p.display_name }}</option>
+        <option value="{{ p.id }}" {% if selected_platform==p.id %}selected{% endif %}>{{ p.display_name }}</option>
         {% endfor %}
       </select>
 
-      <select name="sort" class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-        <option value="latest" {% if selected_sort == 'latest' or not selected_sort %}selected{% endif %}>नवीनतम पहले</option>
-        <option value="az" {% if selected_sort == 'az' %}selected{% endif %}>नाम (A-Z)</option>
+      <select name="sort"
+        class="filter-select border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+        <option value="latest" {% if selected_sort=='latest' or not selected_sort %}selected{% endif %}>नवीनतम पहले
+        </option>
+        <option value="az" {% if selected_sort=='az' %}selected{% endif %}>नाम (A-Z)</option>
       </select>
 
-      <label class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 cursor-pointer whitespace-nowrap">
-        <input type="checkbox" name="hindi_dub" value="1" {% if selected_hindi_dub %}checked{% endif %} class="accent-red-600">
+      <label
+        class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 cursor-pointer whitespace-nowrap">
+        <input type="checkbox" name="hindi_dub" value="1" {% if selected_hindi_dub %}checked{% endif %}
+          class="accent-red-600">
         सिर्फ़ हिंदी डब
       </label>
 
       <input type="hidden" name="category" value="{{ selected_category or '' }}">
 
-      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition whitespace-nowrap">
+      <button type="submit"
+        class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition whitespace-nowrap">
         <i class="fas fa-filter mr-1"></i> फ़िल्टर करें
       </button>
     </div>
@@ -59,34 +73,40 @@
 
   <!-- कैटेगरी पिल्स -->
   <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 mb-4">
-    <a href="{{ filter_url('category') }}" class="category-pill {% if not selected_category %}category-pill-active{% endif %}">
+    <a href="{{ filter_url('category') }}"
+      class="category-pill {% if not selected_category %}category-pill-active{% endif %}">
       <i class="fas fa-border-all mr-1"></i>सभी
     </a>
     {% for cat in categories %}
-    <a href="{{ category_url(cat.id) }}" class="category-pill {% if selected_category == cat.id %}category-pill-active{% endif %}">
+    <a href="{{ category_url(cat.id) }}"
+      class="category-pill {% if selected_category == cat.id %}category-pill-active{% endif %}">
       {{ cat.display_name }}
     </a>
     {% endfor %}
   </div>
 
   <!-- एक्टिव फ़िल्टर चिप्स -->
-  {% if q or selected_category or selected_platform or selected_hindi_dub or (selected_sort and selected_sort != 'latest') %}
+  {% if q or selected_category or selected_platform or selected_hindi_dub or (selected_sort and selected_sort !=
+  'latest') %}
   <div class="active-filter-chips mb-4">
     {% if q %}
     <a href="{{ filter_url('q') }}" class="chip-item">खोज: "{{ q }}" <i class="fas fa-times ml-1"></i></a>
     {% endif %}
     {% if selected_category %}
-      {% set ns = namespace(label=selected_category) %}
-      {% for cat in categories %}{% if cat.id == selected_category %}{% set ns.label = cat.display_name %}{% endif %}{% endfor %}
+    {% set ns = namespace(label=selected_category) %}
+    {% for cat in categories %}{% if cat.id == selected_category %}{% set ns.label = cat.display_name %}{% endif %}{%
+    endfor %}
     <a href="{{ filter_url('category') }}" class="chip-item">{{ ns.label }} <i class="fas fa-times ml-1"></i></a>
     {% endif %}
     {% if selected_platform %}
-      {% set ns2 = namespace(label=selected_platform) %}
-      {% for p in platforms %}{% if p.id == selected_platform %}{% set ns2.label = p.display_name %}{% endif %}{% endfor %}
+    {% set ns2 = namespace(label=selected_platform) %}
+    {% for p in platforms %}{% if p.id == selected_platform %}{% set ns2.label = p.display_name %}{% endif %}{% endfor
+    %}
     <a href="{{ filter_url('platform') }}" class="chip-item">{{ ns2.label }} <i class="fas fa-times ml-1"></i></a>
     {% endif %}
     {% if selected_hindi_dub %}
-    <a href="{{ filter_url('hindi_dub') }}" class="chip-item chip-dub"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब <i class="fas fa-times ml-1"></i></a>
+    <a href="{{ filter_url('hindi_dub') }}" class="chip-item chip-dub"><i
+        class="fas fa-closed-captioning mr-1"></i>हिंदी डब <i class="fas fa-times ml-1"></i></a>
     {% endif %}
     {% if selected_sort and selected_sort != 'latest' %}
     <a href="{{ filter_url('sort') }}" class="chip-item">नाम अनुसार <i class="fas fa-times ml-1"></i></a>
@@ -97,12 +117,13 @@
 
   <!-- रिज़ल्ट काउंट -->
   <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-    {% if total_count %}कुल <span class="font-bold text-gray-900 dark:text-white">{{ total_count }}</span> गाइड मिलीं{% else %}कोई गाइड नहीं मिली{% endif %}
+    {% if total_count %}कुल <span class="font-bold text-gray-900 dark:text-white">{{ total_count }}</span> गाइड मिलीं{%
+    else %}कोई गाइड नहीं मिली{% endif %}
   </p>
 
   <!-- रिज़ल्ट ग्रिड -->
   {% if articles %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+  <div class="anime-card-grid">
     {% for article in articles %}
     <a href="/article/{{ article.slug }}" class="anime-card group">
       <div class="anime-card-image-wrap">

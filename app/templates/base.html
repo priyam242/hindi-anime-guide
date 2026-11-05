@@ -45,6 +45,7 @@
   <link rel="stylesheet" href="/static/css/header-fix.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+
   <!-- Tailwind CDN JIT (replaces static tailwind.css to avoid missing-class bugs) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -308,97 +309,575 @@
       border-radius: 50%;
     }
 
-    /* Anime Cards */
+    /* Responsive Anime Poster Grid */
+    .anime-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    /* 3D Tilt & Parallax Card System */
     .anime-card {
       display: block;
       position: relative;
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      text-decoration: none;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 2 / 3;
+      width: 100%;
     }
     .anime-card-image-wrap {
       position: relative;
+      width: 100%;
+      height: 100%;
       border-radius: 16px;
       overflow: hidden;
-      aspect-ratio: 3/4;
-      background: #f3f4f6;
+      aspect-ratio: 2 / 3;
+      background: #11141a;
       border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      transition: transform 0.25s, box-shadow 0.25s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      transform-style: preserve-3d;
+      transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);
+      transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+      will-change: transform;
     }
     html.dark .anime-card-image-wrap {
-      background: #111111;
+      background: #0d0f14;
       border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.1);
     }
     .anime-card:hover .anime-card-image-wrap {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(220, 38, 38, 0.2);
+      border-color: rgba(225, 29, 72, 0.4);
+      box-shadow: 0 20px 40px -10px rgba(220, 38, 38, 0.35), 0 0 25px rgba(220, 38, 38, 0.15);
+    }
+    html.dark .anime-card:hover .anime-card-image-wrap {
+      border-color: rgba(244, 63, 94, 0.5);
+      box-shadow: 0 22px 45px -10px rgba(225, 29, 72, 0.5), 0 0 35px rgba(225, 29, 72, 0.25);
     }
     .anime-card-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.4s;
+      display: block;
+      transform: scale(1.01) translateZ(0);
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .anime-card:hover .anime-card-image {
-      transform: scale(1.05);
+      transform: scale(1.08) translateZ(12px);
     }
-    .badge-hindi {
+
+    /* Dynamic Sheen Glare Reflection */
+    .card-glare {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #dc2626;
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 999px;
-      z-index: 10;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.06) 40%, transparent 70%);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.3s ease;
+      z-index: 15;
+      mix-blend-mode: overlay;
     }
+    .anime-card:hover .card-glare {
+      opacity: 1;
+    }
+
+    /* Cinematic Overlay & Content */
     .card-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.7) 65%, rgba(5,5,10,0.96) 100%);
+      transition: background 0.3s ease;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .anime-card:hover .card-overlay {
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 25%, rgba(0,0,0,0.8) 60%, rgba(5,5,10,0.99) 100%);
     }
     .card-content {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      padding: 14px;
-      z-index: 5;
+      padding: 16px;
+      z-index: 10;
+      transform: translateZ(24px);
     }
     .category-tag {
-      position: absolute;
-      bottom: 100%;
-      left: 0;
       display: inline-block;
-      background: rgba(220, 38, 38, 0.9);
+      background: rgba(220, 38, 38, 0.95);
       color: white;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 3.5px 9px;
       border-radius: 6px;
-      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
     }
     .card-title {
-      color: white;
+      color: #ffffff;
       font-weight: 700;
-      font-size: 14px;
-      line-height: 1.3;
-      margin-bottom: 4px;
+      font-size: 15px;
+      line-height: 1.35;
+      margin-bottom: 5px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
     .card-meta {
       display: flex;
       align-items: center;
-      gap: 4px;
-      color: rgba(255,255,255,0.8);
+      gap: 5px;
+      color: rgba(255,255,255,0.85);
       font-size: 11px;
+    }
+
+    /* Glossy Neon Legal Streaming Platform Badges */
+    .platform-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+      transform: translateZ(30px);
+    }
+    .badge-neon-platform {
+      display: inline-flex;
+      align-items: center;
+      gap: 3.5px;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 6.5px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+    .badge-neon-platform:hover {
+      transform: scale(1.08) translateY(-1px);
+    }
+
+    /* CR: Orange */
+    .badge-neon-crunchyroll {
+      background: rgba(255, 100, 0, 0.22);
+      color: #ff9d42;
+      border: 1px solid rgba(255, 100, 0, 0.65);
+      box-shadow: 0 0 10px rgba(255, 100, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(255, 100, 0, 0.6);
+    }
+    /* NF: Vivid Red */
+    .badge-neon-netflix {
+      background: rgba(229, 9, 20, 0.22);
+      color: #ff525d;
+      border: 1px solid rgba(229, 9, 20, 0.65);
+      box-shadow: 0 0 10px rgba(229, 9, 20, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(229, 9, 20, 0.6);
+    }
+    /* JC: Magenta */
+    .badge-neon-jiocinema {
+      background: rgba(225, 29, 72, 0.22);
+      color: #fda4af;
+      border: 1px solid rgba(225, 29, 72, 0.65);
+      box-shadow: 0 0 10px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(225, 29, 72, 0.6);
+    }
+    /* JH: Royal Blue */
+    .badge-neon-jiohotstar {
+      background: rgba(37, 99, 235, 0.22);
+      color: #93c5fd;
+      border: 1px solid rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(37, 99, 235, 0.6);
+    }
+    /* PV: Cyan */
+    .badge-neon-prime {
+      background: rgba(0, 168, 225, 0.22);
+      color: #7dd3fc;
+      border: 1px solid rgba(0, 168, 225, 0.65);
+      box-shadow: 0 0 10px rgba(0, 168, 225, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(0, 168, 225, 0.6);
+    }
+    /* YT: Crimson */
+    .badge-neon-youtube {
+      background: rgba(239, 68, 68, 0.22);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.65);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+      text-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    }
+    /* Default / Other */
+    .badge-neon-default {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Light Theme Badge Hover Highlights */
+    body:not(.dark) .badge-neon-crunchyroll:hover {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #ea580c;
+      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.22);
+    }
+    body:not(.dark) .badge-neon-netflix:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #dc2626;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.22);
+    }
+    body:not(.dark) .badge-neon-jiocinema:hover {
+      background: #fff1f2;
+      color: #be123c;
+      border-color: #e11d48;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.22);
+    }
+    body:not(.dark) .badge-neon-jiohotstar:hover {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #2563eb;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+    }
+    body:not(.dark) .badge-neon-prime:hover {
+      background: #f0fdfa;
+      color: #0f766e;
+      border-color: #0d9488;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.22);
+    }
+    body:not(.dark) .badge-neon-youtube:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #dc2626;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.22);
+    }
+
+    /* Hindi Dub High-Energy Badge */
+    .badge-hindi {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      color: #ffffff;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4.5px 11px;
+      border-radius: 999px;
+      z-index: 12;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 0 14px rgba(225, 29, 72, 0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.02em;
+      transform: translateZ(35px);
+      animation: aura-pulse 3s infinite ease-in-out;
+    }
+    @keyframes aura-pulse {
+      0%, 100% { box-shadow: 0 0 14px rgba(225, 29, 72, 0.6), inset 0 1px 0 rgba(255,255,255,0.4); }
+      50% { box-shadow: 0 0 22px rgba(225, 29, 72, 0.9), 0 0 35px rgba(244, 63, 94, 0.4), inset 0 1px 0 rgba(255,255,255,0.6); }
+    }
+
+    /* GetLayers Button Styling */
+    .getlayers-btn-minimal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #1f2937;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      text-decoration: none;
+    }
+    html.dark .getlayers-btn-minimal {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: none;
+    }
+    .getlayers-btn-minimal:hover {
+      background: #fff1f2;
+      color: #e11d48;
+      border-color: rgba(225, 29, 72, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(225, 29, 72, 0.15);
+    }
+    html.dark .getlayers-btn-minimal:hover {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25);
+    }
+    .getlayers-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: #0f172a;
+      color: #ffffff;
+      border: 1px solid #0f172a;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+      text-decoration: none;
+    }
+    html.dark .getlayers-btn-primary {
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #ffffff;
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+    }
+    .getlayers-btn-primary:hover {
+      background: #e11d48;
+      border-color: #e11d48;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(225, 29, 72, 0.45);
+    }
+
+
+    /* Cinematic Hero Glassmorphic System */
+    .hero-canvas-wrap {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, rgba(225, 29, 72, 0.08) 0%, rgba(255, 255, 255, 0.95) 70%);
+      border: 1px solid rgba(220, 38, 38, 0.15);
+      box-shadow: 0 20px 50px -15px rgba(225, 29, 72, 0.12), 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+    html.dark .hero-canvas-wrap {
+      background: radial-gradient(circle at 50% 20%, rgba(225, 29, 72, 0.18) 0%, rgba(10, 10, 15, 0.98) 75%);
+      border: 1px solid rgba(244, 63, 94, 0.22);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(225, 29, 72, 0.25);
+    }
+
+    .hero-glow-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(circle at 15% 30%, rgba(225, 29, 72, 0.16) 0%, transparent 50%),
+        radial-gradient(circle at 85% 70%, rgba(245, 158, 11, 0.12) 0%, transparent 50%);
+      mix-blend-mode: screen;
+      z-index: 1;
+    }
+    html.dark .hero-glow-layer {
+      background: 
+        radial-gradient(circle at 15% 25%, rgba(225, 29, 72, 0.3) 0%, transparent 55%),
+        radial-gradient(circle at 85% 75%, rgba(245, 158, 11, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+    }
+
+    .hero-glass-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      color: #1f2937;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+      transition: all 0.25s ease;
+    }
+    html.dark .hero-glass-pill {
+      background: rgba(20, 20, 30, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f3f4f6;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+    .hero-glass-pill:hover {
+      transform: translateY(-2px);
+      background: #fff1f2;
+      border-color: rgba(225, 29, 72, 0.45);
+      color: #be123c;
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.18);
+    }
+    html.dark .hero-glass-pill:hover {
+      background: rgba(30, 20, 28, 0.8);
+      border-color: rgba(244, 63, 94, 0.5);
+      color: #fda4af;
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.3);
+    }
+
+    .pulse-dot {
+      position: relative;
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid #10b981;
+      animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    .hero-floating-deck {
+      position: relative;
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+    .hero-poster-card {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.25),
+        0 0 30px rgba(225, 29, 72, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
+    }
+    html.dark .hero-poster-card {
+      box-shadow: 
+        0 30px 70px -15px rgba(0, 0, 0, 0.9),
+        0 0 45px rgba(225, 29, 72, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .hero-poster-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 
+        0 35px 80px -15px rgba(0, 0, 0, 0.4),
+        0 0 50px rgba(225, 29, 72, 0.4);
+    }
+    html.dark .hero-poster-card:hover {
+      box-shadow: 
+        0 40px 90px -15px rgba(0, 0, 0, 0.95),
+        0 0 65px rgba(225, 29, 72, 0.65);
+    }
+
+    .hero-micro-badge {
+      position: absolute;
+      z-index: 20;
+      padding: 7px 14px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      animation: float-drift 4s ease-in-out infinite alternate;
+    }
+    .hero-micro-badge-tl {
+      top: -12px;
+      left: -12px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(225, 29, 72, 0.3);
+      color: #b91c1c;
+    }
+    html.dark .hero-micro-badge-tl {
+      background: rgba(15, 15, 25, 0.85);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+    .hero-micro-badge-br {
+      bottom: -12px;
+      right: -12px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #047857;
+      animation-delay: -2s;
+    }
+    html.dark .hero-micro-badge-br {
+      background: rgba(15, 15, 25, 0.85);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      color: #6ee7b7;
+    }
+    @keyframes float-drift {
+      0% { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(-7px) rotate(1deg); }
+    }
+
+    .btn-cinematic-primary {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      box-shadow: 0 8px 24px rgba(225, 29, 72, 0.45);
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .btn-cinematic-primary::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 40%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: rotate(25deg);
+      transition: none;
+      animation: shine-sweep 4s infinite ease-in-out;
+    }
+    @keyframes shine-sweep {
+      0% { left: -60%; }
+      25% { left: 140%; }
+      100% { left: 140%; }
+    }
+    .btn-cinematic-primary:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 12px 32px rgba(225, 29, 72, 0.6);
+    }
+
+    .btn-cinematic-glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      color: #1f2937;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    html.dark .btn-cinematic-glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+    .btn-cinematic-glass:hover {
+      transform: translateY(-2px) scale(1.03);
+      background: #fff1f2;
+      border-color: rgba(225, 29, 72, 0.45);
+      color: #e11d48;
+      box-shadow: 0 8px 24px rgba(225, 29, 72, 0.16);
+    }
+    html.dark .btn-cinematic-glass:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(244, 63, 94, 0.5);
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(225, 29, 72, 0.3);
     }
 
     /* Category Pills */
@@ -423,11 +902,47 @@
     .category-pill:hover {
       border-color: #dc2626;
       color: #dc2626;
+      background: #fff1f2;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.14);
+    }
+    html.dark .category-pill:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+      background: #1e1114;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
     }
     .category-pill-active {
       background: #dc2626 !important;
       border-color: #dc2626 !important;
       color: #ffffff !important;
+    }
+
+    /* Light Theme Interactive Hover Glows & Background Highlights */
+    body:not(.dark) .card:hover {
+      border-color: rgba(225, 29, 72, 0.35);
+      box-shadow: 0 12px 28px -6px rgba(225, 29, 72, 0.14), 0 4px 10px rgba(0, 0, 0, 0.04);
+    }
+    body:not(.dark) .side-nav .menu a:hover {
+      background: #fff1f2;
+      color: #e11d48;
+      border-left-color: rgba(225, 29, 72, 0.5);
+    }
+    body:not(.dark) .theme-toggle-btn:hover {
+      background: #fff1f2;
+      border-color: rgba(225, 29, 72, 0.4);
+      color: #e11d48;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.12);
+    }
+    body:not(.dark) .notif-bell-btn:hover {
+      background: #fff1f2;
+      border-color: rgba(225, 29, 72, 0.4);
+      color: #e11d48;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.12);
+    }
+    body:not(.dark) .find:hover {
+      border-color: rgba(225, 29, 72, 0.35);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.06);
     }
 
     .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -542,7 +1057,7 @@
 
   <!-- Header / Topbar -->
   <header class="topbar-header">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
 
       <!-- Brand Logo & Mobile Trigger -->
       <div class="flex items-center gap-1.5 sm:gap-3">
@@ -564,7 +1079,7 @@
       </div>
 
       <!-- Quick Search Bar (Desktop) -->
-      <div class="hidden md:flex items-center flex-1 max-w-md mx-4">
+      <div class="hidden md:flex items-center flex-1 max-w-xl mx-6">
         <div class="relative w-full">
           <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
           <input type="search" placeholder="Search anime..."
@@ -732,21 +1247,21 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-gray-900 mt-20 text-gray-500 dark:text-gray-400 text-sm">
-    <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-        <div class="space-y-4 md:col-span-1">
-          <a class="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
+  <footer class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-gray-900 mt-20 text-gray-500 dark:text-gray-400 text-base">
+    <div class="max-w-[1780px] mx-auto px-4 py-14 sm:px-8 lg:px-12 xl:px-16">
+      <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-10">
+        <div class="space-y-4 md:col-span-1 lg:col-span-2">
+          <a class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
             Hindi Anime <span class="text-red-600">Guide</span>
           </a>
-          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed" data-i18n="footer_tagline">
+          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md" data-i18n="footer_tagline">
             India's legal streaming guide for Hindi dubbed anime, news & recommendations.
           </p>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_guides">Guides</h4>
-          <ul class="space-y-2 text-xs">
+          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_guides">Guides</h4>
+          <ul class="space-y-2.5 text-sm">
             <li><a href="/explore?category=action" class="hover:text-red-600 transition-colors">Action Anime</a></li>
             <li><a href="/explore?category=romance" class="hover:text-red-600 transition-colors">Romance Anime</a></li>
             <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">Hindi Dubbed Only</a></li>
@@ -754,8 +1269,8 @@
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_site">Site</h4>
-          <ul class="space-y-2 text-xs">
+          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_site">Site</h4>
+          <ul class="space-y-2.5 text-sm">
             <li><a href="/about" class="hover:text-red-600 transition-colors" data-i18n="about_us">About Us</a></li>
             <li><a href="/editorial-policy" class="hover:text-red-600 transition-colors" data-i18n="editorial_policy">Editorial Policy</a></li>
             <li><a href="/contact" class="hover:text-red-600 transition-colors" data-i18n="contact">Contact</a></li>
@@ -763,17 +1278,17 @@
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_legal">Legal</h4>
-          <ul class="space-y-2 text-xs">
+          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4" data-i18n="footer_legal">Legal</h4>
+          <ul class="space-y-2.5 text-sm">
             <li><a href="/privacy" class="hover:text-red-600 transition-colors" data-i18n="privacy">Privacy Policy</a></li>
             <li><a href="/disclaimer" class="hover:text-red-600 transition-colors" data-i18n="disclaimer">Disclaimer</a></li>
           </ul>
         </div>
       </div>
 
-      <div class="pt-8 border-t border-gray-200 dark:border-gray-900 text-center md:flex md:justify-between md:text-left text-xs text-gray-400 dark:text-gray-500">
+      <div class="pt-8 border-t border-gray-200 dark:border-gray-900 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400 dark:text-gray-500">
         <p>© {{ current_year() }} {{ site.name }}. <span data-i18n="footer_rights">All rights reserved.</span></p>
-        <p class="mt-2 md:mt-0" data-i18n="footer_disclaimer_text">All trademarks belong to their respective owners. We reference official streaming platforms only.</p>
+        <p class="mt-2 md:mt-0 text-center md:text-right" data-i18n="footer_disclaimer_text">All trademarks belong to their respective owners. We reference official streaming platforms only.</p>
       </div>
     </div>
   </footer>
@@ -1027,6 +1542,72 @@
     };
 
     if (IS_AUTHENTICATED) loadNotifications();
+
+    // --- 3D Parallax Tilt & Specular Glare Micro-Engine (60 FPS, Zero-Dependency) ---
+    (function() {
+      if (typeof window === 'undefined') return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+      function handleTiltMove(e) {
+        const card = this;
+        const rect = card.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const dx = (x - cx) / cx;
+        const dy = (y - cy) / cy;
+
+        const tiltX = -dy * 11;
+        const tiltY = dx * 11;
+
+        const wrap = card.querySelector('.anime-card-image-wrap');
+        if (wrap) {
+          wrap.style.transform = 'perspective(900px) rotateX(' + tiltX.toFixed(2) + 'deg) rotateY(' + tiltY.toFixed(2) + 'deg) scale3d(1.03, 1.03, 1.03)';
+        }
+
+        const glare = card.querySelector('.card-glare');
+        if (glare) {
+          glare.style.left = x + 'px';
+          glare.style.top = y + 'px';
+        }
+      }
+
+      function handleTiltLeave() {
+        const wrap = this.querySelector('.anime-card-image-wrap');
+        if (wrap) {
+          wrap.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        }
+      }
+
+      window.init3DCardTilt = function() {
+        if (isTouch && window.innerWidth < 768) return; // avoid hover jitter on small touchscreens
+        const cards = document.querySelectorAll('.anime-card, [data-tilt]');
+        cards.forEach(function(card) {
+          if (card.dataset.tiltInitialized === 'true') return;
+          card.dataset.tiltInitialized = 'true';
+
+          const wrap = card.querySelector('.anime-card-image-wrap');
+          if (wrap && !wrap.querySelector('.card-glare')) {
+            const glare = document.createElement('div');
+            glare.className = 'card-glare';
+            wrap.appendChild(glare);
+          }
+
+          card.addEventListener('mousemove', handleTiltMove, { passive: true });
+          card.addEventListener('mouseleave', handleTiltLeave, { passive: true });
+        });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.init3DCardTilt);
+      } else {
+        window.init3DCardTilt();
+      }
+    })();
   </script>
   {% block extra_scripts %}{% endblock %}
 </body>
