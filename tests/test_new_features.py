@@ -322,6 +322,7 @@ def test_feature3_reader_bookmark_system():
     # 6. Article page reflects bookmarked state
     art_page = client.get("/article/jujutsu-kaisen-bm-test")
     assert art_page.status_code == 200
+    assert "bookmarked: true" in art_page.text
     assert "सेव किया गया" in art_page.text
 
     # 7. Toggle Bookmark OFF

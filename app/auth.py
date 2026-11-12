@@ -148,8 +148,10 @@ async def get_current_user(request: Request) -> Optional[dict]:
             return None   # stale cookie — revoked
 
     return {
+        "id": db_user.id,
         "email": token_data.email,
         "name": token_data.name,
+        "username": getattr(db_user, "username", None),
         "user_type": token_data.user_type,
         "token_version": token_data.token_version,
         "avatar_url": getattr(db_user, "avatar_url", None),

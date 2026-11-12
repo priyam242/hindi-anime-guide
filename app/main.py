@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session
-from .config import settings, STATIC_DIR, get_settings
+from .config import settings, STATIC_DIR, get_settings, validate_secret_key
 from .db import engine, init_db
 from .routers import pages, admin, users, uploads
 from .routers.pages import get_categories
@@ -17,6 +17,7 @@ from .auth import get_current_user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_secret_key(get_settings())
     init_db()
     try:
         with Session(engine) as session:

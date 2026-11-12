@@ -7,7 +7,6 @@ Create Date: 2026-10-21
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 revision: str = 'c3d4e5f6a7b8'
 down_revision: Union[str, None] = 'b2c3d4e5f6a7'
@@ -17,7 +16,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     columns = [c["name"] for c in inspector.get_columns("user")]
 
     with op.batch_alter_table("user", schema=None) as batch_op:
@@ -34,7 +33,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     columns = [c["name"] for c in inspector.get_columns("user")]
 
     with op.batch_alter_table("user", schema=None) as batch_op:

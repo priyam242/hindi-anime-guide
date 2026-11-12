@@ -218,7 +218,6 @@ def test_no_color_literals_except_tokens_css():
             norm_path = file_path.replace("\\", "/")
             if any(norm_path.endswith(allowed) for allowed in [
                 "app/static/css/tokens.css",
-                "app/static/css/header-fix.css",
                 "app/templates/legal/_base.html",
                 "app/templates/base.html"
             ]):

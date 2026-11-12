@@ -62,19 +62,20 @@ def seed_data(session: Session) -> None:
         session.add_all(platforms)
         session.commit()
 
-    from app.auth import get_password_hash
-    existing_dummy = session.exec(select(User).where(User.email == "suraj@gmail.com")).first()
-    if not existing_dummy:
-        dummy_user = User(
-            name="Suraj",
-            username="suraj",
-            email="suraj@gmail.com",
-            hashed_password=get_password_hash("suraj123"),
-            is_active=True,
-            is_banned=False,
-        )
-        session.add(dummy_user)
-        session.commit()
+    if getattr(get_settings(), "env", "").lower() != "production":
+        from app.auth import get_password_hash
+        existing_dummy = session.exec(select(User).where(User.email == "suraj@gmail.com")).first()
+        if not existing_dummy:
+            dummy_user = User(
+                name="Suraj",
+                username="suraj",
+                email="suraj@gmail.com",
+                hashed_password=get_password_hash("suraj123"),
+                is_active=True,
+                is_banned=False,
+            )
+            session.add(dummy_user)
+            session.commit()
 
     if getattr(settings, "seed_sample_data", False):
         existing_sample = session.exec(select(Article).where(Article.slug == "namuna-anime-shuruat-guide")).first()

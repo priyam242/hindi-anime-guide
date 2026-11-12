@@ -130,3 +130,29 @@ def test_testing_env_clears_smtp_and_google_secrets():
     assert s.google_client_id == ""
     assert s.google_client_secret == ""
 
+
+def test_production_startup_guards_and_safe_notif_dom(monkeypatch):
+    """Production lifespan enforces SECRET_KEY, skips dummy user seed, and notifications render via textContent."""
+    from app.models import User
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "env", "production")
+    monkeypatch.setattr(settings, "secret_key", "")
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        with TestClient(app):
+            pass
+
+    with Session(app_db.engine) as session:
+        existing = session.exec(select(User).where(User.email == "suraj@gmail.com")).first()
+        if existing:
+            session.delete(existing)
+            session.commit()
+        app_db.seed_data(session)
+        assert session.exec(select(User).where(User.email == "suraj@gmail.com")).first() is None
+
+    monkeypatch.setattr(settings, "env", "testing")
+    home_html = TestClient(app).get("/").text
+    assert "msgDiv.textContent = n.message" in home_html
+
+

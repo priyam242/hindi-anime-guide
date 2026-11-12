@@ -7,7 +7,6 @@ Create Date: 2026-10-20 00:00:00.000000
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 revision: str = '0f1a2b3c4d5e'
 down_revision: Union[str, None] = '9d0e1f2a3b4c'
@@ -17,7 +16,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     existing_tables = inspector.get_table_names()
 
     # Add bio and avatar_url to admin1 if not already present

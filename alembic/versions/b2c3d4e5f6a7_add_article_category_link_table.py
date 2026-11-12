@@ -7,7 +7,6 @@ Create Date: 2026-10-21
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 revision: str = 'b2c3d4e5f6a7'
 down_revision: Union[str, None] = 'a1b2c3d4e5f6'
@@ -17,7 +16,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     existing_tables = inspector.get_table_names()
 
     if "article_category_link" not in existing_tables:
@@ -40,7 +39,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     existing_tables = inspector.get_table_names()
 
     if "article_category_link" in existing_tables:

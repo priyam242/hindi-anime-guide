@@ -225,9 +225,11 @@ def article_page(request: Request, slug: str, session: Session = Depends(get_ses
     valid_availabilities = [a for a in article.availabilities if getattr(a, "last_checked", None) is not None]
 
     is_bookmarked = False
-    if user and getattr(user, "id", None):
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+    user_type = user.get("user_type") if isinstance(user, dict) else "user"
+    if user_id and user_type != "admin":
         bm = session.exec(
-            select(Bookmark).where(Bookmark.user_id == user.id, Bookmark.article_id == article.id)
+            select(Bookmark).where(Bookmark.user_id == user_id, Bookmark.article_id == article.id)
         ).first()
         is_bookmarked = bm is not None
 
@@ -278,7 +280,8 @@ async def report_outdated_info(
         
     p_info = f" (प्लेटफॉर्म: {platform_name.strip()})" if platform_name and platform_name.strip() else ""
     user = getattr(request.state, "user", None)
-    user_str = f"User @{user.username}" if user and getattr(user, "username", None) else f"Guest ({client_ip})"
+    username = (user.get("username") or user.get("name")) if isinstance(user, dict) else getattr(user, "username", None)
+    user_str = f"User @{username}" if username else f"Guest ({client_ip})"
     
     admins = session.exec(select(Admin1)).all()
     if admins:

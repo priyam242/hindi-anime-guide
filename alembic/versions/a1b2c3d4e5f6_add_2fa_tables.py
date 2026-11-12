@@ -7,7 +7,6 @@ Create Date: 2026-10-21
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 revision: str = 'a1b2c3d4e5f6'
 down_revision: Union[str, None] = 'e3f4a5b6c7d8'
@@ -17,7 +16,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
+    inspector = sa.inspect(bind)
     existing_tables = inspector.get_table_names()
 
     # ── 1. Add 2FA columns to admin1 ───────────────────────────────────
