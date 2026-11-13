@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% from "components/macros.html" import render_badge, render_section_header, render_empty_state, render_pagination %}
 
-{% block title %}एनीमे समाचार एवं ताज़ा अपडेट्स | Latest Anime News — {{ site.name }}{% endblock %}
-{% block meta_description %}भारत और दुनियाभर से ताज़ा एनीमे समाचार, नए सीज़न घोषणाएं, और आधिकारिक अपडेट्स हिंदी और अंग्रेजी में।{% endblock %}
+{% block title %}एनीमे समाचार एवं ताज़ा अपडेट्स | Latest Anime News & Updates — {{ site.name }}{% endblock %}
+{% block meta_description %}भारत और दुनियाभर से ताज़ा एनीमे समाचार, नए सीज़न घोषणाएं, ओटीटी रिलीज़ और आधिकारिक अपडेट्स हिंदी और अंग्रेजी में।{% endblock %}
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/news{% endblock %}
 
 {% block og_tags %}
@@ -14,129 +15,200 @@
 {% block content %}
 <div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8">
     
-    <!-- Hero / Header Strip -->
-    <div class="border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-xs font-bold text-red-600 uppercase tracking-wider mb-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                    <span>ताज़ा समाचार एवं अपडेट्स (Editorial News)</span>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                    <i class="fas fa-newspaper text-red-600"></i>
-                    <span>एनीमे समाचार (Latest Anime News)</span>
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
-                    सत्यापित तथ्यों पर आधारित एनीमे उद्योग की ताज़ा घोषणाएं, नए एपिसोड्स, और आधिकारिक रिलीज़ तिथियां।
-                </p>
-            </div>
-            
-            <!-- Quick Hub Links -->
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white shadow-sm">ताज़ा समाचार</a>
-                <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">सीज़न शेड्यूल</a>
-                <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">मंगा अपडेट्स</a>
-                <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">पुरस्कार</a>
-            </div>
+  <!-- Hero / Header Strip -->
+  <div class="border-b border-white/10 pb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider mb-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+          <span>संपादकीय समाचार • Verified Anime News</span>
         </div>
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
+          <i class="fas fa-newspaper text-red-600"></i>
+          <span class="heading-gradient">ताज़ा एनीमे समाचार</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
+          सत्यापित तथ्यों पर आधारित एनीमे उद्योग की ताज़ा घोषणाएं, नए एपिसोड्स, और आधिकारिक रिलीज़।
+        </p>
+      </div>
+      
+      <!-- Quick Section Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white shadow-sm">ताज़ा समाचार</a>
+        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
+        <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
+        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
+        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+      </div>
     </div>
 
-    <!-- News Cards Grid -->
-    {% if items and items|length > 0 %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {% for item in items %}
-        <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
-            <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900">
-                {% if item.image_url %}
-                <img src="{{ item.image_url }}" alt="{{ item.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.style.opacity='0.2'">
-                {% else %}
-                <div class="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
-                    <i class="fas fa-play"></i>
-                </div>
-                {% endif %}
-                <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                    {% if item.content_type == 'news' %}
-                        <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">NEWS</span>
-                    {% elif item.content_type == 'schedule' %}
-                        <span class="bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">SCHEDULE</span>
-                    {% elif item.content_type == 'manga' %}
-                        <span class="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">MANGA</span>
-                    {% elif item.content_type == 'award' %}
-                        <span class="bg-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">AWARD</span>
-                    {% else %}
-                        <span class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">UPDATE</span>
-                    {% endif %}
-                </div>
-            </a>
+    <!-- Category Filter Chips -->
+    <div class="flex items-center gap-2 pt-5 overflow-x-auto pb-1 scrollbar-thin">
+      <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        सभी (All)
+      </a>
+      <a href="/news?category=news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'news' %}bg-blue-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        एनीमे समाचार
+      </a>
+      <a href="/news?category=schedule" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'schedule' %}bg-purple-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        सीज़न अपडेट्स
+      </a>
+      <a href="/news?category=manga" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'manga' %}bg-emerald-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        मंगा रिलीज़
+      </a>
+      <a href="/news?category=award" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'award' %}bg-amber-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        अवॉर्ड्स
+      </a>
+      <a href="/news?category=trailer" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'trailer' %}bg-pink-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        ट्रेलर्स
+      </a>
+    </div>
+  </div>
 
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                    <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        <span class="flex items-center gap-1">
-                            <i class="far fa-calendar-alt text-[11px]"></i>
-                            <span>{{ (item.published_at | hindi_date) if item.published_at else (item.created_at | hindi_date) }}</span>
-                        </span>
-                        <span>Source: <strong class="text-gray-700 dark:text-gray-300">{{ item.source_name }}</strong></span>
-                    </div>
-
-                    <h2 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                        <a href="/updates/{{ item.id }}">
-                            {{ item.title_hi or item.title_en }}
-                        </a>
-                    </h2>
-
-                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-3 leading-relaxed">
-                        {{ (item.summary_hi or item.summary_en) | short_description(140) }}...
-                    </p>
-                </div>
-
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
-                    <a href="/updates/{{ item.id }}" class="text-red-600 dark:text-red-400 font-bold hover:underline inline-flex items-center gap-1">
-                        <span>पूरा पढ़ें</span>
-                        <i class="fas fa-arrow-right text-[10px]"></i>
-                    </a>
-                    {% if item.source_url %}
-                    <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" title="Original source reference">
-                        <i class="fas fa-external-link-alt text-[11px]"></i>
-                    </a>
-                    {% endif %}
-                </div>
+  {% if items and items|length > 0 %}
+    <!-- FEATURED HERO ITEM (Item 0 on Page 1) -->
+    {% if page == 1 and items|length > 0 %}
+      {% set feat = items[0] %}
+      <div class="relative overflow-hidden rounded-2xl bg-neutral-900/80 border border-white/10 hover:border-red-500/30 transition-all duration-300 shadow-xl group">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
+          <!-- Hero Poster / Image -->
+          <a href="/updates/{{ feat.id }}" class="lg:col-span-7 relative aspect-[16/9] lg:aspect-auto overflow-hidden bg-neutral-950 block">
+            {% if feat.image_url %}
+            <img src="{{ feat.image_url }}" alt="{{ feat.title_en }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                 onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
+            {% else %}
+            <div class="w-full h-full min-h-[280px] flex items-center justify-center text-gray-500 text-5xl">
+              <i class="fas fa-newspaper"></i>
             </div>
-        </article>
-        {% endfor %}
+            {% endif %}
+            <div class="absolute top-4 left-4 flex items-center gap-2">
+              <span class="bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded shadow flex items-center gap-1.5">
+                <i class="fas fa-star text-[10px]"></i>
+                <span>प्रमुख समाचार • FEATURED</span>
+              </span>
+            </div>
+          </a>
+
+          <!-- Hero Details -->
+          <div class="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 text-xs text-gray-400">
+                <span class="flex items-center gap-1 text-red-400 font-semibold">
+                  <i class="far fa-clock text-[11px]"></i>
+                  <span>{{ feat.published_at | relative_time_hindi }}</span>
+                </span>
+                <span>•</span>
+                <span class="text-gray-300 font-medium">{{ feat.source_name }}</span>
+              </div>
+
+              <h2 class="text-xl sm:text-2xl lg:text-3xl font-black text-white group-hover:text-red-400 transition-colors leading-tight">
+                <a href="/updates/{{ feat.id }}">
+                  {{ feat.title_hi or feat.title_en }}
+                </a>
+              </h2>
+
+              <p class="text-xs text-gray-400 font-mono">
+                {{ feat.title_en }}
+              </p>
+
+              <p class="text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
+                {{ (feat.summary_hi or feat.summary_en) | short_description(220) }}...
+              </p>
+            </div>
+
+            <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+              <a href="/updates/{{ feat.id }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow">
+                <span>पूरी रिपोर्ट पढ़ें</span>
+                <i class="fas fa-arrow-right text-[10px]"></i>
+              </a>
+
+              {% if feat.source_url %}
+              <a href="{{ feat.source_url }}" target="_blank" rel="nofollow noopener" class="text-xs text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
+                <span>{{ feat.source_name }}</span>
+                <i class="fas fa-external-link-alt text-[9px]"></i>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- NEWS CARDS GRID (Remaining Items) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
+      {% for item in (items[1:] if page == 1 else items) %}
+      <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-red-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
+        <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
+          {% if item.image_url %}
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
+               loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl">
+            <i class="fas fa-play"></i>
+          </div>
+          {% endif %}
+
+          <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+            {% if item.content_type == 'news' %}
+              <span class="bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">NEWS</span>
+            {% elif item.content_type == 'schedule' %}
+              <span class="bg-purple-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">SCHEDULE</span>
+            {% elif item.content_type == 'manga' %}
+              <span class="bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">MANGA</span>
+            {% elif item.content_type == 'award' %}
+              <span class="bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">AWARD</span>
+            {% else %}
+              <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">UPDATE</span>
+            {% endif %}
+          </div>
+        </a>
+
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
+              <span class="flex items-center gap-1 text-red-400">
+                <i class="far fa-clock text-[10px]"></i>
+                <span>{{ item.published_at | relative_time_hindi }}</span>
+              </span>
+              <span class="truncate max-w-[110px]">{{ item.source_name }}</span>
+            </div>
+
+            <h3 class="text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
+              <a href="/updates/{{ item.id }}">
+                {{ item.title_hi or item.title_en }}
+              </a>
+            </h3>
+
+            <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+              {{ (item.summary_hi or item.summary_en) | short_description(120) }}...
+            </p>
+          </div>
+
+          <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+            <a href="/updates/{{ item.id }}" class="text-red-400 hover:text-red-300 font-bold inline-flex items-center gap-1">
+              <span>पूरा पढ़ें</span>
+              <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+            {% if item.source_url %}
+            <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-200 transition-colors" title="Original source">
+              <i class="fas fa-external-link-alt text-[10px]"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
     </div>
 
     <!-- Pagination -->
-    {% if total_pages > 1 %}
-    <div class="flex justify-center items-center gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
-        {% if page > 1 %}
-        <a href="/news?page={{ page - 1 }}" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 transition-colors">
-            ← पिछला (Previous)
-        </a>
-        {% endif %}
-        
-        <span class="text-xs text-gray-500 font-medium">पृष्ठ {{ page }} / {{ total_pages }}</span>
+    {{ render_pagination(page, total_pages, '/news') }}
 
-        {% if page < total_pages %}
-        <a href="/news?page={{ page + 1 }}" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 transition-colors">
-            अगला (Next) →
-        </a>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    {% else %}
-    <!-- Empty State -->
-    <div class="py-20 text-center bg-gray-50 dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-        <div class="w-16 h-16 bg-red-100 dark:bg-red-950/40 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-            <i class="fas fa-newspaper"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">अभी कोई प्रकाशित समाचार नहीं है</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
-            संपादकीय टीम द्वारा ड्राफ्ट्स की समीक्षा करने के बाद ताज़ा समाचार यहाँ प्रदर्शित होंगे।
-        </p>
-    </div>
-    {% endif %}
+  {% else %}
+    {{ render_empty_state('कोई समाचार उपलब्ध नहीं है', 'No News Available', 'इस श्रेणी में अभी कोई समाचार आइटम प्रकाशित नहीं है।', 'No published news items match this category.', 'fas fa-newspaper', lang) }}
+  {% endif %}
 
 </div>
 {% endblock %}

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% from "components/macros.html" import render_badge, render_section_header, render_empty_state, render_pagination %}
 
-{% block title %}एनीमे सीज़न प्रसारण शेड्यूल (IST) | This Season Airing Schedule — {{ site.name }}{% endblock %}
-{% block meta_description %}वर्तमान सीज़न के सभी लोकप्रिय एनीमे का आधिकारिक प्रसारण शेड्यूल। भारतीय समयानुसार (IST) आगामी एपिसोड्स की रिलीज़ तिथियां।{% endblock %}
+{% block title %}एनीमे सीज़न प्रसारण शेड्यूल (IST) | Anime Airing Schedule & Live Countdown — {{ site.name }}{% endblock %}
+{% block meta_description %}वर्तमान सीज़न के सभी लोकप्रिय एनीमे का आधिकारिक प्रसारण शेड्यूल। भारतीय समयानुसार (IST) आगामी एपिसोड्स की लाइव काउंटडाउन एवं रिलीज़ टाइमिंग।{% endblock %}
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/schedule{% endblock %}
 
 {% block og_tags %}
@@ -12,134 +13,278 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8">
+<div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8"
+     x-data="scheduleManager()"
+     x-init="init()">
     
-    <!-- Header -->
-    <div class="border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
-                    <span>आधिकारिक प्रसारण सारणी (Airing Calendar)</span>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                    <i class="fas fa-calendar-alt text-purple-600"></i>
-                    <span>वर्तमान सीज़न एनीमे शेड्यूल (Airing Schedule in IST)</span>
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
-                    सभी आगामी एपिसोड्स का समय भारतीय मानक समय (Indian Standard Time, IST) में प्रदर्शित है।
-                </p>
-            </div>
-
-            <!-- Quick Hub Links -->
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-sm">सीज़न शेड्यूल</a>
-                <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">एनीमे समाचार</a>
-                <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">मंगा अपडेट्स</a>
-                <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">पुरस्कार</a>
-            </div>
+  <!-- Header -->
+  <div class="border-b border-white/10 pb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider mb-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+          <span>आधिकारिक प्रसारण सारणी • Live Airing Calendar (IST)</span>
         </div>
-    </div>
-
-    <!-- Schedule Cards Grid -->
-    {% if items and items|length > 0 %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {% for item in items %}
-        {% set ep_num = (item.external_id | extract_episode) or (item.title_en | extract_episode) %}
-        {% set ist_time = (item.summary_en | format_airing_ist) or (item.summary_hi | format_airing_ist) %}
-
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
-            <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900">
-                {% if item.image_url %}
-                <img src="{{ item.image_url }}" alt="{{ item.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                {% else %}
-                <div class="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
-                    <i class="fas fa-tv"></i>
-                </div>
-                {% endif %}
-
-                <!-- Episode Badge -->
-                {% if ep_num %}
-                <div class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1">
-                    <i class="fas fa-play text-[9px]"></i>
-                    <span>एपिसोड {{ ep_num }}</span>
-                </div>
-                {% endif %}
-
-                <!-- Time Badge in IST -->
-                <div class="absolute bottom-2.5 left-2.5 right-2.5 bg-black/75 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded-md flex items-center justify-between">
-                    <span class="flex items-center gap-1.5 truncate text-purple-300 font-semibold">
-                        <i class="far fa-clock text-[10px]"></i>
-                        <span>{{ ist_time }}</span>
-                    </span>
-                    <span class="text-[10px] text-gray-300 shrink-0">IST</span>
-                </div>
-            </div>
-
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                    <h2 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                        <a href="/updates/{{ item.id }}">
-                            {{ item.title_hi or item.title_en }}
-                        </a>
-                    </h2>
-
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                        {{ item.title_en }}
-                    </div>
-
-                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-3 leading-relaxed">
-                        {{ (item.summary_hi or item.summary_en) | short_description(130) }}...
-                    </p>
-                </div>
-
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
-                    <a href="/updates/{{ item.id }}" class="text-purple-600 dark:text-purple-400 font-bold hover:underline inline-flex items-center gap-1">
-                        <span>शेड्यूल विवरण</span>
-                        <i class="fas fa-arrow-right text-[10px]"></i>
-                    </a>
-                    
-                    <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors inline-flex items-center gap-1" title="AniList Source">
-                        <span>AniList</span>
-                        <i class="fas fa-external-link-alt text-[10px]"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if total_pages > 1 %}
-    <div class="flex justify-center items-center gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
-        {% if page > 1 %}
-        <a href="/schedule?page={{ page - 1 }}" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 hover:text-purple-600 transition-colors">
-            ← पिछला (Previous)
-        </a>
-        {% endif %}
-        
-        <span class="text-xs text-gray-500 font-medium">पृष्ठ {{ page }} / {{ total_pages }}</span>
-
-        {% if page < total_pages %}
-        <a href="/schedule?page={{ page + 1 }}" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 hover:text-purple-600 transition-colors">
-            अगला (Next) →
-        </a>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    {% else %}
-    <!-- Empty State -->
-    <div class="py-20 text-center bg-gray-50 dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-        <div class="w-16 h-16 bg-purple-100 dark:bg-purple-950/40 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-            <i class="fas fa-calendar-alt"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">अभी कोई प्रकाशित शेड्यूल अपडेट नहीं है</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
-            ड्राफ्ट्स प्रकाशित होने पर इस सीज़न का ताज़ा प्रसारण शेड्यूल यहाँ स्वचालित रूप से प्रदर्शित होगा।
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
+          <i class="fas fa-calendar-alt text-purple-500"></i>
+          <span class="heading-gradient">वर्तमान सीज़न एनीमे शेड्यूल</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
+          सभी आगामी एपिसोड्स का समय भारतीय मानक समय (IST) में लाइव काउंटडाउन के साथ प्रदर्शित है।
         </p>
+      </div>
+
+      <!-- Quick Section Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white shadow-sm">शेड्यूल</a>
+        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">समाचार</a>
+        <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
+        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
+        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+      </div>
     </div>
-    {% endif %}
+  </div>
+
+  <!-- Day Tabs (Mon-Sun + This Week) -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <!-- Days Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin max-w-full" role="tablist">
+        <button type="button" @click="activeDay = 'all'"
+                :class="activeDay === 'all' ? 'bg-purple-600 text-white border-purple-500' : 'bg-white/5 text-gray-300 hover:bg-white/10 border-white/10'"
+                class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
+          पूरा हफ़्ता (This Week)
+        </button>
+
+        <template x-for="(day, idx) in days" :key="idx">
+          <button type="button" @click="activeDay = idx"
+                  :class="activeDay === idx ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10 border-white/10'"
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5">
+            <span x-text="day.nameHi"></span>
+            <span x-show="todayIdx === idx" class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="आज (Today)"></span>
+          </button>
+        </template>
+      </div>
+
+      <!-- Filters & Sort -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Format Filter -->
+        <select x-model="formatFilter" class="bg-neutral-900 border border-white/10 text-xs text-gray-200 px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-purple-500">
+          <option value="all">सभी प्रारूप (All Formats)</option>
+          <option value="TV">TV Series</option>
+          <option value="Movie">Movie</option>
+          <option value="ONA">ONA / Special</option>
+        </select>
+
+        <!-- Hindi Dub Filter -->
+        <button type="button" @click="hindiOnly = !hindiOnly"
+                :class="hindiOnly ? 'bg-red-600 text-white border-red-500' : 'bg-white/5 text-gray-300 hover:bg-white/10 border-white/10'"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all inline-flex items-center gap-1.5">
+          <i class="fas fa-headphones text-[10px]"></i>
+          <span>हिंदी डब</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Grid -->
+  {% if items and items|length > 0 %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="schedule-grid">
+    {% for item in items %}
+      {% set ep_num = (item.external_id | extract_episode) or (item.title_en | extract_episode) %}
+      {% set ist_time = (item.summary_en | format_airing_ist) or (item.summary_hi | format_airing_ist) %}
+      {% set iso_time = (item.published_at | airing_iso) if item.published_at else (item.summary_en | airing_iso) %}
+      {% set item_weekday = (item.published_at | airing_weekday) if item.published_at else (item.summary_en | airing_weekday) %}
+      {% set has_hindi = ('hindi' in (item.title_hi or '')|lower) or ('hindi' in (item.summary_hi or '')|lower) or ('डब' in (item.summary_hi or '')) or ('डब' in (item.title_hi or '')) %}
+
+      <div class="schedule-card group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-purple-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl"
+           data-weekday="{{ item_weekday }}"
+           data-hindi="{{ '1' if has_hindi else '0' }}"
+           data-format="{% if 'movie' in (item.title_en|lower) %}Movie{% elif 'ona' in (item.title_en|lower) %}ONA{% else %}TV{% endif %}"
+           data-iso="{{ iso_time }}"
+           x-show="matchesItem({{ item_weekday }}, {{ 'true' if has_hindi else 'false' }}, '{% if 'movie' in (item.title_en|lower) %}Movie{% elif 'ona' in (item.title_en|lower) %}ONA{% else %}TV{% endif %}')">
+
+        <!-- Poster Image Container -->
+        <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
+          {% if item.image_url %}
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
+               loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl">
+            <i class="fas fa-tv"></i>
+          </div>
+          {% endif %}
+
+          <!-- Episode Badge -->
+          {% if ep_num %}
+          <div class="absolute top-2.5 left-2.5 bg-red-600/95 backdrop-blur-sm text-white text-[10px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1">
+            <i class="fas fa-play text-[8px]"></i>
+            <span>एपिसोड {{ ep_num }}</span>
+          </div>
+          {% endif %}
+
+          <!-- Hindi Dub Badge -->
+          {% if has_hindi %}
+          <div class="absolute top-2.5 right-2.5 bg-emerald-600/95 backdrop-blur-sm text-white text-[9px] font-black px-2 py-0.5 rounded shadow">
+            HINDI DUB
+          </div>
+          {% endif %}
+
+          <!-- Time Badge in IST -->
+          <div class="absolute bottom-2.5 left-2.5 right-2.5 bg-black/85 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded flex items-center justify-between">
+            <span class="flex items-center gap-1.5 truncate text-purple-300 font-semibold">
+              <i class="far fa-clock text-[10px]"></i>
+              <span>{{ ist_time or 'IST Airing' }}</span>
+            </span>
+            <span class="text-[9px] text-gray-400 shrink-0">IST</span>
+          </div>
+        </a>
+
+        <!-- Card Body -->
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <!-- Live Countdown -->
+              <span class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/40"
+                    x-text="getCountdown('{{ iso_time }}')">
+                गिनती जारी...
+              </span>
+              <!-- Status / Score -->
+              <span class="text-[11px] text-amber-400 font-bold inline-flex items-center gap-1">
+                <i class="fas fa-star text-[10px]"></i>
+                <span>AniList</span>
+              </span>
+            </div>
+
+            <h3 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 leading-snug">
+              <a href="/updates/{{ item.id }}">
+                {{ item.title_hi or item.title_en }}
+              </a>
+            </h3>
+
+            <div class="text-xs text-gray-400 mt-1 line-clamp-1 font-mono">
+              {{ item.title_en }}
+            </div>
+
+            <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+              {{ (item.summary_hi or item.summary_en) | short_description(120) }}
+            </p>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+            <a href="/updates/{{ item.id }}" class="text-purple-400 hover:text-purple-300 font-bold inline-flex items-center gap-1">
+              <span>शेड्यूल विवरण</span>
+              <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+
+            {% if item.source_url %}
+            <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center gap-1" title="AniList Source">
+              <span>AniList</span>
+              <i class="fas fa-external-link-alt text-[9px]"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Dynamic Empty-State for Filters (Alpine) -->
+  <div x-show="visibleCount === 0" style="display: none;" class="py-16 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+    <div class="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-purple-400 text-xl mx-auto mb-3">
+      <i class="fas fa-calendar-xmark"></i>
+    </div>
+    <h3 class="text-base font-bold text-white">इस दिन के लिए कोई प्रसारण शेड्यूल नहीं मिला</h3>
+    <p class="text-xs text-gray-400 mt-1">अन्य दिनों के टैब देखें या फ़िल्टर रीसेट करें।</p>
+    <button type="button" @click="activeDay = 'all'; formatFilter = 'all'; hindiOnly = false" class="mt-4 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white">
+      सभी एपिसोड्स देखें
+    </button>
+  </div>
+
+  <!-- Pagination -->
+  {{ render_pagination(page, total_pages, '/schedule') }}
+
+  {% else %}
+    {{ render_empty_state('सीज़न शेड्यूल जल्द ही उपलब्ध होगा', 'Schedule Available Soon', 'वर्तमान सीज़न के एपिसोड्स का शेड्यूल एकत्रित किया जा रहा है।', 'Season airing entries are being gathered.', 'fas fa-calendar-alt', lang) }}
+  {% endif %}
 
 </div>
+
+<!-- Alpine.js Schedule Management Script -->
+<script>
+function scheduleManager() {
+  return {
+    days: [
+      { nameHi: 'सोमवार', nameEn: 'Mon' },
+      { nameHi: 'मंगलवार', nameEn: 'Tue' },
+      { nameHi: 'बुधवार', nameEn: 'Wed' },
+      { nameHi: 'गुरुवार', nameEn: 'Thu' },
+      { nameHi: 'शुक्रवार', nameEn: 'Fri' },
+      { nameHi: 'शनिवार', nameEn: 'Sat' },
+      { nameHi: 'रविवार', nameEn: 'Sun' }
+    ],
+    todayIdx: 0,
+    activeDay: 'all',
+    formatFilter: 'all',
+    hindiOnly: false,
+    now: new Date().getTime(),
+    visibleCount: 1,
+
+    init() {
+      // Calculate today's index in IST (0=Mon .. 6=Sun)
+      const jsDay = new Date().getDay();
+      this.todayIdx = (jsDay === 0) ? 6 : jsDay - 1;
+      this.activeDay = this.todayIdx;
+
+      // Tick now every second for live countdown
+      setInterval(() => {
+        this.now = new Date().getTime();
+        this.updateVisibleCount();
+      }, 1000);
+
+      this.$nextTick(() => this.updateVisibleCount());
+    },
+
+    matchesItem(weekday, isHindi, format) {
+      if (this.activeDay !== 'all' && weekday !== this.activeDay) return false;
+      if (this.hindiOnly && !isHindi) return false;
+      if (this.formatFilter !== 'all' && format !== this.formatFilter) return false;
+      return true;
+    },
+
+    updateVisibleCount() {
+      const cards = document.querySelectorAll('.schedule-card');
+      let count = 0;
+      cards.forEach(card => {
+        if (card.style.display !== 'none') count++;
+      });
+      this.visibleCount = count;
+    },
+
+    getCountdown(isoStr) {
+      if (!isoStr) return 'शेड्यूल उपलब्ध';
+      const target = new Date(isoStr).getTime();
+      if (isNaN(target)) return 'शेड्यूल उपलब्ध';
+
+      const diff = target - this.now;
+      if (diff <= 0) {
+        if (diff > -86400000) return 'प्रसारित (Aired)';
+        return 'संपन्न';
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (days > 0) return `${days}d ${hours}h ${mins}m`;
+      return `${hours}h ${mins}m ${secs}s`;
+    }
+  };
+}
+</script>
 {% endblock %}

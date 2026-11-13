@@ -116,6 +116,111 @@ def format_airing_ist(val: Any) -> str:
     return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
 
 
+def airing_iso(val: Any) -> str:
+    """Return ISO 8601 string for javascript new Date()."""
+    if not val:
+        return ""
+    dt = None
+    if isinstance(val, (int, float)):
+        dt = datetime.fromtimestamp(val, tz=timezone.utc)
+    elif isinstance(val, datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+    elif isinstance(val, str):
+        match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', val)
+        if match:
+            date_p, time_p = match.groups()
+            try:
+                dt = datetime.strptime(f"{date_p} {time_p}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
+        if not dt:
+            try:
+                dt = datetime.fromisoformat(val)
+            except Exception:
+                return ""
+    if dt:
+        return dt.isoformat()
+    return ""
+
+
+def extract_youtube_id(url: Optional[str]) -> Optional[str]:
+    """Extract 11-char YouTube ID from url or external_id string."""
+    if not url:
+        return None
+    m = re.search(r'(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})', url)
+    if m:
+        return m.group(1)
+    return None
+
+
+def airing_weekday(val: Any) -> int:
+    """Return weekday integer 0=Mon, 1=Tue, ..., 6=Sun in IST."""
+    if not val:
+        return 0
+    dt = None
+    if isinstance(val, (int, float)):
+        dt = datetime.fromtimestamp(val, tz=timezone.utc)
+    elif isinstance(val, datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+    elif isinstance(val, str):
+        match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', val)
+        if match:
+            date_p, time_p = match.groups()
+            try:
+                dt = datetime.strptime(f"{date_p} {time_p}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
+        if not dt:
+            try:
+                dt = datetime.fromisoformat(val)
+            except Exception:
+                return 0
+    if dt:
+        ist_dt = dt.astimezone(IST)
+        return ist_dt.weekday()
+    return 0
+
+
+def relative_time_hindi(val: Any) -> str:
+    """Returns Hindi relative time like '2 घंटे पहले' or '3 दिन पहले'."""
+    if not val:
+        return ""
+    dt = None
+    if isinstance(val, (int, float)):
+        dt = datetime.fromtimestamp(val, tz=timezone.utc)
+    elif isinstance(val, datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+    elif isinstance(val, str):
+        try:
+            dt = datetime.fromisoformat(val)
+        except Exception:
+            return val
+    if not dt:
+        return ""
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    seconds = int(diff.total_seconds())
+    if seconds < 0:
+        return "जल्द ही"
+    if seconds < 60:
+        return "अभी-अभी"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} मिनट पहले"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} घंटे पहले"
+    days = hours // 24
+    if days == 1:
+        return "कल"
+    if days < 7:
+        return f"{days} दिन पहले"
+    weeks = days // 7
+    if weeks < 4:
+        return f"{weeks} हफ़्ते पहले"
+    return hindi_date(dt)
+
+
 class CurrentYearValue(int):
     """Jinja-compatible callable and int representing current year in IST."""
     def __new__(cls):
@@ -172,12 +277,20 @@ templates.env.filters["short_description"] = short_description
 templates.env.filters["first_words"] = first_words
 templates.env.filters["format_airing_ist"] = format_airing_ist
 templates.env.filters["extract_episode"] = extract_episode
+templates.env.filters["airing_iso"] = airing_iso
+templates.env.filters["airing_weekday"] = airing_weekday
+templates.env.filters["relative_time_hindi"] = relative_time_hindi
+templates.env.filters["extract_youtube_id"] = extract_youtube_id
 
 from app.utils import get_initials, get_avatar_color
 templates.env.globals["get_initials"] = get_initials
 templates.env.globals["get_avatar_color"] = get_avatar_color
 templates.env.globals["format_airing_ist"] = format_airing_ist
 templates.env.globals["extract_episode"] = extract_episode
+templates.env.globals["airing_iso"] = airing_iso
+templates.env.globals["airing_weekday"] = airing_weekday
+templates.env.globals["relative_time_hindi"] = relative_time_hindi
+templates.env.globals["extract_youtube_id"] = extract_youtube_id
 templates.env.filters["initials"] = get_initials
 templates.env.filters["avatar_color"] = get_avatar_color
 

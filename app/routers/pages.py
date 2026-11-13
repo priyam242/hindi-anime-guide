@@ -43,6 +43,7 @@ _SCHEDULE_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
 _MANGA_CACHE: tuple[List[AnimeDraft], float] | None = None
 _AWARDS_CACHE: tuple[List[AnimeDraft], float] | None = None
 _TRAILERS_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
+_UPDATES_HUB_CACHE: tuple[dict, float] | None = None
 HUB_CACHE_TTL: float = 20.0
 
 
@@ -476,11 +477,104 @@ def category_page(request: Request, slug: str, session: Session = Depends(get_se
 
 
 # ---------- AUTOMATION PUBLIC SECTIONS & NEWS/UPDATES ----------
+@router.get("/updates", response_class=HTMLResponse)
+def updates_hub_page(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    global _UPDATES_HUB_CACHE
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    if caching and _UPDATES_HUB_CACHE and _UPDATES_HUB_CACHE[1] > now:
+        data = _UPDATES_HUB_CACHE[0]
+    else:
+        # 1. Latest News (try pure news, fallback to latest published updates)
+        news_items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "news")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all())
+        if not news_items:
+            news_items = list(session.exec(
+                select(AnimeDraft)
+                .where(AnimeDraft.status == "published")
+                .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+                .limit(4)
+            ).all())
+
+        # 2. Season Schedule / Airing
+        schedule_items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "schedule")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all())
+
+        # 3. Manga Updates
+        manga_items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "manga")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all())
+
+        # 4. Awards
+        award_items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "award")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all())
+
+        # 5. Trailers
+        trailer_items = list(session.exec(
+            select(AnimeDraft)
+            .where(
+                AnimeDraft.status == "published",
+                or_(
+                    AnimeDraft.content_type == "trailer",
+                    AnimeDraft.title_en.ilike("%trailer%"),
+                    AnimeDraft.title_hi.ilike("%ट्रेलर%"),
+                    AnimeDraft.summary_en.ilike("%trailer%"),
+                    AnimeDraft.summary_hi.ilike("%ट्रेलर%"),
+                ),
+            )
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all())
+
+        data = {
+            "news": news_items,
+            "schedule": schedule_items,
+            "manga": manga_items,
+            "awards": award_items,
+            "trailers": trailer_items,
+        }
+        if caching:
+            _UPDATES_HUB_CACHE = (data, now + HUB_CACHE_TTL)
+
+    return render(
+        "updates.html",
+        categories=categories,
+        data=data,
+        lang=lang,
+        user=user,
+        active_nav="updates",
+        request=request,
+    )
+
+
 @router.get("/news", response_class=HTMLResponse)
 def news_page(
     request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(12, ge=1, le=50),
+    category: Optional[str] = Query(None),
     session: Session = Depends(get_session),
 ):
     categories = get_categories(session)
@@ -489,15 +583,21 @@ def news_page(
 
     caching = is_caching_enabled()
     now = time.monotonic()
-    cache_key = (page, per_page)
+    cache_key = (page, per_page, category)
     cached = _NEWS_CACHE.get(cache_key) if caching else None
     if cached and cached[2] > now:
         items, total_count = cached[0], cached[1]
     else:
-        base_query = select(AnimeDraft).where(
-            AnimeDraft.status == "published",
-            AnimeDraft.content_type.in_(["news", "schedule", "manga", "award"]),
-        )
+        if category and category in ["news", "schedule", "manga", "award", "trailer"]:
+            base_query = select(AnimeDraft).where(
+                AnimeDraft.status == "published",
+                AnimeDraft.content_type == category,
+            )
+        else:
+            base_query = select(AnimeDraft).where(
+                AnimeDraft.status == "published",
+                AnimeDraft.content_type.in_(["news", "schedule", "manga", "award", "trailer"]),
+            )
         total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
         offset = (page - 1) * per_page
         items = list(session.exec(
@@ -517,6 +617,7 @@ def news_page(
         page=page,
         total_pages=total_pages,
         total_count=total_count,
+        current_news_category=category,
         lang=lang,
         user=user,
         active_nav="news",

@@ -1,82 +1,162 @@
 {% extends "base.html" %}
+{% from "components/macros.html" import render_badge, render_section_header, render_empty_state, render_pagination %}
 
-{% block title %}एनीमे ट्रेलर्स व टीज़र (Anime Trailers & Teasers) — {{ site.name }}{% endblock %}
-{% block meta_description %}आगामी और वर्तमान एनीमे सीज़न्स के नवीनतम आधिकारिक ट्रेलर्स, टीज़र प्रोमो और घोषणाएं।{% endblock %}
+{% block title %}एनीमे ट्रेलर्स व टीज़र | Official Anime Trailers & PVs — {{ site.name }}{% endblock %}
+{% block meta_description %}आगामी और वर्तमान एनीमे सीज़न्स के नवीनतम आधिकारिक यूट्यूब ट्रेलर्स, टीज़र प्रोमो और घोषणाएं। एक क्लिक पर फुल एचडी ट्रेलर्स देखें।{% endblock %}
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/trailers{% endblock %}
+
+{% block og_tags %}
+<meta property="og:type" content="website">
+<meta property="og:title" content="एनीमे ट्रेलर्स व टीज़र — {{ site.name }}">
+<meta property="og:description" content="आधिकारिक यूट्यूब और प्रोडक्शन हाउस द्वारा जारी किए गए नवीनतम एनीमे ट्रेलर्स।">
+<meta property="og:url" content="{{ request.url }}">
+{% endblock %}
 
 {% block content %}
 <div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8">
     
-    <!-- Header -->
-    <div class="border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-xs font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wider mb-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-pink-600 animate-pulse"></span>
-                    <span>ऑफिशियल प्रोमो व टीज़र (Official Promos)</span>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                    <i class="fas fa-film text-pink-600"></i>
-                    <span>एनीमे ट्रेलर्स (Anime Trailers & PVs)</span>
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
-                    आधिकारिक यूट्यूब और प्रोडक्शन हाउस द्वारा जारी किए गए नवीनतम एनीमे ट्रेलर्स और प्रोमोशनल वीडियोज़।
-                </p>
-            </div>
-
-            <!-- Quick Hub Links -->
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 text-white shadow-sm">ट्रेलर्स</a>
-                <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">एनीमे समाचार</a>
-                <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">सीज़न शेड्यूल</a>
-                <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">मंगा अपडेट्स</a>
-                <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">पुरस्कार</a>
-            </div>
+  <!-- Header -->
+  <div class="border-b border-white/10 pb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-pink-400 uppercase tracking-wider mb-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+          <span>ऑफिशियल प्रोमो व टीज़र • Click-to-Play Fast Video</span>
         </div>
-    </div>
-
-    <!-- Trailers Grid -->
-    {% if items and items|length > 0 %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {% for item in items %}
-        <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
-            <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900">
-                {% if item.image_url %}
-                <img src="{{ item.image_url }}" alt="{{ item.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                {% else %}
-                <div class="w-full h-full flex flex-col items-center justify-center text-pink-500 text-3xl">
-                    <i class="fas fa-play"></i>
-                </div>
-                {% endif %}
-                <span class="absolute top-2.5 left-2.5 bg-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">TRAILER</span>
-            </a>
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                    <h2 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-pink-600 transition-colors line-clamp-2">
-                        <a href="/updates/{{ item.id }}">{{ item.title_hi or item.title_en }}</a>
-                    </h2>
-                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-3">
-                        {{ (item.summary_hi or item.summary_en) | short_description(140) }}
-                    </p>
-                </div>
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
-                    <span class="text-gray-500">{{ item.source_name }}</span>
-                    <a href="/updates/{{ item.id }}" class="text-pink-600 font-bold hover:underline">ट्रेलर विवरण →</a>
-                </div>
-            </div>
-        </article>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center py-16 px-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800">
-        <i class="fas fa-film text-4xl text-gray-400 mb-3"></i>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">वर्तमान में कोई नया ट्रेलर ड्राफ्ट उपलब्ध नहीं है</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
-            ऑटोमेशन पाइपलाइन नए एनीमे पीवी और ट्रेलर घोषणाओं को फेच कर रही है। जल्द ही यहाँ नए ट्रेलर्स दिखाई देंगे।
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
+          <i class="fas fa-film text-pink-500"></i>
+          <span class="heading-gradient">एनीमे ट्रेलर्स एवं प्रमोशनल वीडियोज़</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
+          आधिकारिक प्रोडक्शन हाउस द्वारा जारी किए गए नवीनतम एनीमे ट्रेलर्स। क्लिक करें और सीधे फुल एचडी में देखें।
         </p>
+      </div>
+
+      <!-- Quick Section Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 text-white shadow-sm">ट्रेलर्स</a>
+        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">समाचार</a>
+        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
+        <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
+        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
+      </div>
     </div>
-    {% endif %}
+  </div>
+
+  <!-- Trailers Grid -->
+  {% if items and items|length > 0 %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for item in items %}
+    {% set yt_id = (item.source_url | extract_youtube_id) or (item.external_id | extract_youtube_id) %}
+    
+    <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-pink-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
+      
+      <!-- Click-to-Load Video Container (Alpine.js) -->
+      <div x-data="{ playing: false }" class="relative aspect-[16/9] overflow-hidden bg-neutral-950">
+        
+        <!-- If Playing: Render Clean YouTube NoCookie iframe -->
+        <template x-if="playing">
+          {% if yt_id %}
+          <iframe src="https://www.youtube-nocookie.com/embed/{{ yt_id }}?autoplay=1&rel=0"
+                  title="{{ item.title_en }}"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  class="w-full h-full border-0">
+          </iframe>
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center bg-black text-white p-4 text-center text-xs">
+            वीडियो लोड नहीं हो सका। कृपया स्रोत लिंक खोलें।
+          </div>
+          {% endif %}
+        </template>
+
+        <!-- Thumbnail + Click to Play Trigger -->
+        <div x-show="!playing" @click="playing = true" class="w-full h-full cursor-pointer relative group/thumb">
+          {% if yt_id %}
+          <img src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg"
+               alt="{{ item.title_en }}"
+               loading="lazy"
+               class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
+               onerror="this.onerror=null; this.src='{{ item.image_url or '/static/favicon.svg' }}';">
+          {% elif item.image_url %}
+          <img src="{{ item.image_url }}"
+               alt="{{ item.title_en }}"
+               loading="lazy"
+               class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
+               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-500 text-4xl">
+            <i class="fas fa-film"></i>
+          </div>
+          {% endif %}
+
+          <!-- Dark Gradient Scrim -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/30 group-hover/thumb:from-black/60 transition-colors"></div>
+
+          <!-- Play Button Overlay -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center shadow-2xl group-hover/thumb:scale-115 transition-all">
+              <i class="fas fa-play text-sm ml-0.5"></i>
+            </div>
+          </div>
+
+          <!-- Trailer Badge -->
+          <div class="absolute top-2.5 left-2.5 bg-pink-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
+            OFFICIAL PV
+          </div>
+
+          <!-- Duration/Platform tag -->
+          <div class="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-sm text-white text-[10px] font-mono px-2 py-0.5 rounded">
+            YouTube
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card Body -->
+      <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+        <div>
+          <div class="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+            <span class="text-pink-400 font-semibold">{{ item.source_name }}</span>
+            <span>{{ (item.published_at | relative_time_hindi) }}</span>
+          </div>
+
+          <h3 class="text-base font-bold text-white group-hover:text-pink-400 transition-colors line-clamp-2 leading-snug">
+            <a href="/updates/{{ item.id }}">
+              {{ item.title_hi or item.title_en }}
+            </a>
+          </h3>
+
+          <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+            {{ (item.summary_hi or item.summary_en) | short_description(120) }}
+          </p>
+        </div>
+
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+          <a href="/updates/{{ item.id }}" class="text-pink-400 hover:text-pink-300 font-bold inline-flex items-center gap-1">
+            <span>विवरण देखें</span>
+            <i class="fas fa-arrow-right text-[10px]"></i>
+          </a>
+
+          {% if item.source_url %}
+          <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1" title="Watch on YouTube">
+            <span>यूट्यूब पर देखें</span>
+            <i class="fas fa-external-link-alt text-[9px]"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {{ render_pagination(page, total_pages, '/trailers') }}
+
+  {% else %}
+    {{ render_empty_state('वर्तमान में कोई नया ट्रेलर उपलब्ध नहीं है', 'No Trailers Available', 'ऑटोमेशन पाइपलाइन नए एनीमे पीवी और ट्रेलर घोषणाओं को फेच कर रही है।', 'Trailers and promotional videos are being updated.', 'fas fa-film', lang) }}
+  {% endif %}
 
 </div>
 {% endblock %}
-

@@ -75,6 +75,43 @@
   <script defer src="/static/js/alpine.min.js"></script>
 
   <style>
+    :root {
+      --theme-bg: #ffffff;
+      --theme-surface: #f9fafb;
+      --theme-card: #ffffff;
+      --theme-border: #e5e7eb;
+      --theme-border-subtle: rgba(0, 0, 0, 0.08);
+      --theme-text-primary: #111827;
+      --theme-text-muted: #6b7280;
+      --theme-accent-red: #dc2626;
+      --theme-accent-red-hover: #b91c1c;
+      --gradient-from: #111827;
+      --gradient-via: #374151;
+      --gradient-to: #dc2626;
+    }
+
+    html.dark {
+      --theme-bg: #0a0a0a;
+      --theme-surface: #121212;
+      --theme-card: #141414;
+      --theme-border: #262626;
+      --theme-border-subtle: rgba(255, 255, 255, 0.08);
+      --theme-text-primary: #f3f4f6;
+      --theme-text-muted: #9ca3af;
+      --theme-accent-red: #ef4444;
+      --theme-accent-red-hover: #f87171;
+      --gradient-from: #ffffff;
+      --gradient-via: #d1d5db;
+      --gradient-to: #ef4444;
+    }
+
+    .heading-gradient {
+      background: linear-gradient(135deg, var(--gradient-from) 0%, var(--gradient-via) 65%, var(--gradient-to) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
     * {
       font-family: 'Bell MT', 'Noto Serif Devanagari', Georgia, 'Times New Roman', serif !important;
       box-sizing: border-box;
@@ -1650,6 +1687,7 @@
   {% set sidebar_groups = [
     {
       "title": "नेविगेशन",
+      "i18n": "sidebar_group_nav",
       "icon": "fas fa-compass",
       "has_all_link": false,
       "links": [
@@ -1680,7 +1718,7 @@
         {
           "id": "nav_hindi_dub",
           "title": "हिंदी डब एनीमे",
-          "i18n": none,
+          "i18n": "nav_hindi_dub",
           "url": "/explore?hindi_dub=1",
           "icon": "fas fa-headphones",
           "color": "text-red-500",
@@ -1693,13 +1731,14 @@
     },
     {
       "title": "ताज़ा अपडेट",
+      "i18n": "sidebar_group_updates",
       "icon": "fas fa-bolt",
       "has_all_link": false,
       "links": [
         {
           "id": "upd_news",
           "title": "एनीमे समाचार",
-          "i18n": none,
+          "i18n": "upd_news",
           "url": "/news",
           "icon": "fas fa-newspaper",
           "color": "text-blue-500",
@@ -1711,7 +1750,7 @@
         {
           "id": "upd_schedule",
           "title": "सीज़न शेड्यूल",
-          "i18n": none,
+          "i18n": "upd_schedule",
           "url": "/schedule",
           "icon": "fas fa-calendar-alt",
           "color": "text-purple-500",
@@ -1723,7 +1762,7 @@
         {
           "id": "upd_manga",
           "title": "मंगा अपडेट्स",
-          "i18n": none,
+          "i18n": "upd_manga",
           "url": "/manga",
           "icon": "fas fa-book-open",
           "color": "text-emerald-500",
@@ -1735,7 +1774,7 @@
         {
           "id": "upd_awards",
           "title": "अवॉर्ड्स",
-          "i18n": none,
+          "i18n": "upd_awards",
           "url": "/awards",
           "icon": "fas fa-trophy",
           "color": "text-amber-500",
@@ -1747,7 +1786,7 @@
         {
           "id": "upd_trailers",
           "title": "ट्रेलर्स",
-          "i18n": none,
+          "i18n": "upd_trailers",
           "url": "/trailers",
           "icon": "fas fa-film",
           "color": "text-pink-500",
@@ -1760,13 +1799,14 @@
     },
     {
       "title": "गाइड्स",
+      "i18n": "sidebar_group_guides",
       "icon": "fas fa-book-bookmark",
       "has_all_link": false,
       "links": [
         {
           "id": "guide_latest",
           "title": "ताज़ा गाइड्स",
-          "i18n": none,
+          "i18n": "guide_latest",
           "url": "/explore?sort=latest",
           "icon": "fas fa-bolt",
           "color": "text-amber-500",
@@ -1778,7 +1818,7 @@
         {
           "id": "guide_beginners",
           "title": "शुरुआती गाइड",
-          "i18n": none,
+          "i18n": "guide_beginners",
           "url": "/explore?category=beginners-guide",
           "icon": "fas fa-seedling",
           "color": "text-blue-500",
@@ -1790,7 +1830,7 @@
         {
           "id": "guide_watch_order",
           "title": "वॉच ऑर्डर",
-          "i18n": none,
+          "i18n": "guide_watch_order",
           "url": "/explore?category=watch-order",
           "icon": "fas fa-list-ol",
           "color": "text-cyan-500",
@@ -1802,7 +1842,7 @@
         {
           "id": "guide_where_to_watch",
           "title": "कहाँ देखें",
-          "i18n": none,
+          "i18n": "guide_where_to_watch",
           "url": "/explore?category=where-to-watch",
           "icon": "fas fa-tv",
           "color": "text-emerald-500",
@@ -1814,7 +1854,7 @@
         {
           "id": "guide_dub_vs_sub",
           "title": "डब vs सब",
-          "i18n": none,
+          "i18n": "guide_dub_vs_sub",
           "url": "/explore?category=dub-vs-sub",
           "icon": "fas fa-sliders",
           "color": "text-purple-500",
@@ -1826,7 +1866,7 @@
         {
           "id": "guide_recommendations",
           "title": "सिफारिशें",
-          "i18n": none,
+          "i18n": "guide_recommendations",
           "url": "/explore?category=recommendations",
           "icon": "fas fa-star",
           "color": "text-amber-500",
@@ -1838,7 +1878,7 @@
         {
           "id": "guide_rankings",
           "title": "टॉप 10 / रैंकिंग",
-          "i18n": none,
+          "i18n": "guide_rankings",
           "url": "/explore?category=rankings",
           "icon": "fas fa-ranking-star",
           "color": "text-orange-500",
@@ -1851,15 +1891,17 @@
     },
     {
       "title": "लोकप्रिय श्रेणियां",
+      "i18n": "sidebar_group_categories",
       "icon": "fas fa-th-large",
       "has_all_link": true,
       "all_link_url": "/explore",
       "all_link_text": "सभी",
+      "all_i18n": "sidebar_all",
       "links": [
         {
           "id": "cat_all_anime",
           "title": "सभी एनीमे",
-          "i18n": none,
+          "i18n": "cat_all_anime",
           "url": "/explore",
           "icon": "fas fa-fire-flame-curved",
           "color": "text-red-500",
@@ -1871,7 +1913,7 @@
         {
           "id": "cat_action",
           "title": "एक्शन",
-          "i18n": none,
+          "i18n": "cat_action",
           "url": "/explore?category=action",
           "icon": "fas fa-bolt-lightning",
           "color": "text-orange-500",
@@ -1883,7 +1925,7 @@
         {
           "id": "cat_romance",
           "title": "Romance",
-          "i18n": none,
+          "i18n": "cat_romance",
           "url": "/explore?category=romance",
           "icon": "fas fa-heart",
           "color": "text-pink-500",
@@ -1895,7 +1937,7 @@
         {
           "id": "cat_comedy",
           "title": "कॉमेडी",
-          "i18n": none,
+          "i18n": "cat_comedy",
           "url": "/explore?category=comedy",
           "icon": "fas fa-face-laugh-squint",
           "color": "text-yellow-500",
@@ -1907,7 +1949,7 @@
         {
           "id": "cat_fantasy",
           "title": "फैंटेसी",
-          "i18n": none,
+          "i18n": "cat_fantasy",
           "url": "/explore?category=fantasy",
           "icon": "fas fa-wand-magic-sparkles",
           "color": "text-purple-500",
@@ -1919,7 +1961,7 @@
         {
           "id": "cat_thriller",
           "title": "थ्रिलर / हॉरर",
-          "i18n": none,
+          "i18n": "cat_thriller",
           "url": "/explore?category=thriller",
           "icon": "fas fa-ghost",
           "color": "text-gray-400 dark:text-gray-400",
@@ -1931,7 +1973,7 @@
         {
           "id": "cat_slice_of_life",
           "title": "स्कूल / स्लाइस ऑफ लाइफ",
-          "i18n": none,
+          "i18n": "cat_slice_of_life",
           "url": "/explore?category=slice-of-life",
           "icon": "fas fa-school",
           "color": "text-emerald-500",
@@ -1943,7 +1985,7 @@
         {
           "id": "cat_sports",
           "title": "स्पोर्ट्स",
-          "i18n": none,
+          "i18n": "cat_sports",
           "url": "/explore?category=sports",
           "icon": "fas fa-volleyball",
           "color": "text-blue-500",
@@ -1962,10 +2004,10 @@
       <div class="sidebar-section-title">
         <span class="flex items-center gap-1.5">
           {% if group.icon %}<i class="{{ group.icon }} text-[11px] text-gray-400"></i>{% endif %}
-          <span>{{ group.title }}</span>
+          <span {% if group.i18n %}data-i18n="{{ group.i18n }}"{% endif %}>{{ group.title }}</span>
         </span>
         {% if group.has_all_link %}
-        <a href="{{ group.all_link_url }}" class="text-[10px] font-bold text-red-600 hover:underline" aria-label="{{ group.title }} - {{ group.all_link_text }}">{{ group.all_link_text }}</a>
+        <a href="{{ group.all_link_url }}" class="text-[10px] font-bold text-red-600 hover:underline" {% if group.all_i18n %}data-i18n="{{ group.all_i18n }}"{% endif %} aria-label="{{ group.title }} - {{ group.all_link_text }}">{{ group.all_link_text }}</a>
         {% endif %}
       </div>
       <div class="space-y-1" role="list">
@@ -2135,8 +2177,34 @@
   <script>
     window.I18N = {
       hi: {
+        "sidebar_group_nav": "नेविगेशन",
+        "sidebar_group_updates": "ताज़ा अपडेट",
+        "sidebar_group_guides": "गाइड्स",
+        "sidebar_group_categories": "लोकप्रिय श्रेणियां",
+        "sidebar_all": "सभी",
         "nav_home": "होम",
         "nav_explore": "एक्सप्लोर",
+        "nav_hindi_dub": "हिंदी डब एनीमे",
+        "upd_news": "एनीमे समाचार",
+        "upd_schedule": "सीज़न शेड्यूल",
+        "upd_manga": "मंगा अपडेट्स",
+        "upd_awards": "अवॉर्ड्स",
+        "upd_trailers": "ट्रेलर्स",
+        "guide_latest": "ताज़ा गाइड्स",
+        "guide_beginners": "शुरुआती गाइड",
+        "guide_watch_order": "वॉच ऑर्डर",
+        "guide_where_to_watch": "कहाँ देखें",
+        "guide_dub_vs_sub": "डब vs सब",
+        "guide_recommendations": "सिफारिशें",
+        "guide_rankings": "टॉप 10 / रैंकिंग",
+        "cat_all_anime": "सभी एनीमे",
+        "cat_action": "एक्शन",
+        "cat_romance": "Romance",
+        "cat_comedy": "कॉमेडी",
+        "cat_fantasy": "फैंटेसी",
+        "cat_thriller": "थ्रिलर / हॉरर",
+        "cat_slice_of_life": "स्कूल / स्लाइस ऑफ लाइफ",
+        "cat_sports": "स्पोर्ट्स",
         "nav_saved": "मेरी सूची",
         "search_placeholder": "एनीमे खोजें...",
         "login": "लॉग इन",
@@ -2145,54 +2213,80 @@
         "my_profile": "मेरी प्रोफ़ाइल",
         "my_saved": "सेव किए गए गाइड्स",
         {% if user and(user.user_type == 'admin' or user.is_superuser or user.is_staff) %}
-    "admin_portal": "एडमिन पोर्टल",
-      "articles_mgmt": "लेख प्रबंधन",
+        "admin_portal": "एडमिन पोर्टल",
+        "articles_mgmt": "लेख प्रबंधन",
         {% endif %}
-    "settings_title": "खाता सेटिंग्स",
-      "notifications": "सूचनाएं",
+        "settings_title": "खाता सेटिंग्स",
+        "notifications": "सूचनाएं",
         "mark_all_read": "सभी पढ़े हुए मार्क करें",
-          "no_notifications": "कोई नई सूचना नहीं है",
-            "footer_tagline": "भारतीय पाठकों के लिए एनीमे कहाँ देखें, हिंदी डब और शुरुआती गाइड।",
-              "footer_guides": "गाइड्स",
-                "footer_site": "साइट",
-                  "footer_legal": "कानूनी",
-                    "about_us": "हमारे बारे में",
-                      "editorial_policy": "संपादकीय नीति",
-                        "contact": "संपर्क",
-                          "privacy": "गोपनीयता नीति",
-                            "disclaimer": "अस्वीकरण",
-                              "footer_disclaimer_text": "सभी ट्रेडमार्क और कॉपीराइट उनके संबंधित स्वामियों के हैं। यह साइट केवल आधिकारिक स्ट्रीमिंग सेवाओं के संदर्भ प्रदान करती है।",
-                                "footer_rights": "सर्वाधिकार सुरक्षित।"
+        "no_notifications": "कोई नई सूचना नहीं है",
+        "footer_tagline": "भारतीय पाठकों के लिए एनीमे कहाँ देखें, हिंदी डब और शुरुआती गाइड।",
+        "footer_guides": "गाइड्स",
+        "footer_site": "साइट",
+        "footer_legal": "कानूनी",
+        "about_us": "हमारे बारे में",
+        "editorial_policy": "संपादकीय नीति",
+        "contact": "संपर्क",
+        "privacy": "गोपनीयता नीति",
+        "disclaimer": "अस्वीकरण",
+        "footer_disclaimer_text": "सभी ट्रेडमार्क और कॉपीराइट उनके संबंधित स्वामियों के हैं। यह साइट केवल आधिकारिक स्ट्रीमिंग सेवाओं के संदर्भ प्रदान करती है।",
+        "footer_rights": "सर्वाधिकार सुरक्षित।"
       },
-    en: {
-      "nav_home": "Home",
+      en: {
+        "sidebar_group_nav": "NAVIGATION",
+        "sidebar_group_updates": "LATEST UPDATES",
+        "sidebar_group_guides": "GUIDES",
+        "sidebar_group_categories": "POPULAR CATEGORIES",
+        "sidebar_all": "All",
+        "nav_home": "Home",
         "nav_explore": "Explore",
-          "nav_saved": "Saved Guides",
-            "search_placeholder": "Search anime guides...",
-              "login": "Log In",
-                "signup": "Sign Up",
-                  "logout": "Sign Out",
-                    "my_profile": "My Profile",
-                      "my_saved": "Saved Guides",
-                        {% if user and(user.user_type == 'admin' or user.is_superuser or user.is_staff) %}
-    "admin_portal": "Admin Portal",
-      "articles_mgmt": "Articles Management",
+        "nav_hindi_dub": "Hindi Dub Anime",
+        "upd_news": "Anime News",
+        "upd_schedule": "Season Schedule",
+        "upd_manga": "Manga Updates",
+        "upd_awards": "Awards",
+        "upd_trailers": "Trailers",
+        "guide_latest": "Latest Guides",
+        "guide_beginners": "Beginner's Guide",
+        "guide_watch_order": "Watch Order",
+        "guide_where_to_watch": "Where to Watch",
+        "guide_dub_vs_sub": "Dub vs Sub",
+        "guide_recommendations": "Recommendations",
+        "guide_rankings": "Top 10 / Rankings",
+        "cat_all_anime": "All Anime",
+        "cat_action": "Action",
+        "cat_romance": "Romance",
+        "cat_comedy": "Comedy",
+        "cat_fantasy": "Fantasy",
+        "cat_thriller": "Thriller / Horror",
+        "cat_slice_of_life": "School / Slice of Life",
+        "cat_sports": "Sports",
+        "nav_saved": "Saved Guides",
+        "search_placeholder": "Search anime guides...",
+        "login": "Log In",
+        "signup": "Sign Up",
+        "logout": "Sign Out",
+        "my_profile": "My Profile",
+        "my_saved": "Saved Guides",
+        {% if user and(user.user_type == 'admin' or user.is_superuser or user.is_staff) %}
+        "admin_portal": "Admin Portal",
+        "articles_mgmt": "Articles Management",
         {% endif %}
-    "settings_title": "Account Settings",
-      "notifications": "Notifications",
+        "settings_title": "Account Settings",
+        "notifications": "Notifications",
         "mark_all_read": "Mark all read",
-          "no_notifications": "No new notifications",
-            "footer_tagline": "Anime streaming guides, Hindi dubs, and recommendations for Indian fans.",
-              "footer_guides": "Guides",
-                "footer_site": "Site",
-                  "footer_legal": "Legal",
-                    "about_us": "About Us",
-                      "editorial_policy": "Editorial Policy",
-                        "contact": "Contact",
-                          "privacy": "Privacy Policy",
-                            "disclaimer": "Disclaimer",
-                              "footer_disclaimer_text": "All trademarks and copyrights belong to their respective owners. We reference official streaming platforms only.",
-                                "footer_rights": "All rights reserved."
+        "no_notifications": "No new notifications",
+        "footer_tagline": "Anime streaming guides, Hindi dubs, and recommendations for Indian fans.",
+        "footer_guides": "Guides",
+        "footer_site": "Site",
+        "footer_legal": "Legal",
+        "about_us": "About Us",
+        "editorial_policy": "Editorial Policy",
+        "contact": "Contact",
+        "privacy": "Privacy Policy",
+        "disclaimer": "Disclaimer",
+        "footer_disclaimer_text": "All trademarks and copyrights belong to their respective owners. We reference official streaming platforms only.",
+        "footer_rights": "All rights reserved."
       }
     };
 

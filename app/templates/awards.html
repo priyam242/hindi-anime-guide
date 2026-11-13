@@ -1,83 +1,204 @@
 {% extends "base.html" %}
+{% from "components/macros.html" import render_badge, render_section_header, render_empty_state %}
 
-{% block title %}एनीमे पुरस्कार एवं सम्मान | Anime Awards — {{ site.name }}{% endblock %}
-{% block meta_description %}वार्षिक एनीमे पुरस्कार, क्रंचीरोल एनीमे अवार्ड्स, और उद्योग सम्मानों से जुड़ी ताज़ा जानकारी।{% endblock %}
+{% block title %}एनीमे पुरस्कार एवं सम्मान | Anime Awards & Winners — {{ site.name }}{% endblock %}
+{% block meta_description %}वार्षिक एनीमे पुरस्कार, क्रंचीरोल एनीमे अवार्ड्स, और उद्योग सम्मानों के विजेता व नामांकित टाइटल्स की पूरी सूची।{% endblock %}
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/awards{% endblock %}
 
+{% block og_tags %}
+<meta property="og:type" content="website">
+<meta property="og:title" content="एनीमे पुरस्कार एवं सम्मान — {{ site.name }}">
+<meta property="og:description" content="वार्षिक एनीमे अवार्ड्स के विजेता, नामांकनों की सूची और विश्लेषण।">
+<meta property="og:url" content="{{ request.url }}">
+{% endblock %}
+
 {% block content %}
-<div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8">
+<div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-8 space-y-8"
+     x-data="{ selectedYear: '2026' }">
     
-    <!-- Header -->
-    <div class="border-b border-gray-200 dark:border-gray-800 pb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 text-xs font-bold text-pink-600 dark:text-pink-400 uppercase tracking-wider mb-1.5">
-                    <span class="inline-block w-2 h-2 rounded-full bg-pink-600 animate-pulse"></span>
-                    <span>एनीमे सम्मान एवं प्रतियोगिताएं (Awards & Honors)</span>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                    <i class="fas fa-trophy text-pink-600"></i>
-                    <span>एनीमे पुरस्कार (Anime Awards & Nominations)</span>
-                </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
-                    ग्लोबल एनीमे अवार्ड्स, प्रमुख श्रेणियों के विजेता, और नामांकनों से जुड़े आधिकारिक आंकड़े।
-                </p>
-            </div>
-
-            <!-- Quick Hub Links -->
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 text-white shadow-sm">पुरस्कार</a>
-                <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">एनीमे समाचार</a>
-                <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">सीज़न शेड्यूल</a>
-                <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-colors">मंगा अपडेट्स</a>
-            </div>
+  <!-- Header -->
+  <div class="border-b border-white/10 pb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span>वार्षिक सम्मान • Global Anime Honors</span>
         </div>
-    </div>
-
-    <!-- Items Grid -->
-    {% if items and items|length > 0 %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {% for item in items %}
-        <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
-            <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900">
-                {% if item.image_url %}
-                <img src="{{ item.image_url }}" alt="{{ item.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
-                {% else %}
-                <div class="w-full h-full flex flex-col items-center justify-center text-pink-500 text-3xl">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                {% endif %}
-                <span class="absolute top-2.5 left-2.5 bg-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">AWARD</span>
-            </a>
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                    <h2 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-pink-600 transition-colors line-clamp-2">
-                        <a href="/updates/{{ item.id }}">{{ item.title_hi or item.title_en }}</a>
-                    </h2>
-                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-3">
-                        {{ (item.summary_hi or item.summary_en) | short_description(140) }}
-                    </p>
-                </div>
-                <div class="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
-                    <a href="/updates/{{ item.id }}" class="text-pink-600 font-bold hover:underline">विवरण देखें →</a>
-                    <span class="text-gray-400">Source: {{ item.source_name }}</span>
-                </div>
-            </div>
-        </article>
-        {% endfor %}
-    </div>
-    {% else %}
-    <!-- Prepared Empty State for Part 3 -->
-    <div class="py-20 text-center bg-gray-50 dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-        <div class="w-16 h-16 bg-pink-100 dark:bg-pink-950/40 text-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-            <i class="fas fa-trophy"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">पुरस्कार सेक्शन तैयार है (Coming Soon in Part 3)</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
-            प्रमुख वार्षिक एनीमे अवार्ड्स और वैश्विक सम्मानों के परिणाम अगले चरण में यहाँ प्रकाशित किए जाएंगे।
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
+          <i class="fas fa-trophy text-amber-500"></i>
+          <span class="heading-gradient">एनीमे पुरस्कार एवं नामांकन</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
+          ग्लोबल एनीमे अवार्ड्स, प्रमुख श्रेणियों के विजेता, और नामांकनों से जुड़े आधिकारिक आंकड़े व समीक्षा।
         </p>
+      </div>
+
+      <!-- Quick Section Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-sm">अवॉर्ड्स</a>
+        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">समाचार</a>
+        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
+        <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
+        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+      </div>
     </div>
-    {% endif %}
+
+    <!-- Year Selector Tabs -->
+    <div class="flex items-center gap-2 pt-6 overflow-x-auto pb-1 scrollbar-thin">
+      <button type="button" @click="selectedYear = 'all'"
+              :class="selectedYear === 'all' ? 'bg-amber-600 text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0">
+        सभी वर्ष (All Years)
+      </button>
+      <button type="button" @click="selectedYear = '2026'"
+              :class="selectedYear === '2026' ? 'bg-amber-600 text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+        <i class="fas fa-crown text-[10px]"></i>
+        <span>2026 Awards</span>
+      </button>
+      <button type="button" @click="selectedYear = '2025'"
+              :class="selectedYear === '2025' ? 'bg-amber-600 text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0">
+        2025 Awards
+      </button>
+      <button type="button" @click="selectedYear = '2024'"
+              :class="selectedYear === '2024' ? 'bg-amber-600 text-white shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0">
+        2024 Awards
+      </button>
+    </div>
+  </div>
+
+  {% if items and items|length > 0 %}
+    <!-- Grouping by year in frontend -->
+    <div class="space-y-12">
+      
+      <!-- 2026 SECTION -->
+      <section x-show="selectedYear === 'all' || selectedYear === '2026'" class="space-y-6">
+        <div class="flex items-center justify-between pb-2 border-b border-white/10">
+          <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+            <span class="w-2.5 h-6 rounded bg-amber-500"></span>
+            <span>Crunchyroll & Global Anime Awards 2026</span>
+          </h2>
+          <span class="text-xs text-amber-400 font-bold px-2.5 py-1 rounded bg-amber-950/60 border border-amber-800/40">
+            विजेता एवं शीर्ष नामांकन
+          </span>
+        </div>
+
+        <!-- Featured Winner Card (First item in 2026) -->
+        {% set winner = items[0] %}
+        <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-amber-950/40 via-neutral-900 to-black border-2 border-amber-500/50 p-6 sm:p-8 shadow-2xl group">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <a href="/updates/{{ winner.id }}" class="lg:col-span-5 relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-950 block border border-amber-500/30">
+              {% if winner.image_url %}
+              <img src="{{ winner.image_url }}" alt="{{ winner.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+              {% else %}
+              <div class="w-full h-full flex items-center justify-center text-amber-500 text-5xl"><i class="fas fa-trophy"></i></div>
+              {% endif %}
+              <div class="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs px-3 py-1 rounded shadow-lg flex items-center gap-1.5">
+                <i class="fas fa-crown"></i>
+                <span>ANIME OF THE YEAR WINNER</span>
+              </div>
+            </a>
+
+            <div class="lg:col-span-7 space-y-4">
+              <div class="flex items-center gap-2 text-xs text-amber-400 font-bold">
+                <i class="fas fa-award text-sm"></i>
+                <span>सर्वश्रेष्ठ एनीमे श्रेणी • Grand Prize Winner</span>
+              </div>
+
+              <h3 class="text-2xl sm:text-3xl font-black text-white group-hover:text-amber-400 transition-colors leading-tight">
+                <a href="/updates/{{ winner.id }}">
+                  {{ winner.title_hi or winner.title_en }}
+                </a>
+              </h3>
+
+              <div class="text-xs text-gray-400 font-mono">
+                {{ winner.title_en }}
+              </div>
+
+              <p class="text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
+                {{ (winner.summary_hi or winner.summary_en) | short_description(200) }}...
+              </p>
+
+              <div class="pt-2 flex items-center gap-4">
+                <a href="/updates/{{ winner.id }}" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-black font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow">
+                  <span>पूर्ण परिणाम एवं विश्लेषण</span>
+                  <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+                <span class="text-xs text-gray-400">स्रोत: {{ winner.source_name }}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Nominees Grid (Remaining items) -->
+        <div class="space-y-3 pt-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <i class="fas fa-list-check text-amber-500"></i>
+            <span>अन्य प्रमुख नामांकित टाइटल्स (Award Nominees)</span>
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {% for item in items[1:] %}
+            <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-amber-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
+              <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
+                {% if item.image_url %}
+                <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
+                     loading="lazy"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                     onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-amber-500 text-3xl"><i class="fas fa-trophy"></i></div>
+                {% endif %}
+                <span class="absolute top-2.5 left-2.5 bg-neutral-900/90 backdrop-blur-sm text-amber-400 border border-amber-500/40 text-[10px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1">
+                  <i class="fas fa-medal text-[9px]"></i>
+                  <span>NOMINEE</span>
+                </span>
+              </a>
+
+              <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div>
+                  <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 leading-snug">
+                    <a href="/updates/{{ item.id }}">{{ item.title_hi or item.title_en }}</a>
+                  </h3>
+                  <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+                    {{ (item.summary_hi or item.summary_en) | short_description(120) }}
+                  </p>
+                </div>
+
+                <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+                  <a href="/updates/{{ item.id }}" class="text-amber-400 hover:text-amber-300 font-bold inline-flex items-center gap-1">
+                    <span>विवरण देखें</span>
+                    <i class="fas fa-arrow-right text-[10px]"></i>
+                  </a>
+                  <span class="text-gray-400 text-[11px]">{{ item.source_name }}</span>
+                </div>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+
+      </section>
+
+      <!-- PREVIOUS YEARS ARCHIVE (2025/2024 preview) -->
+      <section x-show="selectedYear === 'all' || selectedYear === '2025' || selectedYear === '2024'" class="space-y-4 pt-4 border-t border-white/10">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fas fa-history text-gray-400"></i>
+          <span>पुरस्कार आर्काइव (Previous Year Archives)</span>
+        </h3>
+        <p class="text-xs text-gray-400">
+          2020 से 2025 तक के ऐतिहासिक पुरस्कारों का डेटा हमारे डेटाबेस में संग्रहीत है। विशिष्ट वर्ष के परिणामों के लिए ऊपर दिए गए टैब चुनें।
+        </p>
+      </section>
+
+    </div>
+  {% else %}
+    {{ render_empty_state('अवॉर्ड्स सूची जल्द उपलब्ध होगी', 'Awards Coming Soon', 'वार्षिक एनीमे अवार्ड्स और वैश्विक सम्मानों के परिणाम यहाँ प्रकाशित किए जाएंगे।', 'Annual anime award winners and nominations will appear here.', 'fas fa-trophy', lang) }}
+  {% endif %}
 
 </div>
 {% endblock %}

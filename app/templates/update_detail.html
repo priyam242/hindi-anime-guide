@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/macros.html" import render_badge, render_share_buttons, render_source_credit %}
 
 {% set current_title = item.title_hi if (lang == 'hi' and item.title_hi) else item.title_en %}
 {% set current_summary = item.summary_hi if (lang == 'hi' and item.summary_hi) else (item.summary_en or '') %}
@@ -69,188 +70,216 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <!-- Breadcrumb & Top Controls -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-        <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
-            <a href="/" class="hover:text-red-600 transition-colors">होम</a>
-            <span>/</span>
-            {% if item.content_type == 'schedule' %}
-                <a href="/schedule" class="hover:text-red-600 transition-colors">शेड्यूल</a>
-            {% elif item.content_type == 'manga' %}
-                <a href="/manga" class="hover:text-red-600 transition-colors">मंगा</a>
-            {% elif item.content_type == 'award' %}
-                <a href="/awards" class="hover:text-red-600 transition-colors">पुरस्कार</a>
-            {% else %}
-                <a href="/news" class="hover:text-red-600 transition-colors">समाचार</a>
-            {% endif %}
-            <span>/</span>
-            <span class="text-gray-900 dark:text-white font-medium truncate max-w-[280px] sm:max-w-md">{{ current_title }}</span>
-        </nav>
+  <!-- Breadcrumb & Top Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-white/10">
+    <nav class="flex items-center gap-2 text-xs text-gray-400 flex-wrap" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-red-500 transition-colors">होम</a>
+      <span>/</span>
+      {% if item.content_type == 'schedule' %}
+        <a href="/schedule" class="hover:text-purple-400 transition-colors">शेड्यूल</a>
+      {% elif item.content_type == 'manga' %}
+        <a href="/manga" class="hover:text-emerald-400 transition-colors">मंगा</a>
+      {% elif item.content_type == 'award' %}
+        <a href="/awards" class="hover:text-amber-400 transition-colors">पुरस्कार</a>
+      {% elif item.content_type == 'trailer' %}
+        <a href="/trailers" class="hover:text-pink-400 transition-colors">ट्रेलर्स</a>
+      {% else %}
+        <a href="/news" class="hover:text-red-500 transition-colors">समाचार</a>
+      {% endif %}
+      <span>/</span>
+      <span class="text-white font-medium truncate max-w-[280px] sm:max-w-md">{{ current_title }}</span>
+    </nav>
 
-        <!-- Inline English / Hindi Reader Toggle -->
-        <div class="inline-flex items-center rounded-lg border border-gray-200 dark:border-gray-800 p-0.5 bg-gray-50 dark:bg-gray-900 text-xs self-start sm:self-auto">
-            <button type="button" id="toggle-hi-btn" onclick="toggleDetailLang('hi')"
-                class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'hi' %}bg-red-600 text-white shadow-sm{% else %}text-gray-600 dark:text-gray-400 hover:text-red-600{% endif %}">
-                हिंदी (HI)
-            </button>
-            <button type="button" id="toggle-en-btn" onclick="toggleDetailLang('en')"
-                class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'en' %}bg-red-600 text-white shadow-sm{% else %}text-gray-600 dark:text-gray-400 hover:text-red-600{% endif %}">
-                English (EN)
-            </button>
-        </div>
+    <!-- Inline English / Hindi Reader Toggle -->
+    <div class="inline-flex items-center rounded-lg border border-white/10 p-0.5 bg-neutral-900 text-xs self-start sm:self-auto">
+      <button type="button" id="toggle-hi-btn" onclick="toggleDetailLang('hi')"
+        class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'hi' %}bg-red-600 text-white shadow-sm{% else %}text-gray-400 hover:text-white{% endif %}">
+        हिंदी (HI)
+      </button>
+      <button type="button" id="toggle-en-btn" onclick="toggleDetailLang('en')"
+        class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'en' %}bg-red-600 text-white shadow-sm{% else %}text-gray-400 hover:text-white{% endif %}">
+        English (EN)
+      </button>
     </div>
+  </div>
 
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  <!-- Main Content Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Left: Article Content -->
-        <article class="lg:col-span-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 shadow-sm">
+    <!-- Left: Article Reading Pane -->
+    <article class="lg:col-span-8 bg-neutral-900/70 border border-white/10 rounded-2xl p-6 sm:p-10 shadow-xl space-y-6">
             
-            <!-- Type & Meta Header -->
-            <div class="flex flex-wrap items-center gap-3 text-xs mb-4">
-                {% if item.content_type == 'schedule' %}
-                    <span class="bg-purple-600 text-white font-bold px-2.5 py-0.5 rounded shadow">📅 SCHEDULE UPDATE</span>
-                {% elif item.content_type == 'news' %}
-                    <span class="bg-blue-600 text-white font-bold px-2.5 py-0.5 rounded shadow">📰 ANIME NEWS</span>
-                {% elif item.content_type == 'manga' %}
-                    <span class="bg-amber-600 text-white font-bold px-2.5 py-0.5 rounded shadow">📖 MANGA UPDATE</span>
-                {% elif item.content_type == 'award' %}
-                    <span class="bg-pink-600 text-white font-bold px-2.5 py-0.5 rounded shadow">🏆 ANIME AWARD</span>
-                {% endif %}
+      <!-- Type & Meta Header -->
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        {% if item.content_type == 'schedule' %}
+          <span class="bg-purple-600/90 text-white font-bold px-2.5 py-0.5 rounded shadow">📅 SCHEDULE UPDATE</span>
+        {% elif item.content_type == 'news' %}
+          <span class="bg-blue-600/90 text-white font-bold px-2.5 py-0.5 rounded shadow">📰 ANIME NEWS</span>
+        {% elif item.content_type == 'manga' %}
+          <span class="bg-emerald-600/90 text-white font-bold px-2.5 py-0.5 rounded shadow">📖 MANGA UPDATE</span>
+        {% elif item.content_type == 'award' %}
+          <span class="bg-amber-600/90 text-white font-bold px-2.5 py-0.5 rounded shadow">🏆 ANIME AWARD</span>
+        {% elif item.content_type == 'trailer' %}
+          <span class="bg-pink-600/90 text-white font-bold px-2.5 py-0.5 rounded shadow">🎬 ANIME TRAILER</span>
+        {% endif %}
 
-                <span class="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <i class="far fa-clock"></i>
-                    <span>{{ (item.published_at | hindi_date) if item.published_at else (item.created_at | hindi_date) }}</span>
-                </span>
-            </div>
+        <span class="text-gray-400 flex items-center gap-1.5">
+          <i class="far fa-clock text-[11px]"></i>
+          <span>{{ (item.published_at | hindi_date) if item.published_at else (item.created_at | hindi_date) }}</span>
+        </span>
 
-            <!-- Main Headline -->
-            <h1 id="detail-headline" class="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-tight mb-6">
-                {{ current_title }}
-            </h1>
+        <span class="text-gray-500">•</span>
+        <span class="text-gray-400">{{ item.source_name }}</span>
+      </div>
 
-            <!-- Cover Image -->
-            {% if item.image_url %}
-            <div class="mb-8 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm max-h-[460px] flex items-center justify-center">
-                <img src="{{ item.image_url }}" alt="{{ item.title_en }}" class="w-full h-full object-cover max-h-[460px]" loading="eager">
-            </div>
-            {% endif %}
+      <!-- Main Headline -->
+      <h1 id="detail-headline" class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight heading-gradient">
+        {{ current_title }}
+      </h1>
 
-            <!-- Summary / Editorial Body -->
-            <div class="prose prose-base sm:prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-200 leading-relaxed space-y-4">
-                <p id="detail-body-text" class="text-base sm:text-lg leading-relaxed whitespace-pre-line font-normal">
-                    {{ current_summary }}
-                </p>
-            </div>
+      <div class="text-xs text-gray-400 font-mono -mt-2">
+        {{ item.title_en }}
+      </div>
 
-            <!-- MANDATORY LEGAL ATTRIBUTION LINE -->
-            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400">
-                <div>
-                    <span>Source: </span>
-                    <a href="{{ item.source_url }}" rel="nofollow noopener" target="_blank" class="text-red-600 dark:text-red-400 font-bold hover:underline inline-flex items-center gap-1">
-                        <span>{{ item.source_name }}</span>
-                        <i class="fas fa-external-link-alt text-[10px]"></i>
-                    </a>
-                </div>
-                <div class="text-[11px] text-gray-400">
-                    आधिकारिक डेटा AniList / प्रकाशक स्रोतों द्वारा सत्यापित • केवल सूचनात्मक उद्देश्य
-                </div>
-            </div>
+      <!-- Cover Image -->
+      {% if item.image_url %}
+      <div class="rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shadow-lg max-h-[480px] flex items-center justify-center">
+        <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
+             class="w-full h-full object-cover max-h-[480px]"
+             loading="eager"
+             onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
+      </div>
+      {% endif %}
 
-        </article>
+      <!-- Summary / Editorial Body -->
+      <div class="prose prose-invert max-w-none text-gray-200 leading-relaxed space-y-4 pt-2">
+        <p id="detail-body-text" class="text-base sm:text-lg leading-relaxed whitespace-pre-line font-normal text-gray-300">
+          {{ current_summary }}
+        </p>
+      </div>
 
-        <!-- Right: Sidebar & Related Updates -->
-        <aside class="lg:col-span-4 space-y-6">
+      <!-- Social Share Buttons -->
+      {{ render_share_buttons(current_title, request.url) }}
+
+      <!-- Official Source Attribution -->
+      <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400">
+        <div>
+          <span>स्रोत संदर्भ (Source): </span>
+          {% if item.source_url %}
+          <a href="{{ item.source_url }}" rel="nofollow noopener" target="_blank" class="text-red-400 font-bold hover:underline inline-flex items-center gap-1">
+            <span>{{ item.source_name }}</span>
+            <i class="fas fa-external-link-alt text-[10px]"></i>
+          </a>
+          {% else %}
+          <span class="font-bold text-gray-300">{{ item.source_name }}</span>
+          {% endif %}
+        </div>
+        <div class="text-[11px] text-gray-400">
+          आधिकारिक AniList / प्रकाशक स्रोतों द्वारा सत्यापित • केवल सूचनात्मक उद्देश्य
+        </div>
+      </div>
+
+    </article>
+
+    <!-- Right: Sidebar & Related Updates -->
+    <aside class="lg:col-span-4 space-y-6">
             
-            <!-- Quick Facts Card -->
-            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 shadow-sm">
-                <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <i class="fas fa-info-circle text-red-600"></i>
-                    <span>संक्षिप्त विवरण (Quick Facts)</span>
-                </h3>
-                <dl class="space-y-2 text-xs">
-                    <div class="flex justify-between py-1 border-b border-gray-200 dark:border-gray-800">
-                        <dt class="text-gray-500">कंटेंट प्रकार:</dt>
-                        <dd class="font-semibold text-gray-900 dark:text-white capitalize">{{ item.content_type }}</dd>
-                    </div>
-                    <div class="flex justify-between py-1 border-b border-gray-200 dark:border-gray-800">
-                        <dt class="text-gray-500">स्रोत:</dt>
-                        <dd class="font-semibold text-gray-900 dark:text-white">{{ item.source_name }}</dd>
-                    </div>
-                    <div class="flex justify-between py-1">
-                        <dt class="text-gray-500">प्रकाशन तिथि:</dt>
-                        <dd class="font-semibold text-gray-900 dark:text-white">{{ (item.published_at | hindi_date) if item.published_at else 'हाल ही में' }}</dd>
-                    </div>
-                </dl>
-            </div>
+      <!-- Quick Facts Card -->
+      <div class="bg-neutral-900/70 border border-white/10 rounded-xl p-5 shadow-sm space-y-3">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i class="fas fa-info-circle text-red-500"></i>
+          <span>संक्षिप्त विवरण (Quick Facts)</span>
+        </h3>
+        <dl class="space-y-2 text-xs">
+          <div class="flex justify-between py-1.5 border-b border-white/5">
+            <dt class="text-gray-400">कंटेंट प्रकार:</dt>
+            <dd class="font-semibold text-white capitalize">{{ item.content_type }}</dd>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-white/5">
+            <dt class="text-gray-400">सत्यापित स्रोत:</dt>
+            <dd class="font-semibold text-white">{{ item.source_name }}</dd>
+          </div>
+          <div class="flex justify-between py-1.5 border-b border-white/5">
+            <dt class="text-gray-400">प्रकाशन तिथि:</dt>
+            <dd class="font-semibold text-white">{{ (item.published_at | hindi_date) if item.published_at else 'हाल ही में' }}</dd>
+          </div>
+          <div class="flex justify-between py-1.5">
+            <dt class="text-gray-400">भाषा विकल्प:</dt>
+            <dd class="font-semibold text-emerald-400">हिंदी / English</dd>
+          </div>
+        </dl>
+      </div>
 
-            <!-- Related Published Updates -->
-            {% if related_items and related_items|length > 0 %}
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 shadow-sm space-y-4">
-                <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <i class="fas fa-bolt text-amber-500"></i>
-                    <span>अन्य ताज़ा अपडेट्स</span>
-                </h3>
-                <div class="space-y-3">
-                    {% for rel in related_items %}
-                    <a href="/updates/{{ rel.id }}" class="flex items-start gap-3 group">
-                        {% if rel.image_url %}
-                        <img src="{{ rel.image_url }}" alt="{{ rel.title_en }}" class="w-14 h-18 object-cover rounded-md shrink-0 border border-gray-200 dark:border-gray-800" loading="lazy">
-                        {% else %}
-                        <div class="w-14 h-18 bg-gray-200 dark:bg-gray-800 rounded-md shrink-0 flex items-center justify-center text-xs text-gray-400">📺</div>
-                        {% endif %}
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                                {{ rel.title_hi or rel.title_en }}
-                            </h4>
-                            <span class="text-[10px] text-gray-400 mt-1 block">
-                                {{ (rel.published_at | hindi_date) if rel.published_at else '' }}
-                            </span>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
+      <!-- Related Published Updates -->
+      {% if related_items and related_items|length > 0 %}
+      <div class="bg-neutral-900/70 border border-white/10 rounded-xl p-5 shadow-sm space-y-4">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i class="fas fa-bolt text-amber-500"></i>
+          <span>अन्य ताज़ा अपडेट्स</span>
+        </h3>
+        <div class="space-y-3">
+          {% for rel in related_items %}
+          <a href="/updates/{{ rel.id }}" class="flex items-start gap-3 group">
+            {% if rel.image_url %}
+            <img src="{{ rel.image_url }}" alt="{{ rel.title_en }}"
+                 class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
+                 loading="lazy"
+                 onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
+            {% else %}
+            <div class="w-16 h-16 bg-neutral-950 rounded-lg shrink-0 flex items-center justify-center text-xs text-gray-500 border border-white/10">📺</div>
             {% endif %}
+            <div class="min-w-0 flex-1">
+              <h4 class="text-xs font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
+                {{ rel.title_hi or rel.title_en }}
+              </h4>
+              <span class="text-[10px] text-gray-400 mt-1 block">
+                {{ (rel.published_at | hindi_date) if rel.published_at else '' }}
+              </span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
 
-        </aside>
+    </aside>
 
-    </div>
+  </div>
 </div>
 
 <script>
-    const DRAFT_TEXTS = {
-        title_hi: {{ (item.title_hi or item.title_en) | tojson }},
-        title_en: {{ item.title_en | tojson }},
-        summary_hi: {{ (item.summary_hi or item.summary_en or '') | tojson }},
-        summary_en: {{ (item.summary_en or item.summary_hi or '') | tojson }}
-    };
+  const DRAFT_TEXTS = {
+    title_hi: {{ (item.title_hi or item.title_en) | tojson }},
+    title_en: {{ item.title_en | tojson }},
+    summary_hi: {{ (item.summary_hi or item.summary_en or '') | tojson }},
+    summary_en: {{ (item.summary_en or item.summary_hi or '') | tojson }}
+  };
 
-    function toggleDetailLang(lang) {
-        try {
-            document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
-            localStorage.setItem('site_lang', lang);
-        } catch (e) {}
+  function toggleDetailLang(lang) {
+    try {
+      document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      localStorage.setItem('site_lang', lang);
+    } catch (e) {}
 
-        const isHi = (lang === 'hi');
-        const btnHi = document.getElementById('toggle-hi-btn');
-        const btnEn = document.getElementById('toggle-en-btn');
-        const headline = document.getElementById('detail-headline');
-        const bodyText = document.getElementById('detail-body-text');
+    const isHi = (lang === 'hi');
+    const btnHi = document.getElementById('toggle-hi-btn');
+    const btnEn = document.getElementById('toggle-en-btn');
+    const headline = document.getElementById('detail-headline');
+    const bodyText = document.getElementById('detail-body-text');
 
-        if (isHi) {
-            btnHi.className = "px-2.5 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
-            btnEn.className = "px-2.5 py-1 rounded-md font-bold transition-all text-gray-600 dark:text-gray-400 hover:text-red-600";
-            headline.textContent = DRAFT_TEXTS.title_hi;
-            bodyText.textContent = DRAFT_TEXTS.summary_hi;
-        } else {
-            btnEn.className = "px-2.5 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
-            btnHi.className = "px-2.5 py-1 rounded-md font-bold transition-all text-gray-600 dark:text-gray-400 hover:text-red-600";
-            headline.textContent = DRAFT_TEXTS.title_en;
-            bodyText.textContent = DRAFT_TEXTS.summary_en;
-        }
+    if (isHi) {
+      btnHi.className = "px-2.5 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
+      btnEn.className = "px-2.5 py-1 rounded-md font-bold transition-all text-gray-400 hover:text-white";
+      headline.textContent = DRAFT_TEXTS.title_hi;
+      bodyText.textContent = DRAFT_TEXTS.summary_hi;
+    } else {
+      btnEn.className = "px-2.5 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
+      btnHi.className = "px-2.5 py-1 rounded-md font-bold transition-all text-gray-400 hover:text-white";
+      headline.textContent = DRAFT_TEXTS.title_en;
+      bodyText.textContent = DRAFT_TEXTS.summary_en;
     }
+  }
 </script>
 {% endblock %}
