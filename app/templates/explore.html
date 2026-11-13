@@ -134,7 +134,12 @@ endblock %}
       <a href="/updates/{{ upd.id }}" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
         <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-950 flex items-center justify-center">
           {% if upd.image_url %}
-          <img src="{{ upd.image_url }}" alt="{{ upd.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+          <img src="{{ upd.image_url }}" 
+               alt="{{ upd.title_en }}" 
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+               loading="lazy"
+               referrerpolicy="no-referrer"
+               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
           {% else %}
           <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4 text-center">
             <i class="fas fa-play text-red-600 text-xl mb-1"></i>
@@ -166,7 +171,12 @@ endblock %}
     {% for article in articles %}
     <a href="/article/{{ article.slug }}" class="anime-card group">
       <div class="anime-card-image-wrap">
-        <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="anime-card-image" loading="lazy">
+        <img src="{{ article.cover_image }}" 
+             alt="{{ article.title }}" 
+             class="anime-card-image" 
+             loading="lazy"
+             referrerpolicy="no-referrer"
+             onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
         {% if article.has_hindi_dub %}
         <span class="badge-hindi badge-dub"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>
         {% endif %}

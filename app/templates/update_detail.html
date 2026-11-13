@@ -149,6 +149,7 @@
         <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
              class="w-full h-full object-cover max-h-[480px]"
              loading="eager"
+             referrerpolicy="no-referrer"
              onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
       </div>
       {% endif %}
@@ -226,6 +227,7 @@
             <img src="{{ rel.image_url }}" alt="{{ rel.title_en }}"
                  class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
                  loading="lazy"
+                 referrerpolicy="no-referrer"
                  onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
             {% else %}
             <div class="w-16 h-16 bg-neutral-950 rounded-lg shrink-0 flex items-center justify-center text-xs text-gray-500 border border-white/10">📺</div>

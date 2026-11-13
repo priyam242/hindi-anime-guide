@@ -75,6 +75,8 @@
           <a href="/updates/{{ feat.id }}" class="lg:col-span-7 relative aspect-[16/9] lg:aspect-auto overflow-hidden bg-neutral-950 block">
             {% if feat.image_url %}
             <img src="{{ feat.image_url }}" alt="{{ feat.title_en }}"
+                 loading="lazy"
+                 referrerpolicy="no-referrer"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                  onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
             {% else %}
@@ -143,6 +145,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
                loading="lazy"
+               referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
           {% else %}

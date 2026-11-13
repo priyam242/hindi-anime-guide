@@ -89,7 +89,7 @@
               <td class="py-3 px-4 flex items-center gap-3">
                 <a href="/updates/{{ m.id }}" class="w-10 h-14 rounded overflow-hidden bg-neutral-950 shrink-0 block border border-white/10 group-hover:border-emerald-500/40 transition-colors">
                   {% if m.image_url %}
-                  <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-2','opacity-40');">
+                  <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-2','opacity-40');">
                   {% else %}
                   <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs"><i class="fas fa-book"></i></div>
                   {% endif %}
@@ -150,7 +150,7 @@
         <article class="p-4 rounded-xl bg-neutral-900/80 border border-white/10 shadow-sm flex items-start gap-3.5">
           <a href="/updates/{{ m.id }}" class="w-14 h-20 rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-white/10">
             {% if m.image_url %}
-            <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
+            <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
             {% else %}
             <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs"><i class="fas fa-book"></i></div>
             {% endif %}

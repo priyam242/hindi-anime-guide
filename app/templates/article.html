@@ -144,7 +144,12 @@
 
   {% if article.cover_image %}
   <div class="rounded-2xl overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
-    <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="w-full h-auto object-cover max-h-[420px]" loading="lazy">
+    <img src="{{ article.cover_image }}" 
+         alt="{{ article.title }}" 
+         class="w-full h-auto object-cover max-h-[420px]" 
+         loading="lazy"
+         referrerpolicy="no-referrer"
+         onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
   </div>
   {% endif %}
 
@@ -326,7 +331,12 @@
           <a href="/article/{{ rel.slug }}" class="anime-card group">
             <div class="anime-card-image-wrap">
               {% if rel.cover_image %}
-              <img src="{{ rel.cover_image }}" alt="{{ rel.title }}" class="anime-card-image" loading="lazy">
+              <img src="{{ rel.cover_image }}" 
+                   alt="{{ rel.title }}" 
+                   class="anime-card-image" 
+                   loading="lazy"
+                   referrerpolicy="no-referrer"
+                   onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
               {% else %}
               <div class="cover c-{{ rel.category_cover_color }}" style="height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; font-weight: 700;">
                 {{ rel.anime_title_hi if rel.anime_title_hi else rel.category_name_hi }}

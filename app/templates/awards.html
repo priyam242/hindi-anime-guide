@@ -92,7 +92,7 @@
             
             <a href="/updates/{{ winner.id }}" class="lg:col-span-5 relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-950 block border border-amber-500/30">
               {% if winner.image_url %}
-              <img src="{{ winner.image_url }}" alt="{{ winner.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+              <img src="{{ winner.image_url }}" alt="{{ winner.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
               {% else %}
               <div class="w-full h-full flex items-center justify-center text-amber-500 text-5xl"><i class="fas fa-trophy"></i></div>
               {% endif %}
@@ -148,6 +148,7 @@
                 {% if item.image_url %}
                 <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
                      loading="lazy"
+                     referrerpolicy="no-referrer"
                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                      onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
                 {% else %}

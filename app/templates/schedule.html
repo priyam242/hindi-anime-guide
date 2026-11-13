@@ -109,6 +109,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
                loading="lazy"
+               referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
           {% else %}
