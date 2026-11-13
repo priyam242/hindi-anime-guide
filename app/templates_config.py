@@ -140,6 +140,7 @@ class _DummyUrl:
 class _DummyRequest:
     url = _DummyUrl()
     cookies = {}
+    query_params = {}
 
 
 def render(template: str, **context) -> str:

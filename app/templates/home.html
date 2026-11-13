@@ -141,28 +141,6 @@
 
     </section>
 
-    <!-- Popular Category Quick Links -->
-    <div class="w-full">
-        <div class="flex items-center justify-between mb-5">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
-                <i class="fas fa-th-large text-red-600"></i> Popular Categories
-            </h2>
-            <a href="/explore" class="text-xs font-bold text-red-600 hover:text-red-700 inline-flex items-center gap-1">
-                सभी श्रेणियां <i class="fas fa-chevron-right text-[10px]"></i>
-            </a>
-        </div>
-        <div class="flex gap-2.5 overflow-x-auto pb-4 scrollbar-hide smooth-touch-scroll">
-            <a href="/explore" class="category-pill category-pill-active">
-                <i class="fas fa-fire-flame-curved mr-1.5 text-xs"></i> All Anime
-            </a>
-            {% for cat in categories %}
-            <a href="/explore?category={{ cat.slug }}" class="category-pill">
-                {{ cat.name_hi or cat.display_name or cat.name }}
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
     <!-- Latest Guides Section with 3D Parallax Tilt Cards & Neon Badges -->
     <section class="w-full">
         <div class="flex items-center justify-between mb-8">

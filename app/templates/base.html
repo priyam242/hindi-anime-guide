@@ -1208,15 +1208,115 @@
       background: #111111;
       border: 1px dashed rgba(255, 255, 255, 0.12);
     }
+
+    /* Sidebar Navigation Styles */
+    .sidebar-nav-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      padding: 0 0.75rem;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    html.dark .sidebar-section-title {
+      color: #9ca3af;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.52rem 0.75rem;
+      border-radius: 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    html.dark .sidebar-link {
+      color: #d1d5db;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(220, 38, 38, 0.08);
+      color: #dc2626;
+    }
+
+    html.dark .sidebar-link:hover {
+      background: rgba(220, 38, 38, 0.16);
+      color: #ef4444;
+    }
+
+    .sidebar-link.active {
+      background: #dc2626;
+      color: #ffffff !important;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    }
+
+    .sidebar-link.active i {
+      color: #ffffff !important;
+    }
+
+    .sidebar-link-badge {
+      margin-left: auto;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.12rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(220, 38, 38, 0.12);
+      color: #dc2626;
+      letter-spacing: 0.03em;
+    }
+
+    html.dark .sidebar-link-badge {
+      background: rgba(220, 38, 38, 0.25);
+      color: #f87171;
+    }
+
+    .sidebar-link.active .sidebar-link-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .scrollbar-thin {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border-radius: 20px;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 
 <body x-data="{
     mobileOpen: false,
+    sidebarOpen: true,
     userMenuOpen: false,
     notifOpen: false,
-    isMobile: window.innerWidth <= 860,
+    isMobile: window.innerWidth < 1024,
     isDark: (() => {
       try { return document.cookie.includes('dark_mode=1') || localStorage.getItem('theme') === 'dark'; } catch (e) { return false; }
     })(),
@@ -1230,12 +1330,26 @@
       } catch (e) {
         this.isDark = false;
       }
+      try {
+        const savedSide = localStorage.getItem('sidebar_open');
+        if (savedSide !== null) {
+          this.sidebarOpen = savedSide === 'true';
+        }
+      } catch (e) {}
       window.addEventListener('resize', () => {
-        this.isMobile = window.innerWidth <= 860;
+        this.isMobile = window.innerWidth < 1024;
         if (!this.isMobile && this.mobileOpen) {
           this.mobileOpen = false;
         }
       });
+    },
+    toggleSidebar() {
+      if (window.innerWidth < 1024) {
+        this.mobileOpen = !this.mobileOpen;
+      } else {
+        this.sidebarOpen = !this.sidebarOpen;
+        try { localStorage.setItem('sidebar_open', this.sidebarOpen); } catch (e) {}
+      }
     },
     openMobile() {
       this.mobileOpen = true;
@@ -1246,10 +1360,7 @@
       this.closeAllMenus();
     },
     toggleMobile() {
-      this.mobileOpen = !this.mobileOpen;
-      if (this.mobileOpen) {
-        this.closeAllMenus();
-      }
+      this.toggleSidebar();
     },
     toggleUserMenu() {
       this.notifOpen = false;
@@ -1290,6 +1401,11 @@
     }
   }" @keydown.escape.window="closeMobile(); closeAllMenus()" @click="closeAllMenus()"
   class="bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 antialiased">
+  {% set current_path = request.url.path if (request is defined and request.url is defined and request.url.path is defined) else '' %}
+  {% set current_cat = (request.query_params.get('category', '') if (request is defined and request.query_params is defined and request.query_params.get is defined) else (selected_category if selected_category is defined else '')) %}
+  {% set current_plat = (request.query_params.get('platform', '') if (request is defined and request.query_params is defined and request.query_params.get is defined) else (selected_platform if selected_platform is defined else '')) %}
+  {% set current_sort = (request.query_params.get('sort', '') if (request is defined and request.query_params is defined and request.query_params.get is defined) else (selected_sort if selected_sort is defined else '')) %}
+  {% set is_hindi_dub_active = (request.query_params.get('hindi_dub') in ['1', 'true', 'True']) if (request is defined and request.query_params is defined and request.query_params.get is defined) else (selected_hindi_dub if selected_hindi_dub is defined else false) %}
   <!-- Inline SVG Sprite & A11y Skip Link -->
   {% include "partials/icons.html" %}
   <a href="#main-content"
@@ -1302,13 +1418,14 @@
     <div
       class="max-w-[1780px] mx-auto px-3 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
-      <!-- Brand Logo & Mobile Trigger -->
+      <!-- Brand Logo & Sidebar / Mobile Trigger -->
       <div class="flex items-center gap-1 sm:gap-3 shrink-0">
-        <button id="hamburger-btn" type="button" aria-label="मेन्यू" @click="toggleMobile()"
-          class="md:hidden p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none">
+        <button id="hamburger-btn" type="button" aria-label="मेन्यू" @click.stop="toggleSidebar()"
+          class="p-1.5 sm:p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 focus:outline-none rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
+        </button>
         </button>
         <a class="text-xs sm:text-xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-1.5 sm:gap-2 notranslate whitespace-nowrap"
           href="/">
@@ -1498,46 +1615,107 @@
   </header>
 
   <!-- Mobile Drawer Menu -->
-  <div x-show="mobileOpen" class="fixed inset-0 z-50 flex md:hidden" style="display: none;">
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="closeMobile()"></div>
+  <div x-show="mobileOpen" class="fixed inset-0 z-50 flex lg:hidden" style="display: none;">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeMobile()"></div>
     <div
-      class="relative bg-white dark:bg-gray-900 w-4/5 max-w-xs p-6 shadow-2xl flex flex-col justify-between border-r border-gray-200 dark:border-gray-800 z-10">
+      class="relative bg-white dark:bg-[#0a0a0a] w-4/5 max-w-xs p-5 shadow-2xl flex flex-col justify-between border-r border-gray-200 dark:border-gray-800 z-10 overflow-y-auto scrollbar-thin">
       <div>
-        <div class="flex items-center justify-between mb-8">
-          <a class="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-200 dark:border-gray-800">
+          <a class="text-base font-extrabold text-gray-900 dark:text-white tracking-tight notranslate flex items-center gap-2" href="/">
+            <span class="bg-red-600 text-white p-1 rounded-md text-xs flex items-center justify-center">
+              <i class="fas fa-play text-[9px]"></i>
+            </span>
             Hindi Anime <span class="text-red-600">Guide</span>
           </a>
-          <button @click="closeMobile()" class="text-gray-500 dark:text-gray-400 hover:text-red-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button @click="closeMobile()" class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600" aria-label="Close menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
         </div>
-        <nav class="space-y-4">
-          <a href="/"
-            class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="nav_home">Home</a>
-          <a href="/explore"
-            class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="nav_explore">Explore</a>
-          {% if user %}
-          <a href="/saved"
-            class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="nav_saved">Saved Guides</a>
-          <a href="/profile"
-            class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="my_profile">My Profile</a>
-          {% else %}
-          <a href="/auth/login"
-            class="block text-gray-700 dark:text-gray-200 font-medium hover:text-red-600 py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="login">Log In</a>
-          <a href="/auth/register"
-            class="block text-red-600 font-bold py-2 border-b border-gray-200 dark:border-gray-800"
-            data-i18n="signup">Sign Up</a>
-          {% endif %}
-        </nav>
+
+        <!-- Mobile Search Input -->
+        <div class="mb-5">
+          <div class="relative w-full">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="search" placeholder="एनीमे खोजें..."
+              class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-700 dark:text-gray-200 pl-8 pr-3 py-1.5 rounded-lg focus:outline-none focus:border-red-500 transition-colors"
+              onkeyup="if(event.key === 'Enter') { window.location.href='/explore?q=' + encodeURIComponent(this.value); }">
+          </div>
+        </div>
+
+        <!-- Core Navigation Section -->
+        <div class="sidebar-nav-section">
+          <div class="sidebar-section-title">
+            <span>नेविगेशन</span>
+            <i class="fas fa-compass text-[11px] text-gray-400"></i>
+          </div>
+          <div class="space-y-1">
+            <a href="/" class="sidebar-link {% if current_path == '/' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
+              <i class="fas fa-house w-4 text-center"></i>
+              <span data-i18n="nav_home">होम</span>
+            </a>
+            <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
+              <i class="fas fa-compass w-4 text-center"></i>
+              <span data-i18n="nav_explore">एक्सप्लोर</span>
+            </a>
+            <a href="/explore?hindi_dub=1" class="sidebar-link {% if is_hindi_dub_active %}active{% endif %}">
+              <i class="fas fa-headphones w-4 text-center text-red-500"></i>
+              <span>हिंदी डब एनीमे</span>
+              <span class="sidebar-link-badge">HINDI</span>
+            </a>
+            <a href="/explore?sort=latest" class="sidebar-link {% if current_sort == 'latest' %}active{% endif %}">
+              <i class="fas fa-bolt w-4 text-center text-amber-500"></i>
+              <span>ताज़ा गाइड्स</span>
+            </a>
+            {% if user %}
+            <a href="/saved" class="sidebar-link {% if current_path == '/saved' %}active{% endif %}">
+              <i class="fas fa-bookmark w-4 text-center text-rose-500"></i>
+              <span data-i18n="nav_saved">मेरी सूची</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Categories Section (Shifted from Home) -->
+        <div class="sidebar-nav-section">
+          <div class="sidebar-section-title">
+            <span class="flex items-center gap-1.5">
+              <i class="fas fa-th-large text-red-600 text-xs"></i>
+              <span>लोकप्रिय श्रेणियां</span>
+            </span>
+            <a href="/explore" class="text-[10px] font-bold text-red-600 hover:underline">सभी</a>
+          </div>
+          <div class="space-y-1">
+            <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat %}active{% endif %}">
+              <i class="fas fa-fire-flame-curved w-4 text-center text-red-500"></i>
+              <span>सभी एनीमे</span>
+            </a>
+            {% for cat in categories %}
+            <a href="/explore?category={{ cat.slug }}" class="sidebar-link {% if current_cat == cat.slug %}active{% endif %}">
+              {% if cat.slug == 'action' %}
+              <i class="fas fa-bolt-lightning w-4 text-center text-amber-500"></i>
+              {% elif cat.slug == 'romance' %}
+              <i class="fas fa-heart w-4 text-center text-pink-500"></i>
+              {% elif cat.slug == 'where-to-watch' %}
+              <i class="fas fa-tv w-4 text-center text-emerald-500"></i>
+              {% elif cat.slug == 'beginners-guide' %}
+              <i class="fas fa-book-open w-4 text-center text-blue-500"></i>
+              {% elif cat.slug == 'dub-vs-sub' %}
+              <i class="fas fa-sliders w-4 text-center text-purple-500"></i>
+              {% elif cat.slug == 'recommendations' %}
+              <i class="fas fa-award w-4 text-center text-yellow-500"></i>
+              {% else %}
+              <i class="fas fa-folder w-4 text-center text-gray-400"></i>
+              {% endif %}
+              <span class="truncate">{{ cat.name_hi or cat.display_name or cat.name }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      <div class="text-xs text-gray-400 dark:text-gray-500 pt-6 border-t border-gray-200 dark:border-gray-800">
+
+      <div class="text-xs text-gray-400 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">
         © {{ current_year() }} {{ site.name }}
       </div>
     </div>
@@ -1551,67 +1729,167 @@
   </div>
   {% endif %}
 
-  <!-- Page Body Content -->
-  <main class="min-h-[calc(100vh-16rem)]" id="main-content">
-    {% block content %}{% endblock %}
-  </main>
-
-  <!-- Global Footer -->
-  <footer
-    class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-gray-900 mt-20 text-gray-500 dark:text-gray-400 text-base">
-    <div class="max-w-[1780px] mx-auto px-4 py-14 sm:px-8 lg:px-12 xl:px-16">
-      <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-10">
-        <div class="space-y-4 md:col-span-1 lg:col-span-2">
-          <a class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
-            Hindi Anime <span class="text-red-600">Guide</span>
+  <!-- Site Layout: Desktop Sticky Sidebar + Main Content Column -->
+  <div class="site-layout flex w-full">
+    <!-- Desktop Left Sidebar -->
+    <aside id="desktop-sidebar"
+      x-show="sidebarOpen"
+      x-transition:enter="transition-all ease-out duration-200"
+      x-transition:enter-start="-ml-64 opacity-0"
+      x-transition:enter-end="ml-0 opacity-100"
+      x-transition:leave="transition-all ease-in duration-150"
+      x-transition:leave-start="ml-0 opacity-100"
+      x-transition:leave-end="-ml-64 opacity-0"
+      class="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-gray-200 dark:border-gray-800/80 bg-white dark:bg-[#0a0a0a] sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto p-4 z-30 select-none scrollbar-thin">
+      
+      <!-- Core Navigation Section -->
+      <div class="sidebar-nav-section">
+        <div class="sidebar-section-title">
+          <span>नेविगेशन</span>
+          <i class="fas fa-compass text-[11px] text-gray-400"></i>
+        </div>
+        <div class="space-y-1">
+          <a href="/" class="sidebar-link {% if current_path == '/' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
+            <i class="fas fa-house w-4 text-center"></i>
+            <span data-i18n="nav_home">होम</span>
           </a>
-          <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md" data-i18n="footer_tagline">
-            India's legal streaming guide for Hindi dubbed anime, news & recommendations.
-          </p>
-        </div>
-
-        <div>
-          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
-            data-i18n="footer_guides">Guides</h4>
-          <ul class="space-y-2.5 text-sm">
-            <li><a href="/explore?category=action" class="hover:text-red-600 transition-colors">Action Anime</a></li>
-            <li><a href="/explore?category=romance" class="hover:text-red-600 transition-colors">Romance Anime</a></li>
-            <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">Hindi Dubbed Only</a>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
-            data-i18n="footer_site">Site</h4>
-          <ul class="space-y-2.5 text-sm">
-            <li><a href="/about" class="hover:text-red-600 transition-colors" data-i18n="about_us">About Us</a></li>
-            <li><a href="/editorial-policy" class="hover:text-red-600 transition-colors"
-                data-i18n="editorial_policy">Editorial Policy</a></li>
-            <li><a href="/contact" class="hover:text-red-600 transition-colors" data-i18n="contact">Contact</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
-            data-i18n="footer_legal">Legal</h4>
-          <ul class="space-y-2.5 text-sm">
-            <li><a href="/privacy" class="hover:text-red-600 transition-colors" data-i18n="privacy">Privacy Policy</a>
-            </li>
-            <li><a href="/disclaimer" class="hover:text-red-600 transition-colors" data-i18n="disclaimer">Disclaimer</a>
-            </li>
-          </ul>
+          <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
+            <i class="fas fa-compass w-4 text-center"></i>
+            <span data-i18n="nav_explore">एक्सप्लोर</span>
+          </a>
+          <a href="/explore?hindi_dub=1" class="sidebar-link {% if is_hindi_dub_active %}active{% endif %}">
+            <i class="fas fa-headphones w-4 text-center text-red-500"></i>
+            <span>हिंदी डब एनीमे</span>
+            <span class="sidebar-link-badge">HINDI</span>
+          </a>
+          <a href="/explore?sort=latest" class="sidebar-link {% if current_sort == 'latest' %}active{% endif %}">
+            <i class="fas fa-bolt w-4 text-center text-amber-500"></i>
+            <span>ताज़ा गाइड्स</span>
+          </a>
+          {% if user %}
+          <a href="/saved" class="sidebar-link {% if current_path == '/saved' %}active{% endif %}">
+            <i class="fas fa-bookmark w-4 text-center text-rose-500"></i>
+            <span data-i18n="nav_saved">मेरी सूची</span>
+          </a>
+          {% endif %}
         </div>
       </div>
 
-      <div
-        class="pt-8 border-t border-gray-200 dark:border-gray-900 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400 dark:text-gray-500">
-        <p>© {{ current_year() }} {{ site.name }}. <span data-i18n="footer_rights">All rights reserved.</span></p>
-        <p class="mt-2 md:mt-0 text-center md:text-right" data-i18n="footer_disclaimer_text">All trademarks belong to
-          their respective owners. We reference official streaming platforms only.</p>
+      <!-- Categories Section (Shifted from Home) -->
+      <div class="sidebar-nav-section">
+        <div class="sidebar-section-title">
+          <span class="flex items-center gap-1.5">
+            <i class="fas fa-th-large text-red-600 text-xs"></i>
+            <span>लोकप्रिय श्रेणियां</span>
+          </span>
+          <a href="/explore" class="text-[10px] font-bold text-red-600 hover:underline">सभी</a>
+        </div>
+        <div class="space-y-1">
+          <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat %}active{% endif %}">
+            <i class="fas fa-fire-flame-curved w-4 text-center text-red-500"></i>
+            <span>सभी एनीमे</span>
+          </a>
+          {% for cat in categories %}
+          <a href="/explore?category={{ cat.slug }}" class="sidebar-link {% if current_cat == cat.slug %}active{% endif %}">
+            {% if cat.slug == 'action' %}
+            <i class="fas fa-bolt-lightning w-4 text-center text-amber-500"></i>
+            {% elif cat.slug == 'romance' %}
+            <i class="fas fa-heart w-4 text-center text-pink-500"></i>
+            {% elif cat.slug == 'where-to-watch' %}
+            <i class="fas fa-tv w-4 text-center text-emerald-500"></i>
+            {% elif cat.slug == 'beginners-guide' %}
+            <i class="fas fa-book-open w-4 text-center text-blue-500"></i>
+            {% elif cat.slug == 'dub-vs-sub' %}
+            <i class="fas fa-sliders w-4 text-center text-purple-500"></i>
+            {% elif cat.slug == 'recommendations' %}
+            <i class="fas fa-award w-4 text-center text-yellow-500"></i>
+            {% else %}
+            <i class="fas fa-folder w-4 text-center text-gray-400"></i>
+            {% endif %}
+            <span class="truncate">{{ cat.name_hi or cat.display_name or cat.name }}</span>
+          </a>
+          {% endfor %}
+        </div>
       </div>
+
+      <!-- Sidebar Mini Footer -->
+      <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500 space-y-2">
+        <div class="flex flex-wrap gap-x-3 gap-y-1">
+          <a href="/about" class="hover:text-red-600 transition-colors" data-i18n="about_us">हमारे बारे में</a>
+          <a href="/editorial-policy" class="hover:text-red-600 transition-colors" data-i18n="editorial_policy">संपादकीय नीति</a>
+          <a href="/contact" class="hover:text-red-600 transition-colors" data-i18n="contact">संपर्क</a>
+          <a href="/privacy" class="hover:text-red-600 transition-colors" data-i18n="privacy">गोपनीयता</a>
+        </div>
+        <p>© {{ current_year() }} {{ site.name }}</p>
+      </div>
+
+    </aside>
+
+    <!-- Main Content & Footer Column -->
+    <div class="flex-1 min-w-0 flex flex-col">
+      <!-- Page Body Content -->
+      <main class="flex-1 min-h-[calc(100vh-16rem)]" id="main-content">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Global Footer -->
+      <footer
+        class="bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-gray-900 mt-20 text-gray-500 dark:text-gray-400 text-base">
+        <div class="max-w-[1780px] mx-auto px-4 py-14 sm:px-8 lg:px-12 xl:px-16">
+          <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12 mb-10">
+            <div class="space-y-4 md:col-span-1 lg:col-span-2">
+              <a class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight notranslate" href="/">
+                Hindi Anime <span class="text-red-600">Guide</span>
+              </a>
+              <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-md" data-i18n="footer_tagline">
+                India's legal streaming guide for Hindi dubbed anime, news & recommendations.
+              </p>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
+                data-i18n="footer_guides">Guides</h4>
+              <ul class="space-y-2.5 text-sm">
+                <li><a href="/explore?category=action" class="hover:text-red-600 transition-colors">Action Anime</a></li>
+                <li><a href="/explore?category=romance" class="hover:text-red-600 transition-colors">Romance Anime</a></li>
+                <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">Hindi Dubbed Only</a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
+                data-i18n="footer_site">Site</h4>
+              <ul class="space-y-2.5 text-sm">
+                <li><a href="/about" class="hover:text-red-600 transition-colors" data-i18n="about_us">About Us</a></li>
+                <li><a href="/editorial-policy" class="hover:text-red-600 transition-colors"
+                    data-i18n="editorial_policy">Editorial Policy</a></li>
+                <li><a href="/contact" class="hover:text-red-600 transition-colors" data-i18n="contact">Contact</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
+                data-i18n="footer_legal">Legal</h4>
+              <ul class="space-y-2.5 text-sm">
+                <li><a href="/privacy" class="hover:text-red-600 transition-colors" data-i18n="privacy">Privacy Policy</a>
+                </li>
+                <li><a href="/disclaimer" class="hover:text-red-600 transition-colors" data-i18n="disclaimer">Disclaimer</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div
+            class="pt-8 border-t border-gray-200 dark:border-gray-900 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400 dark:text-gray-500">
+            <p>© {{ current_year() }} {{ site.name }}. <span data-i18n="footer_rights">All rights reserved.</span></p>
+            <p class="mt-2 md:mt-0 text-center md:text-right" data-i18n="footer_disclaimer_text">All trademarks belong to
+              their respective owners. We reference official streaming platforms only.</p>
+          </div>
+        </div>
+      </footer>
     </div>
-  </footer>
+  </div>
 
   <script>
     window.I18N = {
