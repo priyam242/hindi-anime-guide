@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     mail_from_email: str = ""
     mail_from_name: str = "Hindi Anime Guide"
 
+    # Content Automation Settings
+    daily_source_draft_cap: int = 10
+    gemini_api_key: str = ""
+
     # Device Trust (days to remember device and skip email OTP; 0 disables)
     otp_trust_device_days: int = 30
 

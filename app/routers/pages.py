@@ -1,6 +1,7 @@
 
 """Public pages router: Home, Explore/Search, Article, Category, Info pages, Sitemap, Robots."""
 from __future__ import annotations
+import time
 from datetime import datetime, timezone
 from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form, Response
@@ -11,7 +12,10 @@ from sqlalchemy.orm import selectinload
 
 from .. import db
 from ..db import get_session
-from ..models import Category, Article, Availability, Comment, Platform, Bookmark, Notification, Admin1
+from ..models import (
+    Category, Article, Availability, Comment, Platform, Bookmark,
+    Notification, Admin1, AnimeDraft,
+)
 from ..markdown_utils import render_markdown_with_toc
 from ..templates_config import render
 
@@ -20,9 +24,70 @@ router = APIRouter()
 # In-memory rate-limiting for reporting outdated availability info (IP -> list of timestamps)
 _report_rate_limit: Dict[str, List[float]] = {}
 
+# ---------------------------------------------------------
+# In-Memory Performance Caching (reduces remote DB round-trips)
+# ---------------------------------------------------------
+_CATEGORIES_CACHE: tuple[List[Category], float] | None = None
+CATEGORIES_CACHE_TTL: float = 60.0
+
+_PLATFORMS_CACHE: tuple[List[Platform], float] | None = None
+PLATFORMS_CACHE_TTL: float = 60.0
+
+_HOME_CACHE: tuple[dict, float] | None = None
+HOME_CACHE_TTL: float = 15.0
+
+_DEFAULT_EXPLORE_CACHE: tuple[List[Article], float] | None = None
+
+_NEWS_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
+_SCHEDULE_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
+_MANGA_CACHE: tuple[List[AnimeDraft], float] | None = None
+_AWARDS_CACHE: tuple[List[AnimeDraft], float] | None = None
+_TRAILERS_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
+HUB_CACHE_TTL: float = 20.0
+
+
+def is_caching_enabled() -> bool:
+    """Caching is active in development and production, bypassed during automated tests."""
+    from ..config import get_settings
+    return get_settings().env.lower() not in ("test", "testing")
+
+
+def invalidate_public_caches() -> None:
+    """Invalidate all public page and metadata in-memory caches."""
+    global _CATEGORIES_CACHE, _PLATFORMS_CACHE, _HOME_CACHE, _DEFAULT_EXPLORE_CACHE, _MANGA_CACHE, _AWARDS_CACHE
+    _CATEGORIES_CACHE = None
+    _PLATFORMS_CACHE = None
+    _HOME_CACHE = None
+    _DEFAULT_EXPLORE_CACHE = None
+    _MANGA_CACHE = None
+    _AWARDS_CACHE = None
+    _NEWS_CACHE.clear()
+    _SCHEDULE_CACHE.clear()
+    _TRAILERS_CACHE.clear()
+
 
 def get_categories(session: Session) -> List[Category]:
-    return list(session.exec(select(Category).order_by(Category.display_order)).all())
+    global _CATEGORIES_CACHE
+    if not is_caching_enabled():
+        return list(session.exec(select(Category).order_by(Category.display_order)).all())
+    now = time.monotonic()
+    if _CATEGORIES_CACHE and _CATEGORIES_CACHE[1] > now:
+        return _CATEGORIES_CACHE[0]
+    cats = list(session.exec(select(Category).order_by(Category.display_order)).all())
+    _CATEGORIES_CACHE = (cats, now + CATEGORIES_CACHE_TTL)
+    return cats
+
+
+def get_platforms(session: Session) -> List[Platform]:
+    global _PLATFORMS_CACHE
+    if not is_caching_enabled():
+        return list(session.exec(select(Platform).order_by(Platform.display_order)).all())
+    now = time.monotonic()
+    if _PLATFORMS_CACHE and _PLATFORMS_CACHE[1] > now:
+        return _PLATFORMS_CACHE[0]
+    plats = list(session.exec(select(Platform).order_by(Platform.display_order)).all())
+    _PLATFORMS_CACHE = (plats, now + PLATFORMS_CACHE_TTL)
+    return plats
 
 
 def _related_articles(session: Session, article: Article) -> List[Article]:
@@ -62,9 +127,14 @@ def _related_articles(session: Session, article: Article) -> List[Article]:
     return related
 
 
-@router.get("/", response_class=HTMLResponse)
-def home_page(request: Request, session: Session = Depends(get_session)):
-    articles = session.exec(
+def get_home_page_data(session: Session) -> dict:
+    global _HOME_CACHE
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    if caching and _HOME_CACHE and _HOME_CACHE[1] > now:
+        return _HOME_CACHE[0]
+
+    articles = list(session.exec(
         select(Article)
         .where(Article.published_at.is_not(None))
         .options(
@@ -74,9 +144,8 @@ def home_page(request: Request, session: Session = Depends(get_session)):
         )
         .order_by(Article.created_at.desc(), Article.id.desc())
         .limit(24)
-    ).all()
-    categories = get_categories(session)
-    user = getattr(request.state, "user", None)
+    ).all())
+
     featured_article = None
     side_articles = []
     grid_articles = []
@@ -90,12 +159,39 @@ def home_page(request: Request, session: Session = Depends(get_session)):
         other_articles = [a for i, a in enumerate(articles) if i != featured_idx]
         side_articles = other_articles[:3]
         grid_articles = other_articles[3:]
+
+    latest_updates = list(session.exec(
+        select(AnimeDraft)
+        .where(AnimeDraft.status == "published")
+        .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+        .limit(5)
+    ).all())
+
+    data = {
+        "articles": articles,
+        "latest_updates": latest_updates,
+        "featured_article": featured_article,
+        "side_articles": side_articles,
+        "grid_articles": grid_articles,
+    }
+    if caching:
+        _HOME_CACHE = (data, now + HOME_CACHE_TTL)
+    return data
+
+
+@router.get("/", response_class=HTMLResponse)
+def home_page(request: Request, session: Session = Depends(get_session)):
+    data = get_home_page_data(session)
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+
     return render(
         "home.html",
-        articles=articles,
-        featured_article=featured_article,
-        side_articles=side_articles,
-        grid_articles=grid_articles,
+        articles=data["articles"],
+        latest_updates=data["latest_updates"],
+        featured_article=data["featured_article"],
+        side_articles=data["side_articles"],
+        grid_articles=data["grid_articles"],
         categories=categories,
         user=user,
         active_nav="home",
@@ -170,14 +266,43 @@ def explore_page(
         order_expr = func.coalesce(Article.published_at, Article.created_at).desc()
         query = query.order_by(order_expr, Article.id.desc())
 
-    articles = list(session.exec(query).all())
+    global _DEFAULT_EXPLORE_CACHE
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    is_default = (not clean_q and not category and not platform and not is_hindi_dub and (not sort or sort == "latest"))
+    if caching and is_default and _DEFAULT_EXPLORE_CACHE and _DEFAULT_EXPLORE_CACHE[1] > now:
+        articles = _DEFAULT_EXPLORE_CACHE[0]
+    else:
+        articles = list(session.exec(query).all())
+        if caching and is_default:
+            _DEFAULT_EXPLORE_CACHE = (articles, now + HUB_CACHE_TTL)
+
+    matching_updates = []
+    if clean_q:
+        q_filter = f"%{clean_q}%"
+        matching_updates = list(session.exec(
+            select(AnimeDraft)
+            .where(
+                AnimeDraft.status == "published",
+                or_(
+                    AnimeDraft.title_hi.ilike(q_filter),
+                    AnimeDraft.title_en.ilike(q_filter),
+                    AnimeDraft.summary_hi.ilike(q_filter),
+                    AnimeDraft.summary_en.ilike(q_filter),
+                )
+            )
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(8)
+        ).all())
+
     categories = get_categories(session)
-    platforms = list(session.exec(select(Platform).order_by(Platform.display_order)).all())
+    platforms = get_platforms(session)
     user = getattr(request.state, "user", None)
 
     return render(
         "explore.html",
         articles=articles,
+        matching_updates=matching_updates,
         total_count=len(articles),
         q=clean_q,
         selected_platform=platform or "",
@@ -346,6 +471,268 @@ def category_page(request: Request, slug: str, session: Session = Depends(get_se
         categories=categories,
         user=user,
         active_nav=slug,
+        request=request,
+    )
+
+
+# ---------- AUTOMATION PUBLIC SECTIONS & NEWS/UPDATES ----------
+@router.get("/news", response_class=HTMLResponse)
+def news_page(
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(12, ge=1, le=50),
+    session: Session = Depends(get_session),
+):
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    cache_key = (page, per_page)
+    cached = _NEWS_CACHE.get(cache_key) if caching else None
+    if cached and cached[2] > now:
+        items, total_count = cached[0], cached[1]
+    else:
+        base_query = select(AnimeDraft).where(
+            AnimeDraft.status == "published",
+            AnimeDraft.content_type.in_(["news", "schedule", "manga", "award"]),
+        )
+        total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+        offset = (page - 1) * per_page
+        items = list(session.exec(
+            base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .offset(offset)
+            .limit(per_page)
+        ).all())
+        if caching:
+            _NEWS_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
+
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+    return render(
+        "news.html",
+        categories=categories,
+        items=items,
+        page=page,
+        total_pages=total_pages,
+        total_count=total_count,
+        lang=lang,
+        user=user,
+        active_nav="news",
+        request=request,
+    )
+
+
+@router.get("/schedule", response_class=HTMLResponse)
+def schedule_page(
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(24, ge=1, le=60),
+    session: Session = Depends(get_session),
+):
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    cache_key = (page, per_page)
+    cached = _SCHEDULE_CACHE.get(cache_key) if caching else None
+    if cached and cached[2] > now:
+        items, total_count = cached[0], cached[1]
+    else:
+        base_query = select(AnimeDraft).where(
+            AnimeDraft.status == "published",
+            AnimeDraft.content_type == "schedule",
+        )
+        total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+        offset = (page - 1) * per_page
+        items = list(session.exec(
+            base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .offset(offset)
+            .limit(per_page)
+        ).all())
+        if caching:
+            _SCHEDULE_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
+
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+    return render(
+        "schedule.html",
+        categories=categories,
+        items=items,
+        page=page,
+        total_pages=total_pages,
+        total_count=total_count,
+        lang=lang,
+        user=user,
+        active_nav="schedule",
+        request=request,
+    )
+
+
+@router.get("/manga", response_class=HTMLResponse)
+def manga_page(
+    request: Request,
+    page: int = Query(1, ge=1),
+    session: Session = Depends(get_session),
+):
+    global _MANGA_CACHE
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    if caching and _MANGA_CACHE and _MANGA_CACHE[1] > now:
+        items = _MANGA_CACHE[0]
+    else:
+        items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "manga")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(24)
+        ).all())
+        if caching:
+            _MANGA_CACHE = (items, now + HUB_CACHE_TTL)
+
+    return render(
+        "manga.html",
+        categories=categories,
+        items=items,
+        lang=lang,
+        user=user,
+        active_nav="manga",
+        request=request,
+    )
+
+
+@router.get("/awards", response_class=HTMLResponse)
+def awards_page(
+    request: Request,
+    page: int = Query(1, ge=1),
+    session: Session = Depends(get_session),
+):
+    global _AWARDS_CACHE
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    if caching and _AWARDS_CACHE and _AWARDS_CACHE[1] > now:
+        items = _AWARDS_CACHE[0]
+    else:
+        items = list(session.exec(
+            select(AnimeDraft)
+            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "award")
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(24)
+        ).all())
+        if caching:
+            _AWARDS_CACHE = (items, now + HUB_CACHE_TTL)
+
+    return render(
+        "awards.html",
+        categories=categories,
+        items=items,
+        lang=lang,
+        user=user,
+        active_nav="awards",
+        request=request,
+    )
+
+
+@router.get("/trailers", response_class=HTMLResponse)
+def trailers_page(
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(12, ge=1, le=50),
+    session: Session = Depends(get_session),
+):
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    caching = is_caching_enabled()
+    now = time.monotonic()
+    cache_key = (page, per_page)
+    cached = _TRAILERS_CACHE.get(cache_key) if caching else None
+    if cached and cached[2] > now:
+        items, total_count = cached[0], cached[1]
+    else:
+        base_query = select(AnimeDraft).where(
+            AnimeDraft.status == "published",
+            or_(
+                AnimeDraft.content_type == "trailer",
+                AnimeDraft.title_en.ilike("%trailer%"),
+                AnimeDraft.title_hi.ilike("%ट्रेलर%"),
+                AnimeDraft.summary_en.ilike("%trailer%"),
+                AnimeDraft.summary_hi.ilike("%ट्रेलर%"),
+            ),
+        )
+        total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+        offset = (page - 1) * per_page
+        items = list(session.exec(
+            base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .offset(offset)
+            .limit(per_page)
+        ).all())
+        if caching:
+            _TRAILERS_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
+
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+    return render(
+        "trailers.html",
+        categories=categories,
+        items=items,
+        page=page,
+        total_pages=total_pages,
+        total_count=total_count,
+        lang=lang,
+        user=user,
+        active_nav="trailers",
+        request=request,
+    )
+
+
+@router.get("/updates/{item_id}", response_class=HTMLResponse)
+@router.get("/news/{item_id}", response_class=HTMLResponse)
+def update_detail_page(
+    request: Request,
+    item_id: int,
+    session: Session = Depends(get_session),
+):
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    item = session.get(AnimeDraft, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Anime update not found")
+
+    # If item is draft, only admin can view preview
+    if item.status != "published":
+        is_admin = user and (user.get("user_type") == "admin" or user.get("is_superuser"))
+        if not is_admin:
+            raise HTTPException(status_code=404, detail="Update is not published")
+
+    related_items = session.exec(
+        select(AnimeDraft)
+        .where(AnimeDraft.status == "published", AnimeDraft.id != item.id)
+        .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+        .limit(4)
+    ).all()
+
+    return render(
+        "update_detail.html",
+        item=item,
+        related_items=related_items,
+        categories=categories,
+        lang=lang,
+        user=user,
         request=request,
     )
 
@@ -642,6 +1029,38 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
             f"""  <url>
     <loc>{base_url}/article/{art.slug}</loc>
     <lastmod>{lastmod_str}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>"""
+        )
+
+    # Public Automation Hub Pages
+    for hub_slug, hub_pri in [
+        ("news", "0.9"),
+        ("schedule", "0.9"),
+        ("manga", "0.7"),
+        ("awards", "0.7"),
+        ("trailers", "0.7"),
+    ]:
+        urls.append(
+            f"""  <url>
+    <loc>{base_url}/{hub_slug}</loc>
+    <changefreq>daily</changefreq>
+    <priority>{hub_pri}</priority>
+  </url>"""
+        )
+
+    # Published Anime Updates ONLY (Drafts strictly excluded)
+    published_updates = session.exec(
+        select(AnimeDraft).where(AnimeDraft.status == "published")
+    ).all()
+    for upd in published_updates:
+        upd_lastmod = upd.published_at or upd.created_at
+        upd_lastmod_str = upd_lastmod.strftime("%Y-%m-%d") if upd_lastmod else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        urls.append(
+            f"""  <url>
+    <loc>{base_url}/updates/{upd.id}</loc>
+    <lastmod>{upd_lastmod_str}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>"""

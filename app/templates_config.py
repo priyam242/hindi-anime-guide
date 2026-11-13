@@ -67,6 +67,55 @@ def first_words(text: str, count: int = 2) -> str:
     return " ".join(words[:count])
 
 
+def extract_episode(val: Optional[str]) -> Optional[int]:
+    """Extract episode number from external_id, title, or summary string."""
+    if not val:
+        return None
+    m = re.search(r'_ep(\d+)', val)
+    if m:
+        return int(m.group(1))
+    m2 = re.search(r'Episode\s+(\d+)', val, re.IGNORECASE)
+    if m2:
+        return int(m2.group(1))
+    m3 = re.search(r'एपिसोड\s+(\d+)', val)
+    if m3:
+        return int(m3.group(1))
+    return None
+
+
+def format_airing_ist(val: Any) -> str:
+    """Format UTC datetime, timestamp, or summary text into readable IST string."""
+    if not val:
+        return ""
+    dt = None
+    if isinstance(val, (int, float)):
+        dt = datetime.fromtimestamp(val, tz=timezone.utc)
+    elif isinstance(val, str):
+        # Look for YYYY-MM-DD HH:MM
+        match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', val)
+        if match:
+            date_p, time_p = match.groups()
+            try:
+                dt = datetime.strptime(f"{date_p} {time_p}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
+        if not dt:
+            try:
+                dt = datetime.fromisoformat(val)
+            except Exception:
+                return val
+    elif isinstance(val, datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+
+    if not dt:
+        return str(val)
+
+    ist_dt = dt.astimezone(IST)
+    month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
+    time_str = ist_dt.strftime("%I:%M %p")
+    return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
+
+
 class CurrentYearValue(int):
     """Jinja-compatible callable and int representing current year in IST."""
     def __new__(cls):
@@ -121,10 +170,14 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
 templates.env.filters["hindi_date"] = hindi_date
 templates.env.filters["short_description"] = short_description
 templates.env.filters["first_words"] = first_words
+templates.env.filters["format_airing_ist"] = format_airing_ist
+templates.env.filters["extract_episode"] = extract_episode
 
 from app.utils import get_initials, get_avatar_color
 templates.env.globals["get_initials"] = get_initials
 templates.env.globals["get_avatar_color"] = get_avatar_color
+templates.env.globals["format_airing_ist"] = format_airing_ist
+templates.env.globals["extract_episode"] = extract_episode
 templates.env.filters["initials"] = get_initials
 templates.env.filters["avatar_color"] = get_avatar_color
 

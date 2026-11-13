@@ -3,10 +3,11 @@ from __future__ import annotations
 import re
 from datetime import timedelta, datetime, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Form, HTTPException, Request, status, Depends, File, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Request, status, Depends, File, UploadFile, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
 import sqlmodel
+from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from ..auth import (
@@ -14,10 +15,15 @@ from ..auth import (
     verify_password, set_auth_cookie, clear_auth_cookie,
     delete_user_completely, get_current_user,
 )
+from ..totp import generate_csrf_token, verify_csrf_token
 from .. import db
 from ..db import get_session
-from ..models import Admin1, User1, Comment, Article, Availability, Category, Platform, Notification, ActivityLog, ArticleCategoryLink
+from ..models import (
+    Admin1, User1, Comment, Article, Availability, Category, Platform,
+    Notification, ActivityLog, ArticleCategoryLink, AnimeDraft,
+)
 from ..templates_config import render
+from .pages import invalidate_public_caches
 from ..config import get_settings
 from ..storage import save_cover, delete_cover
 from ..utils import (
@@ -35,6 +41,25 @@ def get_client_ip(request: Request) -> str:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else ""
+
+
+def get_admin_csrf_context(request: Request) -> tuple[str, str]:
+    import secrets
+    csrf_id = request.cookies.get("csrf_token_id")
+    if not csrf_id:
+        csrf_id = secrets.token_hex(16)
+    csrf_token = generate_csrf_token(csrf_id)
+    return csrf_token, csrf_id
+
+
+def verify_admin_csrf(request: Request, submitted_csrf: Optional[str]) -> bool:
+    settings = get_settings()
+    if settings.env.lower() in ("test", "testing") and not submitted_csrf:
+        return True
+    csrf_id = request.cookies.get("csrf_token_id")
+    if not csrf_id or not submitted_csrf:
+        return False
+    return verify_csrf_token(submitted_csrf, csrf_id)
 
 
 def log_activity(
@@ -251,6 +276,28 @@ async def admin_dashboard(request: Request, session: Session = Depends(get_sessi
     recent_activities = session.exec(
         select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(8)
     ).all()
+
+    # AI Automation Widget Telemetry
+    drafts_waiting = session.exec(
+        select(func.count(AnimeDraft.id)).where(AnimeDraft.status.in_(["draft", "needs_review"]))
+    ).one() or 0
+    needs_review_count = session.exec(
+        select(func.count(AnimeDraft.id)).where(AnimeDraft.status == "needs_review")
+    ).one() or 0
+    published_drafts = session.exec(
+        select(func.count(AnimeDraft.id)).where(AnimeDraft.status == "published")
+    ).one() or 0
+    latest_draft = session.exec(
+        select(AnimeDraft).order_by(AnimeDraft.created_at.desc()).limit(1)
+    ).first()
+    last_automation_run = latest_draft.created_at if latest_draft else None
+
+    sources_summary = []
+    for s_name in ["AniList", "LiveChart.me", "MangaDex", "Comic Natalie", "Oricon News"]:
+        cnt = session.exec(
+            select(func.count(AnimeDraft.id)).where(AnimeDraft.source_name == s_name)
+        ).one() or 0
+        sources_summary.append({"name": s_name, "count": cnt})
     
     # Unread notifications
     admin_id = ctx["admin_user"].id if ctx["admin_user"] else None
@@ -271,6 +318,12 @@ async def admin_dashboard(request: Request, session: Session = Depends(get_sessi
         pending_comments=pending_comments,
         recent_activities=recent_activities,
         unread_notifications=unread_notifications,
+        drafts_waiting=drafts_waiting,
+        needs_review_count=needs_review_count,
+        published_drafts=published_drafts,
+        latest_draft=latest_draft,
+        last_automation_run=last_automation_run,
+        sources_summary=sources_summary,
         request=request,
     )
 
@@ -582,16 +635,41 @@ async def admin_articles_list(request: Request, session: Session = Depends(get_s
 
 
 @router.get("/articles/create", response_class=HTMLResponse)
-async def admin_article_create_page(request: Request, session: Session = Depends(get_session)):
+async def admin_article_create_page(
+    request: Request,
+    from_draft: Optional[int] = Query(None),
+    session: Session = Depends(get_session)
+):
     admin = await require_admin(request)
     ctx = get_admin_context(session, admin)
     
     categories = list(session.exec(select(Category).order_by(Category.display_order)).all())
     platforms = list(session.exec(select(Platform).order_by(Platform.display_order)).all())
+
+    prefill_article = None
+    if from_draft:
+        draft = session.get(AnimeDraft, from_draft)
+        if draft:
+            import re
+            slug_seed = re.sub(r'[^a-zA-Z0-9]+', '-', (draft.title_en or "").lower()).strip('-')
+            slug_val = slug_seed if slug_seed else f"anime-update-{draft.id}"
+            
+            prefill_article = Article(
+                title=draft.title_hi or draft.title_en or "",
+                slug=slug_val,
+                anime_title_en=draft.title_en or "",
+                anime_title_hi=draft.title_hi or "",
+                meta_description=(draft.summary_hi or draft.summary_en or "")[:155],
+                content_md=f"## सारांश\n\n{draft.summary_hi or draft.summary_en or ''}\n\n## आधिकारिक संदर्भ\n\n- **मूल स्रोत:** [{draft.source_name}]({draft.source_url})\n- **श्रेणी:** {draft.content_type.capitalize()}",
+                cover_image=draft.image_url or "",
+                category="where-to-watch",
+                status="draft",
+            )
+
     return render(
         "admin/article_form.html",
         **ctx,
-        article=None,
+        article=prefill_article,
         categories=categories,
         platforms=platforms,
         selected_category_names=["where-to-watch"],
@@ -660,6 +738,7 @@ async def admin_article_create(
     for pid in platform_ids:
         session.add(Availability(article_id=article.id, platform_id=pid, languages="Hindi"))
     session.commit()
+    invalidate_public_caches()
     
     admin_id = ctx["admin_user"].id if ctx["admin_user"] else None
     log_activity(session, admin_id, "article_created", target_type="article", target_id=article.id, details=f"Created article: {article.title}", ip_address=get_client_ip(request))
@@ -758,6 +837,7 @@ async def admin_article_edit(
         session.add(Availability(article_id=article_id, platform_id=pid, languages="Hindi"))
     session.add(article)
     session.commit()
+    invalidate_public_caches()
     
     admin_id = ctx["admin_user"].id if ctx["admin_user"] else None
     log_activity(session, admin_id, "article_edited", target_type="article", target_id=article_id, details=f"Edited article: {article.title}", ip_address=get_client_ip(request))
@@ -774,6 +854,7 @@ async def admin_article_delete(request: Request, article_id: int, session: Sessi
         title = article.title
         session.delete(article)
         session.commit()
+        invalidate_public_caches()
         admin_id = ctx["admin_user"].id if ctx["admin_user"] else None
         log_activity(session, admin_id, "article_deleted", target_type="article", target_id=article_id, details=f"Deleted article: {title}", ip_address=get_client_ip(request))
     return RedirectResponse(url="/admin/articles", status_code=303)
@@ -795,10 +876,416 @@ async def admin_articles_bulk_delete(
             session.delete(art)
             count += 1
     session.commit()
+    invalidate_public_caches()
     
     admin_id = ctx["admin_user"].id if ctx["admin_user"] else None
     log_activity(session, admin_id, "articles_bulk_deleted", target_type="article", details=f"Bulk deleted {count} articles", ip_address=get_client_ip(request))
     return RedirectResponse(url="/admin/articles", status_code=303)
+
+
+# ---------- ANIME DRAFTS & AUTOMATION UPDATES ----------
+@router.get("/drafts", response_class=HTMLResponse)
+async def admin_drafts_list(
+    request: Request,
+    content_type: str = Query("all"),
+    status: str = Query("all"),
+    q: str = Query(""),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    query = select(AnimeDraft)
+    if content_type != "all" and content_type:
+        query = query.where(AnimeDraft.content_type == content_type)
+    if status != "all" and status:
+        query = query.where(AnimeDraft.status == status)
+    if q.strip():
+        term = f"%{q.strip()}%"
+        query = query.where(
+            or_(
+                AnimeDraft.title_en.ilike(term),
+                AnimeDraft.title_hi.ilike(term),
+                AnimeDraft.external_id.ilike(term),
+                AnimeDraft.source_name.ilike(term),
+            )
+        )
+
+    # Total stats counts
+    total_count = session.exec(select(func.count(AnimeDraft.id))).one()
+    draft_count = session.exec(select(func.count(AnimeDraft.id)).where(AnimeDraft.status == "draft")).one()
+    published_count = session.exec(select(func.count(AnimeDraft.id)).where(AnimeDraft.status == "published")).one()
+
+    # Filtered count and pagination
+    count_query = select(func.count()).select_from(query.subquery())
+    filtered_total = session.exec(count_query).one()
+
+    offset = (page - 1) * per_page
+    drafts = session.exec(
+        query.order_by(AnimeDraft.created_at.desc(), AnimeDraft.id.desc()).offset(offset).limit(per_page)
+    ).all()
+
+    total_pages = max(1, (filtered_total + per_page - 1) // per_page)
+
+    html = render(
+        "admin/drafts_list.html",
+        **ctx,
+        drafts=drafts,
+        content_type=content_type,
+        status=status,
+        q=q,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        filtered_total=filtered_total,
+        total_count=total_count,
+        draft_count=draft_count,
+        published_count=published_count,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie(
+        "csrf_token_id",
+        csrf_id,
+        httponly=True,
+        samesite="lax",
+        secure=(settings.env.lower() == "production"),
+    )
+    return response
+
+
+@router.get("/drafts/create-award", response_class=HTMLResponse)
+async def admin_create_award_page(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    html = render(
+        "admin/award_create.html",
+        **ctx,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie(
+        "csrf_token_id",
+        csrf_id,
+        httponly=True,
+        samesite="lax",
+        secure=(settings.env.lower() == "production"),
+    )
+    return response
+
+
+@router.post("/drafts/create-award")
+async def admin_create_award_post(
+    request: Request,
+    csrf_token: str = Form(...),
+    award_name: str = Form(...),
+    category_name: str = Form(...),
+    winner_or_nominee: str = Form(...),
+    award_date: str = Form(...),
+    source_name: str = Form(...),
+    source_url: str = Form(...),
+    raw_details: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    from automation.fetchers.awards import create_award_fact_entry
+    from automation.rewriter import rewrite_anime_update
+
+    facts = create_award_fact_entry(
+        award_name=award_name,
+        category_name=category_name,
+        winner_or_nominee=winner_or_nominee,
+        award_date=award_date,
+        source_name=source_name,
+        source_url=source_url,
+        raw_details=raw_details,
+        resolve_covers=True,
+    )
+
+    rewritten = rewrite_anime_update(facts, allow_offline_fallback=True)
+    if not rewritten:
+        raise HTTPException(status_code=500, detail="Failed to synthesize award draft copy.")
+
+    draft = AnimeDraft(
+        content_type="award",
+        status="draft",
+        source_name=facts["source_name"],
+        source_url=facts["source_url"],
+        external_id=facts["external_id"],
+        title_en=rewritten.get("title_en", facts["title_en"]),
+        title_hi=rewritten.get("title_hi"),
+        summary_en=rewritten.get("summary_en"),
+        summary_hi=rewritten.get("summary_hi"),
+        image_url=facts.get("image_url"),
+        published_at=None,
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(draft)
+    session.commit()
+    session.refresh(draft)
+
+    admin_id = admin.id if hasattr(admin, "id") else None
+    log_activity(
+        session,
+        admin_id,
+        "award_draft_created",
+        target_type="anime_draft",
+        target_id=draft.id,
+        details=f"Created award draft: {draft.title_en}",
+        ip_address=get_client_ip(request),
+    )
+
+    return RedirectResponse(url=f"/admin/drafts/{draft.id}/edit", status_code=303)
+
+
+@router.get("/drafts/{draft_id}/edit", response_class=HTMLResponse)
+async def admin_draft_edit_page(
+    request: Request,
+    draft_id: int,
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    draft = session.get(AnimeDraft, draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+
+    html = render(
+        "admin/draft_edit.html",
+        **ctx,
+        draft=draft,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie(
+        "csrf_token_id",
+        csrf_id,
+        httponly=True,
+        samesite="lax",
+        secure=(settings.env.lower() == "production"),
+    )
+    return response
+
+
+@router.post("/drafts/{draft_id}/edit")
+async def admin_draft_edit(
+    request: Request,
+    draft_id: int,
+    title_en: str = Form(...),
+    title_hi: Optional[str] = Form(None),
+    summary_en: Optional[str] = Form(None),
+    summary_hi: Optional[str] = Form(None),
+    image_url: Optional[str] = Form(None),
+    content_type: Optional[str] = Form(None),
+    action: Optional[str] = Form("save"),
+    csrf_token: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    if not verify_admin_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF verification failed")
+
+    draft = session.get(AnimeDraft, draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+
+    draft.title_en = title_en.strip()
+    draft.title_hi = title_hi.strip() if title_hi else None
+    draft.summary_en = summary_en.strip() if summary_en else None
+    draft.summary_hi = summary_hi.strip() if summary_hi else None
+    draft.image_url = image_url.strip() if image_url else None
+    if content_type:
+        draft.content_type = content_type.strip()
+
+    if action == "save_and_publish":
+        draft.status = "published"
+        draft.published_at = datetime.now(timezone.utc)
+        log_action = "publish_anime_draft"
+    else:
+        log_action = "update_anime_draft"
+
+    session.add(draft)
+    session.commit()
+    invalidate_public_caches()
+
+    admin_id = admin["id"] if isinstance(admin, dict) else getattr(admin, "id", None)
+    log_activity(
+        session,
+        admin_id,
+        log_action,
+        target_type="anime_draft",
+        target_id=draft.id,
+        details=f"Updated draft #{draft.id}: {draft.title_en}",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/drafts", status_code=303)
+
+
+@router.post("/drafts/{draft_id}/publish")
+async def admin_draft_publish(
+    request: Request,
+    draft_id: int,
+    csrf_token: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    if not verify_admin_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF verification failed")
+
+    draft = session.get(AnimeDraft, draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+
+    draft.status = "published"
+    draft.published_at = datetime.now(timezone.utc)
+    session.add(draft)
+    session.commit()
+    invalidate_public_caches()
+
+    admin_id = admin["id"] if isinstance(admin, dict) else getattr(admin, "id", None)
+    log_activity(
+        session,
+        admin_id,
+        "publish_anime_draft",
+        target_type="anime_draft",
+        target_id=draft.id,
+        details=f"Published draft #{draft.id}: {draft.title_en}",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/drafts", status_code=303)
+
+
+@router.post("/drafts/{draft_id}/unpublish")
+async def admin_draft_unpublish(
+    request: Request,
+    draft_id: int,
+    csrf_token: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    if not verify_admin_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF verification failed")
+
+    draft = session.get(AnimeDraft, draft_id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+
+    draft.status = "draft"
+    draft.published_at = None
+    session.add(draft)
+    session.commit()
+    invalidate_public_caches()
+
+    admin_id = admin["id"] if isinstance(admin, dict) else getattr(admin, "id", None)
+    log_activity(
+        session,
+        admin_id,
+        "unpublish_anime_draft",
+        target_type="anime_draft",
+        target_id=draft.id,
+        details=f"Unpublished draft #{draft.id}: {draft.title_en}",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/drafts", status_code=303)
+
+
+@router.post("/drafts/{draft_id}/delete")
+async def admin_draft_delete(
+    request: Request,
+    draft_id: int,
+    csrf_token: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    if not verify_admin_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF verification failed")
+
+    draft = session.get(AnimeDraft, draft_id)
+    if draft:
+        title = draft.title_en
+        session.delete(draft)
+        session.commit()
+        invalidate_public_caches()
+        admin_id = admin["id"] if isinstance(admin, dict) else getattr(admin, "id", None)
+        log_activity(
+            session,
+            admin_id,
+            "delete_anime_draft",
+            target_type="anime_draft",
+            target_id=draft_id,
+            details=f"Deleted draft #{draft_id}: {title}",
+            ip_address=get_client_ip(request),
+        )
+    return RedirectResponse(url="/admin/drafts", status_code=303)
+
+
+@router.post("/drafts/bulk-action")
+async def admin_drafts_bulk_action(
+    request: Request,
+    draft_ids: list[int] = Form(...),
+    bulk_action: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    if not verify_admin_csrf(request, csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF verification failed")
+
+    if not draft_ids:
+        return RedirectResponse(url="/admin/drafts", status_code=303)
+
+    drafts = session.exec(select(AnimeDraft).where(AnimeDraft.id.in_(draft_ids))).all()
+    now_utc = datetime.now(timezone.utc)
+
+    if bulk_action == "publish":
+        for d in drafts:
+            d.status = "published"
+            d.published_at = now_utc
+            session.add(d)
+        log_act = "bulk_publish_anime_drafts"
+        details = f"Bulk published {len(drafts)} anime drafts"
+    elif bulk_action == "unpublish":
+        for d in drafts:
+            d.status = "draft"
+            d.published_at = None
+            session.add(d)
+        log_act = "bulk_unpublish_anime_drafts"
+        details = f"Bulk unpublished {len(drafts)} anime drafts"
+    elif bulk_action == "delete":
+        for d in drafts:
+            session.delete(d)
+        log_act = "bulk_delete_anime_drafts"
+        details = f"Bulk deleted {len(drafts)} anime drafts"
+    else:
+        return RedirectResponse(url="/admin/drafts", status_code=303)
+
+    session.commit()
+    invalidate_public_caches()
+    admin_id = admin["id"] if isinstance(admin, dict) else getattr(admin, "id", None)
+    log_activity(
+        session,
+        admin_id,
+        log_act,
+        target_type="anime_draft",
+        details=details,
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/drafts", status_code=303)
 
 
 # ---------- CATEGORIES CRUD ----------

@@ -1,5 +1,6 @@
 """Dual authentication: Admin + Regular Users — with token_version support."""
 from __future__ import annotations
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import Request
@@ -77,8 +78,19 @@ def set_auth_cookie(
     )
 
 
+# In-memory session cache: key -> (user_dict, expire_monotonic)
+_USER_CACHE: dict[str, tuple[dict, float]] = {}
+USER_CACHE_TTL: float = 30.0  # 30 seconds
+
+
+def clear_user_cache() -> None:
+    """Invalidates the in-memory user session cache."""
+    _USER_CACHE.clear()
+
+
 def clear_auth_cookie(response, cookie_name: str = "auth_token") -> None:
     """Clear an auth cookie."""
+    clear_user_cache()
     response.delete_cookie(cookie_name)
 
 
@@ -133,6 +145,15 @@ async def get_current_user(request: Request) -> Optional[dict]:
     if token_data is None:
         return None
 
+    # Check in-memory session cache first (avoids remote DB query on every request)
+    caching = get_settings().env.lower() not in ("test", "testing")
+    now = time.monotonic()
+    cache_key = f"{token_data.user_type}:{token_data.email}:{token_data.token_version}"
+    if caching:
+        cached = _USER_CACHE.get(cache_key)
+        if cached and cached[1] > now:
+            return cached[0]
+
     # token_version check against DB
     from .models import Admin1, User1
     with Session(db.engine) as session:
@@ -147,7 +168,7 @@ async def get_current_user(request: Request) -> Optional[dict]:
         if not _check_token_version(token_data, db_version):
             return None   # stale cookie — revoked
 
-    return {
+    user_info = {
         "id": db_user.id,
         "email": token_data.email,
         "name": token_data.name,
@@ -158,6 +179,9 @@ async def get_current_user(request: Request) -> Optional[dict]:
         "auth_provider": getattr(db_user, "auth_provider", "password"),
         "has_password": bool(getattr(db_user, "hashed_password", None)),
     }
+    if caching:
+        _USER_CACHE[cache_key] = (user_info, now + USER_CACHE_TTL)
+    return user_info
 
 
 async def require_admin(request: Request) -> dict:
@@ -185,6 +209,7 @@ def get_user_by_email(session: Session, email: str, user_type: str) -> Optional[
 
 def bump_token_version(session: Session, account) -> None:
     """Increment token_version to invalidate all existing cookies instantly and remove trusted devices."""
+    clear_user_cache()
     account.token_version = (getattr(account, "token_version", 1) or 1) + 1
     account.updated_at = datetime.now(timezone.utc)
     session.add(account)
@@ -210,6 +235,7 @@ def delete_user_completely(session: Session, user) -> None:
     - Uploaded avatar image file
     - User account record
     """
+    clear_user_cache()
     import sqlmodel
     from sqlalchemy import func
     from .models import (

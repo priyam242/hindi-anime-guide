@@ -1242,6 +1242,12 @@
       color: #374151;
       transition: all 0.15s ease;
       text-decoration: none;
+      outline: none;
+    }
+
+    .sidebar-link:focus-visible {
+      outline: 2px solid #dc2626;
+      outline-offset: 2px;
     }
 
     html.dark .sidebar-link {
@@ -1286,6 +1292,27 @@
     }
 
     .sidebar-link.active .sidebar-link-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .sidebar-link-badge-blue {
+      margin-left: auto;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.12rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.12);
+      color: #2563eb;
+      letter-spacing: 0.03em;
+    }
+
+    html.dark .sidebar-link-badge-blue {
+      background: rgba(37, 99, 235, 0.25);
+      color: #60a5fa;
+    }
+
+    .sidebar-link.active .sidebar-link-badge-blue {
       background: rgba(255, 255, 255, 0.25);
       color: #ffffff;
     }
@@ -1454,6 +1481,8 @@
         <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300 mr-2">
           <a href="/" class="hover:text-red-600 transition-colors" data-i18n="nav_home">Home</a>
           <a href="/explore" class="hover:text-red-600 transition-colors" data-i18n="nav_explore">Explore</a>
+          <a href="/news" class="hover:text-red-600 transition-colors">News</a>
+          <a href="/schedule" class="hover:text-red-600 transition-colors">Schedule</a>
           {% if user %}
           <a href="/saved" class="hover:text-red-600 transition-colors" data-i18n="nav_saved">Saved</a>
           {% endif %}
@@ -1614,6 +1643,352 @@
     </div>
   </header>
 
+  {# =======================================================================
+     SIDEBAR NAVIGATION CONFIGURATION (DATA-DRIVEN)
+     Each item can be enabled/disabled with one line ("enabled": true/false).
+     ======================================================================= #}
+  {% set sidebar_groups = [
+    {
+      "title": "नेविगेशन",
+      "icon": "fas fa-compass",
+      "has_all_link": false,
+      "links": [
+        {
+          "id": "nav_home",
+          "title": "होम",
+          "i18n": "nav_home",
+          "url": "/",
+          "icon": "fas fa-house",
+          "color": "text-gray-400 dark:text-gray-400",
+          "badge": none,
+          "badge_type": "red",
+          "active": (current_path == '/' and not current_cat and not is_hindi_dub_active and not current_plat and not current_sort),
+          "enabled": true
+        },
+        {
+          "id": "nav_explore",
+          "title": "एक्सप्लोर",
+          "i18n": "nav_explore",
+          "url": "/explore",
+          "icon": "fas fa-compass",
+          "color": "text-gray-400 dark:text-gray-400",
+          "badge": none,
+          "badge_type": "red",
+          "active": (current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat and not current_sort),
+          "enabled": true
+        },
+        {
+          "id": "nav_hindi_dub",
+          "title": "हिंदी डब एनीमे",
+          "i18n": none,
+          "url": "/explore?hindi_dub=1",
+          "icon": "fas fa-headphones",
+          "color": "text-red-500",
+          "badge": "HINDI",
+          "badge_type": "red",
+          "active": is_hindi_dub_active,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "title": "ताज़ा अपडेट",
+      "icon": "fas fa-bolt",
+      "has_all_link": false,
+      "links": [
+        {
+          "id": "upd_news",
+          "title": "एनीमे समाचार",
+          "i18n": none,
+          "url": "/news",
+          "icon": "fas fa-newspaper",
+          "color": "text-blue-500",
+          "badge": "NEW",
+          "badge_type": "blue",
+          "active": (current_path == '/news' or current_path.startswith('/news/') or current_path.startswith('/updates/')),
+          "enabled": true
+        },
+        {
+          "id": "upd_schedule",
+          "title": "सीज़न शेड्यूल",
+          "i18n": none,
+          "url": "/schedule",
+          "icon": "fas fa-calendar-alt",
+          "color": "text-purple-500",
+          "badge": none,
+          "badge_type": "purple",
+          "active": (current_path == '/schedule'),
+          "enabled": true
+        },
+        {
+          "id": "upd_manga",
+          "title": "मंगा अपडेट्स",
+          "i18n": none,
+          "url": "/manga",
+          "icon": "fas fa-book-open",
+          "color": "text-emerald-500",
+          "badge": none,
+          "badge_type": "green",
+          "active": (current_path == '/manga'),
+          "enabled": true
+        },
+        {
+          "id": "upd_awards",
+          "title": "अवॉर्ड्स",
+          "i18n": none,
+          "url": "/awards",
+          "icon": "fas fa-trophy",
+          "color": "text-amber-500",
+          "badge": none,
+          "badge_type": "gold",
+          "active": (current_path == '/awards'),
+          "enabled": true
+        },
+        {
+          "id": "upd_trailers",
+          "title": "ट्रेलर्स",
+          "i18n": none,
+          "url": "/trailers",
+          "icon": "fas fa-film",
+          "color": "text-pink-500",
+          "badge": none,
+          "badge_type": "pink",
+          "active": (current_path == '/trailers'),
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "title": "गाइड्स",
+      "icon": "fas fa-book-bookmark",
+      "has_all_link": false,
+      "links": [
+        {
+          "id": "guide_latest",
+          "title": "ताज़ा गाइड्स",
+          "i18n": none,
+          "url": "/explore?sort=latest",
+          "icon": "fas fa-bolt",
+          "color": "text-amber-500",
+          "badge": none,
+          "badge_type": "yellow",
+          "active": (current_sort == 'latest'),
+          "enabled": true
+        },
+        {
+          "id": "guide_beginners",
+          "title": "शुरुआती गाइड",
+          "i18n": none,
+          "url": "/explore?category=beginners-guide",
+          "icon": "fas fa-seedling",
+          "color": "text-blue-500",
+          "badge": none,
+          "badge_type": "blue",
+          "active": (current_cat == 'beginners-guide' or current_path == '/category/beginners-guide'),
+          "enabled": true
+        },
+        {
+          "id": "guide_watch_order",
+          "title": "वॉच ऑर्डर",
+          "i18n": none,
+          "url": "/explore?category=watch-order",
+          "icon": "fas fa-list-ol",
+          "color": "text-cyan-500",
+          "badge": none,
+          "badge_type": "cyan",
+          "active": (current_cat == 'watch-order' or current_path == '/category/watch-order'),
+          "enabled": true
+        },
+        {
+          "id": "guide_where_to_watch",
+          "title": "कहाँ देखें",
+          "i18n": none,
+          "url": "/explore?category=where-to-watch",
+          "icon": "fas fa-tv",
+          "color": "text-emerald-500",
+          "badge": none,
+          "badge_type": "green",
+          "active": (current_cat == 'where-to-watch' or current_path == '/category/where-to-watch'),
+          "enabled": true
+        },
+        {
+          "id": "guide_dub_vs_sub",
+          "title": "डब vs सब",
+          "i18n": none,
+          "url": "/explore?category=dub-vs-sub",
+          "icon": "fas fa-sliders",
+          "color": "text-purple-500",
+          "badge": none,
+          "badge_type": "purple",
+          "active": (current_cat == 'dub-vs-sub' or current_path == '/category/dub-vs-sub'),
+          "enabled": true
+        },
+        {
+          "id": "guide_recommendations",
+          "title": "सिफारिशें",
+          "i18n": none,
+          "url": "/explore?category=recommendations",
+          "icon": "fas fa-star",
+          "color": "text-amber-500",
+          "badge": none,
+          "badge_type": "gold",
+          "active": (current_cat == 'recommendations' or current_path == '/category/recommendations'),
+          "enabled": true
+        },
+        {
+          "id": "guide_rankings",
+          "title": "टॉप 10 / रैंकिंग",
+          "i18n": none,
+          "url": "/explore?category=rankings",
+          "icon": "fas fa-ranking-star",
+          "color": "text-orange-500",
+          "badge": none,
+          "badge_type": "orange",
+          "active": (current_cat == 'rankings' or current_path == '/category/rankings'),
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "title": "लोकप्रिय श्रेणियां",
+      "icon": "fas fa-th-large",
+      "has_all_link": true,
+      "all_link_url": "/explore",
+      "all_link_text": "सभी",
+      "links": [
+        {
+          "id": "cat_all_anime",
+          "title": "सभी एनीमे",
+          "i18n": none,
+          "url": "/explore",
+          "icon": "fas fa-fire-flame-curved",
+          "color": "text-red-500",
+          "badge": none,
+          "badge_type": "red",
+          "active": (current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat and not current_sort),
+          "enabled": true
+        },
+        {
+          "id": "cat_action",
+          "title": "एक्शन",
+          "i18n": none,
+          "url": "/explore?category=action",
+          "icon": "fas fa-bolt-lightning",
+          "color": "text-orange-500",
+          "badge": none,
+          "badge_type": "orange",
+          "active": (current_cat == 'action' or current_path == '/category/action'),
+          "enabled": true
+        },
+        {
+          "id": "cat_romance",
+          "title": "Romance",
+          "i18n": none,
+          "url": "/explore?category=romance",
+          "icon": "fas fa-heart",
+          "color": "text-pink-500",
+          "badge": none,
+          "badge_type": "pink",
+          "active": (current_cat == 'romance' or current_path == '/category/romance'),
+          "enabled": true
+        },
+        {
+          "id": "cat_comedy",
+          "title": "कॉमेडी",
+          "i18n": none,
+          "url": "/explore?category=comedy",
+          "icon": "fas fa-face-laugh-squint",
+          "color": "text-yellow-500",
+          "badge": none,
+          "badge_type": "yellow",
+          "active": (current_cat == 'comedy' or current_path == '/category/comedy'),
+          "enabled": true
+        },
+        {
+          "id": "cat_fantasy",
+          "title": "फैंटेसी",
+          "i18n": none,
+          "url": "/explore?category=fantasy",
+          "icon": "fas fa-wand-magic-sparkles",
+          "color": "text-purple-500",
+          "badge": none,
+          "badge_type": "purple",
+          "active": (current_cat == 'fantasy' or current_path == '/category/fantasy'),
+          "enabled": true
+        },
+        {
+          "id": "cat_thriller",
+          "title": "थ्रिलर / हॉरर",
+          "i18n": none,
+          "url": "/explore?category=thriller",
+          "icon": "fas fa-ghost",
+          "color": "text-gray-400 dark:text-gray-400",
+          "badge": none,
+          "badge_type": "gray",
+          "active": (current_cat == 'thriller' or current_path == '/category/thriller'),
+          "enabled": true
+        },
+        {
+          "id": "cat_slice_of_life",
+          "title": "स्कूल / स्लाइस ऑफ लाइफ",
+          "i18n": none,
+          "url": "/explore?category=slice-of-life",
+          "icon": "fas fa-school",
+          "color": "text-emerald-500",
+          "badge": none,
+          "badge_type": "green",
+          "active": (current_cat == 'slice-of-life' or current_path == '/category/slice-of-life'),
+          "enabled": true
+        },
+        {
+          "id": "cat_sports",
+          "title": "स्पोर्ट्स",
+          "i18n": none,
+          "url": "/explore?category=sports",
+          "icon": "fas fa-volleyball",
+          "color": "text-blue-500",
+          "badge": none,
+          "badge_type": "blue",
+          "active": (current_cat == 'sports' or current_path == '/category/sports'),
+          "enabled": true
+        }
+      ]
+    }
+  ] %}
+
+  {% macro render_sidebar_nav(is_mobile=false) %}
+    {% for group in sidebar_groups %}
+    <div class="sidebar-nav-section">
+      <div class="sidebar-section-title">
+        <span class="flex items-center gap-1.5">
+          {% if group.icon %}<i class="{{ group.icon }} text-[11px] text-gray-400"></i>{% endif %}
+          <span>{{ group.title }}</span>
+        </span>
+        {% if group.has_all_link %}
+        <a href="{{ group.all_link_url }}" class="text-[10px] font-bold text-red-600 hover:underline" aria-label="{{ group.title }} - {{ group.all_link_text }}">{{ group.all_link_text }}</a>
+        {% endif %}
+      </div>
+      <div class="space-y-1" role="list">
+        {% for item in group.links %}
+        {% if item.enabled %}
+        <a href="{{ item.url }}"
+          class="sidebar-link {% if item.active %}active{% endif %}"
+          {% if is_mobile %}@click="closeMobile()"{% endif %}
+          aria-label="{{ item.title }}"
+          {% if item.active %}aria-current="page"{% endif %}>
+          <i class="{{ item.icon }} w-4 text-center {{ item.color }}"></i>
+          <span {% if item.i18n %}data-i18n="{{ item.i18n }}"{% endif %}>{{ item.title }}</span>
+          {% if item.badge %}
+          <span class="{% if item.badge_type == 'blue' %}sidebar-link-badge-blue{% else %}sidebar-link-badge{% endif %}">{{ item.badge }}</span>
+          {% endif %}
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% endmacro %}
+
   <!-- Mobile Drawer Menu -->
   <div x-show="mobileOpen" class="fixed inset-0 z-50 flex lg:hidden" style="display: none;">
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="closeMobile()"></div>
@@ -1644,75 +2019,8 @@
           </div>
         </div>
 
-        <!-- Core Navigation Section -->
-        <div class="sidebar-nav-section">
-          <div class="sidebar-section-title">
-            <span>नेविगेशन</span>
-            <i class="fas fa-compass text-[11px] text-gray-400"></i>
-          </div>
-          <div class="space-y-1">
-            <a href="/" class="sidebar-link {% if current_path == '/' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
-              <i class="fas fa-house w-4 text-center"></i>
-              <span data-i18n="nav_home">होम</span>
-            </a>
-            <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
-              <i class="fas fa-compass w-4 text-center"></i>
-              <span data-i18n="nav_explore">एक्सप्लोर</span>
-            </a>
-            <a href="/explore?hindi_dub=1" class="sidebar-link {% if is_hindi_dub_active %}active{% endif %}">
-              <i class="fas fa-headphones w-4 text-center text-red-500"></i>
-              <span>हिंदी डब एनीमे</span>
-              <span class="sidebar-link-badge">HINDI</span>
-            </a>
-            <a href="/explore?sort=latest" class="sidebar-link {% if current_sort == 'latest' %}active{% endif %}">
-              <i class="fas fa-bolt w-4 text-center text-amber-500"></i>
-              <span>ताज़ा गाइड्स</span>
-            </a>
-            {% if user %}
-            <a href="/saved" class="sidebar-link {% if current_path == '/saved' %}active{% endif %}">
-              <i class="fas fa-bookmark w-4 text-center text-rose-500"></i>
-              <span data-i18n="nav_saved">मेरी सूची</span>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Categories Section (Shifted from Home) -->
-        <div class="sidebar-nav-section">
-          <div class="sidebar-section-title">
-            <span class="flex items-center gap-1.5">
-              <i class="fas fa-th-large text-red-600 text-xs"></i>
-              <span>लोकप्रिय श्रेणियां</span>
-            </span>
-            <a href="/explore" class="text-[10px] font-bold text-red-600 hover:underline">सभी</a>
-          </div>
-          <div class="space-y-1">
-            <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat %}active{% endif %}">
-              <i class="fas fa-fire-flame-curved w-4 text-center text-red-500"></i>
-              <span>सभी एनीमे</span>
-            </a>
-            {% for cat in categories %}
-            <a href="/explore?category={{ cat.slug }}" class="sidebar-link {% if current_cat == cat.slug %}active{% endif %}">
-              {% if cat.slug == 'action' %}
-              <i class="fas fa-bolt-lightning w-4 text-center text-amber-500"></i>
-              {% elif cat.slug == 'romance' %}
-              <i class="fas fa-heart w-4 text-center text-pink-500"></i>
-              {% elif cat.slug == 'where-to-watch' %}
-              <i class="fas fa-tv w-4 text-center text-emerald-500"></i>
-              {% elif cat.slug == 'beginners-guide' %}
-              <i class="fas fa-book-open w-4 text-center text-blue-500"></i>
-              {% elif cat.slug == 'dub-vs-sub' %}
-              <i class="fas fa-sliders w-4 text-center text-purple-500"></i>
-              {% elif cat.slug == 'recommendations' %}
-              <i class="fas fa-award w-4 text-center text-yellow-500"></i>
-              {% else %}
-              <i class="fas fa-folder w-4 text-center text-gray-400"></i>
-              {% endif %}
-              <span class="truncate">{{ cat.name_hi or cat.display_name or cat.name }}</span>
-            </a>
-            {% endfor %}
-          </div>
-        </div>
+        <!-- Dynamic Grouped Navigation -->
+        {{ render_sidebar_nav(is_mobile=true) }}
       </div>
 
       <div class="text-xs text-gray-400 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">
@@ -1742,75 +2050,8 @@
       x-transition:leave-end="-ml-64 opacity-0"
       class="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 border-r border-gray-200 dark:border-gray-800/80 bg-white dark:bg-[#0a0a0a] sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto p-4 z-30 select-none scrollbar-thin">
       
-      <!-- Core Navigation Section -->
-      <div class="sidebar-nav-section">
-        <div class="sidebar-section-title">
-          <span>नेविगेशन</span>
-          <i class="fas fa-compass text-[11px] text-gray-400"></i>
-        </div>
-        <div class="space-y-1">
-          <a href="/" class="sidebar-link {% if current_path == '/' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
-            <i class="fas fa-house w-4 text-center"></i>
-            <span data-i18n="nav_home">होम</span>
-          </a>
-          <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat and not is_hindi_dub_active and not current_plat %}active{% endif %}">
-            <i class="fas fa-compass w-4 text-center"></i>
-            <span data-i18n="nav_explore">एक्सप्लोर</span>
-          </a>
-          <a href="/explore?hindi_dub=1" class="sidebar-link {% if is_hindi_dub_active %}active{% endif %}">
-            <i class="fas fa-headphones w-4 text-center text-red-500"></i>
-            <span>हिंदी डब एनीमे</span>
-            <span class="sidebar-link-badge">HINDI</span>
-          </a>
-          <a href="/explore?sort=latest" class="sidebar-link {% if current_sort == 'latest' %}active{% endif %}">
-            <i class="fas fa-bolt w-4 text-center text-amber-500"></i>
-            <span>ताज़ा गाइड्स</span>
-          </a>
-          {% if user %}
-          <a href="/saved" class="sidebar-link {% if current_path == '/saved' %}active{% endif %}">
-            <i class="fas fa-bookmark w-4 text-center text-rose-500"></i>
-            <span data-i18n="nav_saved">मेरी सूची</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Categories Section (Shifted from Home) -->
-      <div class="sidebar-nav-section">
-        <div class="sidebar-section-title">
-          <span class="flex items-center gap-1.5">
-            <i class="fas fa-th-large text-red-600 text-xs"></i>
-            <span>लोकप्रिय श्रेणियां</span>
-          </span>
-          <a href="/explore" class="text-[10px] font-bold text-red-600 hover:underline">सभी</a>
-        </div>
-        <div class="space-y-1">
-          <a href="/explore" class="sidebar-link {% if current_path == '/explore' and not current_cat %}active{% endif %}">
-            <i class="fas fa-fire-flame-curved w-4 text-center text-red-500"></i>
-            <span>सभी एनीमे</span>
-          </a>
-          {% for cat in categories %}
-          <a href="/explore?category={{ cat.slug }}" class="sidebar-link {% if current_cat == cat.slug %}active{% endif %}">
-            {% if cat.slug == 'action' %}
-            <i class="fas fa-bolt-lightning w-4 text-center text-amber-500"></i>
-            {% elif cat.slug == 'romance' %}
-            <i class="fas fa-heart w-4 text-center text-pink-500"></i>
-            {% elif cat.slug == 'where-to-watch' %}
-            <i class="fas fa-tv w-4 text-center text-emerald-500"></i>
-            {% elif cat.slug == 'beginners-guide' %}
-            <i class="fas fa-book-open w-4 text-center text-blue-500"></i>
-            {% elif cat.slug == 'dub-vs-sub' %}
-            <i class="fas fa-sliders w-4 text-center text-purple-500"></i>
-            {% elif cat.slug == 'recommendations' %}
-            <i class="fas fa-award w-4 text-center text-yellow-500"></i>
-            {% else %}
-            <i class="fas fa-folder w-4 text-center text-gray-400"></i>
-            {% endif %}
-            <span class="truncate">{{ cat.name_hi or cat.display_name or cat.name }}</span>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
+      <!-- Dynamic Grouped Navigation -->
+      {{ render_sidebar_nav(is_mobile=false) }}
 
       <!-- Sidebar Mini Footer -->
       <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 text-[11px] text-gray-400 dark:text-gray-500 space-y-2">

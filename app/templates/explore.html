@@ -121,6 +121,45 @@ endblock %}
     else %}कोई गाइड नहीं मिली{% endif %}
   </p>
 
+  <!-- संबंधित ताज़ा अपडेट्स व समाचार (यदि खोज में मिले) -->
+  {% if matching_updates and matching_updates|length > 0 %}
+  <div class="mb-10 p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800">
+    <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <i class="fas fa-newspaper text-blue-500"></i>
+      <span>संबंधित एनीमे समाचार व ताज़ा अपडेट्स</span>
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">{{ matching_updates|length }} परिणाम</span>
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for upd in matching_updates %}
+      <a href="/updates/{{ upd.id }}" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+        <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-950 flex items-center justify-center">
+          {% if upd.image_url %}
+          <img src="{{ upd.image_url }}" alt="{{ upd.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+          {% else %}
+          <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4 text-center">
+            <i class="fas fa-play text-red-600 text-xl mb-1"></i>
+            <span class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Hindi Anime Guide</span>
+          </div>
+          {% endif %}
+          <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+            {{ upd.content_type }}
+          </span>
+        </div>
+        <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+          <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
+            {{ upd.title_hi or upd.title_en }}
+          </h3>
+          <div class="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <span>{{ upd.source_name }}</span>
+            <span class="text-red-600 font-semibold group-hover:underline">पढ़ें →</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- रिज़ल्ट ग्रिड -->
   {% if articles %}
   <div class="anime-card-grid">

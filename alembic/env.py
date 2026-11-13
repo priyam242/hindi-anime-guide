@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.models import (
     Category, Article, Platform, Availability, Admin1, User, User1,
     Comment, Notification, ActivityLog, Bookmark, ArticleCategoryLink,
+    AnimeDraft,
 )  # noqa: F401
 
 settings = get_settings()

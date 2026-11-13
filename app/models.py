@@ -546,6 +546,28 @@ class SecurityLog(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class AnimeDraft(SQLModel, table=True):
+    """Staged anime drafts collected from external sources (AniList, etc.) for editorial review."""
+    __tablename__ = "anime_draft"
+    __table_args__ = (
+        Index("ix_anime_draft_status", "status"),
+        Index("ix_anime_draft_content_type", "content_type"),
+    )
+    id: Optional[int] = Field(default=None, primary_key=True)
+    content_type: str = Field(default="schedule", max_length=50)
+    status: str = Field(default="draft", max_length=20)
+    source_name: str = Field(default="AniList", max_length=100)
+    source_url: str = Field(max_length=500)
+    external_id: str = Field(max_length=150, unique=True, index=True)
+    title_en: str = Field(max_length=300)
+    title_hi: Optional[str] = Field(default=None, max_length=300, nullable=True)
+    summary_en: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    summary_hi: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    image_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
+    published_at: Optional[datetime] = Field(default=None, nullable=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # Legacy alias & enums
 AdminUser = Admin1
 

@@ -874,6 +874,10 @@
                     <span class="icon">📝</span>
                     <span data-admin-i18n="nav_articles">Articles</span>
                 </a>
+                <a href="/admin/drafts" class="nav-link {% if '/admin/drafts' in request.url.path %}active{% endif %}">
+                    <span class="icon">🤖</span>
+                    <span>AI Drafts & Updates</span>
+                </a>
                 <a href="/admin/categories" class="nav-link {% if '/admin/categories' in request.url.path %}active{% endif %}">
                     <span class="icon">📂</span>
                     <span data-admin-i18n="nav_categories">Categories</span>

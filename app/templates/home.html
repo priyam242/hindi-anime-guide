@@ -141,6 +141,61 @@
 
     </section>
 
+    <!-- Latest Published Anime News & Airing Schedule -->
+    {% if latest_updates and latest_updates|length > 0 %}
+    <section class="w-full">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
+                    <i class="fas fa-bolt text-amber-500"></i>
+                    <span>ताज़ा समाचार एवं सीज़न शेड्यूल (Latest Updates)</span>
+                </h2>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                    वर्तमान एनीमे सीज़न के आधिकारिक प्रसारण समय और ताज़ा संपादकीय समाचार
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/news" class="text-red-600 hover:text-red-700 font-bold text-sm inline-flex items-center gap-1.5 transition-transform hover:translate-x-1">
+                    All News <i class="fas fa-arrow-right text-xs"></i>
+                </a>
+                <span class="text-gray-300 dark:text-gray-700">|</span>
+                <a href="/schedule" class="text-purple-600 hover:text-purple-700 font-bold text-sm inline-flex items-center gap-1.5 transition-transform hover:translate-x-1">
+                    Full Schedule <i class="fas fa-calendar-alt text-xs"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {% for upd in latest_updates[:4] %}
+            <a href="/updates/{{ upd.id }}" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                    {% if upd.image_url %}
+                    <img src="{{ upd.image_url }}" alt="{{ upd.title_en }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                    {% else %}
+                    <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4 text-center">
+                        <i class="fas fa-play text-red-600 text-xl mb-1"></i>
+                        <span class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Hindi Anime Guide</span>
+                    </div>
+                    {% endif %}
+                    <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                        {{ upd.content_type }}
+                    </span>
+                </div>
+                <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
+                        {{ upd.title_hi or upd.title_en }}
+                    </h3>
+                    <div class="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <span>{{ (upd.published_at | hindi_date) if upd.published_at else 'हाल ही में' }}</span>
+                        <span class="text-red-600 font-semibold group-hover:underline">पढ़ें →</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Latest Guides Section with 3D Parallax Tilt Cards & Neon Badges -->
     <section class="w-full">
         <div class="flex items-center justify-between mb-8">

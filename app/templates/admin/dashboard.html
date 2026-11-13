@@ -462,6 +462,65 @@
                 <div class="desc">Directory & status</div>
             </div>
         </a>
+        <a href="/admin/drafts" class="action-tile">
+            <div class="icon" style="color: var(--primary);">🤖</div>
+            <div class="action-tile-text">
+                <div class="title">AI Drafts Review</div>
+                <div class="desc">{{ drafts_waiting }} drafts waiting</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- AI Content Automation Engine Telemetry Widget -->
+<div class="card" style="margin-bottom: 28px; padding: 22px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div>
+            <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0 0 4px 0;">
+                <span>🤖</span> AI Content Automation Pipeline
+            </h2>
+            <div style="font-size: 12.5px; color: var(--text-secondary);">
+                Last Automation Run: <strong>{{ last_automation_run.strftime('%d %b %Y, %I:%M %p UTC') if last_automation_run else 'Not run yet' }}</strong>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/admin/drafts" class="btn btn-secondary btn-sm">Review Staged Drafts ({{ drafts_waiting }})</a>
+            {% if needs_review_count > 0 %}
+                <a href="/admin/drafts?status=needs_review" class="btn btn-danger btn-sm">Flagged for Review ({{ needs_review_count }})</a>
+            {% endif %}
+            <a href="/admin/drafts/create-award" class="btn btn-primary btn-sm">+ Add Award Fact</a>
+        </div>
+    </div>
+
+    <!-- Telemetry Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px;">
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Waiting Drafts</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--warning-text); margin-top: 4px;">{{ drafts_waiting }}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Pending publication</div>
+        </div>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Needs Review</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--danger-text); margin-top: 4px;">{{ needs_review_count }}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Quality gate flagged</div>
+        </div>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Published Live</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--success-text); margin-top: 4px;">{{ published_drafts }}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Active on public site</div>
+        </div>
+    </div>
+
+    <!-- Source Breakdown Pills -->
+    <div style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">Source Inventory:</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% for s in sources_summary %}
+                <span class="stat-pill" style="font-size: 12px; background: var(--bg); border: 1px solid var(--border); padding: 3px 10px; border-radius: var(--radius-full);">
+                    {{ s.name }}: <strong style="color: var(--primary);">{{ s.count }}</strong>
+                </span>
+            {% endfor %}
+        </div>
     </div>
 </div>
 

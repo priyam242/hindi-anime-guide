@@ -1,0 +1,318 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Draft #{{ draft.id }} — Hindi Anime Guide Admin{% endblock %}
+{% block breadcrumb_current %}Edit Draft #{{ draft.id }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .editor-layout {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+        .editor-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .editor-pane, .preview-pane {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .preview-pane {
+        position: sticky;
+        top: calc(var(--header-height) + 24px);
+        max-height: calc(100vh - var(--header-height) - 48px);
+        overflow-y: auto;
+    }
+
+    .preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .preview-tabs {
+        display: flex;
+        gap: 6px;
+    }
+
+    .preview-tab-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .preview-tab-btn.active {
+        background: var(--primary);
+        color: var(--white);
+        border-color: var(--primary);
+    }
+
+    .preview-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        background: var(--bg);
+    }
+
+    .preview-image {
+        width: 100%;
+        max-height: 240px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 14px;
+        border: 1px solid var(--border);
+    }
+
+    .preview-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .preview-summary {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        white-space: pre-line;
+    }
+
+    .meta-box {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        font-size: 12.5px;
+    }
+
+    .meta-item strong {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 11px;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1><span>✏️</span> Edit Anime Draft #{{ draft.id }}</h1>
+        <div class="page-subtitle">Verify, polish English and Hindi content, and preview live before publishing.</div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <a href="/admin/articles/create?from_draft={{ draft.id }}" class="btn btn-secondary btn-sm" title="Convert draft facts into a full editorial guide">📝 Convert to Guide</a>
+        <a href="/admin/drafts" class="btn btn-secondary btn-sm">← Back to Drafts</a>
+        {% if draft.status == 'published' %}
+            <a href="/updates/{{ draft.id }}" target="_blank" class="btn btn-secondary btn-sm">View Public Page ↗</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Metadata Strip -->
+<div class="meta-box">
+    <div class="meta-item">
+        <strong>Status</strong>
+        {% if draft.status == 'published' %}
+            <span class="badge badge-success">● Published ({{ draft.published_at.strftime('%d %b %Y %H:%M') if draft.published_at else '' }})</span>
+        {% else %}
+            <span class="badge badge-warning">○ Draft (Unpublished)</span>
+        {% endif %}
+    </div>
+    <div class="meta-item">
+        <strong>Source</strong>
+        <a href="{{ draft.source_url }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600;">
+            {{ draft.source_name }} ↗
+        </a>
+    </div>
+    <div class="meta-item">
+        <strong>External ID</strong>
+        <code>{{ draft.external_id }}</code>
+    </div>
+    <div class="meta-item">
+        <strong>Created At</strong>
+        <span>{{ draft.created_at.strftime('%d %b %Y %H:%M UTC') if draft.created_at else '' }}</span>
+    </div>
+</div>
+
+<form action="/admin/drafts/{{ draft.id }}/edit" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="editor-layout">
+        <!-- Left: Edit Controls -->
+        <div class="editor-pane">
+            <h3 style="margin-bottom: 16px; font-size: 16px; font-weight: 700;">Content Details</h3>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="content_type" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">Content Type</label>
+                <select name="content_type" id="content_type" class="select" style="width: 100%;">
+                    <option value="schedule" {% if draft.content_type == 'schedule' %}selected{% endif %}>📅 Airing Schedule Update</option>
+                    <option value="news" {% if draft.content_type == 'news' %}selected{% endif %}>📰 Anime News</option>
+                    <option value="manga" {% if draft.content_type == 'manga' %}selected{% endif %}>📖 Manga Update</option>
+                    <option value="award" {% if draft.content_type == 'award' %}selected{% endif %}>🏆 Industry Award</option>
+                </select>
+            </div>
+
+            <!-- English Title -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="title_en" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
+                    Title (English) <span style="color: var(--primary);">*</span>
+                </label>
+                <input type="text" name="title_en" id="title_en" class="input" value="{{ draft.title_en }}" required style="width: 100%;" oninput="updateLivePreview()">
+            </div>
+
+            <!-- Hindi Title -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="title_hi" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
+                    Title (Hindi / Devanagari)
+                </label>
+                <input type="text" name="title_hi" id="title_hi" class="input" value="{{ draft.title_hi or '' }}" style="width: 100%;" oninput="updateLivePreview()">
+            </div>
+
+            <!-- Image Cover URL -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="image_url" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
+                    Cover Image URL (AniList CDN)
+                </label>
+                <input type="url" name="image_url" id="image_url" class="input" value="{{ draft.image_url or '' }}" style="width: 100%;" oninput="updateLivePreview()">
+            </div>
+
+            <!-- English Summary -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label" for="summary_en" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
+                    Summary (English — 80-150 words)
+                </label>
+                <textarea name="summary_en" id="summary_en" class="textarea" rows="6" style="width: 100%; font-size: 14px; line-height: 1.6;" oninput="updateLivePreview()">{{ draft.summary_en or '' }}</textarea>
+            </div>
+
+            <!-- Hindi Summary -->
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label" for="summary_hi" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
+                    Summary (Hindi / Devanagari — 80-150 words)
+                </label>
+                <textarea name="summary_hi" id="summary_hi" class="textarea" rows="6" style="width: 100%; font-size: 14px; line-height: 1.6;" oninput="updateLivePreview()">{{ draft.summary_hi or '' }}</textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border); padding-top: 18px;">
+                <button type="submit" name="action" value="save" class="btn btn-secondary">
+                    💾 Save Draft
+                </button>
+                <button type="submit" name="action" value="save_and_publish" class="btn btn-primary">
+                    🚀 Save & Publish
+                </button>
+                <a href="/admin/articles/create?from_draft={{ draft.id }}" class="btn btn-secondary" style="color: var(--primary); font-weight: 600;" title="Convert this draft into a full editorial guide">
+                    📝 Convert to Full Guide
+                </a>
+                <a href="/admin/drafts" class="btn btn-secondary" style="margin-left: auto;">Cancel</a>
+            </div>
+        </div>
+
+        <!-- Right: Live Tabbed Preview -->
+        <div class="preview-pane">
+            <div class="preview-header">
+                <span style="font-weight: 700; font-size: 13.5px; color: var(--text-primary);">LIVE PREVIEW</span>
+                <div class="preview-tabs">
+                    <button type="button" class="preview-tab-btn active" id="tab-hi-btn" onclick="switchPreviewLang('hi')">Hindi (हिंदी)</button>
+                    <button type="button" class="preview-tab-btn" id="tab-en-btn" onclick="switchPreviewLang('en')">English</button>
+                </div>
+            </div>
+
+            <div class="preview-card">
+                <img id="preview-cover-img" src="{{ draft.image_url or '' }}" alt="Cover" class="preview-image" onerror="this.style.display='none'" onload="this.style.display='block'">
+                
+                <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+                    <span id="preview-badge-type" class="badge badge-purple" style="font-size: 11px;">Schedule</span>
+                    <span class="badge badge-secondary" style="font-size: 11px;">Source: {{ draft.source_name }}</span>
+                </div>
+
+                <h3 id="preview-title-text" class="preview-title">
+                    {{ draft.title_hi or draft.title_en }}
+                </h3>
+
+                <p id="preview-summary-text" class="preview-summary">
+                    {{ draft.summary_hi or draft.summary_en or 'No summary text provided.' }}
+                </p>
+
+                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 12px; color: var(--text-secondary);">
+                    <span>Source attribution: </span>
+                    <a href="{{ draft.source_url }}" target="_blank" rel="nofollow noopener" style="color: var(--primary);">{{ draft.source_name }} ↗</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    let activeLang = 'hi';
+
+    function switchPreviewLang(lang) {
+        activeLang = lang;
+        document.getElementById('tab-hi-btn').classList.toggle('active', lang === 'hi');
+        document.getElementById('tab-en-btn').classList.toggle('active', lang === 'en');
+        updateLivePreview();
+    }
+
+    function updateLivePreview() {
+        const titleEn = document.getElementById('title_en').value.trim();
+        const titleHi = document.getElementById('title_hi').value.trim();
+        const summaryEn = document.getElementById('summary_en').value.trim();
+        const summaryHi = document.getElementById('summary_hi').value.trim();
+        const imgUrl = document.getElementById('image_url').value.trim();
+        const contentType = document.getElementById('content_type').value;
+
+        // Image
+        const imgElem = document.getElementById('preview-cover-img');
+        if (imgUrl) {
+            imgElem.src = imgUrl;
+            imgElem.style.display = 'block';
+        } else {
+            imgElem.style.display = 'none';
+        }
+
+        // Content type badge
+        const badgeType = document.getElementById('preview-badge-type');
+        badgeType.textContent = contentType.charAt(0).toUpperCase() + contentType.slice(1);
+
+        // Titles and Summaries based on active language tab
+        const titleElem = document.getElementById('preview-title-text');
+        const summaryElem = document.getElementById('preview-summary-text');
+
+        if (activeLang === 'hi') {
+            titleElem.textContent = titleHi || titleEn || 'शीर्षक यहाँ प्रदर्शित होगा...';
+            summaryElem.textContent = summaryHi || summaryEn || 'विवरण यहाँ प्रदर्शित होगा...';
+        } else {
+            titleElem.textContent = titleEn || titleHi || 'Title will appear here...';
+            summaryElem.textContent = summaryEn || summaryHi || 'Summary will appear here...';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLivePreview();
+    });
+</script>
+{% endblock %}

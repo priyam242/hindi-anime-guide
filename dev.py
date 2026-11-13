@@ -58,9 +58,13 @@ if __name__ == "__main__":
     print("=" * 65)
 
     # Run uvicorn server
-    uvicorn.run(
-        "app.main:app",
-        host=host,
-        port=port,
-        reload=True
-    )
+    try:
+        uvicorn.run(
+            "app.main:app",
+            host=host,
+            port=port,
+            reload=True
+        )
+    except (KeyboardInterrupt, SystemExit):
+        print("\n👋 सर्वर सफलतापूर्वक बंद हो गया। (Server stopped cleanly)")
+        sys.exit(0)

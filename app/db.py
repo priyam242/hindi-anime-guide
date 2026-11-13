@@ -12,15 +12,32 @@ from app.models import Article, Availability, Category, Platform, Admin1, User, 
 
 settings = get_settings()
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-
-engine = create_engine(
-    settings.database_url,
-    echo=False,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    pool_recycle=300,
+is_sqlite = settings.database_url.startswith("sqlite")
+connect_args = (
+    {"check_same_thread": False}
+    if is_sqlite
+    else {"connect_timeout": 10, "application_name": "hindi_anime_guide"}
 )
+
+engine_kwargs = {
+    "echo": False,
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+}
+
+if not is_sqlite:
+    engine_kwargs.update({
+        "pool_size": 10,
+        "max_overflow": 20,
+        "pool_recycle": 1800,
+        "pool_timeout": 30,
+    })
+else:
+    engine_kwargs.update({
+        "pool_recycle": 300,
+    })
+
+engine = create_engine(settings.database_url, **engine_kwargs)
 
 
 @event.listens_for(Engine, "connect")
@@ -40,16 +57,26 @@ def get_session() -> Generator[Session, None, None]:
 
 def seed_data(session: Session) -> None:
     """Seeds official categories and platforms."""
-    existing_cat = session.exec(select(Category)).first()
-    if not existing_cat:
-        cats = [
-            Category(name="where-to-watch", display_name="कहाँ देखें", display_order=1),
-            Category(name="recommendations", display_name="सिफारिशें", display_order=2),
-            Category(name="beginners-guide", display_name="शुरुआती गाइड", display_order=3),
-            Category(name="dub-vs-sub", display_name="डब vs सब", display_order=4),
-        ]
-        session.add_all(cats)
-        session.commit()
+    planned_categories = [
+        {"name": "where-to-watch", "display_name": "कहाँ देखें", "order": 1},
+        {"name": "recommendations", "display_name": "सिफारिशें", "order": 2},
+        {"name": "beginners-guide", "display_name": "शुरुआती गाइड", "order": 3},
+        {"name": "dub-vs-sub", "display_name": "डब vs सब", "order": 4},
+        {"name": "watch-order", "display_name": "वॉच ऑर्डर", "order": 5},
+        {"name": "rankings", "display_name": "टॉप 10 / रैंकिंग", "order": 6},
+        {"name": "action", "display_name": "एक्शन", "order": 7},
+        {"name": "romance", "display_name": "Romance", "order": 8},
+        {"name": "comedy", "display_name": "कॉमेडी", "order": 9},
+        {"name": "fantasy", "display_name": "फैंटेसी", "order": 10},
+        {"name": "thriller", "display_name": "थ्रिलर / हॉरर", "order": 11},
+        {"name": "slice-of-life", "display_name": "स्कूल / स्लाइस ऑफ लाइफ", "order": 12},
+        {"name": "sports", "display_name": "स्पोर्ट्स", "order": 13},
+    ]
+    for p_cat in planned_categories:
+        existing = session.exec(select(Category).where(Category.name == p_cat["name"])).first()
+        if not existing:
+            session.add(Category(name=p_cat["name"], display_name=p_cat["display_name"], display_order=p_cat["order"]))
+    session.commit()
 
     existing_platform = session.exec(select(Platform)).first()
     if not existing_platform:

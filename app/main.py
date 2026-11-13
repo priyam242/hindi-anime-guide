@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, Response
@@ -55,7 +56,11 @@ async def performance_and_security_headers(request: Request, call_next):
     """
     Phase 9 & 10: Performance & AdSense Verification Headers
     """
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        return Response(status_code=499)
+
     path = request.url.path.lower()
 
     if path.startswith("/static/") or path.startswith("/media/"):
@@ -85,10 +90,22 @@ async def performance_and_security_headers(request: Request, call_next):
 @app.middleware("http")
 async def inject_user_context(request: Request, call_next):
     """Make current user info available to all templates."""
-    user = await get_current_user(request)
-    request.state.user = user
-    response = await call_next(request)
-    return response
+    path = request.url.path.lower()
+    # Fast path: Skip DB user lookup for static assets, media, favicon, and health checks
+    if path.startswith(("/static/", "/media/", "/favicon.ico", "/health", "/ads.txt", "/robots.txt")):
+        request.state.user = None
+        try:
+            return await call_next(request)
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            return Response(status_code=499)
+
+    try:
+        user = await get_current_user(request)
+        request.state.user = user
+        response = await call_next(request)
+        return response
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        return Response(status_code=499)
 
 
 @app.get("/docs", include_in_schema=False)
