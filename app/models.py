@@ -552,6 +552,7 @@ class AnimeDraft(SQLModel, table=True):
     __table_args__ = (
         Index("ix_anime_draft_status", "status"),
         Index("ix_anime_draft_content_type", "content_type"),
+        Index("ix_anime_draft_status_published", "status", "published_at"),
     )
     id: Optional[int] = Field(default=None, primary_key=True)
     content_type: str = Field(default="schedule", max_length=50)

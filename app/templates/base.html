@@ -1998,16 +1998,46 @@
     }
   ] %}
 
+  {% set SIDEBAR_TITLES_EN = {
+    "sidebar_group_nav": "NAVIGATION",
+    "sidebar_group_updates": "LATEST UPDATES",
+    "sidebar_group_guides": "GUIDES",
+    "sidebar_group_categories": "POPULAR CATEGORIES",
+    "nav_home": "Home",
+    "nav_explore": "Explore",
+    "nav_hindi_dub": "Hindi Dub Anime",
+    "upd_news": "Anime News",
+    "upd_schedule": "Season Schedule",
+    "upd_manga": "Manga Updates",
+    "upd_awards": "Awards",
+    "upd_trailers": "Trailers",
+    "guide_latest": "Latest Guides",
+    "guide_beginners": "Beginner's Guide",
+    "guide_watch_order": "Watch Order",
+    "guide_where_to_watch": "Where to Watch",
+    "guide_dub_vs_sub": "Dub vs Sub",
+    "guide_recommendations": "Recommendations",
+    "guide_rankings": "Top 10 / Rankings",
+    "cat_all_anime": "All Anime",
+    "cat_action": "Action",
+    "cat_romance": "Romance",
+    "cat_comedy": "Comedy",
+    "cat_fantasy": "Fantasy",
+    "cat_thriller": "Thriller / Horror",
+    "cat_slice_of_life": "School / Slice of Life",
+    "cat_sports": "Sports"
+  } %}
+
   {% macro render_sidebar_nav(is_mobile=false) %}
     {% for group in sidebar_groups %}
     <div class="sidebar-nav-section">
       <div class="sidebar-section-title">
         <span class="flex items-center gap-1.5">
           {% if group.icon %}<i class="{{ group.icon }} text-[11px] text-gray-400"></i>{% endif %}
-          <span {% if group.i18n %}data-i18n="{{ group.i18n }}"{% endif %}>{{ group.title }}</span>
+          <span {% if group.i18n %}data-i18n="{{ group.i18n }}"{% endif %}>{{ (SIDEBAR_TITLES_EN[group.i18n] if (lang == 'en' and group.i18n in SIDEBAR_TITLES_EN) else group.title) }}</span>
         </span>
         {% if group.has_all_link %}
-        <a href="{{ group.all_link_url }}" class="text-[10px] font-bold text-red-600 hover:underline" {% if group.all_i18n %}data-i18n="{{ group.all_i18n }}"{% endif %} aria-label="{{ group.title }} - {{ group.all_link_text }}">{{ group.all_link_text }}</a>
+        <a href="{{ group.all_link_url }}" class="text-[10px] font-bold text-red-600 hover:underline" {% if group.all_i18n %}data-i18n="{{ group.all_i18n }}"{% endif %} aria-label="{{ group.title }} - {{ group.all_link_text }}">{{ ('All' if lang == 'en' else group.all_link_text) }}</a>
         {% endif %}
       </div>
       <div class="space-y-1" role="list">
@@ -2019,7 +2049,7 @@
           aria-label="{{ item.title }}"
           {% if item.active %}aria-current="page"{% endif %}>
           <i class="{{ item.icon }} w-4 text-center {{ item.color }}"></i>
-          <span {% if item.i18n %}data-i18n="{{ item.i18n }}"{% endif %}>{{ item.title }}</span>
+          <span {% if item.i18n %}data-i18n="{{ item.i18n }}"{% endif %}>{{ (SIDEBAR_TITLES_EN[item.i18n] if (lang == 'en' and item.i18n in SIDEBAR_TITLES_EN) else item.title) }}</span>
           {% if item.badge %}
           <span class="{% if item.badge_type == 'blue' %}sidebar-link-badge-blue{% else %}sidebar-link-badge{% endif %}">{{ item.badge }}</span>
           {% endif %}

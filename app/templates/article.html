@@ -386,7 +386,8 @@
 <div x-show="reportOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="reportOpen = false">
   <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full" @click.stop>
     <h3 class="text-lg font-bold mb-3 text-gray-900 dark:text-white"><i class="fas fa-flag text-red-600 mr-2"></i>जानकारी रिपोर्ट करें</h3>
-    <form method="post" :action="window.location.pathname + '/report-outdated'">
+    <form method="post" action="/article/{{ article.slug }}/report-outdated">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <textarea name="note" rows="4" required maxlength="1000" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-3 mb-3 bg-transparent text-gray-900 dark:text-white" placeholder="क्या गलत/पुराना है? विवरण लिखें..."></textarea>
       <input type="text" name="platform_name" placeholder="प्लेटफ़ॉर्म का नाम (वैकल्पिक)" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 mb-3 text-sm bg-transparent text-gray-900 dark:text-white">
       <div class="flex gap-2 justify-end">
