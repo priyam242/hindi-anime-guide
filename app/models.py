@@ -565,6 +565,11 @@ class AnimeDraft(SQLModel, table=True):
     summary_en: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     summary_hi: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     image_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
+    chapters: Optional[int] = Field(default=None, nullable=True)
+    volumes: Optional[int] = Field(default=None, nullable=True)
+    publication_status: Optional[str] = Field(default=None, max_length=50, nullable=True)
+    airing_day: Optional[str] = Field(default=None, max_length=20, nullable=True)
+    airing_time: Optional[str] = Field(default=None, max_length=50, nullable=True)
     published_at: Optional[datetime] = Field(default=None, nullable=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

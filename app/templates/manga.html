@@ -83,7 +83,8 @@
           </thead>
           <tbody class="divide-y divide-white/5 font-normal">
             {% for m in group_items %}
-            {% set ch_num = (m.external_id | extract_episode) or (m.title_en | extract_episode) or 100 + loop.index %}
+            {% set ch_num = m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
+            {% set status_lower = (m.publication_status or 'Ongoing')|lower %}
             <tr class="hover:bg-white/[0.03] transition-colors group">
               <!-- Title & Thumbnail -->
               <td class="py-3 px-4 flex items-center gap-3">
@@ -102,19 +103,32 @@
                 </div>
               </td>
 
-              <!-- Chapter -->
+              <!-- Chapter & Volumes -->
               <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold font-mono text-[11px]">
-                  <i class="fas fa-file-lines text-[9px]"></i>
-                  <span>Chapter {{ ch_num }}</span>
-                </span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  {% if ch_num %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold font-mono text-[11px]">
+                    <i class="fas fa-file-lines text-[9px]"></i>
+                    <span>Chapter {{ ch_num }}</span>
+                  </span>
+                  {% else %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 text-gray-400 border border-white/10 text-[11px] font-mono">
+                    New Release
+                  </span>
+                  {% endif %}
+                  {% if m.volumes %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10 text-[10px] font-mono">
+                    Vol. {{ m.volumes }}
+                  </span>
+                  {% endif %}
+                </div>
               </td>
 
               <!-- Status -->
               <td class="py-3 px-4">
-                {% if loop.index % 5 == 0 %}
+                {% if 'finished' in status_lower or 'completed' in status_lower %}
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40 text-[10px] font-bold">Completed</span>
-                {% elif loop.index % 7 == 0 %}
+                {% elif 'hiatus' in status_lower %}
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40 text-[10px] font-bold">Hiatus</span>
                 {% else %}
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold">Ongoing</span>
@@ -146,7 +160,8 @@
       <!-- MOBILE STACKED CARDS -->
       <div class="md:hidden space-y-3">
         {% for m in group_items %}
-        {% set ch_num = (m.external_id | extract_episode) or (m.title_en | extract_episode) or 100 + loop.index %}
+        {% set ch_num = m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
+        {% set status_lower = (m.publication_status or 'Ongoing')|lower %}
         <article class="p-4 rounded-xl bg-neutral-900/80 border border-white/10 shadow-sm flex items-start gap-3.5">
           <a href="/updates/{{ m.id }}" class="w-14 h-20 rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-white/10">
             {% if m.image_url %}
@@ -164,12 +179,29 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap text-[10px]">
+              {% if ch_num %}
               <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold font-mono">
                 Ch. {{ ch_num }}
               </span>
-              <span class="px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10">
+              {% endif %}
+              {% if m.volumes %}
+              <span class="px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10 font-mono">
+                Vol. {{ m.volumes }}
+              </span>
+              {% endif %}
+              {% if 'finished' in status_lower or 'completed' in status_lower %}
+              <span class="px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40 font-bold">
+                Completed
+              </span>
+              {% elif 'hiatus' in status_lower %}
+              <span class="px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40 font-bold">
+                Hiatus
+              </span>
+              {% else %}
+              <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold">
                 Ongoing
               </span>
+              {% endif %}
               <span class="text-gray-400">
                 {{ (m.published_at | relative_time_hindi) }}
               </span>

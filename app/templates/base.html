@@ -2327,6 +2327,8 @@
       try {
         const userPref = (CURRENT_USER_EMAIL ? localStorage.getItem('user_lang_' + CURRENT_USER_EMAIL) : null) || localStorage.getItem('site_lang');
         if (userPref === 'en' || userPref === 'hi') return userPref;
+        const m = document.cookie.match(/(?:^|;\s*)(?:site_lang|lang)=(en|hi)/);
+        if (m) return m[1];
       } catch (e) { }
       return 'hi';
     };
@@ -2442,6 +2444,7 @@
         if (CURRENT_USER_EMAIL) localStorage.setItem('user_lang_' + CURRENT_USER_EMAIL, lang);
       } catch (e) { }
       document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      document.cookie = "lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
       window.applySiteLanguage(lang);
       if (typeof window.updateSettingsLanguageUI === 'function') {
         window.updateSettingsLanguageUI(lang);

@@ -68,9 +68,13 @@ def first_words(text: str, count: int = 2) -> str:
 
 
 def extract_episode(val: Optional[str]) -> Optional[int]:
-    """Extract episode number from external_id, title, or summary string."""
+    """Extract episode or chapter number from external_id, title, or summary string."""
     if not val:
         return None
+    # Check chapter patterns first (e.g., Chapter 1130, Ch. 182, चैप्टर 186)
+    m_ch = re.search(r'(?:Chapter|Ch\.|चैप्टर)\s*(\d+)', val, re.IGNORECASE)
+    if m_ch:
+        return int(m_ch.group(1))
     m = re.search(r'_ep(\d+)', val)
     if m:
         return int(m.group(1))
@@ -84,36 +88,82 @@ def extract_episode(val: Optional[str]) -> Optional[int]:
 
 
 def format_airing_ist(val: Any) -> str:
-    """Format UTC datetime, timestamp, or summary text into readable IST string."""
+    """Format UTC datetime, timestamp, or natural broadcast text (e.g. 'Sundays at 23:15 JST') into readable IST string."""
     if not val:
         return ""
-    dt = None
     if isinstance(val, (int, float)):
         dt = datetime.fromtimestamp(val, tz=timezone.utc)
-    elif isinstance(val, str):
+        ist_dt = dt.astimezone(IST)
+        month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
+        time_str = ist_dt.strftime("%I:%M %p")
+        return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
+
+    if isinstance(val, datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
+        ist_dt = dt.astimezone(IST)
+        month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
+        time_str = ist_dt.strftime("%I:%M %p")
+        return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
+
+    if isinstance(val, str):
         # Look for YYYY-MM-DD HH:MM
         match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', val)
         if match:
             date_p, time_p = match.groups()
             try:
                 dt = datetime.strptime(f"{date_p} {time_p}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+                ist_dt = dt.astimezone(IST)
+                month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
+                time_str = ist_dt.strftime("%I:%M %p")
+                return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
             except Exception:
                 pass
-        if not dt:
-            try:
-                dt = datetime.fromisoformat(val)
-            except Exception:
-                return val
-    elif isinstance(val, datetime):
-        dt = val if val.tzinfo else val.replace(tzinfo=timezone.utc)
 
-    if not dt:
-        return str(val)
+        # Try ISO format
+        try:
+            dt = datetime.fromisoformat(val)
+            ist_dt = dt.astimezone(IST)
+            month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
+            time_str = ist_dt.strftime("%I:%M %p")
+            return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
+        except Exception:
+            pass
 
-    ist_dt = dt.astimezone(IST)
-    month_hi = HINDI_MONTHS.get(ist_dt.month, str(ist_dt.month))
-    time_str = ist_dt.strftime("%I:%M %p")
-    return f"{ist_dt.day} {month_hi} {ist_dt.year}, {time_str} IST"
+        # Check for natural broadcast string like "Sundays at 23:15 JST" or "23:15 JST"
+        jst_match = re.search(r'(\d{1,2}):(\d{2})\s*(?:JST)', val, re.IGNORECASE)
+        if jst_match:
+            h, m = int(jst_match.group(1)), int(jst_match.group(2))
+            total_minutes = h * 60 + m - (3 * 60 + 30)  # Convert JST to IST (-3h 30m)
+            if total_minutes < 0:
+                total_minutes += 24 * 60
+            ist_h = (total_minutes // 60) % 24
+            ist_m = total_minutes % 60
+            ampm = "PM" if ist_h >= 12 else "AM"
+            display_h = ist_h % 12 or 12
+            ist_time_str = f"{display_h}:{ist_m:02d} {ampm} IST"
+            day_str = ""
+            for en_day, hi_day in [
+                ("sunday", "प्रत्येक रविवार"), ("monday", "प्रत्येक सोमवार"),
+                ("tuesday", "प्रत्येक मंगलवार"), ("wednesday", "प्रत्येक बुधवार"),
+                ("thursday", "प्रत्येक गुरुवार"), ("friday", "प्रत्येक शुक्रवार"),
+                ("saturday", "प्रत्येक शनिवार")
+            ]:
+                if en_day in val.lower():
+                    day_str = f"{hi_day}, "
+                    break
+            return f"{day_str}{ist_time_str}"
+
+        # If it has simple IST or 24hr time like "20:00"
+        time_match = re.search(r'(\d{1,2}):(\d{2})', val)
+        if time_match:
+            h, m = int(time_match.group(1)), int(time_match.group(2))
+            ampm = "PM" if h >= 12 else "AM"
+            display_h = h % 12 or 12
+            return f"{display_h}:{m:02d} {ampm} IST"
+
+        return val
+
+    return str(val)
 
 
 def airing_iso(val: Any) -> str:
@@ -157,6 +207,21 @@ def airing_weekday(val: Any) -> int:
     """Return weekday integer 0=Mon, 1=Tue, ..., 6=Sun in IST."""
     if not val:
         return 0
+    if isinstance(val, str):
+        cleaned = val.strip().lower()
+        day_map = {
+            "monday": 0, "mon": 0, "सोमवार": 0, "सोम": 0,
+            "tuesday": 1, "tue": 1, "मंगलवार": 1, "मंगल": 1,
+            "wednesday": 2, "wed": 2, "बुधवार": 2, "बुध": 2,
+            "thursday": 3, "thu": 3, "गुरुवार": 3, "बृहस्पतिवार": 3, "गुरु": 3,
+            "friday": 4, "fri": 4, "शुक्रवार": 4, "शुक्र": 4,
+            "saturday": 5, "sat": 5, "शनिवार": 5, "शनि": 5,
+            "sunday": 6, "sun": 6, "रविवार": 6, "रवि": 6,
+        }
+        for k, v in day_map.items():
+            if k in cleaned:
+                return v
+
     dt = None
     if isinstance(val, (int, float)):
         dt = datetime.fromtimestamp(val, tz=timezone.utc)
@@ -317,5 +382,16 @@ def render(template: str, **context) -> str:
     context.setdefault("user", None)
     if "request" not in context or context["request"] is None:
         context["request"] = _DummyRequest()
+    req = context["request"]
+    if "lang" not in context:
+        extracted_lang = "hi"
+        try:
+            qp_lang = getattr(req, "query_params", {}).get("lang") if hasattr(req, "query_params") else None
+            ck = getattr(req, "cookies", {}) if hasattr(req, "cookies") else {}
+            ck_lang = ck.get("site_lang") or ck.get("lang")
+            extracted_lang = qp_lang or ck_lang or "hi"
+        except Exception:
+            extracted_lang = "hi"
+        context["lang"] = "en" if extracted_lang == "en" else "hi"
     tmpl = env.get_template(template)
     return tmpl.render(**context)

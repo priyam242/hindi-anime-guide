@@ -92,9 +92,9 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="schedule-grid">
     {% for item in items %}
       {% set ep_num = (item.external_id | extract_episode) or (item.title_en | extract_episode) %}
-      {% set ist_time = (item.summary_en | format_airing_ist) or (item.summary_hi | format_airing_ist) %}
+      {% set ist_time = (item.airing_time | format_airing_ist) or (item.summary_en | format_airing_ist) or (item.summary_hi | format_airing_ist) %}
       {% set iso_time = (item.published_at | airing_iso) if item.published_at else (item.summary_en | airing_iso) %}
-      {% set item_weekday = (item.published_at | airing_weekday) if item.published_at else (item.summary_en | airing_weekday) %}
+      {% set item_weekday = (item.airing_day | airing_weekday) if item.airing_day else ((item.summary_en | airing_weekday) if (item.summary_en and ('monday' in item.summary_en.lower() or 'tuesday' in item.summary_en.lower() or 'wednesday' in item.summary_en.lower() or 'thursday' in item.summary_en.lower() or 'friday' in item.summary_en.lower() or 'saturday' in item.summary_en.lower() or 'sunday' in item.summary_en.lower())) else (item.published_at | airing_weekday)) %}
       {% set has_hindi = ('hindi' in (item.title_hi or '')|lower) or ('hindi' in (item.summary_hi or '')|lower) or ('डब' in (item.summary_hi or '')) or ('डब' in (item.title_hi or '')) %}
 
       <div class="schedule-card group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-purple-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl"
