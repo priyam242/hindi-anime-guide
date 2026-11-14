@@ -588,6 +588,7 @@ class AnimeDraft(SQLModel, table=True):
     is_stale: bool = Field(default=False, nullable=False)
     latest_chapter: Optional[str] = Field(default=None, max_length=50, nullable=True)
     next_volume_date: Optional[datetime] = Field(default=None, nullable=True)
+    premiere_date: Optional[datetime] = Field(default=None, nullable=True)
     score: Optional[float] = Field(default=None, nullable=True)
     rank: Optional[int] = Field(default=None, nullable=True)
     official_links: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))

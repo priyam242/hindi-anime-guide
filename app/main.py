@@ -2,7 +2,8 @@ from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, FileResponse, Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -160,8 +161,24 @@ async def _custom_http_exception_handler(request: Request, exc):
     )
 
 
+async def _validation_exception_handler(request: Request, exc: RequestValidationError):
+    accept = request.headers.get("accept", "")
+    is_api = "application/json" in accept or request.url.path.startswith("/api/")
+    if not is_api:
+        user = getattr(request.state, "user", None)
+        try:
+            with Session(engine) as session:
+                categories = get_categories(session)
+        except Exception:
+            categories = []
+        return HTMLResponse(status_code=404, content=render("not_found.html", categories=categories, user=user, request=request))
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
 app.add_exception_handler(404, _custom_http_exception_handler)
 app.add_exception_handler(500, _custom_http_exception_handler)
+app.add_exception_handler(HTTPException, _custom_http_exception_handler)
+app.add_exception_handler(RequestValidationError, _validation_exception_handler)
 app.add_exception_handler(Exception, _custom_http_exception_handler)
 
 # Static & Media mounts

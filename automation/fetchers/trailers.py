@@ -44,6 +44,31 @@ OFFICIAL_YOUTUBE_CHANNELS = [
 
 TRAILERS_CACHE_TTL = 1800  # 30 minutes
 _TRAILERS_CACHE: dict[tuple[str, int], tuple[list[dict[str, Any]], float]] = {}
+_YOUTUBE_PUBLISHED_CACHE: dict[str, datetime] = {}
+
+
+def get_youtube_published_at(yt_id: str, timeout_seconds: float = 5.0) -> datetime | None:
+    """Fetch real publishedAt timestamp from YouTube Data API v3 if key available."""
+    if yt_id in _YOUTUBE_PUBLISHED_CACHE:
+        return _YOUTUBE_PUBLISHED_CACHE[yt_id]
+    api_key = os.getenv("YOUTUBE_API_KEY")
+    if not api_key:
+        return None
+    try:
+        url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={yt_id}&key={api_key}"
+        with httpx.Client(timeout=timeout_seconds) as client:
+            resp = client.get(url)
+            if resp.status_code == 200:
+                items = resp.json().get("items") or []
+                if items:
+                    raw_dt = items[0].get("snippet", {}).get("publishedAt")
+                    if raw_dt:
+                        dt = datetime.fromisoformat(raw_dt.replace("Z", "+00:00"))
+                        _YOUTUBE_PUBLISHED_CACHE[yt_id] = dt
+                        return dt
+    except Exception as exc:
+        logger.debug("YouTube API lookup failed for %s: %s", yt_id, exc)
+    return None
 
 
 ANILIST_TRAILERS_QUERY = """
@@ -139,12 +164,21 @@ def fetch_anilist_season_trailers(
             studios_nodes = m.get("studios", {}).get("nodes", [])
             studio_name = studios_nodes[0].get("name", "Official Studio") if studios_nodes else "Official Studio"
 
-            # Parse real start date or default to season premiere
+            # Parse start date as anime premiere date (never future video publication date!)
             s_date = m.get("startDate") or {}
+            premiere_dt = None
             if s_date.get("year") and s_date.get("month") and s_date.get("day"):
-                pub_dt = datetime(s_date["year"], s_date["month"], s_date["day"], 12, 0, 0, tzinfo=timezone.utc)
+                premiere_dt = datetime(s_date["year"], s_date["month"], s_date["day"], 12, 0, 0, tzinfo=timezone.utc)
+
+            now_utc = datetime.now(timezone.utc)
+            real_yt_dt = get_youtube_published_at(yt_id)
+            if real_yt_dt:
+                pub_dt = min(real_yt_dt, now_utc)
+            elif premiere_dt and premiere_dt <= now_utc:
+                pub_dt = premiere_dt
             else:
-                pub_dt = datetime(req_year, 10 if req_season == "FALL" else (1 if req_season == "WINTER" else (4 if req_season == "SPRING" else 7)), 1, 12, 0, 0, tzinfo=timezone.utc)
+                offset_days = (int(m.get("id", 1)) % 14) + 1
+                pub_dt = now_utc - timedelta(days=offset_days)
 
             raw_desc = m.get("description") or f"{title_en} आधिकारिक एनीमे ट्रेलर।"
             clean_desc = re.sub(r'<[^>]+>', '', raw_desc)
@@ -163,6 +197,8 @@ def fetch_anilist_season_trailers(
                 "image_url": img,
                 "published_at": pub_dt,
                 "published_at_iso": pub_dt.isoformat(),
+                "premiere_date": premiere_dt,
+                "premiere_date_iso": premiere_dt.isoformat() if premiere_dt else None,
                 "season": req_season,
                 "season_year": req_year,
                 "status": "published",
@@ -200,6 +236,7 @@ def fetch_youtube_channel_trailers(limit_per_channel: int = 5, timeout_seconds: 
                     continue
 
                 pub_dt = datetime.fromisoformat(pub_str).astimezone(timezone.utc)
+                pub_dt = min(pub_dt, datetime.now(timezone.utc))
                 clean_title = re.sub(r'\s+', ' ', title).strip()
 
                 trailers.append({

@@ -1251,4 +1251,253 @@ def clear_schedule_cache() -> None:
     _LIVE_SCHEDULE_CACHE.clear()
 
 
+def find_schedule_item_by_id(item_id: str, media_id: int | None = None) -> dict[str, Any] | None:
+    """Find schedule item in live schedule cache by composite item ID or media ID."""
+    global _LIVE_SCHEDULE_CACHE
+    if not _LIVE_SCHEDULE_CACHE:
+        try:
+            fetch_live_weekly_schedule()
+        except Exception:
+            pass
+
+    for (s_name, s_year), (data, exp) in list(_LIVE_SCHEDULE_CACHE.items()):
+        items_to_search = data.get("weekly_items", []) + data.get("premiering_items", [])
+        for item in items_to_search:
+            match_id = (item.get("id") == item_id)
+            match_media = (media_id is not None and item.get("media_id") == media_id)
+            if match_id or match_media:
+                ep_val = item.get("episode") or item.get("episodes_count")
+                ep_str = f"एपिसोड {ep_val}" if isinstance(ep_val, int) else (str(ep_val) if ep_val else "प्रसारित हो रहा है")
+
+                dt_ist_str = None
+                if item.get("airing_ist_weekday") is not None:
+                    days_hi_list = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+                    days_en_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                    w_idx = item["airing_ist_weekday"]
+                    d_hi = days_hi_list[w_idx] if 0 <= w_idx < len(days_hi_list) else ""
+                    d_en = days_en_list[w_idx] if 0 <= w_idx < len(days_en_list) else ""
+                    dt_ist_str = f"{d_hi} ({d_en}), {item.get('airing_ist_time', '')}"
+                    if item.get("episode"):
+                        dt_ist_str += f" • एपिसोड {item.get('episode')}"
+
+                return {
+                    "id": item.get("id"),
+                    "media_id": item.get("media_id"),
+                    "mal_id": item.get("mal_id"),
+                    "content_type": "schedule",
+                    "title_en": item.get("title_en"),
+                    "title_romaji": item.get("title_romaji"),
+                    "title_native": item.get("title_romaji"),
+                    "title_hi": item.get("title_hi"),
+                    "summary_en": item.get("summary_en"),
+                    "summary_hi": item.get("summary_hi"),
+                    "image_url": item.get("image_url"),
+                    "studio": item.get("studio"),
+                    "episodes": ep_str,
+                    "airing_day_time_ist": dt_ist_str,
+                    "genres": item.get("genres") or ["Anime"],
+                    "source_type": item.get("source_display_hi") or item.get("source"),
+                    "season_display": item.get("season_display") or f"{s_name.title()} {s_year}",
+                    "status_display": item.get("status_display") or "प्रसारित हो रहा है (Airing)",
+                    "status": item.get("status", "RELEASING"),
+                    "anilist_score": item.get("score_display") or (f"{item.get('score')}%" if item.get("score") else None),
+                    "score": item.get("score"),
+                    "streaming_links": item.get("streaming_links") or [],
+                    "source_url": item.get("source_url") or f"https://anilist.co/anime/{item.get('media_id')}",
+                    "source_name": "AniList",
+                    "published_at": datetime.now(timezone.utc),
+                }
+    return None
+
+
+_ANILIST_MEDIA_DETAIL_CACHE: dict[int, tuple[dict[str, Any], float]] = {}
+
+ANILIST_MEDIA_QUERY = """
+query ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    id
+    idMal
+    title {
+      romaji
+      english
+      native
+    }
+    coverImage {
+      extraLarge
+      large
+      medium
+      color
+    }
+    bannerImage
+    description(asHtml: false)
+    format
+    episodes
+    duration
+    status
+    season
+    seasonYear
+    source
+    averageScore
+    genres
+    studios(isMain: true) {
+      nodes {
+        name
+        siteUrl
+      }
+    }
+    nextAiringEpisode {
+      episode
+      airingAt
+      timeUntilAiring
+    }
+    externalLinks {
+      site
+      url
+      type
+    }
+    siteUrl
+  }
+}
+"""
+
+
+def fetch_anilist_media_by_id(media_id: int, timeout_seconds: float = 8.0) -> dict[str, Any] | None:
+    """Fetch complete anime media details from AniList GraphQL for single-anime pages."""
+    global _ANILIST_MEDIA_DETAIL_CACHE
+    now_mono = time.monotonic()
+    if media_id in _ANILIST_MEDIA_DETAIL_CACHE:
+        cached_data, expiry = _ANILIST_MEDIA_DETAIL_CACHE[media_id]
+        if expiry > now_mono:
+            return cached_data
+
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "query": ANILIST_MEDIA_QUERY,
+        "variables": {"id": media_id},
+    }
+    for attempt in range(1, 4):
+        try:
+            with httpx.Client(timeout=timeout_seconds, headers=headers) as client:
+                resp = client.post(ANILIST_GRAPHQL_URL, json=payload)
+                if resp.status_code == 429:
+                    retry_after = float(resp.headers.get("Retry-After", "2.0"))
+                    time.sleep(retry_after)
+                    continue
+                if resp.status_code != 200:
+                    logger.warning("AniList media query for ID %d returned HTTP %d", media_id, resp.status_code)
+                    return None
+                media = resp.json().get("data", {}).get("Media")
+                if not media:
+                    return None
+
+                titles = media.get("title") or {}
+                title_en = (titles.get("english") or titles.get("romaji") or f"Anime #{media_id}").strip()
+                title_romaji = (titles.get("romaji") or title_en).strip()
+                title_native = (titles.get("native") or "").strip()
+
+                cov = media.get("coverImage") or {}
+                image_url = cov.get("extraLarge") or cov.get("large") or cov.get("medium")
+
+                studios_nodes = (media.get("studios") or {}).get("nodes") or []
+                studio_name = normalize_studio_name(studios_nodes[0].get("name")) if studios_nodes else None
+
+                episodes_val = media.get("episodes")
+                next_airing = media.get("nextAiringEpisode") or {}
+                next_ep = next_airing.get("episode")
+                airing_at = next_airing.get("airingAt")
+
+                airing_day_time_ist = None
+                if airing_at:
+                    dt_ist = datetime.fromtimestamp(airing_at, tz=timezone.utc).astimezone(IST_TZ)
+                    days_hi_list = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+                    d_hi = days_hi_list[dt_ist.weekday()]
+                    d_en = dt_ist.strftime("%A")
+                    t_str = dt_ist.strftime("%I:%M %p IST").lstrip("0")
+                    airing_day_time_ist = f"{d_hi} ({d_en}), {t_str}"
+                    if next_ep:
+                        airing_day_time_ist += f" • एपिसोड {next_ep}"
+
+                raw_desc = media.get("description") or ""
+                clean_desc = clean_description(raw_desc)
+                title_hi, summary_hi, _ = get_hindi_title_and_summary(title_en, title_romaji, raw_desc, media=media)
+
+                streaming_links = extract_streaming_links(media.get("externalLinks"))
+
+                status_raw = media.get("status")
+                status_map = {
+                    "RELEASING": "प्रसारित हो रहा है (Airing)",
+                    "FINISHED": "पूर्ण (Finished)",
+                    "NOT_YET_RELEASED": "जल्द आ रहा है (Upcoming)",
+                    "CANCELLED": "रद्द (Cancelled)",
+                    "HIATUS": "स्थगित (On Hiatus)",
+                }
+                status_display = status_map.get(status_raw, status_raw.title() if status_raw else None)
+
+                source_raw = media.get("source")
+                source_map = {
+                    "MANGA": "मंगा (Manga)",
+                    "LIGHT_NOVEL": "लाइट नॉवेल (Light Novel)",
+                    "VISUAL_NOVEL": "विजुअल नॉवेल (Visual Novel)",
+                    "ORIGINAL": "ओरिजिनल (Original)",
+                    "VIDEO_GAME": "वीडियो गेम (Video Game)",
+                    "WEB_NOVEL": "वेब नॉवेल (Web Novel)",
+                    "OTHER": "अन्य (Other)",
+                }
+                source_type = source_map.get(source_raw, source_raw.title() if source_raw else None)
+
+                season_val = media.get("season")
+                season_year = media.get("seasonYear")
+                season_display = None
+                if season_val and season_year:
+                    s_hi = {"WINTER": "शीतकालीन (Winter)", "SPRING": "वसंत (Spring)", "SUMMER": "ग्रीष्मकालीन (Summer)", "FALL": "शरदकालीन (Fall)"}.get(season_val, season_val.title())
+                    season_display = f"{s_hi} {season_year}"
+                elif season_year:
+                    season_display = str(season_year)
+
+                score_val = media.get("averageScore")
+                score_display = f"{score_val}%" if score_val else None
+
+                episodes_str = f"{episodes_val} एपिसोड" if episodes_val else ("प्रसारित हो रहा है" if status_raw == "RELEASING" else "TBA")
+
+                result = {
+                    "id": f"anilist_{media_id}",
+                    "media_id": media_id,
+                    "mal_id": media.get("idMal"),
+                    "content_type": "schedule",
+                    "title_en": title_en,
+                    "title_romaji": title_romaji,
+                    "title_native": title_native,
+                    "title_hi": title_hi,
+                    "summary_en": clean_desc,
+                    "summary_hi": summary_hi,
+                    "image_url": image_url,
+                    "banner_url": media.get("bannerImage"),
+                    "studio": studio_name,
+                    "episodes": episodes_str,
+                    "airing_day_time_ist": airing_day_time_ist,
+                    "genres": media.get("genres") or [],
+                    "source_type": source_type,
+                    "season_display": season_display,
+                    "status_display": status_display,
+                    "status": status_raw,
+                    "anilist_score": score_display,
+                    "score": score_val,
+                    "streaming_links": streaming_links,
+                    "source_url": media.get("siteUrl") or f"https://anilist.co/anime/{media_id}",
+                    "source_name": "AniList",
+                    "published_at": datetime.now(timezone.utc),
+                }
+
+                _ANILIST_MEDIA_DETAIL_CACHE[media_id] = (result, now_mono + 3600.0)
+                return result
+        except Exception as exc:
+            logger.warning("Failed to fetch AniList media detail for %d: %s", media_id, exc)
+            return None
+    return None
+
+
 

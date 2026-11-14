@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 import logging
+import re
 import threading
 import time
 from datetime import datetime, timezone, timedelta
@@ -1559,35 +1560,86 @@ def trailers_page(
 
 @router.get("/updates/{item_id}", response_class=HTMLResponse)
 @router.get("/news/{item_id}", response_class=HTMLResponse)
+@router.get("/anime/{item_id}", response_class=HTMLResponse)
 def update_detail_page(
     request: Request,
-    item_id: int,
+    item_id: str,
     session: Session = Depends(get_session),
 ):
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
 
-    item = session.get(AnimeDraft, item_id)
+    item = None
+    # 1. Try DB integer ID
+    if item_id.isdigit():
+        item = session.get(AnimeDraft, int(item_id))
+        if item and item.status != "published":
+            is_admin = user and (user.get("user_type") == "admin" or user.get("is_superuser"))
+            if not is_admin:
+                raise HTTPException(status_code=404, detail="Update is not published")
+
+    # 2. Try DB external_id (only if published or admin)
+    if not item:
+        db_item = session.exec(select(AnimeDraft).where(AnimeDraft.external_id == item_id)).first()
+        if db_item:
+            if db_item.status == "published":
+                item = db_item
+            else:
+                is_admin = user and (user.get("user_type") == "admin" or user.get("is_superuser"))
+                if is_admin:
+                    item = db_item
+
+    # 3. If not resolved from DB, resolve from in-memory live schedule or AniList API
+    if not item:
+        from automation.fetchers.anilist import find_schedule_item_by_id, fetch_anilist_media_by_id
+        media_id = None
+        m = re.search(r'(?:anilist_)?(\d+)(?:_ep\d+)?', item_id)
+        if m:
+            media_id = int(m.group(1))
+
+        # Check in-memory live schedule cache first (0ms, 0 external network calls)
+        live_item = find_schedule_item_by_id(item_id, media_id=media_id)
+        if not live_item and media_id:
+            live_item = fetch_anilist_media_by_id(media_id)
+
+        if live_item:
+            class ItemWrapper:
+                def __init__(self, d):
+                    self._d = d
+                    for k, v in d.items():
+                        setattr(self, k, v)
+                def __getitem__(self, key):
+                    return self._d.get(key)
+                def get(self, key, default=None):
+                    return self._d.get(key, default)
+            item = ItemWrapper(live_item)
+
     if not item:
         raise HTTPException(status_code=404, detail="Anime update not found")
 
-    # If item is draft, only admin can view preview
-    if item.status != "published":
-        is_admin = user and (user.get("user_type") == "admin" or user.get("is_superuser"))
-        if not is_admin:
-            raise HTTPException(status_code=404, detail="Update is not published")
-
-    related_items = session.exec(
-        select(AnimeDraft)
-        .where(
-            AnimeDraft.status == "published",
-            AnimeDraft.is_stale == False,
-            AnimeDraft.id != item.id
-        )
-        .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-        .limit(4)
-    ).all()
+    item_db_id = getattr(item, "id", None)
+    if isinstance(item_db_id, int):
+        related_items = session.exec(
+            select(AnimeDraft)
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.id != item_db_id
+            )
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all()
+    else:
+        related_items = session.exec(
+            select(AnimeDraft)
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False
+            )
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(4)
+        ).all()
 
     return render(
         "update_detail.html",

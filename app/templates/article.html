@@ -1,5 +1,6 @@
 
 {% extends "base.html" %}
+{% from "components/macros.html" import render_share_buttons %}
 
 {% block title %}{{ article.title }} | {{ site.name }}{% endblock %}
 
@@ -177,6 +178,11 @@
     <button @click="reportOpen = true" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-600 hover:text-red-600 text-sm font-semibold transition">
       <i class="fas fa-flag"></i> रिपोर्ट करें
     </button>
+  </div>
+
+  <!-- सोशल शेयरिंग रो -->
+  <div class="mb-6">
+    {{ render_share_buttons(article.title, request.url) }}
   </div>
 
   <!-- मोबाइल TOC एकॉर्डियन -->

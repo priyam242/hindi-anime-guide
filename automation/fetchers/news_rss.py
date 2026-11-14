@@ -140,11 +140,7 @@ def extract_image_from_item(item_elem: ET.Element, raw_description: str, title: 
             if img_url.startswith("http"):
                 return img_url
 
-    # 4. Search AniList cover by clean title
-    cover = search_anilist_cover(title)
-    if cover:
-        return cover
-
+    # Strict: Never use fuzzy AniList manga/anime covers for news articles (prevents unrelated covers)
     return None
 
 
