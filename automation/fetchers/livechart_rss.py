@@ -137,14 +137,29 @@ def _normalize_rss_item(item: ET.Element, resolve_covers: bool = True) -> dict[s
     if resolve_covers:
         cover_image_url = search_anilist_cover(title_raw)
 
+    # Determine source credit and preferred article URL
+    # Rule: For LiveChart items whose source_url is x.com, keep credit but label them "Tweet"
+    # and prefer the LiveChart article URL if available.
+    is_tweet = "x.com" in link_raw.lower() or "twitter.com" in link_raw.lower()
+    livechart_article_url = guid_raw if ("livechart.me/headlines/" in (guid_raw or "")) else None
+
+    if is_tweet:
+        source_name = "Tweet"
+        final_source_url = livechart_article_url or link_raw or "https://www.livechart.me"
+    else:
+        source_name = "LiveChart.me"
+        final_source_url = link_raw or guid_raw or "https://www.livechart.me"
+
     return {
         "external_id": external_id,
         "content_type": "news",
-        "source_name": "LiveChart.me",
-        "source_url": link_raw or guid_raw or "https://www.livechart.me",
+        "source_name": source_name,
+        "source_url": final_source_url,
+        "tweet_url": link_raw if is_tweet else None,
         "title_en": title_raw,
         "title_romaji": title_raw,
         "title_english": title_raw,
+        "published_at": pub_date_iso,
         "pub_date_iso": pub_date_iso,
         "raw_summary": clean_desc,
         "image_url": cover_image_url,

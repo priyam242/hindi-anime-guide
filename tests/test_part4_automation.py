@@ -235,3 +235,96 @@ def test_github_actions_workflow_file_exists():
     assert "secrets.GEMINI_API_KEY" in content
     assert "concurrency:" in content
     assert "timeout-minutes: 15" in content
+
+
+def test_translation_number_and_date_validator():
+    """Verify that Gemini outputs containing unauthorized dates/numbers are rejected."""
+    from automation.rewriter import validate_translation_numbers_and_dates
+
+    source_facts = {
+        "title_en": "Solo Leveling Season 2 Episode 13 Announcement",
+        "raw_summary": "Episode 13 is scheduled for broadcast on 2025-01-05.",
+        "chapter_number": 13,
+    }
+
+    # 1. Valid translation with exact matching numbers
+    valid_translation = {
+        "title_en": "Solo Leveling Season 2 Episode 13 Announcement",
+        "title_hi": "सोलो लेवलिंग सीज़न 2 एपिसोड 13 की आधिकारिक घोषणा",
+        "summary_en": "Episode 13 broadcast on 2025-01-05.",
+        "summary_hi": "एपिसोड 13 का प्रसारण 2025-01-05 को किया जाएगा।",
+    }
+    is_valid, reason = validate_translation_numbers_and_dates(source_facts, valid_translation)
+    assert is_valid is True
+
+    # 2. Hallucinated year (e.g. 2026 instead of 2025)
+    invalid_translation = {
+        "title_en": "Solo Leveling Season 2 Episode 13 Announcement",
+        "title_hi": "सोलो लेवलिंग सीज़न 2 एपिसोड 13 की घोषणा 2026 में",
+        "summary_en": "Episode 13 broadcast on 2025-01-05.",
+        "summary_hi": "एपिसोड 13 का प्रसारण 2026 में किया जाएगा।",
+    }
+    is_valid, reason = validate_translation_numbers_and_dates(source_facts, invalid_translation)
+    assert is_valid is False
+    assert "2026" in reason
+
+    # 3. Hallucinated episode number (e.g. episode 24 when source had 13)
+    invalid_ep_translation = {
+        "title_en": "Solo Leveling Season 2 Episode 13 Announcement",
+        "title_hi": "सोलो लेवलिंग सीज़न 2 एपिसोड 24 की घोषणा",
+        "summary_en": "Episode 13 broadcast on 2025-01-05.",
+        "summary_hi": "एपिसोड 24 का प्रसारण विवरण।",
+    }
+    is_valid, reason = validate_translation_numbers_and_dates(source_facts, invalid_ep_translation)
+    assert is_valid is False
+    assert "24" in reason
+
+
+def test_pipeline_deduplication_and_publishing_rules(isolate_database_per_test):
+    """Verify composite deduplication and strict publishing rules."""
+    from automation.saver import is_duplicate_pipeline_item, save_draft
+    from sqlmodel import SQLModel
+    test_engine = isolate_database_per_test
+    SQLModel.metadata.create_all(test_engine)
+
+    # 1. Test composite deduplication
+    draft_data = {
+        "external_id": "test_rule_ext_1",
+        "source_name": "AniList",
+        "source_url": "https://anilist.co/anime/99999",
+        "anilist_id": 99999,
+        "title_en": "Deduplication Test Anime",
+        "title_hi": "डुप्लीकेशन टेस्ट एनीमे",
+        "summary_en": "This is a comprehensive test summary describing the newly added anime show for deduplication testing in our test suite.",
+        "summary_hi": "यह हमारे टेस्ट सुइट में डिडुप्लीकेशन टेस्टिंग के लिए जोड़े गए नए एनीमे शो का विवरण देने वाला एक व्यापक सारांश है।",
+        "published_at": datetime(2025, 2, 1, tzinfo=timezone.utc),
+        "season_year": 2025,
+        "status": "draft",
+    }
+    success, res_id = save_draft(draft_data, check_near_duplicates=False, engine=test_engine)
+    assert success is True
+
+    # Same anilist_id and season_year must be identified as duplicate
+    assert is_duplicate_pipeline_item(anilist_id=99999, season_year=2025, engine=test_engine) is True
+
+    # Same normalized title + source_url must be identified as duplicate
+    assert is_duplicate_pipeline_item(title_en="Deduplication Test Anime!", source_url="https://anilist.co/anime/99999", engine=test_engine) is True
+
+    # 2. Strict publishing rule: Draft cannot be saved with status='published' if source_url or published_at is missing
+    draft_no_pub = {
+        "external_id": "test_rule_ext_2",
+        "source_name": "AniList",
+        "source_url": "https://anilist.co/anime/88888",
+        "title_en": "Unpublished Draft Missing Date",
+        "summary_en": "A long editorial summary to satisfy word count requirements cleanly for this unit test.",
+        "summary_hi": "इस यूनिट टेस्ट के लिए शब्द संख्या आवश्यकताओं को पूरा करने के लिए एक लंबा संपादकीय सारांश।",
+        "published_at": None,
+        "status": "published",  # Requests published!
+    }
+    success, draft_id = save_draft(draft_no_pub, check_near_duplicates=False, engine=test_engine)
+    assert success is True
+    with Session(test_engine) as session:
+        saved = session.get(AnimeDraft, draft_id)
+        # Forced to needs_review because published_at is missing!
+        assert saved.status == "needs_review"
+

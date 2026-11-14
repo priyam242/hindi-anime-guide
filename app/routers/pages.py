@@ -1,9 +1,12 @@
 
 """Public pages router: Home, Explore/Search, Article, Category, Info pages, Sitemap, Robots."""
 from __future__ import annotations
+import json
+import logging
+import threading
 import time
-from datetime import datetime, timezone
-from typing import List, Optional, Dict
+from datetime import datetime, timezone, timedelta
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlmodel import Session, select
@@ -14,37 +17,63 @@ from .. import db
 from ..db import get_session
 from ..models import (
     Category, Article, Availability, Comment, Platform, Bookmark,
-    Notification, Admin1, AnimeDraft,
+    Notification, Admin1, AnimeDraft, AwardCeremony, AwardEntry,
 )
 from ..markdown_utils import render_markdown_with_toc
-from ..templates_config import render
+from ..templates_config import render, extract_episode, extract_youtube_id
+from automation.fetchers.anilist import (
+    fetch_live_weekly_schedule,
+    get_season_cycle,
+    normalize_studio_name,
+    PLATFORM_CLASSES,
+    IST_TZ,
+)
+from automation.fetchers.trailers import fetch_live_trailers
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # In-memory rate-limiting for reporting outdated availability info (IP -> list of timestamps)
 _report_rate_limit: Dict[str, List[float]] = {}
 
 # ---------------------------------------------------------
-# In-Memory Performance Caching (reduces remote DB round-trips)
+# In-Memory SWR (Stale-While-Revalidate) Caching
+# - Fresh: Return cache immediately (0 ms delay)
+# - Stale: Return cache immediately and refresh via background thread (0 ms visitor delay)
+# - Cold: Compute synchronously on startup / first request
 # ---------------------------------------------------------
+SWR_FRESH_TTL: float = 300.0   # 5 minutes fresh
+SWR_STALE_TTL: float = 3600.0  # 60 minutes stale-while-revalidate window
+
 _CATEGORIES_CACHE: tuple[List[Category], float] | None = None
-CATEGORIES_CACHE_TTL: float = 60.0
+CATEGORIES_CACHE_TTL: float = 600.0
 
 _PLATFORMS_CACHE: tuple[List[Platform], float] | None = None
-PLATFORMS_CACHE_TTL: float = 60.0
+PLATFORMS_CACHE_TTL: float = 600.0
 
-_HOME_CACHE: tuple[dict, float] | None = None
-HOME_CACHE_TTL: float = 15.0
+_HOME_CACHE: dict[str, Any] | None = None
+HOME_CACHE_TTL: float = 300.0
 
 _DEFAULT_EXPLORE_CACHE: tuple[List[Article], float] | None = None
 
-_NEWS_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
-_SCHEDULE_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
-_MANGA_CACHE: tuple[List[AnimeDraft], float] | None = None
-_AWARDS_CACHE: tuple[List[AnimeDraft], float] | None = None
-_TRAILERS_CACHE: Dict[tuple[int, int], tuple[List[AnimeDraft], int, float]] = {}
+_NEWS_CACHE: Dict[tuple[int, int, Optional[str], bool], tuple[List[AnimeDraft], int, Optional[AnimeDraft], List[AnimeDraft], float]] = {}
+_SCHEDULE_CACHE: Dict[tuple[Optional[str], Optional[int]], dict[str, Any]] = {}
+_MANGA_CACHE: dict[str, Any] | None = None
+_AWARDS_YEARS_CACHE: tuple[List[int], float] | None = None
+_AWARDS_CACHE: Dict[int, dict[str, Any]] = {}
+_TRAILERS_CACHE: Dict[tuple[int, int, str, int], tuple[list, int, float]] = {}
+
+NEWS_CATEGORIES = [
+    {"slug": "Announcement", "name_en": "Announcement", "name_hi": "घोषणाएं", "icon": "fa-bullhorn", "badge_class": "bg-blue-600"},
+    {"slug": "Trailer", "name_en": "Trailer", "name_hi": "ट्रेलर्स", "icon": "fa-film", "badge_class": "bg-pink-600"},
+    {"slug": "Release Date", "name_en": "Release Date", "name_hi": "रिलीज़ डेट्स", "icon": "fa-calendar-check", "badge_class": "bg-emerald-600"},
+    {"slug": "Movie", "name_en": "Movie", "name_hi": "फ़िल्में", "icon": "fa-film", "badge_class": "bg-purple-600"},
+    {"slug": "Interview", "name_en": "Interview", "name_hi": "इंटरव्यू", "icon": "fa-microphone", "badge_class": "bg-amber-600"},
+    {"slug": "Event Recap", "name_en": "Event Recap", "name_hi": "इवेंट्स", "icon": "fa-award", "badge_class": "bg-indigo-600"},
+    {"slug": "Industry", "name_en": "Industry", "name_hi": "इंडस्ट्री", "icon": "fa-chart-line", "badge_class": "bg-teal-600"},
+]
 _UPDATES_HUB_CACHE: tuple[dict, float] | None = None
-HUB_CACHE_TTL: float = 20.0
+HUB_CACHE_TTL: float = 300.0
 
 
 def is_caching_enabled() -> bool:
@@ -53,18 +82,37 @@ def is_caching_enabled() -> bool:
     return get_settings().env.lower() not in ("test", "testing")
 
 
+def _revalidate_async(worker_fn, *args, **kwargs):
+    """Run SWR cache revalidation asynchronously in background thread with an isolated DB session.
+    Ensures zero delay for web visitors while caches stay continuously warm and up-to-date.
+    """
+    def _runner():
+        try:
+            from ..db import engine
+            with Session(engine) as bg_session:
+                worker_fn(bg_session, *args, **kwargs)
+        except Exception as exc:
+            import logging
+            logging.getLogger("app.routers.pages").error("SWR background revalidation error: %s", exc)
+
+    t = threading.Thread(target=_runner, daemon=True)
+    t.start()
+
+
 def invalidate_public_caches() -> None:
     """Invalidate all public page and metadata in-memory caches."""
-    global _CATEGORIES_CACHE, _PLATFORMS_CACHE, _HOME_CACHE, _DEFAULT_EXPLORE_CACHE, _MANGA_CACHE, _AWARDS_CACHE
+    global _CATEGORIES_CACHE, _PLATFORMS_CACHE, _HOME_CACHE, _DEFAULT_EXPLORE_CACHE, _MANGA_CACHE, _AWARDS_YEARS_CACHE, _AWARDS_CACHE, _NEWS_CACHE, _SCHEDULE_CACHE, _TRAILERS_CACHE, _UPDATES_HUB_CACHE
     _CATEGORIES_CACHE = None
     _PLATFORMS_CACHE = None
     _HOME_CACHE = None
     _DEFAULT_EXPLORE_CACHE = None
     _MANGA_CACHE = None
-    _AWARDS_CACHE = None
+    _AWARDS_YEARS_CACHE = None
+    _AWARDS_CACHE.clear()
     _NEWS_CACHE.clear()
     _SCHEDULE_CACHE.clear()
     _TRAILERS_CACHE.clear()
+    _UPDATES_HUB_CACHE = None
 
 
 def get_categories(session: Session) -> List[Category]:
@@ -128,13 +176,8 @@ def _related_articles(session: Session, article: Article) -> List[Article]:
     return related
 
 
-def get_home_page_data(session: Session) -> dict:
-    global _HOME_CACHE
-    caching = is_caching_enabled()
-    now = time.monotonic()
-    if caching and _HOME_CACHE and _HOME_CACHE[1] > now:
-        return _HOME_CACHE[0]
-
+def compute_home_page_data(session: Session) -> dict:
+    """Compute fresh homepage articles and latest updates factual payload."""
     articles = list(session.exec(
         select(Article)
         .where(Article.published_at.is_not(None))
@@ -161,22 +204,74 @@ def get_home_page_data(session: Session) -> dict:
         side_articles = other_articles[:3]
         grid_articles = other_articles[3:]
 
+    # Strict 14-day cutoff for Home latest updates
+    cutoff_14d = datetime.now(timezone.utc) - timedelta(days=14)
     latest_updates = list(session.exec(
         select(AnimeDraft)
-        .where(AnimeDraft.status == "published")
+        .where(
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+            AnimeDraft.published_at.is_not(None),
+            AnimeDraft.source_url.is_not(None),
+            AnimeDraft.source_url != "",
+            AnimeDraft.published_at >= cutoff_14d,
+        )
         .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-        .limit(5)
+        .limit(4)
     ).all())
 
-    data = {
+    return {
         "articles": articles,
         "latest_updates": latest_updates,
         "featured_article": featured_article,
         "side_articles": side_articles,
         "grid_articles": grid_articles,
     }
-    if caching:
-        _HOME_CACHE = (data, now + HOME_CACHE_TTL)
+
+
+def get_home_page_data(session: Session) -> dict:
+    """Stale-While-Revalidate Home page data getter."""
+    global _HOME_CACHE
+    caching = is_caching_enabled()
+    if not caching:
+        return compute_home_page_data(session)
+
+    now = time.monotonic()
+    if _HOME_CACHE:
+        # 1. Fresh Cache Hit (< SWR_FRESH_TTL)
+        if now < _HOME_CACHE["fresh_until"]:
+            return _HOME_CACHE["data"]
+
+        # 2. Stale Cache Hit (< SWR_STALE_TTL): Return immediately and refresh in background
+        if now < _HOME_CACHE["stale_until"]:
+            if not _HOME_CACHE.get("is_refreshing"):
+                _HOME_CACHE["is_refreshing"] = True
+
+                def _refresh_home(bg_s: Session):
+                    global _HOME_CACHE
+                    try:
+                        fresh = compute_home_page_data(bg_s)
+                        _HOME_CACHE = {
+                            "data": fresh,
+                            "fresh_until": time.monotonic() + SWR_FRESH_TTL,
+                            "stale_until": time.monotonic() + SWR_STALE_TTL,
+                            "is_refreshing": False,
+                        }
+                    except Exception:
+                        if _HOME_CACHE:
+                            _HOME_CACHE["is_refreshing"] = False
+
+                _revalidate_async(_refresh_home)
+            return _HOME_CACHE["data"]
+
+    # 3. Cold Cache Miss: Compute synchronously
+    data = compute_home_page_data(session)
+    _HOME_CACHE = {
+        "data": data,
+        "fresh_until": now + SWR_FRESH_TTL,
+        "stale_until": now + SWR_STALE_TTL,
+        "is_refreshing": False,
+    }
     return data
 
 
@@ -318,6 +413,88 @@ def explore_page(
     )
 
 
+def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _find_manga_for_article(session: Session, article: Article) -> Optional[dict[str, Any]]:
+    """Look up corresponding source manga metadata and progress for an anime guide article."""
+    anime_title = (article.anime_title_en or "").lower()
+    slug = (article.slug or "").lower()
+
+    manga_items = session.exec(
+        select(AnimeDraft).where(
+            AnimeDraft.content_type == "manga",
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+        )
+    ).all()
+
+    matched: Optional[AnimeDraft] = None
+    for m in manga_items:
+        m_en = (m.title_en or "").lower()
+        if anime_title and (anime_title in m_en or m_en in anime_title):
+            matched = m
+            break
+        for token in ["one-piece", "jujutsu-kaisen", "demon-slayer", "solo-leveling", "attack-on-titan", "death-note", "naruto", "dragon-ball", "spy-x-family", "haikyuu", "blue-lock", "frieren"]:
+            if token in slug and token.replace("-", " ") in m_en:
+                matched = m
+                break
+        if matched:
+            break
+
+    if not matched:
+        return None
+
+    links = []
+    if matched.official_links:
+        try:
+            links = json.loads(matched.official_links)
+        except Exception:
+            links = []
+
+    now_utc = datetime.now(timezone.utc)
+    dt_utc = _ensure_utc(matched.next_volume_date)
+    future_next_vol = matched.next_volume_date if (dt_utc and dt_utc > now_utc) else None
+    live_progress = matched.anime_progress if (matched.anime_progress and matched.anime_progress.strip()) else None
+
+    return {
+        "id": matched.id,
+        "title_en": matched.title_en,
+        "title_hi": matched.title_hi or matched.title_en,
+        "image_url": matched.image_url,
+        "status": matched.publication_status or "Ongoing",
+        "latest_chapter": matched.latest_chapter,
+        "chapters": matched.chapters,
+        "volumes": matched.volumes,
+        "score": matched.score,
+        "rank": matched.rank,
+        "next_volume_date": future_next_vol,
+        "anime_progress": live_progress,
+        "official_links": links,
+        "source_name": matched.source_name,
+        "source_url": matched.source_url,
+    }
+
+
+def _match_anime_article_for_manga(manga: AnimeDraft, articles: list[Article]) -> Optional[Article]:
+    """Find corresponding anime guide article in DB for a manga draft."""
+    m_en = (manga.title_en or "").lower()
+    for a in articles:
+        if a.anime_title_en and (a.anime_title_en.lower() in m_en or m_en in a.anime_title_en.lower()):
+            return a
+    for token in ["one-piece", "jujutsu-kaisen", "demon-slayer", "solo-leveling", "attack-on-titan", "death-note", "naruto", "dragon-ball", "spy-x-family", "haikyuu", "blue-lock", "frieren"]:
+        if token.replace("-", " ") in m_en:
+            for a in articles:
+                if token in (a.slug or "").lower():
+                    return a
+    return None
+
+
 # ---------- ARTICLE DETAIL ----------
 @router.get("/article/{slug}", response_class=HTMLResponse)
 def article_page(request: Request, slug: str, session: Session = Depends(get_session)):
@@ -350,6 +527,9 @@ def article_page(request: Request, slug: str, session: Session = Depends(get_ses
     content_html, toc_html = render_markdown_with_toc(article.content_md)
     valid_availabilities = [a for a in article.availabilities if getattr(a, "last_checked", None) is not None]
 
+    # Look up corresponding source manga and progress
+    manga_info = _find_manga_for_article(session, article)
+
     is_bookmarked = False
     user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
     user_type = user.get("user_type") if isinstance(user, dict) else "user"
@@ -371,6 +551,7 @@ def article_page(request: Request, slug: str, session: Session = Depends(get_ses
         is_bookmarked=is_bookmarked,
         content_html=content_html,
         toc_html=toc_html,
+        manga_info=manga_info,
         request=request,
     )
 
@@ -495,14 +676,21 @@ def updates_hub_page(
         # 1. Latest News (try pure news, fallback to latest published updates)
         news_items = list(session.exec(
             select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "news")
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.content_type == "news"
+            )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
         ).all())
         if not news_items:
             news_items = list(session.exec(
                 select(AnimeDraft)
-                .where(AnimeDraft.status == "published")
+                .where(
+                    AnimeDraft.status == "published",
+                    AnimeDraft.is_stale == False
+                )
                 .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
                 .limit(4)
             ).all())
@@ -510,7 +698,11 @@ def updates_hub_page(
         # 2. Season Schedule / Airing
         schedule_items = list(session.exec(
             select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "schedule")
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.content_type == "schedule"
+            )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
         ).all())
@@ -518,7 +710,11 @@ def updates_hub_page(
         # 3. Manga Updates
         manga_items = list(session.exec(
             select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "manga")
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.content_type == "manga"
+            )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
         ).all())
@@ -526,7 +722,11 @@ def updates_hub_page(
         # 4. Awards
         award_items = list(session.exec(
             select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "award")
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.content_type == "award"
+            )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
         ).all())
@@ -570,6 +770,7 @@ def updates_hub_page(
 
 
 @router.get("/news", response_class=HTMLResponse)
+@router.get("/news/archive", response_class=HTMLResponse)
 def news_page(
     request: Request,
     page: int = Query(1, ge=1),
@@ -580,24 +781,44 @@ def news_page(
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
+    is_archive = request.url.path.rstrip("/").endswith("/archive")
 
     caching = is_caching_enabled()
     now = time.monotonic()
-    cache_key = (page, per_page, category)
+    cache_key = (page, per_page, category, is_archive)
     cached = _NEWS_CACHE.get(cache_key) if caching else None
-    if cached and cached[2] > now:
-        items, total_count = cached[0], cached[1]
+    if cached and cached[4] > now:
+        items, total_count, featured_item, editor_picks = cached[0], cached[1], cached[2], cached[3]
     else:
-        if category and category in ["news", "schedule", "manga", "award", "trailer"]:
-            base_query = select(AnimeDraft).where(
-                AnimeDraft.status == "published",
-                AnimeDraft.content_type == category,
-            )
-        else:
-            base_query = select(AnimeDraft).where(
-                AnimeDraft.status == "published",
-                AnimeDraft.content_type.in_(["news", "schedule", "manga", "award", "trailer"]),
-            )
+        # Strict editorial news base query: published, not stale, verified source_url & factual published_at
+        base_query = select(AnimeDraft).where(
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+            AnimeDraft.published_at.is_not(None),
+            AnimeDraft.source_url.is_not(None),
+            AnimeDraft.source_url != "",
+        )
+
+        cutoff_30d = datetime.now(timezone.utc) - timedelta(days=30)
+        if not is_archive:
+            base_query = base_query.where(AnimeDraft.published_at >= cutoff_30d)
+
+        # Category Filter (7 standard categories + content_type fallback)
+        if category and category != "all":
+            valid_cats = {c["slug"] for c in NEWS_CATEGORIES}
+            if category in valid_cats:
+                if category == "Trailer":
+                    base_query = base_query.where(
+                        or_(
+                            AnimeDraft.news_category == "Trailer",
+                            AnimeDraft.content_type == "trailer",
+                        )
+                    )
+                else:
+                    base_query = base_query.where(AnimeDraft.news_category == category)
+            elif category in ["news", "schedule", "manga", "award", "trailer"]:
+                base_query = base_query.where(AnimeDraft.content_type == category)
+
         total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
         offset = (page - 1) * per_page
         items = list(session.exec(
@@ -605,8 +826,55 @@ def news_page(
             .offset(offset)
             .limit(per_page)
         ).all())
+
+        # Editorial Highlights (AnimeCorner-style Featured Hero & Editor's Picks on Page 1)
+        featured_item = None
+        editor_picks = []
+        if page == 1:
+            feat_query = select(AnimeDraft).where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.is_featured == True,
+                AnimeDraft.published_at.is_not(None),
+                AnimeDraft.source_url.is_not(None),
+            )
+            if not is_archive:
+                feat_query = feat_query.where(AnimeDraft.published_at >= cutoff_30d)
+            featured_item = session.exec(feat_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())).first()
+
+            if not featured_item and items:
+                featured_item = items[0]
+
+            ed_query = select(AnimeDraft).where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.is_editor_pick == True,
+                AnimeDraft.published_at.is_not(None),
+                AnimeDraft.source_url.is_not(None),
+            )
+            if not is_archive:
+                ed_query = ed_query.where(AnimeDraft.published_at >= cutoff_30d)
+            if featured_item:
+                ed_query = ed_query.where(AnimeDraft.id != featured_item.id)
+            editor_picks = list(session.exec(ed_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc()).limit(4)).all())
+
+            if len(editor_picks) < 3:
+                excluded = {featured_item.id} if featured_item else set()
+                excluded.update(e.id for e in editor_picks)
+                fill_query = select(AnimeDraft).where(
+                    AnimeDraft.status == "published",
+                    AnimeDraft.is_stale == False,
+                    AnimeDraft.published_at.is_not(None),
+                    AnimeDraft.source_url.is_not(None),
+                    AnimeDraft.id.notin_(excluded),
+                )
+                if not is_archive:
+                    fill_query = fill_query.where(AnimeDraft.published_at >= cutoff_30d)
+                fill_items = list(session.exec(fill_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc()).limit(3 - len(editor_picks))).all())
+                editor_picks.extend(fill_items)
+
         if caching:
-            _NEWS_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
+            _NEWS_CACHE[cache_key] = (items, total_count, featured_item, editor_picks, now + HUB_CACHE_TTL)
 
     total_pages = max(1, (total_count + per_page - 1) // per_page)
 
@@ -614,10 +882,14 @@ def news_page(
         "news.html",
         categories=categories,
         items=items,
+        featured_item=featured_item,
+        editor_picks=editor_picks,
+        news_categories=NEWS_CATEGORIES,
         page=page,
         total_pages=total_pages,
         total_count=total_count,
         current_news_category=category,
+        is_archive=is_archive,
         lang=lang,
         user=user,
         active_nav="news",
@@ -625,44 +897,168 @@ def news_page(
     )
 
 
+def compute_schedule_page_data(session: Session, season: Optional[str] = None, year: Optional[int] = None) -> dict[str, Any]:
+    """Fetch and aggregate live weekly airing schedule and season premieres."""
+    schedule_data = fetch_live_weekly_schedule(season=season, year=year)
+    season_info = schedule_data.get("season_info") or get_season_cycle()
+    weekly_items = list(schedule_data.get("weekly_items") or [])
+    premiering_items = schedule_data.get("premiering_items") or []
+    today_idx = schedule_data.get("today_idx", 0)
+
+    # Query active non-stale database schedule drafts and merge
+    base_query = select(AnimeDraft).where(
+        AnimeDraft.status == "published",
+        AnimeDraft.is_stale == False,
+        AnimeDraft.content_type == "schedule",
+    )
+    db_items = list(session.exec(
+        base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+    ).all())
+
+    seen_titles = {str(item.get("title_en", "")).lower() for item in weekly_items}
+    for db_item in db_items:
+        title_en = db_item.title_en or ""
+        if title_en and title_en.lower() not in seen_titles:
+            airing_ts = int(db_item.published_at.timestamp()) if db_item.published_at else 0
+            if db_item.published_at:
+                dt_ist = db_item.published_at.astimezone(IST_TZ) if db_item.published_at.tzinfo else db_item.published_at.replace(tzinfo=timezone.utc).astimezone(IST_TZ)
+            else:
+                dt_ist = datetime.now(IST_TZ)
+            ep_num = extract_episode(db_item.external_id) or extract_episode(db_item.title_en)
+            has_hindi = bool(getattr(db_item, "hindi_dub", False))
+            dub_links = []
+            if getattr(db_item, "dub_platform", None):
+                p_name = db_item.dub_platform
+                p_cls = PLATFORM_CLASSES.get(p_name, {"name": p_name, "short": p_name[:2].upper(), "class": "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"})
+                dub_links.append({
+                    "name": p_cls["name"],
+                    "short": p_cls["short"],
+                    "url": getattr(db_item, "dub_source_url", "") or "#",
+                    "class": p_cls["class"],
+                })
+
+            item_dict = {
+                "id": db_item.id,
+                "media_id": db_item.anilist_id or db_item.id,
+                "mal_id": db_item.mal_id,
+                "episode": ep_num,
+                "airing_at": airing_ts,
+                "airing_at_iso": db_item.published_at.isoformat() if db_item.published_at else "",
+                "airing_ist_weekday": dt_ist.weekday(),
+                "airing_ist_time": db_item.airing_time or dt_ist.strftime("%I:%M %p IST").lstrip("0"),
+                "title_en": title_en,
+                "title_romaji": db_item.title_en,
+                "title_hi": db_item.title_hi or title_en,
+                "image_url": db_item.image_url,
+                "studio": normalize_studio_name("Official Studio"),
+                "source": "MANGA",
+                "source_display_hi": "मंगा",
+                "score": 85,
+                "score_display": "8.5",
+                "score_source": "AniList",
+                "popularity": 100000,
+                "popularity_display": "100.0k",
+                "members": 100000,
+                "members_display": "100.0k",
+                "streaming_links": dub_links,
+                "has_verified_hindi_dub": has_hindi,
+                "summary_en": db_item.summary_en or "",
+                "summary_hi": db_item.summary_hi or db_item.summary_en or "",
+                "source_url": db_item.source_url or "",
+                "status": "RELEASING",
+                "format": "TV",
+            }
+            weekly_items.insert(0, item_dict)
+            seen_titles.add(title_en.lower())
+
+    return {
+        "weekly_items": weekly_items,
+        "season_info": season_info,
+        "premiering_items": premiering_items,
+        "today_idx": today_idx,
+    }
+
+
+def get_schedule_page_data(session: Session, season: Optional[str] = None, year: Optional[int] = None) -> dict[str, Any]:
+    """Stale-While-Revalidate Schedule page data getter."""
+    global _SCHEDULE_CACHE
+    caching = is_caching_enabled()
+    if not caching:
+        return compute_schedule_page_data(session, season, year)
+
+    now = time.monotonic()
+    cache_key = (season.upper() if season else None, int(year) if year else None)
+    cached = _SCHEDULE_CACHE.get(cache_key)
+
+    if cached:
+        # 1. Fresh hit (< SWR_FRESH_TTL)
+        if now < cached["fresh_until"]:
+            return cached["data"]
+
+        # 2. Stale hit (< SWR_STALE_TTL): Serve immediately, refresh in background
+        if now < cached["stale_until"]:
+            if not cached.get("is_refreshing"):
+                cached["is_refreshing"] = True
+
+                def _refresh_sched(bg_s: Session):
+                    global _SCHEDULE_CACHE
+                    try:
+                        fresh = compute_schedule_page_data(bg_s, season, year)
+                        _SCHEDULE_CACHE[cache_key] = {
+                            "data": fresh,
+                            "fresh_until": time.monotonic() + SWR_FRESH_TTL,
+                            "stale_until": time.monotonic() + SWR_STALE_TTL,
+                            "is_refreshing": False,
+                        }
+                    except Exception:
+                        if cache_key in _SCHEDULE_CACHE:
+                            _SCHEDULE_CACHE[cache_key]["is_refreshing"] = False
+
+                _revalidate_async(_refresh_sched)
+            return cached["data"]
+
+    # 3. Cold miss
+    data = compute_schedule_page_data(session, season, year)
+    _SCHEDULE_CACHE[cache_key] = {
+        "data": data,
+        "fresh_until": now + SWR_FRESH_TTL,
+        "stale_until": now + SWR_STALE_TTL,
+        "is_refreshing": False,
+    }
+    return data
+
+
 @router.get("/schedule", response_class=HTMLResponse)
 def schedule_page(
     request: Request,
+    season: Optional[str] = Query(None),
+    year: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(24, ge=1, le=60),
+    per_page: int = Query(60, ge=1, le=150),
     session: Session = Depends(get_session),
 ):
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
 
-    caching = is_caching_enabled()
-    now = time.monotonic()
-    cache_key = (page, per_page)
-    cached = _SCHEDULE_CACHE.get(cache_key) if caching else None
-    if cached and cached[2] > now:
-        items, total_count = cached[0], cached[1]
-    else:
-        base_query = select(AnimeDraft).where(
-            AnimeDraft.status == "published",
-            AnimeDraft.content_type == "schedule",
-        )
-        total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
-        offset = (page - 1) * per_page
-        items = list(session.exec(
-            base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-            .offset(offset)
-            .limit(per_page)
-        ).all())
-        if caching:
-            _SCHEDULE_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
+    data = get_schedule_page_data(session, season, year)
+    weekly_items = data["weekly_items"]
+    season_info = data["season_info"]
+    premiering_items = data["premiering_items"]
+    today_idx = data["today_idx"]
 
+    total_count = len(weekly_items)
+    offset = (page - 1) * per_page
+    paged_items = weekly_items[offset : offset + per_page]
     total_pages = max(1, (total_count + per_page - 1) // per_page)
 
     return render(
         "schedule.html",
         categories=categories,
-        items=items,
+        items=weekly_items,
+        season_info=season_info,
+        premiering_items=premiering_items,
+        today_idx=today_idx,
         page=page,
         total_pages=total_pages,
         total_count=total_count,
@@ -673,71 +1069,362 @@ def schedule_page(
     )
 
 
+def compute_manga_page_data(session: Session) -> dict[str, Any]:
+    """Fetch and aggregate published manga updates, links, and ongoing/completed groups."""
+    items = list(session.exec(
+        select(AnimeDraft)
+        .where(
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+            AnimeDraft.content_type == "manga",
+            AnimeDraft.published_at.is_not(None)
+        )
+        .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+    ).all())
+
+    articles = list(session.exec(select(Article)).all())
+    anime_articles_map = {}
+    manga_links_map = {}
+    for m in items:
+        if m.id:
+            art = _match_anime_article_for_manga(m, articles)
+            if art:
+                anime_articles_map[m.id] = art
+            try:
+                manga_links_map[m.id] = json.loads(m.official_links) if m.official_links else []
+            except Exception:
+                manga_links_map[m.id] = []
+
+    now_utc = datetime.now(timezone.utc)
+    cutoff_7d = now_utc - timedelta(days=7)
+
+    this_week_chapters = [
+        m for m in items
+        if (m.publication_status or "").lower() in ("ongoing", "releasing")
+        and m.published_at and _ensure_utc(m.published_at) >= cutoff_7d
+    ]
+    ongoing_series = [m for m in items if (m.publication_status or "").lower() in ("ongoing", "releasing")]
+    completed_series = [m for m in items if (m.publication_status or "").lower() in ("completed", "finished")]
+
+    new_volumes = sorted(
+        [m for m in items if m.next_volume_date and _ensure_utc(m.next_volume_date) > now_utc],
+        key=lambda x: _ensure_utc(x.next_volume_date),
+    )
+
+    return {
+        "items": items,
+        "this_week_chapters": this_week_chapters,
+        "ongoing_series": ongoing_series,
+        "completed_series": completed_series,
+        "new_volumes": new_volumes,
+        "anime_articles_map": anime_articles_map,
+        "manga_links_map": manga_links_map,
+        "now_utc": now_utc,
+    }
+
+
+def get_manga_page_data(session: Session) -> dict[str, Any]:
+    """Stale-While-Revalidate Manga page data getter."""
+    global _MANGA_CACHE
+    caching = is_caching_enabled()
+    if not caching:
+        return compute_manga_page_data(session)
+
+    now = time.monotonic()
+    if _MANGA_CACHE:
+        # 1. Fresh hit
+        if now < _MANGA_CACHE["fresh_until"]:
+            return _MANGA_CACHE["data"]
+
+        # 2. Stale hit: Return immediately, refresh in background
+        if now < _MANGA_CACHE["stale_until"]:
+            if not _MANGA_CACHE.get("is_refreshing"):
+                _MANGA_CACHE["is_refreshing"] = True
+
+                def _refresh_manga(bg_s: Session):
+                    global _MANGA_CACHE
+                    try:
+                        fresh = compute_manga_page_data(bg_s)
+                        _MANGA_CACHE = {
+                            "data": fresh,
+                            "fresh_until": time.monotonic() + SWR_FRESH_TTL,
+                            "stale_until": time.monotonic() + SWR_STALE_TTL,
+                            "is_refreshing": False,
+                        }
+                    except Exception:
+                        if _MANGA_CACHE:
+                            _MANGA_CACHE["is_refreshing"] = False
+
+                _revalidate_async(_refresh_manga)
+            return _MANGA_CACHE["data"]
+
+    # 3. Cold miss
+    data = compute_manga_page_data(session)
+    _MANGA_CACHE = {
+        "data": data,
+        "fresh_until": now + SWR_FRESH_TTL,
+        "stale_until": now + SWR_STALE_TTL,
+        "is_refreshing": False,
+    }
+    return data
+
+
 @router.get("/manga", response_class=HTMLResponse)
 def manga_page(
     request: Request,
     page: int = Query(1, ge=1),
     session: Session = Depends(get_session),
 ):
-    global _MANGA_CACHE
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
 
-    caching = is_caching_enabled()
-    now = time.monotonic()
-    if caching and _MANGA_CACHE and _MANGA_CACHE[1] > now:
-        items = _MANGA_CACHE[0]
-    else:
-        items = list(session.exec(
-            select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "manga")
-            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-            .limit(24)
-        ).all())
-        if caching:
-            _MANGA_CACHE = (items, now + HUB_CACHE_TTL)
+    data = get_manga_page_data(session)
+    items = data["items"]
+    this_week_chapters = data["this_week_chapters"]
+    ongoing_series = data["ongoing_series"]
+    completed_series = data["completed_series"]
+    new_volumes = data["new_volumes"]
+    anime_articles_map = data["anime_articles_map"]
+    manga_links_map = data["manga_links_map"]
+    now_utc = data["now_utc"]
 
     return render(
         "manga.html",
         categories=categories,
         items=items,
+        this_week_chapters=this_week_chapters,
+        ongoing_series=ongoing_series,
+        completed_series=completed_series,
+        new_volumes=new_volumes,
+        anime_articles_map=anime_articles_map,
+        manga_links_map=manga_links_map,
         lang=lang,
         user=user,
+        now_utc=now_utc,
         active_nav="manga",
         request=request,
     )
 
 
+def compute_awards_page_data(session: Session, year: Optional[int] = None) -> dict[str, Any]:
+    """Fetch and aggregate verified award ceremonies, winner entries, and edition archives."""
+    available_years = list(session.exec(
+        select(AwardCeremony.edition_year)
+        .where(AwardCeremony.status == "verified")
+        .distinct()
+        .order_by(AwardCeremony.edition_year.desc())
+    ).all())
+
+    latest_year = available_years[0] if available_years else None
+    if not year or year not in available_years:
+        selected_year = latest_year
+    else:
+        selected_year = year
+
+    is_latest_edition = bool(latest_year and selected_year == latest_year)
+
+    ceremonies_data = []
+    hero_entry = None
+    hero_ceremony = None
+    hero_nominees = []
+    article_links_map = {}
+
+    if selected_year:
+        ceremonies = session.exec(
+            select(AwardCeremony)
+            .where(
+                AwardCeremony.edition_year == selected_year,
+                AwardCeremony.status == "verified",
+            )
+            .order_by(AwardCeremony.id)
+        ).all()
+
+        for c in ceremonies:
+            entries = session.exec(
+                select(AwardEntry)
+                .where(
+                    AwardEntry.ceremony_id == c.id,
+                    AwardEntry.status == "verified",
+                )
+                .order_by(AwardEntry.id)
+            ).all()
+
+            entries_with_nominees = []
+            for e in entries:
+                try:
+                    nominees = json.loads(e.nominee_media_ids) if e.nominee_media_ids else []
+                except Exception:
+                    nominees = []
+                entries_with_nominees.append((e, nominees))
+
+                if e.winner_title and e.id not in article_links_map:
+                    matched_art = session.exec(
+                        select(Article).where(
+                            or_(
+                                Article.anime_title_en.ilike(f"%{e.winner_title}%"),
+                                Article.title.ilike(f"%{e.winner_title}%"),
+                            )
+                        )
+                    ).first()
+                    if matched_art:
+                        article_links_map[e.id] = matched_art.slug
+
+            ceremonies_data.append({
+                "ceremony": c,
+                "entries": entries_with_nominees,
+            })
+
+            # Task 4: Anything older than the latest edition goes to the archive, never the hero
+            if is_latest_edition and not hero_entry and "crunchyroll" in c.name.lower():
+                for e in entries:
+                    if "anime of the year" in e.category.lower() or "grand prize" in e.category.lower():
+                        hero_entry = e
+                        hero_ceremony = c
+                        try:
+                            hero_nominees = json.loads(e.nominee_media_ids) if e.nominee_media_ids else []
+                        except Exception:
+                            hero_nominees = []
+                        break
+
+        if is_latest_edition and ceremonies_data and not hero_entry:
+            for c_block in ceremonies_data:
+                for (e, noms) in c_block["entries"]:
+                    cat_lower = e.category.lower()
+                    if "anime of the year" in cat_lower or "grand prize" in cat_lower:
+                        hero_entry = e
+                        hero_ceremony = c_block["ceremony"]
+                        hero_nominees = noms
+                        break
+                if hero_entry:
+                    break
+            if not hero_entry and ceremonies_data[0]["entries"]:
+                hero_entry, hero_nominees = ceremonies_data[0]["entries"][0]
+                hero_ceremony = ceremonies_data[0]["ceremony"]
+
+    # Archive summary for older years
+    archive_years = []
+    for y in available_years:
+        if y != latest_year:
+            c_count = len(session.exec(
+                select(AwardCeremony.id).where(
+                    AwardCeremony.edition_year == y,
+                    AwardCeremony.status == "verified",
+                )
+            ).all())
+            e_count = len(session.exec(
+                select(AwardEntry.id)
+                .join(AwardCeremony)
+                .where(
+                    AwardCeremony.edition_year == y,
+                    AwardCeremony.status == "verified",
+                    AwardEntry.status == "verified",
+                )
+            ).all())
+            archive_years.append({
+                "year": y,
+                "ceremonies_count": c_count,
+                "entries_count": e_count,
+            })
+
+    return {
+        "ceremonies_data": ceremonies_data,
+        "hero_entry": hero_entry,
+        "hero_ceremony": hero_ceremony,
+        "hero_nominees": hero_nominees,
+        "archive_years": archive_years,
+        "article_links_map": article_links_map,
+        "available_years": available_years,
+        "selected_year": selected_year,
+        "latest_year": latest_year,
+        "is_latest_edition": is_latest_edition,
+    }
+
+
+def get_awards_page_data(session: Session, year: Optional[int] = None) -> dict[str, Any]:
+    """Stale-While-Revalidate Awards page data getter."""
+    global _AWARDS_CACHE
+    caching = is_caching_enabled()
+    if not caching:
+        return compute_awards_page_data(session, year)
+
+    now = time.monotonic()
+    cache_key = year or 0
+    cached = _AWARDS_CACHE.get(cache_key)
+
+    if cached:
+        # 1. Fresh hit
+        if now < cached["fresh_until"]:
+            return cached["data"]
+
+        # 2. Stale hit: Return immediately, refresh in background
+        if now < cached["stale_until"]:
+            if not cached.get("is_refreshing"):
+                cached["is_refreshing"] = True
+
+                def _refresh_awards(bg_s: Session):
+                    global _AWARDS_CACHE
+                    try:
+                        fresh = compute_awards_page_data(bg_s, year)
+                        _AWARDS_CACHE[cache_key] = {
+                            "data": fresh,
+                            "fresh_until": time.monotonic() + SWR_FRESH_TTL,
+                            "stale_until": time.monotonic() + SWR_STALE_TTL,
+                            "is_refreshing": False,
+                        }
+                    except Exception:
+                        if cache_key in _AWARDS_CACHE:
+                            _AWARDS_CACHE[cache_key]["is_refreshing"] = False
+
+                _revalidate_async(_refresh_awards)
+            return cached["data"]
+
+    # 3. Cold miss
+    data = compute_awards_page_data(session, year)
+    _AWARDS_CACHE[cache_key] = {
+        "data": data,
+        "fresh_until": now + SWR_FRESH_TTL,
+        "stale_until": now + SWR_STALE_TTL,
+        "is_refreshing": False,
+    }
+    return data
+
+
 @router.get("/awards", response_class=HTMLResponse)
 def awards_page(
     request: Request,
-    page: int = Query(1, ge=1),
+    year: Optional[int] = Query(None),
     session: Session = Depends(get_session),
 ):
-    global _AWARDS_CACHE
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
 
-    caching = is_caching_enabled()
-    now = time.monotonic()
-    if caching and _AWARDS_CACHE and _AWARDS_CACHE[1] > now:
-        items = _AWARDS_CACHE[0]
-    else:
-        items = list(session.exec(
-            select(AnimeDraft)
-            .where(AnimeDraft.status == "published", AnimeDraft.content_type == "award")
-            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-            .limit(24)
-        ).all())
-        if caching:
-            _AWARDS_CACHE = (items, now + HUB_CACHE_TTL)
+    data = get_awards_page_data(session, year)
+    available_years = data["available_years"]
+    selected_year = data["selected_year"]
+    latest_year = data["latest_year"]
+    is_latest_edition = data["is_latest_edition"]
+    ceremonies_data = data["ceremonies_data"]
+    hero_entry = data["hero_entry"]
+    hero_ceremony = data["hero_ceremony"]
+    hero_nominees = data["hero_nominees"]
+    archive_years = data["archive_years"]
+    article_links_map = data["article_links_map"]
 
     return render(
         "awards.html",
         categories=categories,
-        items=items,
+        available_years=available_years,
+        selected_year=selected_year,
+        latest_year=latest_year,
+        is_latest_edition=is_latest_edition,
+        ceremonies_data=ceremonies_data,
+        hero_entry=hero_entry,
+        hero_ceremony=hero_ceremony,
+        hero_nominees=hero_nominees,
+        archive_years=archive_years,
+        article_links_map=article_links_map,
         lang=lang,
         user=user,
         active_nav="awards",
@@ -745,41 +1432,109 @@ def awards_page(
     )
 
 
+def prewarm_public_pages() -> dict[str, Any]:
+    """Pre-warm in-memory caches for Home, Schedule, Manga, and Awards pages.
+    Guarantees 0ms cold wait for incoming visitors across all Gunicorn workers.
+    """
+    from ..db import engine
+    stats = {}
+    try:
+        with Session(engine) as s:
+            get_categories(s)
+            get_platforms(s)
+            h = get_home_page_data(s)
+            stats["home_articles"] = len(h.get("articles", []))
+            sc = get_schedule_page_data(s, None, None)
+            stats["schedule_items"] = len(sc.get("weekly_items", []))
+            m = get_manga_page_data(s)
+            stats["manga_items"] = len(m.get("items", []))
+            a = get_awards_page_data(s, None)
+            stats["awards_ceremonies"] = len(a.get("ceremonies_data", []))
+    except Exception as e:
+        logger.debug(f"Prewarm skipped (e.g. database not initialized yet): {e}")
+    return stats
+
+
 @router.get("/trailers", response_class=HTMLResponse)
 def trailers_page(
     request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(12, ge=1, le=50),
+    season: Optional[str] = Query(None),
+    year: Optional[int] = Query(None),
     session: Session = Depends(get_session),
 ):
     categories = get_categories(session)
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
+    cycle = get_season_cycle()
+
+    target_season = (season or cycle["current"]["season"]).upper() if season != "all" else "all"
+    target_year = int(year or cycle["current"]["year"])
 
     caching = is_caching_enabled()
     now = time.monotonic()
-    cache_key = (page, per_page)
+    cache_key = (page, per_page, target_season, target_year)
     cached = _TRAILERS_CACHE.get(cache_key) if caching else None
     if cached and cached[2] > now:
         items, total_count = cached[0], cached[1]
     else:
-        base_query = select(AnimeDraft).where(
+        # 1. Fetch published trailers from DB
+        db_query = select(AnimeDraft).where(
             AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+            AnimeDraft.published_at.is_not(None),
+            AnimeDraft.source_url.is_not(None),
+            AnimeDraft.source_url != "",
             or_(
                 AnimeDraft.content_type == "trailer",
-                AnimeDraft.title_en.ilike("%trailer%"),
-                AnimeDraft.title_hi.ilike("%ट्रेलर%"),
-                AnimeDraft.summary_en.ilike("%trailer%"),
-                AnimeDraft.summary_hi.ilike("%ट्रेलर%"),
+                AnimeDraft.news_category == "Trailer",
             ),
         )
-        total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+        if target_season != "all":
+            db_query = db_query.where(
+                or_(
+                    AnimeDraft.season == target_season,
+                    AnimeDraft.season.is_(None),
+                )
+            )
+        db_trailers = list(session.exec(db_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())).all())
+
+        # 2. Fetch live trailers from AniList & official YouTube channel feeds
+        live_trailers = fetch_live_trailers(
+            season=target_season if target_season != "all" else None,
+            year=target_year if target_season != "all" else None,
+        )
+
+        # 3. Merge & Deduplicate by YouTube ID
+        all_trailers = []
+        seen_yt_ids = set()
+
+        for item in db_trailers:
+            yt_id = extract_youtube_id(item.source_url or "") or extract_youtube_id(item.external_id or "")
+            if yt_id:
+                seen_yt_ids.add(yt_id)
+            all_trailers.append(item)
+
+        for live in live_trailers:
+            yt_id = live.get("youtube_id")
+            if yt_id and yt_id not in seen_yt_ids:
+                seen_yt_ids.add(yt_id)
+                all_trailers.append(live)
+
+        # Sort strictly newest first by published_at
+        def _get_pub(x):
+            dt = getattr(x, "published_at", None) or (x.get("published_at") if isinstance(x, dict) else None)
+            if dt:
+                return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=timezone.utc)
+
+        all_trailers.sort(key=_get_pub, reverse=True)
+
+        total_count = len(all_trailers)
         offset = (page - 1) * per_page
-        items = list(session.exec(
-            base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-            .offset(offset)
-            .limit(per_page)
-        ).all())
+        items = all_trailers[offset : offset + per_page]
+
         if caching:
             _TRAILERS_CACHE[cache_key] = (items, total_count, now + HUB_CACHE_TTL)
 
@@ -792,6 +1547,9 @@ def trailers_page(
         page=page,
         total_pages=total_pages,
         total_count=total_count,
+        season_cycle=cycle,
+        current_season=target_season,
+        selected_year=target_year,
         lang=lang,
         user=user,
         active_nav="trailers",
@@ -822,7 +1580,11 @@ def update_detail_page(
 
     related_items = session.exec(
         select(AnimeDraft)
-        .where(AnimeDraft.status == "published", AnimeDraft.id != item.id)
+        .where(
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+            AnimeDraft.id != item.id
+        )
         .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
         .limit(4)
     ).all()
@@ -1173,5 +1935,74 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
 </urlset>"""
 
     return Response(content=xml_content, media_type="application/xml")
+
+
+@router.get("/placeholder.svg", response_class=Response)
+def dynamic_placeholder_svg(
+    title: Optional[str] = Query("Hindi Anime Guide"),
+    category: Optional[str] = Query(None),
+    color: Optional[str] = Query(None),
+):
+    """Generate a clean, high-contrast, theme-consistent SVG placeholder.
+
+    Rule: Never use unrelated anime posters as fallbacks.
+    Displays post title and category accent colour.
+    """
+    import html
+    safe_title = html.escape((title or "Hindi Anime Guide").strip())
+    if len(safe_title) > 50:
+        safe_title = safe_title[:47] + "..."
+
+    cat_colors = {
+        "News": "#3b82f6",
+        "Announcement": "#3b82f6",
+        "Trailer": "#ec4899",
+        "Release Date": "#10b981",
+        "Schedule": "#8b5cf6",
+        "Manga": "#f59e0b",
+        "Awards": "#eab308",
+        "Award": "#eab308",
+        "Movie": "#a855f7",
+    }
+    accent = color if (color and color.startswith("#")) else cat_colors.get(category or "", "#6366f1")
+    cat_label = html.escape((category or "Anime Guide").upper())
+
+    line1 = safe_title[:25]
+    line2 = safe_title[25:50] if len(safe_title) > 25 else ""
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="{accent}" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="{accent}" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)" />
+  <rect x="20" y="20" width="360" height="520" rx="16" fill="url(#glow)" stroke="{accent}" stroke-opacity="0.3" stroke-width="2" />
+
+  <!-- Category Badge -->
+  <rect x="50" y="50" width="130" height="30" rx="6" fill="{accent}" fill-opacity="0.2" stroke="{accent}" stroke-opacity="0.4" />
+  <text x="115" y="70" fill="{accent}" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="1">{cat_label}</text>
+
+  <!-- Anime Icon -->
+  <circle cx="200" cy="220" r="54" fill="{accent}" fill-opacity="0.15" />
+  <circle cx="200" cy="220" r="42" fill="{accent}" fill-opacity="0.25" />
+  <path d="M190 195 L222 220 L190 245 Z" fill="#ffffff" opacity="0.9" />
+
+  <!-- Title Text -->
+  <text x="200" y="330" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="700" text-anchor="middle">
+    <tspan x="200" dy="0">{line1}</tspan>
+    {f'<tspan x="200" dy="24">{line2}</tspan>' if line2 else ''}
+  </text>
+
+  <text x="200" y="440" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" text-anchor="middle">Hindi Anime Guide</text>
+  <text x="200" y="465" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">आधिकारिक एनीमे एवं मंगा गाइड</text>
+</svg>"""
+    return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
 
 

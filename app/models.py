@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional, Any
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, date as py_date
 from sqlalchemy import CheckConstraint, UniqueConstraint, Column, Text, func, Index
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
@@ -553,6 +553,12 @@ class AnimeDraft(SQLModel, table=True):
         Index("ix_anime_draft_status", "status"),
         Index("ix_anime_draft_content_type", "content_type"),
         Index("ix_anime_draft_status_published", "status", "published_at"),
+        Index("ix_anime_draft_is_stale", "is_stale"),
+        Index("ix_anime_draft_anilist_id", "anilist_id"),
+        Index("ix_anime_draft_mal_id", "mal_id"),
+        Index("ix_anime_draft_is_featured", "is_featured"),
+        Index("ix_anime_draft_is_editor_pick", "is_editor_pick"),
+        Index("ix_anime_draft_news_category", "news_category"),
     )
     id: Optional[int] = Field(default=None, primary_key=True)
     content_type: str = Field(default="schedule", max_length=50)
@@ -565,13 +571,68 @@ class AnimeDraft(SQLModel, table=True):
     summary_en: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     summary_hi: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     image_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
+    news_category: Optional[str] = Field(default="Announcement", max_length=50, nullable=True)
+    is_featured: bool = Field(default=False, nullable=False)
+    is_editor_pick: bool = Field(default=False, nullable=False)
     chapters: Optional[int] = Field(default=None, nullable=True)
     volumes: Optional[int] = Field(default=None, nullable=True)
     publication_status: Optional[str] = Field(default=None, max_length=50, nullable=True)
     airing_day: Optional[str] = Field(default=None, max_length=20, nullable=True)
     airing_time: Optional[str] = Field(default=None, max_length=50, nullable=True)
     published_at: Optional[datetime] = Field(default=None, nullable=True)
+    fetched_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
+    anilist_id: Optional[int] = Field(default=None, nullable=True)
+    mal_id: Optional[int] = Field(default=None, nullable=True)
+    season: Optional[str] = Field(default=None, max_length=20, nullable=True)
+    season_year: Optional[int] = Field(default=None, nullable=True)
+    is_stale: bool = Field(default=False, nullable=False)
+    latest_chapter: Optional[str] = Field(default=None, max_length=50, nullable=True)
+    next_volume_date: Optional[datetime] = Field(default=None, nullable=True)
+    score: Optional[float] = Field(default=None, nullable=True)
+    rank: Optional[int] = Field(default=None, nullable=True)
+    official_links: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    anime_progress: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    hindi_dub: bool = Field(default=False, nullable=False)
+    dub_platform: Optional[str] = Field(default=None, max_length=100, nullable=True)
+    dub_source_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AwardCeremony(SQLModel, table=True):
+    model_config = {"ignored_types": (hybrid_property,)}
+    __tablename__ = "award_ceremony"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(max_length=200)
+    name_hi: Optional[str] = Field(default=None, max_length=200, nullable=True)
+    edition_year: int = Field(index=True)
+    date: Optional[py_date] = Field(default=None, nullable=True)
+    location: Optional[str] = Field(default=None, max_length=200, nullable=True)
+    source_url: str = Field(max_length=500)
+    status: str = Field(default="verified", max_length=50)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    entries: list["AwardEntry"] = Relationship(back_populates="ceremony")
+
+
+class AwardEntry(SQLModel, table=True):
+    model_config = {"ignored_types": (hybrid_property,)}
+    __tablename__ = "award_entry"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ceremony_id: int = Field(foreign_key="award_ceremony.id", index=True)
+    category: str = Field(max_length=200)
+    category_hi: Optional[str] = Field(default=None, max_length=200, nullable=True)
+    winner_media_id: int = Field(index=True)
+    winner_title: Optional[str] = Field(default=None, max_length=300, nullable=True)
+    winner_title_hi: Optional[str] = Field(default=None, max_length=300, nullable=True)
+    winner_poster: Optional[str] = Field(default=None, max_length=500, nullable=True)
+    nominee_media_ids: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    source_url: str = Field(max_length=500)
+    status: str = Field(default="verified", max_length=50)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    ceremony: Optional[AwardCeremony] = Relationship(back_populates="entries")
 
 
 # Legacy alias & enums

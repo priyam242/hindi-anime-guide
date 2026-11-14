@@ -66,9 +66,9 @@
       <article class="group rounded-xl overflow-hidden bg-neutral-900/60 dark:bg-neutral-900/80 border border-white/10 hover:border-red-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-lg">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl"><i class="fas fa-newspaper"></i></div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">NEWS</span>
         </a>
@@ -113,9 +113,9 @@
       <div class="group rounded-xl overflow-hidden bg-neutral-900/60 dark:bg-neutral-900/80 border border-white/10 hover:border-purple-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-lg">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Schedule';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl"><i class="fas fa-tv"></i></div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           {% if ep_num %}
           <div class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1">
@@ -164,9 +164,9 @@
       <article class="group rounded-xl overflow-hidden bg-neutral-900/60 dark:bg-neutral-900/80 border border-white/10 hover:border-emerald-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-lg">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Manga';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl"><i class="fas fa-book-open"></i></div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">MANGA</span>
         </a>
@@ -206,9 +206,9 @@
       <article class="group rounded-xl overflow-hidden bg-neutral-900/60 dark:bg-neutral-900/80 border border-white/10 hover:border-amber-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-lg">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-amber-500 text-3xl"><i class="fas fa-trophy"></i></div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1">
             <i class="fas fa-crown text-[9px]"></i>
@@ -251,9 +251,9 @@
       <article class="group rounded-xl overflow-hidden bg-neutral-900/60 dark:bg-neutral-900/80 border border-white/10 hover:border-pink-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-lg">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Trailer';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-pink-500 text-3xl"><i class="fas fa-play"></i></div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/10 transition-colors">
             <div class="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">

@@ -5,7 +5,7 @@
 - SEO meta tags and sitemap.xml validation
 - Strict exclusion of unpublished drafts from public views
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
@@ -52,7 +52,8 @@ def test_part2_drafts_flow(client: TestClient, isolate_database_per_test):
             title_hi="अटैक ऑन टाइटन 10वीं वर्षगांठ विशेष कार्यक्रम की घोषणा",
             summary_en="The production committee for Attack on Titan has officially revealed plans for a special 10th anniversary commemoration showcase with voice actors.",
             summary_hi="अटैक ऑन टाइटन निर्माण समिति ने अपनी 10वीं वर्षगांठ के उपलक्ष्य में एक विशेष कार्यक्रम की आधिकारिक घोषणा की है।",
-            image_url="https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-C6FPmWm59CyP.jpg"
+            image_url="https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-C6FPmWm59CyP.jpg",
+            published_at=datetime.now(timezone.utc) - timedelta(days=2),
         )
         d2 = AnimeDraft(
             content_type="manga",
@@ -188,6 +189,7 @@ def test_schedule_and_bulk_actions(client: TestClient, isolate_database_per_test
             title_hi="बल्क ड्राफ्ट 1",
             summary_en="Summary 1",
             summary_hi="विवरण 1",
+            published_at=datetime.now(timezone.utc),
         )
         d_bulk2 = AnimeDraft(
             content_type="manga",
@@ -199,6 +201,7 @@ def test_schedule_and_bulk_actions(client: TestClient, isolate_database_per_test
             title_hi="बल्क ड्राफ्ट 2",
             summary_en="Summary 2",
             summary_hi="विवरण 2",
+            published_at=datetime.now(timezone.utc),
         )
         session.add_all([sch, d_bulk1, d_bulk2])
         session.commit()

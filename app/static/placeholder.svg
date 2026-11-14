@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)" />
+  <circle cx="200" cy="240" r="50" fill="#6366f1" opacity="0.15" />
+  <path d="M185 215 L230 240 L185 265 Z" fill="#818cf8" opacity="0.8" />
+  <text x="200" y="330" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" text-anchor="middle">Hindi Anime Guide</text>
+  <text x="200" y="358" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="12" text-anchor="middle">आधिकारिक एनीमे एवं मंगा गाइड</text>
+</svg>

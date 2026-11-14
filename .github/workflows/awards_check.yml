@@ -1,0 +1,53 @@
+name: Awards Weekly Verification Check
+
+on:
+  schedule:
+    # Run weekly every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: awards-check-group
+  cancel-in-progress: false
+
+jobs:
+  verify-and-seed-awards:
+    name: Verify Official Awards & Ensure Latest Edition
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Live Source URLs & Seed Latest Editions
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python automation/seed_awards.py
+          python -m pytest tests/test_awards_rebuild.py -v
+
+      - name: Pre-warm public pages
+        if: always()
+        run: |
+          SITE="${{ secrets.SITE_BASE_URL || secrets.SITE_URL }}"
+          if [ -n "$SITE" ]; then
+            echo "Pre-warming public pages on $SITE..."
+            curl -sSf "${SITE}/" > /dev/null || true
+            curl -sSf "${SITE}/schedule" > /dev/null || true
+            curl -sSf "${SITE}/manga" > /dev/null || true
+            curl -sSf "${SITE}/awards" > /dev/null || true
+          fi
+

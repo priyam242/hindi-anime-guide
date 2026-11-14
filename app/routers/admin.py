@@ -21,6 +21,7 @@ from ..db import get_session
 from ..models import (
     Admin1, User1, Comment, Article, Availability, Category, Platform,
     Notification, ActivityLog, ArticleCategoryLink, AnimeDraft,
+    AwardCeremony, AwardEntry,
 )
 from ..templates_config import render
 from .pages import invalidate_public_caches
@@ -1092,6 +1093,12 @@ async def admin_draft_edit(
     summary_hi: Optional[str] = Form(None),
     image_url: Optional[str] = Form(None),
     content_type: Optional[str] = Form(None),
+    news_category: Optional[str] = Form("Announcement"),
+    is_featured: Optional[str] = Form(None),
+    is_editor_pick: Optional[str] = Form(None),
+    hindi_dub: Optional[str] = Form(None),
+    dub_platform: Optional[str] = Form(None),
+    dub_source_url: Optional[str] = Form(None),
     action: Optional[str] = Form("save"),
     csrf_token: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -1111,10 +1118,21 @@ async def admin_draft_edit(
     draft.image_url = image_url.strip() if image_url else None
     if content_type:
         draft.content_type = content_type.strip()
+    if news_category:
+        draft.news_category = news_category.strip()
+    draft.is_featured = bool(is_featured and is_featured in ("1", "true", "on", "yes"))
+    draft.is_editor_pick = bool(is_editor_pick and is_editor_pick in ("1", "true", "on", "yes"))
+    draft.hindi_dub = bool(hindi_dub and hindi_dub in ("1", "true", "on", "yes"))
+    draft.dub_platform = dub_platform.strip() if dub_platform else None
+    draft.dub_source_url = dub_source_url.strip() if dub_source_url else None
 
     if action == "save_and_publish":
+        if not draft.source_url or not draft.published_at:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot publish draft: both source_url and factual published_at timestamp are strictly required."
+            )
         draft.status = "published"
-        draft.published_at = datetime.now(timezone.utc)
         log_action = "publish_anime_draft"
     else:
         log_action = "update_anime_draft"
@@ -1151,8 +1169,14 @@ async def admin_draft_publish(
     if not draft:
         raise HTTPException(status_code=404, detail="Draft not found")
 
+    if not draft.source_url or not draft.published_at:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot publish draft: both source_url and factual published_at timestamp are strictly required."
+        )
+
     draft.status = "published"
-    draft.published_at = datetime.now(timezone.utc)
+    # Never overwrite factual published_at with now()
     session.add(draft)
     session.commit()
     invalidate_public_caches()
@@ -1253,12 +1277,15 @@ async def admin_drafts_bulk_action(
     now_utc = datetime.now(timezone.utc)
 
     if bulk_action == "publish":
+        published_count = 0
         for d in drafts:
+            if not d.source_url or not d.published_at:
+                continue
             d.status = "published"
-            d.published_at = now_utc
             session.add(d)
+            published_count += 1
         log_act = "bulk_publish_anime_drafts"
-        details = f"Bulk published {len(drafts)} anime drafts"
+        details = f"Bulk published {published_count} verified anime drafts"
     elif bulk_action == "unpublish":
         for d in drafts:
             d.status = "draft"
@@ -1706,6 +1733,442 @@ async def admin_comments_bulk_action(
         log_activity(session, admin_id, "comments_bulk_deleted", target_type="comment", details=f"Bulk deleted {count} comments", ip_address=get_client_ip(request))
         
     return RedirectResponse(url="/admin/comments", status_code=303)
+
+
+# =========================================================================
+# AWARDS & CEREMONIES MANAGEMENT (Admin CRUD)
+# =========================================================================
+from datetime import date as py_date
+
+
+def parse_date_safe(val: Optional[str]) -> Optional[py_date]:
+    if not val:
+        return None
+    try:
+        return py_date.fromisoformat(val.strip())
+    except Exception:
+        return None
+
+
+def resolve_anilist_media_simple(media_id: int) -> tuple[Optional[str], Optional[str]]:
+    """Helper to fetch (title, poster_url) from AniList GraphQL for an anime media_id."""
+    import httpx
+    query = """
+    query ($id: Int) {
+      Media(id: $id, type: ANIME) {
+        title { english romaji }
+        coverImage { extraLarge large }
+      }
+    }
+    """
+    try:
+        resp = httpx.post("https://graphql.anilist.co", json={"query": query, "variables": {"id": media_id}}, timeout=6.0)
+        if resp.status_code == 200:
+            m = resp.json().get("data", {}).get("Media", {})
+            title = m.get("title", {}).get("english") or m.get("title", {}).get("romaji")
+            poster = m.get("coverImage", {}).get("extraLarge") or m.get("coverImage", {}).get("large")
+            return title, poster
+    except Exception:
+        pass
+    return None, None
+
+
+def resolve_anilist_nominees_batch(id_list: List[int]) -> str:
+    """Fetch metadata for multiple nominee IDs and return a JSON string."""
+    import json
+    import httpx
+    if not id_list:
+        return "[]"
+    query = """
+    query ($ids: [Int]) {
+      Page(page: 1, perPage: 50) {
+        media(id_in: $ids) {
+          id
+          title { english romaji }
+          coverImage { extraLarge large medium }
+        }
+      }
+    }
+    """
+    nominees = []
+    try:
+        resp = httpx.post("https://graphql.anilist.co", json={"query": query, "variables": {"ids": id_list}}, timeout=8.0)
+        if resp.status_code == 200:
+            media_list = resp.json().get("data", {}).get("Page", {}).get("media", [])
+            media_map = {
+                m["id"]: {
+                    "media_id": m["id"],
+                    "title": m.get("title", {}).get("english") or m.get("title", {}).get("romaji"),
+                    "poster": m.get("coverImage", {}).get("extraLarge") or m.get("coverImage", {}).get("large"),
+                }
+                for m in media_list
+            }
+            for nid in id_list:
+                if nid in media_map:
+                    nominees.append(media_map[nid])
+                else:
+                    nominees.append({"media_id": nid, "title": f"Anime ID {nid}", "poster": None})
+    except Exception:
+        nominees = [{"media_id": nid, "title": f"Anime ID {nid}", "poster": None} for nid in id_list]
+    return json.dumps(nominees, ensure_ascii=False)
+
+
+@router.get("/awards", response_class=HTMLResponse)
+async def admin_awards_list(request: Request, session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    ceremonies = list(session.exec(
+        select(AwardCeremony).order_by(AwardCeremony.edition_year.desc(), AwardCeremony.id.desc())
+    ).all())
+
+    current_year = datetime.now(timezone.utc).year
+    latest_edition_year = max((c.edition_year for c in ceremonies), default=0)
+    show_stale_warning = bool(ceremonies and latest_edition_year < (current_year - 1))
+
+    html = render(
+        "admin/awards_list.html",
+        **ctx,
+        ceremonies=ceremonies,
+        show_stale_warning=show_stale_warning,
+        latest_edition_year=latest_edition_year,
+        current_year=current_year,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie("csrf_token_id", csrf_id, httponly=True, samesite="lax", secure=(settings.env.lower() == "production"))
+    return response
+
+
+@router.get("/awards/ceremonies/new", response_class=HTMLResponse)
+async def admin_ceremony_new_page(request: Request, session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    html = render(
+        "admin/award_ceremony_form.html",
+        **ctx,
+        ceremony=None,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie("csrf_token_id", csrf_id, httponly=True, samesite="lax", secure=(settings.env.lower() == "production"))
+    return response
+
+
+@router.post("/awards/ceremonies/new")
+async def admin_ceremony_new_post(
+    request: Request,
+    name: str = Form(...),
+    edition_year: int = Form(...),
+    source_url: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    name_hi: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    parsed_date = parse_date_safe(date)
+    ceremony = AwardCeremony(
+        name=name.strip(),
+        name_hi=name_hi.strip() if name_hi else None,
+        edition_year=edition_year,
+        date=parsed_date,
+        location=location.strip() if location else None,
+        source_url=source_url.strip(),
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(ceremony)
+    session.commit()
+    session.refresh(ceremony)
+    invalidate_public_caches()
+
+    admin_id = admin.id if hasattr(admin, "id") else None
+    log_activity(
+        session, admin_id, "award_ceremony_created",
+        target_type="award_ceremony", target_id=ceremony.id,
+        details=f"Created ceremony: {ceremony.name} ({ceremony.edition_year})",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/awards", status_code=303)
+
+
+@router.get("/awards/ceremonies/{ceremony_id}/edit", response_class=HTMLResponse)
+async def admin_ceremony_edit_page(ceremony_id: int, request: Request, session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    ceremony = session.get(AwardCeremony, ceremony_id)
+    if not ceremony:
+        raise HTTPException(status_code=404, detail="Ceremony not found")
+
+    html = render(
+        "admin/award_ceremony_form.html",
+        **ctx,
+        ceremony=ceremony,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie("csrf_token_id", csrf_id, httponly=True, samesite="lax", secure=(settings.env.lower() == "production"))
+    return response
+
+
+@router.post("/awards/ceremonies/{ceremony_id}/edit")
+async def admin_ceremony_edit_post(
+    ceremony_id: int,
+    request: Request,
+    name: str = Form(...),
+    edition_year: int = Form(...),
+    source_url: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    name_hi: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    ceremony = session.get(AwardCeremony, ceremony_id)
+    if not ceremony:
+        raise HTTPException(status_code=404, detail="Ceremony not found")
+
+    ceremony.name = name.strip()
+    ceremony.name_hi = name_hi.strip() if name_hi else None
+    ceremony.edition_year = edition_year
+    ceremony.date = parse_date_safe(date)
+    ceremony.location = location.strip() if location else None
+    ceremony.source_url = source_url.strip()
+
+    session.commit()
+    invalidate_public_caches()
+
+    admin_id = admin.id if hasattr(admin, "id") else None
+    log_activity(
+        session, admin_id, "award_ceremony_updated",
+        target_type="award_ceremony", target_id=ceremony.id,
+        details=f"Updated ceremony: {ceremony.name} ({ceremony.edition_year})",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/awards", status_code=303)
+
+
+@router.post("/awards/ceremonies/{ceremony_id}/delete")
+async def admin_ceremony_delete_post(ceremony_id: int, request: Request, csrf_token: Optional[str] = Form(None), session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    ceremony = session.get(AwardCeremony, ceremony_id)
+    if ceremony:
+        session.delete(ceremony)
+        session.commit()
+        invalidate_public_caches()
+        admin_id = admin.id if hasattr(admin, "id") else None
+        log_activity(
+            session, admin_id, "award_ceremony_deleted",
+            target_type="award_ceremony", target_id=ceremony_id,
+            details=f"Deleted ceremony {ceremony_id}",
+            ip_address=get_client_ip(request),
+        )
+    return RedirectResponse(url="/admin/awards", status_code=303)
+
+
+@router.get("/awards/entries/new", response_class=HTMLResponse)
+async def admin_entry_new_page(request: Request, ceremony_id: Optional[int] = Query(None), session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    ceremonies = list(session.exec(select(AwardCeremony).order_by(AwardCeremony.edition_year.desc(), AwardCeremony.id)).all())
+
+    html = render(
+        "admin/award_entry_form.html",
+        **ctx,
+        ceremonies=ceremonies,
+        selected_ceremony_id=ceremony_id,
+        entry=None,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie("csrf_token_id", csrf_id, httponly=True, samesite="lax", secure=(settings.env.lower() == "production"))
+    return response
+
+
+@router.post("/awards/entries/new")
+async def admin_entry_new_post(
+    request: Request,
+    ceremony_id: int = Form(...),
+    category: str = Form(...),
+    winner_media_id: int = Form(...),
+    source_url: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    category_hi: Optional[str] = Form(None),
+    winner_title: Optional[str] = Form(None),
+    winner_title_hi: Optional[str] = Form(None),
+    winner_poster: Optional[str] = Form(None),
+    nominee_ids_input: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    resolved_title, resolved_poster = None, None
+    if not winner_title or not winner_poster:
+        resolved_title, resolved_poster = resolve_anilist_media_simple(winner_media_id)
+
+    final_title = winner_title.strip() if winner_title else (resolved_title or f"Anime ID {winner_media_id}")
+    final_poster = winner_poster.strip() if winner_poster else resolved_poster
+
+    nominee_ids = []
+    if nominee_ids_input:
+        for raw in nominee_ids_input.replace("\n", ",").split(","):
+            raw_s = raw.strip()
+            if raw_s.isdigit():
+                nominee_ids.append(int(raw_s))
+    nominees_json = resolve_anilist_nominees_batch(nominee_ids)
+
+    entry = AwardEntry(
+        ceremony_id=ceremony_id,
+        category=category.strip(),
+        category_hi=category_hi.strip() if category_hi else None,
+        winner_media_id=winner_media_id,
+        winner_title=final_title,
+        winner_title_hi=winner_title_hi.strip() if winner_title_hi else None,
+        winner_poster=final_poster,
+        nominee_media_ids=nominees_json,
+        source_url=source_url.strip(),
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    invalidate_public_caches()
+
+    admin_id = admin.id if hasattr(admin, "id") else None
+    log_activity(
+        session, admin_id, "award_entry_created",
+        target_type="award_entry", target_id=entry.id,
+        details=f"Created award entry: {entry.category} ({entry.winner_title})",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/awards", status_code=303)
+
+
+@router.get("/awards/entries/{entry_id}/edit", response_class=HTMLResponse)
+async def admin_entry_edit_page(entry_id: int, request: Request, session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    ctx = get_admin_context(session, admin)
+    csrf_token, csrf_id = get_admin_csrf_context(request)
+
+    entry = session.get(AwardEntry, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Award entry not found")
+
+    ceremonies = list(session.exec(select(AwardCeremony).order_by(AwardCeremony.edition_year.desc(), AwardCeremony.id)).all())
+
+    html = render(
+        "admin/award_entry_form.html",
+        **ctx,
+        ceremonies=ceremonies,
+        selected_ceremony_id=entry.ceremony_id,
+        entry=entry,
+        csrf_token=csrf_token,
+        request=request,
+    )
+    response = HTMLResponse(content=html)
+    response.set_cookie("csrf_token_id", csrf_id, httponly=True, samesite="lax", secure=(settings.env.lower() == "production"))
+    return response
+
+
+@router.post("/awards/entries/{entry_id}/edit")
+async def admin_entry_edit_post(
+    entry_id: int,
+    request: Request,
+    ceremony_id: int = Form(...),
+    category: str = Form(...),
+    winner_media_id: int = Form(...),
+    source_url: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    category_hi: Optional[str] = Form(None),
+    winner_title: Optional[str] = Form(None),
+    winner_title_hi: Optional[str] = Form(None),
+    winner_poster: Optional[str] = Form(None),
+    nominee_ids_input: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    entry = session.get(AwardEntry, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Award entry not found")
+
+    resolved_title, resolved_poster = None, None
+    if not winner_title or not winner_poster:
+        resolved_title, resolved_poster = resolve_anilist_media_simple(winner_media_id)
+
+    final_title = winner_title.strip() if winner_title else (resolved_title or entry.winner_title or f"Anime ID {winner_media_id}")
+    final_poster = winner_poster.strip() if winner_poster else (resolved_poster or entry.winner_poster)
+
+    nominee_ids = []
+    if nominee_ids_input:
+        for raw in nominee_ids_input.replace("\n", ",").split(","):
+            raw_s = raw.strip()
+            if raw_s.isdigit():
+                nominee_ids.append(int(raw_s))
+    nominees_json = resolve_anilist_nominees_batch(nominee_ids) if nominee_ids else entry.nominee_media_ids
+
+    entry.ceremony_id = ceremony_id
+    entry.category = category.strip()
+    entry.category_hi = category_hi.strip() if category_hi else None
+    entry.winner_media_id = winner_media_id
+    entry.winner_title = final_title
+    entry.winner_title_hi = winner_title_hi.strip() if winner_title_hi else None
+    entry.winner_poster = final_poster
+    entry.nominee_media_ids = nominees_json
+    entry.source_url = source_url.strip()
+
+    session.commit()
+    invalidate_public_caches()
+
+    admin_id = admin.id if hasattr(admin, "id") else None
+    log_activity(
+        session, admin_id, "award_entry_updated",
+        target_type="award_entry", target_id=entry.id,
+        details=f"Updated award entry: {entry.category} ({entry.winner_title})",
+        ip_address=get_client_ip(request),
+    )
+    return RedirectResponse(url="/admin/awards", status_code=303)
+
+
+@router.post("/awards/entries/{entry_id}/delete")
+async def admin_entry_delete_post(entry_id: int, request: Request, csrf_token: Optional[str] = Form(None), session: Session = Depends(get_session)):
+    admin = await require_admin(request)
+    verify_admin_csrf(request, csrf_token)
+
+    entry = session.get(AwardEntry, entry_id)
+    if entry:
+        session.delete(entry)
+        session.commit()
+        invalidate_public_caches()
+        admin_id = admin.id if hasattr(admin, "id") else None
+        log_activity(
+            session, admin_id, "award_entry_deleted",
+            target_type="award_entry", target_id=entry_id,
+            details=f"Deleted award entry {entry_id}",
+            ip_address=get_client_ip(request),
+        )
+    return RedirectResponse(url="/admin/awards", status_code=303)
 
 
 # ---------- STARTUP / HELPER: Auto-create default admin ----------

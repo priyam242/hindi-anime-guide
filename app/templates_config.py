@@ -337,6 +337,18 @@ class SiteProxy:
 
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
+def from_json(val: Any) -> Any:
+    if not val:
+        return []
+    if isinstance(val, (list, dict)):
+        return val
+    try:
+        return json.loads(val)
+    except Exception:
+        return []
+
+
+templates.env.filters["from_json"] = from_json
 templates.env.filters["hindi_date"] = hindi_date
 templates.env.filters["short_description"] = short_description
 templates.env.filters["first_words"] = first_words

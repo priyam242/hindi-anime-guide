@@ -3,11 +3,11 @@
   {% set cat = article.category_rel if article.category_rel else None %}
   {% if article.cover_image %}
   <div class="cover-media">
-    <img src="{{ article.cover_image }}" 
+    <img src="{{ article.cover_image or '/static/placeholder.svg' }}" 
          alt="{{ article.title }}" 
          loading="lazy"
          referrerpolicy="no-referrer"
-         onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+         onerror="this.onerror=null; this.src='/placeholder.svg?title={{ article.title | urlencode }}';">
   </div>
   {% else %}
   <div class="cover c-{{ article.category_cover_color }}">

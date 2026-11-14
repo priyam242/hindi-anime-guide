@@ -137,14 +137,11 @@ endblock %}
           <img src="{{ upd.image_url }}" 
                alt="{{ upd.title_en }}" 
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-               loading="lazy"
+               loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}" 
                referrerpolicy="no-referrer"
-               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+               onerror="this.onerror=null; this.src='/placeholder.svg?title={{ upd.title_en | urlencode }}&category=News';">
           {% else %}
-          <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4 text-center">
-            <i class="fas fa-play text-red-600 text-xl mb-1"></i>
-            <span class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Hindi Anime Guide</span>
-          </div>
+          <img src="/static/placeholder.svg" alt="{{ upd.title_en }}" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
             {{ upd.content_type }}
@@ -171,12 +168,13 @@ endblock %}
     {% for article in articles %}
     <a href="/article/{{ article.slug }}" class="anime-card group">
       <div class="anime-card-image-wrap">
-        <img src="{{ article.cover_image }}" 
+        <img src="{{ article.cover_image or '/static/placeholder.svg' }}" 
              alt="{{ article.title }}" 
              class="anime-card-image" 
-             loading="lazy"
+             loading="{% if loop.index <= 6 %}eager{% else %}lazy{% endif %}" 
+             {% if loop.index <= 2 %}fetchpriority="high"{% endif %}
              referrerpolicy="no-referrer"
-             onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+             onerror="this.onerror=null; this.src='/placeholder.svg?title={{ article.title | urlencode }}';">
         {% if article.has_hindi_dub %}
         <span class="badge-hindi badge-dub"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>
         {% endif %}

@@ -24,6 +24,166 @@ PRIMARY_GEMINI_MODEL = "gemini-2.5-flash"
 FALLBACK_GEMINI_MODEL = "gemini-1.5-flash"
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
+DEVANAGARI_DIGITS_MAP = str.maketrans("०१२३४५६७८९", "0123456789")
+
+
+def extract_all_numbers(text: str) -> set[int]:
+    """Extract all integer numbers from text, normalizing Devanagari numerals to ASCII."""
+    if not text:
+        return set()
+    normalized = text.translate(DEVANAGARI_DIGITS_MAP)
+    matches = re.findall(r'\b\d+\b', normalized)
+    return {int(m) for m in matches}
+
+
+def validate_translation_numbers_and_dates(
+    source_facts: dict[str, Any],
+    translated: dict[str, str],
+) -> tuple[bool, str]:
+    """Validate that Gemini's Hindi output contains ONLY numbers and dates found in the source facts.
+
+    Rule: If the output contains any date or number not found in the source, reject it and keep English.
+    """
+    # 1. Gather all factual source text
+    source_values = [str(v) for k, v in source_facts.items() if v is not None]
+    if "title_en" in translated:
+        source_values.append(translated["title_en"])
+    if "summary_en" in translated:
+        source_values.append(translated["summary_en"])
+
+    source_text = " ".join(source_values)
+    source_numbers = extract_all_numbers(source_text)
+
+    # 2. Extract numbers from Hindi outputs
+    hindi_title = translated.get("title_hi", "")
+    hindi_summary = translated.get("summary_hi", "")
+    hindi_numbers = extract_all_numbers(f"{hindi_title} {hindi_summary}")
+
+    # 3. Check for unauthorized numbers/dates
+    unauthorized = hindi_numbers - source_numbers
+    if unauthorized:
+        return False, f"Unauthorized numbers/dates found in Hindi output: {sorted(list(unauthorized))}"
+
+    return True, "valid"
+
+
+def split_sentences(text: str) -> list[str]:
+    """Split text into sentences respecting English punctuation and Devanagari danda."""
+    if not text:
+        return []
+    parts = re.split(r'(?<=[.!?।])\s+', text.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+def validate_and_sanitize_news_summary(
+    title_en: str,
+    raw_source_text: str,
+    summary_en: str,
+    summary_hi: str,
+) -> tuple[str, str, list[str]]:
+    """Validate and sanitize news summaries according to strict grounding rules:
+    
+    1. Use ONLY text present in the RSS description/content.
+    2. If none exists (or description is empty / boilerplate), show only translated title + 'Read full story' link.
+    3. Remove any sentence that adds facts not in the source (cast, teaser, jury praise, editorial filler).
+    """
+    removed_facts: list[str] = []
+    clean_raw = (raw_source_text or "").strip()
+
+    # Strip known boilerplate from raw_source_text
+    if clean_raw.lower().startswith("official anime news reporting regarding"):
+        clean_raw = ""
+
+    # Rule 1: If no RSS description exists, suppress summary copy completely
+    if not clean_raw or len(clean_raw.split()) < 3:
+        if summary_en or summary_hi:
+            removed_facts.append(
+                "Empty RSS description: suppressed fabricated body copy; restricted to translated title and 'Read full story' link."
+            )
+        return "", "", removed_facts
+
+    source_corpus = f"{title_en} {clean_raw}".lower()
+
+    # Prohibited categories of ungrounded extra facts
+    prohibited_categories = [
+        {
+            "category": "cast/voice actor details not in source",
+            "en_keywords": ["cast", "voice actor", "voice actress", "starring", "stars as"],
+            "hi_keywords": ["कलाकार", "कास्ट", "आवाज"],
+        },
+        {
+            "category": "teaser/trailer/visual details not in source",
+            "en_keywords": ["teaser visual", "new trailer", "pv", "promo video", "key visual"],
+            "hi_keywords": ["टीज़र", "ट्रेलर", "विजुअल", "प्रोमो"],
+        },
+        {
+            "category": "jury praise / subjective acclaim not in source",
+            "en_keywords": ["jury praise", "praised by jury", "critically acclaimed", "storytelling impact", "accolade"],
+            "hi_keywords": ["ज्यूरी", "सराहना", "प्रशंसा", "असाधारण प्रभाव"],
+        },
+    ]
+
+    # Universal boilerplate sentences to purge unconditionally
+    boilerplate_en = [
+        "editorial desk will continue monitoring",
+        "according to verified announcement details documented via",
+        "production milestones and schedule outlines have been shared",
+        "anime enthusiasts tracking industry updates can follow",
+    ]
+    boilerplate_hi = [
+        "हमारी संपादकीय टीम",
+        "नज़र बनाए रखेगी",
+        "ताज़ा मीडिया रिपोर्टों के अनुसार निर्माण और आगामी प्रसारण से जुड़े आधिकारिक विवरण",
+        "प्रशंसक आधिकारिक चैनलों के जरिए इस प्रोजेक्ट की प्रगति",
+    ]
+
+    # Filter English sentences
+    en_sentences = split_sentences(summary_en)
+    valid_en_sentences: list[str] = []
+    for s in en_sentences:
+        s_lower = s.lower()
+        if any(b in s_lower for b in boilerplate_en):
+            removed_facts.append(f"Purged EN boilerplate: '{s[:60]}...'")
+            continue
+
+        violation = False
+        for rule in prohibited_categories:
+            for kw in rule["en_keywords"]:
+                if kw in s_lower and kw not in source_corpus:
+                    removed_facts.append(f"Purged EN ungrounded {rule['category']}: '{s[:60]}...'")
+                    violation = True
+                    break
+            if violation:
+                break
+        if not violation:
+            valid_en_sentences.append(s)
+
+    # Filter Hindi sentences
+    hi_sentences = split_sentences(summary_hi)
+    valid_hi_sentences: list[str] = []
+    for s in hi_sentences:
+        s_lower = s.lower()
+        if any(b in s_lower for b in boilerplate_hi):
+            removed_facts.append(f"Purged HI boilerplate: '{s[:60]}...'")
+            continue
+
+        violation = False
+        for rule in prohibited_categories:
+            for kw in rule["hi_keywords"]:
+                if kw in s_lower and kw not in source_corpus:
+                    removed_facts.append(f"Purged HI ungrounded {rule['category']}: '{s[:60]}...'")
+                    violation = True
+                    break
+            if violation:
+                break
+        if not violation:
+            valid_hi_sentences.append(s)
+
+    final_en = " ".join(valid_en_sentences).strip()
+    final_hi = " ".join(valid_hi_sentences).strip()
+
+    return final_en, final_hi, removed_facts
+
 
 def rewrite_anime_update(
     item_facts: dict[str, Any],
@@ -106,6 +266,31 @@ def rewrite_anime_update(
             raw_text = content_parts[0].get("text", "").strip()
             parsed = _parse_gemini_json_response(raw_text)
             if parsed:
+                # Task 4 Validator: Reject Hindi output if it contains unauthorized dates or numbers
+                is_valid, reason = validate_translation_numbers_and_dates(item_facts, parsed)
+                if not is_valid:
+                    logger.warning(
+                        "Gemini Hindi output rejected by validator (%s). Keeping original English text.",
+                        reason,
+                    )
+                    parsed["title_hi"] = parsed["title_en"]
+                    parsed["summary_hi"] = parsed["summary_en"]
+
+                # News Summary Validator: Rule 1 - Use only text present in RSS description.
+                # Remove ungrounded cast, teaser, jury praise, and boilerplate.
+                if item_facts.get("content_type") == "news":
+                    raw_src = item_facts.get("raw_summary", "") or item_facts.get("summary_en", "")
+                    clean_en, clean_hi, removed_facts = validate_and_sanitize_news_summary(
+                        title_en=parsed.get("title_en", ""),
+                        raw_source_text=raw_src,
+                        summary_en=parsed.get("summary_en", ""),
+                        summary_hi=parsed.get("summary_hi", ""),
+                    )
+                    parsed["summary_en"] = clean_en
+                    parsed["summary_hi"] = clean_hi
+                    if removed_facts:
+                        logger.info("News summary validator purged ungrounded facts: %s", removed_facts)
+
                 return parsed
 
         except httpx.HTTPStatusError as exc:
@@ -207,13 +392,14 @@ SPECIFIC INSTRUCTIONS:
 {instructions.strip()}
 
 LEGAL & EDITORIAL MANDATES:
-1. STRICT FACTS ONLY: Rely strictly on the provided factual metadata above. NEVER invent, extrapolate, or hallucinate plot spoilers, fan theories, or unauthorized dates.
-2. ZERO COPYING: Do NOT copy any prose from external summaries or third-party websites. Use original editorial sentences.
-3. AUTHENTIC HINDI: Write natural, fluent Hindi in proper Devanagari script (e.g. 'प्रसारण शेड्यूल', 'एपिसोड', 'मंगा चैप्टर', 'अवार्ड सम्मान'). Do NOT produce awkward robot-translations.
-4. SUMMARY LENGTH:
+1. TRANSLATION ONLY MANDATE: You may ONLY translate title and summary to natural Hindi. Dates, numbers, episode counts, years, and names must be copied strictly from the source facts without any alteration. NEVER invent, guess, or extrapolate dates (like 2026, November, etc.) or episode numbers that are not in the source facts. Any output containing an unauthorized date or number will be rejected.
+2. STRICT FACTS ONLY: Rely strictly on the provided factual metadata above. NEVER invent plot spoilers, fan theories, or unauthorized dates.
+3. ZERO COPYING: Do NOT copy verbatim prose from external summaries or third-party websites. Use original editorial sentences.
+4. AUTHENTIC HINDI: Write natural, fluent Hindi in proper Devanagari script (e.g. 'प्रसारण शेड्यूल', 'एपिसोड', 'मंगा चैप्टर', 'अवार्ड सम्मान'). Do NOT produce awkward robot-translations.
+5. SUMMARY LENGTH:
    - summary_en must be between 80 and 150 words.
    - summary_hi must be between 80 and 150 words in natural Devanagari.
-5. TITLES:
+6. TITLES:
    - title_en: Concise, engaging English headline (10-18 words).
    - title_hi: Clear Hindi headline in Devanagari (10-18 words).
 
@@ -272,22 +458,34 @@ def _generate_offline_factual_draft(facts: dict[str, Any]) -> dict[str, str]:
     raw_summary = facts.get("raw_summary", "")
 
     if content_type == "news":
-        headline_en = f"{title_en}: Latest News and Official Announcement"
-        headline_hi = f"{title_en}: ताज़ा समाचार और आधिकारिक घोषणा"
-        summary_en = (
-            f"An official editorial news update confirms key developments regarding {title_en}. "
-            f"According to verified announcement details documented via {source_name}, production "
-            f"milestones and schedule outlines have been shared with international audiences. "
-            f"Anime enthusiasts tracking industry updates can follow verified release milestones "
-            f"and multimedia confirmations through official channels. "
-            f"Hindi Anime Guide editorial desk will continue monitoring distribution status and localized releases."
+        headline_en = title_en
+        headline_hi = facts.get("title_hi") or title_en
+
+        # Rule 1: Use ONLY text present in RSS description. If none exists, show only translated title + 'Read full story'
+        clean_raw = (raw_summary or "").strip()
+        if clean_raw.lower().startswith("official anime news reporting regarding"):
+            clean_raw = ""
+
+        if not clean_raw or len(clean_raw.split()) < 3:
+            summary_en = ""
+            summary_hi = ""
+        else:
+            summary_en = clean_raw
+            summary_hi = facts.get("summary_hi") or clean_raw
+
+        # Run validator to sanitize against ungrounded extrapolations
+        clean_en, clean_hi, _ = validate_and_sanitize_news_summary(
+            title_en=headline_en,
+            raw_source_text=clean_raw,
+            summary_en=summary_en,
+            summary_hi=summary_hi,
         )
-        summary_hi = (
-            f"{title_en} से जुड़ी एक महत्वपूर्ण आधिकारिक घोषणा {source_name} के माध्यम से सामने आई है। "
-            f"ताज़ा मीडिया रिपोर्टों के अनुसार निर्माण और आगामी प्रसारण से जुड़े आधिकारिक विवरण साझा किए गए हैं। "
-            f"एनीमे प्रशंसक आधिकारिक चैनलों के जरिए इस प्रोजेक्ट की प्रगति और रिलीज़ डेट्स को ट्रैक कर सकते हैं। "
-            f"हमारी संपादकीय टीम इस घोषणा से जुड़े सभी नए विजुअल्स, टीज़र और भारतीय स्ट्रीमिंग उपलब्धता पर नज़र बनाए रखेगी।"
-        )
+        return {
+            "title_en": headline_en,
+            "title_hi": headline_hi,
+            "summary_en": clean_en,
+            "summary_hi": clean_hi,
+        }
     elif content_type == "manga":
         ch_num = facts.get("chapter_number")
         manga_name = facts.get("manga_title") or title_en

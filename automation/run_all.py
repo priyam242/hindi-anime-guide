@@ -25,11 +25,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from automation.fetchers.anilist import fetch_current_season_schedule
+from automation.fetchers.anilist import fetch_current_season_schedule, fetch_live_weekly_schedule
 from automation.fetchers.livechart_rss import fetch_livechart_news
-from automation.fetchers.manga import fetch_latest_manga_chapters
+from automation.fetchers.manga import fetch_latest_manga_chapters, sync_manga_database
 from automation.fetchers.natalie_rss import fetch_natalie_news
+from automation.fetchers.news_rss import fetch_all_news_rss
 from automation.fetchers.oricon_rss import fetch_oricon_news
+from automation.fetchers.trailers import fetch_live_trailers
 from automation.rewriter import rewrite_anime_update
 from automation.saver import (
     cleanup_old_unpublished_drafts,
@@ -39,6 +41,7 @@ from automation.saver import (
     is_external_id_saved,
     save_draft,
 )
+from automation.seed_awards import seed_awards_database
 
 load_dotenv()
 
@@ -52,6 +55,62 @@ logger = logging.getLogger("automation.run_all")
 DEFAULT_DAILY_CAP = 10
 DEFAULT_GLOBAL_GEMINI_CAP = 40
 
+def _fetch_news_pipeline(limit: int = 10) -> list[dict[str, Any]]:
+    items = fetch_all_news_rss(limit_per_source=max(2, limit // 4))
+    return items[:limit]
+
+
+def _fetch_trailers_pipeline(limit: int = 10) -> list[dict[str, Any]]:
+    trailers = fetch_live_trailers(force_refresh=True)
+    items: list[dict[str, Any]] = []
+    for t in trailers[:limit]:
+        items.append({
+            "external_id": f"trailer_{t.get('youtube_id', '')}",
+            "content_type": "trailer",
+            "source_name": t.get("source_channel") or "Official Anime Channel",
+            "source_url": t.get("youtube_url", ""),
+            "title_en": t.get("title_en") or t.get("title_romaji", ""),
+            "summary_en": f"Official PV/Trailer for {t.get('title_en', '')}.",
+            "image_url": t.get("thumbnail_url"),
+            "published_at": t.get("published_at"),
+            "season": t.get("season"),
+            "season_year": t.get("season_year"),
+        })
+    return items
+
+
+def _fetch_schedule_pipeline(limit: int = 10) -> list[dict[str, Any]]:
+    schedule_data = fetch_live_weekly_schedule(force_refresh=True)
+    items: list[dict[str, Any]] = []
+    for day, cards in schedule_data.items():
+        if isinstance(cards, list):
+            for c in cards:
+                items.append({
+                    "external_id": f"schedule_{c.get('media_id')}_ep{c.get('episode')}",
+                    "content_type": "schedule",
+                    "source_name": "AniList Airing Schedule",
+                    "source_url": f"https://anilist.co/anime/{c.get('media_id')}",
+                    "title_en": c.get("title_en") or c.get("title_romaji", ""),
+                    "summary_en": c.get("synopsis_en", ""),
+                    "image_url": c.get("poster_url"),
+                    "airing_day": day,
+                    "airing_time": c.get("airing_time_ist"),
+                })
+    return items[:limit]
+
+
+def _fetch_awards_pipeline(limit: int = 10) -> list[dict[str, Any]]:
+    res = seed_awards_database()
+    return [{
+        "external_id": f"awards_verified_seed_{len(res)}",
+        "content_type": "news",
+        "source_name": "Official Awards Registry",
+        "source_url": "https://animefestival.jp/en/",
+        "title_en": "Anime Awards Database Seed & Verification",
+        "summary_en": f"Verified {len(res)} official anime awards ceremonies.",
+    }]
+
+
 # Source mapping dictionary
 SOURCE_REGISTRY: dict[str, dict[str, Any]] = {
     "anilist": {
@@ -59,6 +118,24 @@ SOURCE_REGISTRY: dict[str, dict[str, Any]] = {
         "source_name": "AniList",
         "fetcher": fetch_current_season_schedule,
         "default_type": "schedule",
+    },
+    "schedule": {
+        "display_name": "AniList Live Weekly Airing Schedule",
+        "source_name": "AniList Airing Schedule",
+        "fetcher": _fetch_schedule_pipeline,
+        "default_type": "schedule",
+    },
+    "news": {
+        "display_name": "Verified RSS News (ANN, Crunchyroll, Anime Corner, Otaku USA, LiveChart)",
+        "source_name": "Anime News RSS",
+        "fetcher": _fetch_news_pipeline,
+        "default_type": "news",
+    },
+    "trailers": {
+        "display_name": "Official Anime Trailers & PVs (YouTube & AniList)",
+        "source_name": "Official YouTube / AniList",
+        "fetcher": _fetch_trailers_pipeline,
+        "default_type": "trailer",
     },
     "livechart": {
         "display_name": "LiveChart.me RSS News",
@@ -71,6 +148,12 @@ SOURCE_REGISTRY: dict[str, dict[str, Any]] = {
         "source_name": "MangaDex",
         "fetcher": fetch_latest_manga_chapters,
         "default_type": "manga",
+    },
+    "awards": {
+        "display_name": "Verified Anime Awards (Crunchyroll & TAAF)",
+        "source_name": "Official Awards Registry",
+        "fetcher": _fetch_awards_pipeline,
+        "default_type": "news",
     },
     "natalie": {
         "display_name": "Comic Natalie (Audited - Skipped)",
@@ -184,7 +267,7 @@ def run_source_pipeline(
                 stats["failed"] += 1
                 continue
 
-            # Assemble draft data
+            # Assemble draft data with source tracking and factual published_at
             draft_payload = {
                 "content_type": item.get("content_type", default_type),
                 "source_name": item.get("source_name", source_name),
@@ -195,6 +278,16 @@ def run_source_pipeline(
                 "summary_en": rewritten.get("summary_en"),
                 "summary_hi": rewritten.get("summary_hi"),
                 "image_url": item.get("image_url"),
+                "published_at": item.get("published_at") or item.get("pub_date_iso"),
+                "anilist_id": item.get("anilist_id"),
+                "mal_id": item.get("mal_id"),
+                "season": item.get("season"),
+                "season_year": item.get("season_year"),
+                "chapters": item.get("chapters"),
+                "volumes": item.get("volumes"),
+                "publication_status": item.get("publication_status"),
+                "airing_day": item.get("airing_day"),
+                "airing_time": item.get("airing_time"),
             }
 
             # Save draft with quality gate & near-duplicate protection
@@ -355,8 +448,7 @@ def main() -> None:
         "--source",
         type=str,
         default="all",
-        choices=["all", "anilist", "livechart", "manga", "natalie", "oricon"],
-        help="Specify source to run ('all' runs all registered sources)",
+        help="Specify source to run ('all', or comma-separated list like 'news,trailers', 'schedule', 'manga', 'awards')",
     )
     parser.add_argument(
         "--limit",
@@ -378,7 +470,13 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    active_sources = None if args.source == "all" else [args.source]
+    if args.source == "all":
+        active_sources = None
+    elif "," in args.source:
+        active_sources = [s.strip() for s in args.source.split(",") if s.strip()]
+    else:
+        active_sources = [args.source.strip()]
+
     run_pipeline(
         sources=active_sources,
         limit=args.limit,

@@ -1,0 +1,54 @@
+name: Manga Daily Sync
+
+on:
+  schedule:
+    # Run daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: manga-sync-group
+  cancel-in-progress: false
+
+jobs:
+  sync-manga:
+    name: Sync Live Manga Chapters & Future Volumes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Sync Manga Database & Stage Chapters
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python -c "from automation.fetchers.manga import sync_manga_database; count = sync_manga_database(); print(f'Manga sync completed. Synced {count} titles.')"
+          python automation/run_all.py --source manga --limit 10
+
+      - name: Pre-warm public pages
+        if: always()
+        run: |
+          SITE="${{ secrets.SITE_BASE_URL || secrets.SITE_URL }}"
+          if [ -n "$SITE" ]; then
+            echo "Pre-warming public pages on $SITE..."
+            curl -sSf "${SITE}/" > /dev/null || true
+            curl -sSf "${SITE}/schedule" > /dev/null || true
+            curl -sSf "${SITE}/manga" > /dev/null || true
+            curl -sSf "${SITE}/awards" > /dev/null || true
+          fi
+

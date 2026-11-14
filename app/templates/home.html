@@ -2,7 +2,7 @@
 
 {% block title %}Hindi Anime Guide — India's Legal Anime Streaming & Hindi Dub Directory{% endblock %}
 
-{% block meta_description %}Find where to legally watch anime in Hindi in India. Complete list of Hindi dubbed anime on Crunchyroll, Netflix, JioCinema & YouTube with watch orders and guides.{% endblock %}
+{% block meta_description %}Find where to legally watch anime in Hindi in India. Complete list of Hindi dubbed anime on Crunchyroll, Netflix, JioHotstar & YouTube with watch orders and guides.{% endblock %}
 
 {% block extra_head %}
 <!-- OpenGraph / Social Meta Tags -->
@@ -85,7 +85,7 @@
             <div class="lg:col-span-5 text-gray-600 dark:text-gray-400 text-base sm:text-lg leading-relaxed lg:pl-8 border-l border-gray-200 dark:border-white/10 flex flex-col justify-between space-y-6">
                 <div>
                     <p class="leading-relaxed">
-                        Crunchyroll, Netflix, JioCinema और Prime Video पर कानूनी रूप से उपलब्ध हिंदी डब एनीमे, आधिकारिक रिलीज़ गाइड्स और सटीक वॉच-ऑर्डर की संपूर्ण भारतीय डायरेक्टरी।
+                        Crunchyroll, Netflix, JioHotstar और Prime Video पर कानूनी रूप से उपलब्ध हिंदी डब एनीमे, आधिकारिक रिलीज़ गाइड्स और सटीक वॉच-ऑर्डर की संपूर्ण भारतीय डायरेक्टरी।
                     </p>
                     <div class="mt-4 flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
                         <span>(026)</span>
@@ -127,11 +127,8 @@
                 <a href="/explore?platform=Netflix" class="badge-neon-platform badge-neon-netflix py-1.5 px-4 text-xs sm:text-sm" title="Watch on Netflix">
                     <i class="fas fa-film"></i> Netflix
                 </a>
-                <a href="/explore?platform=JioCinema" class="badge-neon-platform badge-neon-jiocinema py-1.5 px-4 text-xs sm:text-sm" title="Watch on JioCinema">
-                    <i class="fas fa-tv"></i> JioCinema
-                </a>
                 <a href="/explore?platform=JioHotstar" class="badge-neon-platform badge-neon-jiohotstar py-1.5 px-4 text-xs sm:text-sm" title="Watch on JioHotstar">
-                    <i class="fas fa-star"></i> JioHotstar
+                    <i class="fas fa-tv"></i> JioHotstar
                 </a>
                 <a href="/explore?platform=Prime+Video" class="badge-neon-platform badge-neon-prime py-1.5 px-4 text-xs sm:text-sm" title="Watch on Prime Video">
                     <i class="fas fa-video"></i> Prime Video
@@ -173,26 +170,48 @@
                     <img src="{{ upd.image_url }}" 
                          alt="{{ upd.title_en }}" 
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                         loading="lazy" 
+                         loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}" 
+                         {% if loop.index <= 2 %}fetchpriority="high"{% endif %}
                          referrerpolicy="no-referrer"
-                         onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+                         onerror="this.onerror=null; this.src='/placeholder.svg?title={{ upd.title_en | urlencode }}&category=News';">
                     {% else %}
                     <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 p-4 text-center">
                         <i class="fas fa-play text-red-600 text-xl mb-1"></i>
                         <span class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Hindi Anime Guide</span>
                     </div>
                     {% endif %}
-                    <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                    {% if upd.content_type == 'news' %}
+                    <span class="absolute top-2 left-2 bg-red-600/95 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
+                        <i class="fas fa-newspaper text-[9px]"></i>
+                        <span>ताज़ा समाचार</span>
+                    </span>
+                    {% elif upd.content_type == 'schedule' %}
+                    <span class="absolute top-2 left-2 bg-purple-600/95 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
+                        <i class="fas fa-calendar-alt text-[9px]"></i>
+                        <span>सीज़न शेड्यूल</span>
+                    </span>
+                    {% else %}
+                    <span class="absolute top-2 left-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                         {{ upd.content_type }}
                     </span>
+                    {% endif %}
                 </div>
                 <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
-                    <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                        {{ upd.title_hi or upd.title_en }}
-                    </h3>
-                    <div class="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <span>{{ (upd.published_at | hindi_date) if upd.published_at else 'हाल ही में' }}</span>
-                        <span class="text-red-600 font-semibold group-hover:underline">पढ़ें →</span>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
+                            {{ upd.title_hi or upd.title_en }}
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+                            {{ (upd.summary_hi or upd.summary_en) | short_description(110) }}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 truncate max-w-[70%]">
+                            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ upd.source_name }}</span>
+                            <span>•</span>
+                            <span title="{{ upd.published_at | hindi_date }}">{{ upd.published_at | hindi_date }} ({{ upd.published_at | relative_time_hindi }})</span>
+                        </div>
+                        <span class="text-red-600 dark:text-red-400 font-bold group-hover:underline flex items-center gap-1 shrink-0">संक्षिप्त →</span>
                     </div>
                 </div>
             </a>
@@ -223,12 +242,13 @@
                     <span class="badge-hindi"><i class="fas fa-volume-high"></i> Hindi Dub</span>
                     {% endif %}
                     
-                    <img src="{{ article.cover_image or 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=533&fit=crop' }}" 
+                    <img src="{{ article.cover_image or '/static/placeholder.svg' }}" 
                          alt="{{ article.title }}" 
                          class="anime-card-image"
-                         loading="lazy"
+                         loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}"
+                         {% if loop.index <= 2 %}fetchpriority="high"{% endif %}
                          referrerpolicy="no-referrer"
-                         onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+                         onerror="this.onerror=null; this.src='/placeholder.svg?title={{ article.title | urlencode }}';">
                     
                     <div class="card-overlay"></div>
                     
@@ -248,10 +268,8 @@
                                 <span class="badge-neon-platform badge-neon-crunchyroll py-1 px-2.5 text-[11px]"><i class="fas fa-play-circle text-[10px]"></i> CR</span>
                                 {% elif 'netflix' in p_lower %}
                                 <span class="badge-neon-platform badge-neon-netflix py-1 px-2.5 text-[11px]"><i class="fas fa-film text-[10px]"></i> NF</span>
-                                {% elif 'jiocinema' in p_lower or 'jio cinema' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-jiocinema py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JC</span>
-                                {% elif 'jiohotstar' in p_lower or 'hotstar' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-star text-[10px]"></i> Hotstar</span>
+                                {% elif 'jiohotstar' in p_lower or 'hotstar' in p_lower or 'jiocinema' in p_lower or 'jio cinema' in p_lower %}
+                                <span class="badge-neon-platform badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JH</span>
                                 {% elif 'prime' in p_lower %}
                                 <span class="badge-neon-platform badge-neon-prime py-1 px-2.5 text-[11px]"><i class="fas fa-video text-[10px]"></i> Prime</span>
                                 {% elif 'youtube' in p_lower or 'muse' in p_lower %}

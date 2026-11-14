@@ -89,9 +89,9 @@ PLATFORMS_DATA = [
         "display_order": 3,
     },
     {
-        "name": "JioCinema",
-        "display_name": "JioCinema",
-        "official_url": "https://www.jiocinema.com",
+        "name": "JioHotstar",
+        "display_name": "JioHotstar",
+        "official_url": "https://www.hotstar.com",
         "display_order": 4,
     },
     {
@@ -109,7 +109,7 @@ ARTICLES_DATA = [
         "anime_title_hi": "नारुतो",
         "anime_title_en": "Naruto",
         "is_featured": True,
-        "meta_description": "नारुतो और शिपूडेन का भारत में संपूर्ण गाइड। जानें Crunchyroll और JioCinema पर हिंदी डब एपिसोड्स, कैनन वॉच ऑर्डर और कौन-से फिलर एपिसोड्स छोड़ने चाहिए।",
+        "meta_description": "नारुतो और शिपूडेन का भारत में संपूर्ण गाइड। जानें Crunchyroll और JioHotstar पर हिंदी डब एपिसोड्स, कैनन वॉच ऑर्डर और कौन-से फिलर एपिसोड्स छोड़ने चाहिए।",
         "category": "where-to-watch",
         "reading_time_minutes": 8,
         "content_md": """# नारुतो (Naruto): भारतीय प्रशंसकों के लिए संपूर्ण गाइड
@@ -135,7 +135,7 @@ ARTICLES_DATA = [
 1. **Crunchyroll India:**
    - नारुतो क्लासिक (भाग 1) और नारुतो शिपूडेन (भाग 2) के प्रमुख सीज़न्स हिंदी डब में उपलब्ध हैं।
    - मूल जापानी ऑडियो और अंग्रेजी सबटाइटल्स भी उपलब्ध हैं।
-2. **JioCinema:**
+2. **JioHotstar:**
    - भारतीय टीवी प्रसारण (Sony YAY!) वाला हिंदी डब ऑडियो यहाँ कई सीज़न्स के लिए स्ट्रीम होता है।
 3. **Netflix India:**
    - नारुतो और नारुतो शिपूडेन के पूरे सीज़न्स जापानी और अंग्रेजी ऑडियो के साथ एचडी में मौजूद हैं।
@@ -168,7 +168,7 @@ ARTICLES_DATA = [
                 "notes": "हिंदी डब और 1080p एचडी स्ट्रीमिंग उपलब्ध।",
             },
             {
-                "platform_id": "JioCinema",
+                "platform_id": "JioHotstar",
                 "languages": "Hindi, English",
                 "hindi_dub": "yes",
                 "status": "available",
@@ -420,7 +420,7 @@ Crunchyroll India ने सोलो लेवलिंग के हिंद�
         "anime_title_hi": "डेथ नोट",
         "anime_title_en": "Death Note",
         "is_featured": False,
-        "meta_description": "शुरुआती एनीमे प्रशंसकों के लिए सबसे बेहतरीन थ्रिलर। डेथ नोट के 37 एपिसोड्स भारत में Netflix और JioCinema पर देखने की पूरी गाइड।",
+        "meta_description": "शुरुआती एनीमे प्रशंसकों के लिए सबसे बेहतरीन थ्रिलर। डेथ नोट के 37 एपिसोड्स भारत में Netflix और JioHotstar पर देखने की पूरी गाइड।",
         "category": "dub-vs-sub",
         "reading_time_minutes": 7,
         "content_md": """# डेथ नोट: न्याय, अहंकार और बुद्धि का मुकाबला
@@ -450,7 +450,7 @@ Crunchyroll India ने सोलो लेवलिंग के हिंद�
 
 ## भारत में आधिकारिक स्ट्रीमिंग
 - **Netflix India:** पूरी 37 एपिसोड्स की सीरीज़ क्रिस्टल-क्लियर वीडियो और बेहतरीन ऑडियो के साथ उपलब्ध है।
-- **JioCinema:** चुनिंदा डबिंग विकल्पों के साथ स्ट्रीम उपलब्ध है।""",
+- **JioHotstar:** चुनिंदा डबिंग विकल्पों के साथ स्ट्रीम उपलब्ध है।""",
         "availabilities": [
             {
                 "platform_id": "Netflix",
@@ -460,7 +460,7 @@ Crunchyroll India ने सोलो लेवलिंग के हिंद�
                 "notes": "सम्पूर्ण 37 एपिसोड्स उपलब्ध।",
             },
             {
-                "platform_id": "JioCinema",
+                "platform_id": "JioHotstar",
                 "languages": "Hindi, English",
                 "hindi_dub": "yes",
                 "status": "available",

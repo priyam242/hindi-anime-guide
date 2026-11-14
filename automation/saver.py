@@ -53,6 +53,45 @@ def _normalize_title_slug(title: str) -> str:
     return re.sub(r'[^a-zA-Z0-9]', '', title.lower())
 
 
+def is_duplicate_pipeline_item(
+    anilist_id: Optional[int] = None,
+    mal_id: Optional[int] = None,
+    title_en: str = "",
+    source_url: str = "",
+    season_year: Optional[int] = None,
+    engine: Optional[Any] = None,
+) -> bool:
+    """Check duplicate by (anilist_id/mal_id + normalized title + source_url)."""
+    eng = engine or _get_engine()
+    norm_target = _normalize_title_slug(title_en) if title_en else ""
+    with Session(eng) as session:
+        # 1. Deduplicate by anilist_id
+        if anilist_id is not None:
+            stmt = select(AnimeDraft).where(AnimeDraft.anilist_id == anilist_id)
+            if season_year is not None:
+                stmt = stmt.where(AnimeDraft.season_year == season_year)
+            if session.exec(stmt).first():
+                return True
+
+        # 2. Deduplicate by mal_id
+        if mal_id is not None:
+            if session.exec(select(AnimeDraft).where(AnimeDraft.mal_id == mal_id)).first():
+                return True
+
+        # 3. Deduplicate by normalized title + source_url
+        if source_url:
+            existing_by_url = session.exec(
+                select(AnimeDraft).where(AnimeDraft.source_url == source_url)
+            ).all()
+            for ex in existing_by_url:
+                if norm_target and _normalize_title_slug(ex.title_en) == norm_target:
+                    return True
+                if not norm_target:
+                    return True
+
+    return False
+
+
 def is_near_duplicate(title_en: str, hours: int = 48) -> bool:
     """Check if an anime update with a matching or nearly identical title exists within 48 hours."""
     if not title_en or len(title_en.strip()) < 5:
@@ -93,20 +132,29 @@ def evaluate_quality_gate(
     summary_en = (draft_data.get("summary_en") or "").strip()
     summary_hi = (draft_data.get("summary_hi") or "").strip()
 
-    if not summary_en or not summary_hi:
+    ctype = draft_data.get("content_type")
+
+    # News items with empty summaries are valid per Rule 1 (source RSS had no description)
+    if ctype not in ("news", "trailer") and (not summary_en or not summary_hi):
         reasons.append("Empty or missing English/Hindi summary")
 
-    # Word count check (< 60 words triggers review)
+    # Word count check (< 60 words triggers review for long-form schedule/manga articles;
+    # news summaries are strictly 2-3 lines, and trailers have 6 words minimum)
     en_words = len(summary_en.split())
     hi_words = len(summary_hi.split())
-    if en_words < 60 or hi_words < 60:
-        reasons.append(f"Summary below 60 words minimum (EN: {en_words}, HI: {hi_words})")
+    if ctype not in ("news", "trailer"):
+        min_words = 60
+        if en_words < min_words or hi_words < min_words:
+            reasons.append(f"Summary below {min_words} words minimum (EN: {en_words}, HI: {hi_words})")
+    elif ctype == "trailer" and (en_words < 6 or hi_words < 6):
+        reasons.append(f"Trailer summary below 6 words minimum (EN: {en_words}, HI: {hi_words})")
 
     # Japanese character check in final drafts (Kanji/Hiragana/Katakana should be translated)
     # \u3040-\u30ff (Kana), \u4e00-\u9fff (Kanji)
-    jp_regex = re.compile(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]')
-    if jp_regex.search(summary_en) or jp_regex.search(summary_hi):
-        reasons.append("Contains raw untranslated Japanese characters in summary copy")
+    if draft_data.get("content_type") != "trailer":
+        jp_regex = re.compile(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]')
+        if jp_regex.search(summary_en) or jp_regex.search(summary_hi):
+            reasons.append("Contains raw untranslated Japanese characters in summary copy")
 
     # High similarity / copying check against raw source text
     if raw_source_text and summary_en:
@@ -159,6 +207,7 @@ def save_draft(
     draft_data: dict[str, Any],
     raw_source_text: str = "",
     check_near_duplicates: bool = True,
+    engine: Optional[Any] = None,
 ) -> tuple[bool, Any]:
     """Insert an anime draft into the database, applying safety and quality gates.
 
@@ -168,6 +217,7 @@ def save_draft(
             summary_en, summary_hi, image_url, content_type.
         raw_source_text: Raw source facts or description for quality gate checking.
         check_near_duplicates: Whether to verify against similar titles in last 48h.
+        engine: Optional custom database engine.
 
     Returns:
         Tuple of (success: bool, id_or_reason: Any).
@@ -176,14 +226,31 @@ def save_draft(
     if not external_id:
         return False, "missing_external_id"
 
+    eng = engine or _get_engine()
     title_en = str(draft_data.get("title_en", ""))
 
-    # 1. Near-duplicate check (within 48 hours)
+    # 1. Composite deduplication (anilist_id / mal_id + normalized title + source_url)
+    source_url = str(draft_data.get("source_url", "")).strip()
+    anilist_id = draft_data.get("anilist_id")
+    mal_id = draft_data.get("mal_id")
+    season_year = draft_data.get("season_year")
+    if is_duplicate_pipeline_item(
+        anilist_id=anilist_id,
+        mal_id=mal_id,
+        title_en=title_en,
+        source_url=source_url,
+        season_year=season_year,
+        engine=eng,
+    ):
+        logger.info("Skipping composite duplicate item (anilist/mal/title/url): '%s'", title_en)
+        return False, "composite_duplicate"
+
+    # 2. Near-duplicate check (within 48 hours)
     if check_near_duplicates and is_near_duplicate(title_en, hours=48):
         logger.info("Skipping near-duplicate item: '%s'", title_en)
         return False, "near_duplicate"
 
-    # 2. Quality gate evaluation
+    # 3. Quality gate evaluation
     status, reasons = evaluate_quality_gate(draft_data, raw_source_text=raw_source_text)
     if status == "needs_review":
         logger.warning(
@@ -192,9 +259,32 @@ def save_draft(
             ", ".join(reasons),
         )
 
-    engine = _get_engine()
-    with Session(engine) as session:
-        # Prevent exact duplicates
+    # 4. Strict publishing rule: An item with no source_url or no published_at must not be published
+    raw_pub_at = draft_data.get("published_at")
+    published_at_dt: Optional[datetime] = None
+    if isinstance(raw_pub_at, datetime):
+        published_at_dt = raw_pub_at if raw_pub_at.tzinfo else raw_pub_at.replace(tzinfo=timezone.utc)
+    elif isinstance(raw_pub_at, str) and raw_pub_at.strip():
+        try:
+            published_at_dt = datetime.fromisoformat(raw_pub_at.strip())
+            if not published_at_dt.tzinfo:
+                published_at_dt = published_at_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            published_at_dt = None
+
+    desired_status = draft_data.get("status") or status
+    if desired_status == "published":
+        if not source_url or not published_at_dt:
+            logger.warning(
+                "Draft for '%s' cannot be published without source_url and factual published_at. Setting status='needs_review'.",
+                title_en,
+            )
+            desired_status = "needs_review"
+    else:
+        desired_status = status
+
+    with Session(eng) as session:
+        # Prevent exact duplicates by external_id
         existing = session.exec(
             select(AnimeDraft).where(AnimeDraft.external_id == external_id)
         ).first()
@@ -203,19 +293,33 @@ def save_draft(
             logger.info("Draft with external_id '%s' already exists (ID: %s). Skipping.", external_id, existing.id)
             return False, "already_exists"
 
-        # Construct safe draft entity
+        # Construct safe draft entity with source tracking and NO now() fallback for published_at
         draft = AnimeDraft(
             content_type=draft_data.get("content_type", "schedule"),
-            status=status,  # Either 'draft' or 'needs_review'
+            status=desired_status,  # 'draft', 'needs_review', or verified 'published'
             source_name=draft_data.get("source_name", "AniList"),
-            source_url=str(draft_data.get("source_url", "")),
+            source_url=source_url,
             external_id=external_id,
             title_en=title_en,
             title_hi=draft_data.get("title_hi"),
             summary_en=draft_data.get("summary_en"),
             summary_hi=draft_data.get("summary_hi"),
             image_url=draft_data.get("image_url"),
-            published_at=None,
+            news_category=draft_data.get("news_category", "Announcement"),
+            is_featured=draft_data.get("is_featured", False),
+            is_editor_pick=draft_data.get("is_editor_pick", False),
+            chapters=draft_data.get("chapters"),
+            volumes=draft_data.get("volumes"),
+            publication_status=draft_data.get("publication_status"),
+            airing_day=draft_data.get("airing_day"),
+            airing_time=draft_data.get("airing_time"),
+            published_at=published_at_dt,  # Strictly factual, never falls back to now()
+            fetched_at=datetime.now(timezone.utc),
+            anilist_id=anilist_id,
+            mal_id=mal_id,
+            season=draft_data.get("season"),
+            season_year=season_year,
+            is_stale=draft_data.get("is_stale", False),
             created_at=datetime.now(timezone.utc),
         )
 

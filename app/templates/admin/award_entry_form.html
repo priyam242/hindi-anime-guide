@@ -1,0 +1,174 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit Award Category Entry' if entry else 'Add Award Category Entry' }}{% endblock %}
+{% block breadcrumb_current %}{{ 'Edit Entry' if entry else 'Add Entry' }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .award-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 24px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    .form-group .hint {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        color: var(--text-primary);
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: #f59e0b;
+    }
+    .info-banner {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="max-width: 800px; margin: 0 auto 24px auto; display: flex; justify-content: space-between; align-items: center;">
+    <div class="page-title-wrap">
+        <h1><span>🎖️</span> {{ 'Edit Award Category Entry' if entry else 'Add Award Category Entry' }}</h1>
+        <div class="page-subtitle">Configure category winner, AniList media poster, and official nominees.</div>
+    </div>
+    <div>
+        <a href="/admin/awards" class="btn btn-secondary btn-sm">← Back to Awards</a>
+    </div>
+</div>
+
+<div class="award-card">
+    <div class="info-banner">
+        <strong>Auto-Lookup Feature:</strong> Provide the <strong>Winner AniList Media ID</strong>. If you leave the English Title or Poster URL blank, the system will automatically fetch high-res posters directly from AniList's official GraphQL CDN.
+    </div>
+
+    <form action="{{ '/admin/awards/entries/' ~ entry.id ~ '/edit' if entry else '/admin/awards/entries/new' }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="form-group">
+            <label for="ceremony_id">Award Ceremony *</label>
+            <select id="ceremony_id" name="ceremony_id" class="form-select" required>
+                {% for c in ceremonies %}
+                <option value="{{ c.id }}" {% if (entry and entry.ceremony_id == c.id) or (selected_ceremony_id and selected_ceremony_id == c.id) %}selected{% endif %}>
+                    {{ c.edition_year }} — {{ c.name }} {% if c.name_hi %}({{ c.name_hi }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="category">Category (English) *</label>
+                <input type="text" id="category" name="category" class="form-input"
+                       value="{{ entry.category if entry else '' }}"
+                       placeholder="e.g. Anime of the Year / Best Film" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category_hi">Category (Hindi)</label>
+                <input type="text" id="category_hi" name="category_hi" class="form-input"
+                       value="{{ entry.category_hi if entry else '' }}"
+                       placeholder="e.g. वर्ष का सर्वश्रेष्ठ एनीमे">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="winner_media_id">Winner AniList Media ID *</label>
+                <input type="number" id="winner_media_id" name="winner_media_id" class="form-input"
+                       value="{{ entry.winner_media_id if entry else '' }}"
+                       placeholder="e.g. 145064 (JJK S2) or 109979" required>
+                <div class="hint">AniList anime integer ID for poster & metadata grounding</div>
+            </div>
+
+            <div class="form-group">
+                <label for="winner_title">Winner Title (English)</label>
+                <input type="text" id="winner_title" name="winner_title" class="form-input"
+                       value="{{ entry.winner_title if entry else '' }}"
+                       placeholder="Leave blank to auto-fetch from AniList">
+                <div class="hint">Auto-resolved from AniList if empty</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="winner_title_hi">Winner Title (Hindi)</label>
+                <input type="text" id="winner_title_hi" name="winner_title_hi" class="form-input"
+                       value="{{ entry.winner_title_hi if entry else '' }}"
+                       placeholder="e.g. जुजुत्सु काइसेन सीज़न 2">
+            </div>
+
+            <div class="form-group">
+                <label for="winner_poster">Winner Poster URL (Optional)</label>
+                <input type="url" id="winner_poster" name="winner_poster" class="form-input"
+                       value="{{ entry.winner_poster if entry else '' }}"
+                       placeholder="Auto-fetched if blank">
+                <div class="hint">Must originate from official AniList CDN</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="nominee_ids_input">Nominee AniList IDs (Comma-separated or JSON)</label>
+            {% set raw_noms = '' %}
+            {% if entry and entry.nominee_media_ids %}
+                {% set noms_list = entry.nominee_media_ids | from_json %}
+                {% if noms_list and noms_list[0] is mapping %}
+                    {% set id_list = [] %}
+                    {% for item in noms_list %}
+                        {% set _ = id_list.append(item.media_id | string) %}
+                    {% endfor %}
+                    {% set raw_noms = id_list | join(', ') %}
+                {% else %}
+                    {% set raw_noms = entry.nominee_media_ids %}
+                {% endif %}
+            {% endif %}
+            <textarea id="nominee_ids_input" name="nominee_ids_input" rows="2" class="form-textarea"
+                      placeholder="e.g. 144847, 127230, 145139, 150672, 136430">{{ raw_noms }}</textarea>
+            <div class="hint">Enter comma-separated AniList IDs for other nominated anime. Titles and posters will be resolved automatically.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="source_url">Official Announcement Source URL *</label>
+            <input type="url" id="source_url" name="source_url" class="form-input"
+                   value="{{ entry.source_url if entry else '' }}"
+                   placeholder="https://..." required>
+            <div class="hint">Direct link to the official category result page</div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <a href="/admin/awards" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">{{ 'Update Entry' if entry else 'Save Entry' }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

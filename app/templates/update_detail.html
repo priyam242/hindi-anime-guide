@@ -149,25 +149,52 @@
         <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
              class="w-full h-full object-cover max-h-[480px]"
              loading="eager"
+             fetchpriority="high"
              referrerpolicy="no-referrer"
-             onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
+             onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}';">
       </div>
       {% endif %}
 
-      <!-- Summary / Editorial Body -->
-      <div class="prose prose-invert max-w-none text-gray-200 leading-relaxed space-y-4 pt-2">
-        <p id="detail-body-text" class="text-base sm:text-lg leading-relaxed whitespace-pre-line font-normal text-gray-300">
+      <!-- 2-3 Line Summary Box (Do NOT republish full articles; hidden if source has no description) -->
+      {% if current_summary and current_summary.strip() %}
+      <div class="p-5 rounded-xl bg-neutral-950/80 border border-white/10 space-y-2">
+        <div class="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
+          <i class="fas fa-file-lines text-xs"></i>
+          <span>संपादकीय सारांश • 2-3 Line Summary</span>
+        </div>
+        <p id="detail-body-text" class="text-base sm:text-lg leading-relaxed text-gray-200">
           {{ current_summary }}
         </p>
+      </div>
+      {% endif %}
+
+      <!-- Prominent Original Source Action Box -->
+      <div class="p-5 rounded-xl bg-red-950/20 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="text-xs font-bold text-gray-300 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>स्रोत श्रेय (Source Credit): <strong class="text-white">{{ item.source_name }}</strong></span>
+          </div>
+          <div class="text-[11px] text-gray-400">
+            हम पूरे लेख पुनर्प्रकाशित (republish) नहीं करते। पूर्ण विवरण एवं आधिकारिक घोषणा के लिए मूल प्रकाशक का लेख पढ़ें।
+          </div>
+        </div>
+        {% if item.source_url %}
+        <a href="{{ item.source_url }}" rel="nofollow noopener" target="_blank"
+           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-red-600/30 shrink-0">
+          <span>Read full story (मूल लेख पढ़ें)</span>
+          <i class="fas fa-external-link-alt text-xs"></i>
+        </a>
+        {% endif %}
       </div>
 
       <!-- Social Share Buttons -->
       {{ render_share_buttons(current_title, request.url) }}
 
-      <!-- Official Source Attribution -->
+      <!-- Official Source Attribution Footer -->
       <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400">
         <div>
-          <span>स्रोत संदर्भ (Source): </span>
+          <span>मूल स्रोत संदर्भ: </span>
           {% if item.source_url %}
           <a href="{{ item.source_url }}" rel="nofollow noopener" target="_blank" class="text-red-400 font-bold hover:underline inline-flex items-center gap-1">
             <span>{{ item.source_name }}</span>
@@ -178,7 +205,7 @@
           {% endif %}
         </div>
         <div class="text-[11px] text-gray-400">
-          आधिकारिक AniList / प्रकाशक स्रोतों द्वारा सत्यापित • केवल सूचनात्मक उद्देश्य
+          सत्यापित प्रकाशक स्रोतों द्वारा समर्थित • केवल सूचनात्मक एवं मार्गदर्शक उद्देश्य
         </div>
       </div>
 
@@ -228,9 +255,9 @@
                  class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10 group-hover:scale-105 transition-transform"
                  loading="lazy"
                  referrerpolicy="no-referrer"
-                 onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
+                 onerror="this.onerror=null; this.src='/placeholder.svg?title={{ rel.title_en | urlencode }}';">
             {% else %}
-            <div class="w-16 h-16 bg-neutral-950 rounded-lg shrink-0 flex items-center justify-center text-xs text-gray-500 border border-white/10">📺</div>
+            <img src="/static/placeholder.svg" alt="{{ rel.title_en }}" class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10">
             {% endif %}
             <div class="min-w-0 flex-1">
               <h4 class="text-xs font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">

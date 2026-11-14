@@ -17,10 +17,10 @@
      x-data="{ viewFilter: 'all' }">
     
   <!-- Header -->
-  <div class="border-b border-white/10 pb-6">
+  <div class="border-b border-gray-200 dark:border-white/10 pb-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1.5">
+        <div class="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5">
           <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>मंगा ट्रैकिंग • Manga Editorial</span>
         </div>
@@ -28,7 +28,7 @@
           <i class="fas fa-book-open text-emerald-500"></i>
           <span class="heading-gradient">मंगा अपडेट्स एवं नए चैप्टर्स</span>
         </h1>
-        <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
           आधिकारिक मंगा प्रकाशकों, नए वॉल्यूम्स, और एनीमे रूपांतरणों से जुड़े सत्यापित अपडेट्स।
         </p>
       </div>
@@ -36,70 +36,65 @@
       <!-- Quick Section Pills -->
       <div class="flex flex-wrap items-center gap-2">
         <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-sm">मंगा</a>
-        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">समाचार</a>
-        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
-        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
-        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">समाचार</a>
+        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">शेड्यूल</a>
+        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">अवॉर्ड्स</a>
+        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">ट्रेलर्स</a>
       </div>
     </div>
   </div>
 
   {% if items and items|length > 0 %}
-    <!-- Time Groups: Today / This Week / Earlier -->
-    {% set ns = namespace(today=[], week=[], earlier=[]) %}
-    {% for item in items %}
-      {% set dt = item.published_at or item.created_at %}
-      {% if loop.index <= 3 %}
-        {% set ns.today = ns.today + [item] %}
-      {% elif loop.index <= 7 %}
-        {% set ns.week = ns.week + [item] %}
-      {% else %}
-        {% set ns.earlier = ns.earlier + [item] %}
-      {% endif %}
-    {% endfor %}
-
-    {% macro render_manga_group(group_items, group_title_hi, group_title_en, group_badge_class) %}
-    {% if group_items|length > 0 %}
-    <div class="space-y-3 pt-4">
+    {% macro render_manga_group(group_items, group_title_hi, group_title_en, group_badge_class, show_next_volume=false) %}
+    {% if group_items and group_items|length > 0 %}
+    <div class="space-y-3 pt-6">
       <!-- Group Header -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 border-b border-gray-200 dark:border-white/5 pb-2">
         <span class="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider {{ group_badge_class }}">
           {{ group_title_hi }}
         </span>
-        <span class="text-xs text-gray-400 font-mono">({{ group_title_en }})</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">({{ group_title_en }})</span>
+        <span class="text-xs text-gray-400 dark:text-gray-500 font-mono ml-auto">{{ group_items|length }} सीरीज़</span>
       </div>
 
       <!-- DESKTOP COMPACT TABLE -->
-      <div class="hidden md:block overflow-hidden rounded-xl bg-neutral-900/70 border border-white/10 shadow-lg">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-neutral-950/80 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-white/10">
+      <div class="hidden md:block overflow-hidden rounded-xl bg-white dark:bg-neutral-900/70 border border-gray-200 dark:border-white/10 shadow-lg">
+        <table class="w-full text-left text-xs text-gray-700 dark:text-gray-300">
+          <thead class="bg-gray-50 dark:bg-neutral-950/80 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-white/10">
             <tr>
               <th scope="col" class="py-3 px-4">मंगा शीर्षक (Manga)</th>
               <th scope="col" class="py-3 px-4">नवीनतम चैप्टर (Latest Chapter)</th>
               <th scope="col" class="py-3 px-4">स्थिति (Status)</th>
               <th scope="col" class="py-3 px-4">रिलीज़ तिथि (Release Date)</th>
-              <th scope="col" class="py-3 px-4 text-right">आधिकारिक स्रोत (Reader)</th>
+              <th scope="col" class="py-3 px-4 text-right">आधिकारिक स्रोत (Official Reader)</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-white/5 font-normal">
+          <tbody class="divide-y divide-gray-100 dark:divide-white/5 font-normal">
             {% for m in group_items %}
-            {% set ch_num = m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
-            {% set status_lower = (m.publication_status or 'Ongoing')|lower %}
-            <tr class="hover:bg-white/[0.03] transition-colors group">
+            {% set ch_num = m.latest_chapter or m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
+            {% set status_lower = (m.publication_status or '')|lower %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group">
               <!-- Title & Thumbnail -->
               <td class="py-3 px-4 flex items-center gap-3">
-                <a href="/updates/{{ m.id }}" class="w-10 h-14 rounded overflow-hidden bg-neutral-950 shrink-0 block border border-white/10 group-hover:border-emerald-500/40 transition-colors">
+                <a href="/updates/{{ m.id }}" class="w-10 h-14 rounded overflow-hidden bg-neutral-950 shrink-0 block border border-gray-200 dark:border-white/10 group-hover:border-emerald-500/40 transition-colors">
                   {% if m.image_url %}
-                  <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-2','opacity-40');">
+                  <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ m.title_en | urlencode }}&category=Manga';">
                   {% else %}
-                  <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs"><i class="fas fa-book"></i></div>
+                  <img src="/static/placeholder.svg" alt="{{ m.title_en }}" class="w-full h-full object-cover">
                   {% endif %}
                 </a>
-                <div class="min-w-0">
-                  <a href="/updates/{{ m.id }}" class="font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-1 text-sm">
+                <div class="min-w-0 space-y-1">
+                  <a href="/updates/{{ m.id }}" class="font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 text-sm">
                     {{ m.title_hi or m.title_en }}
                   </a>
-                  <span class="text-[11px] text-gray-400 font-mono block truncate">{{ m.title_en }}</span>
+                  <span class="text-[11px] text-gray-500 dark:text-gray-400 font-mono block truncate">{{ m.title_en }}</span>
+                  {% set anime_art = anime_articles_map.get(m.id) if anime_articles_map else None %}
+                  {% if anime_art %}
+                  <a href="/article/{{ anime_art.slug }}" class="inline-flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400 hover:underline font-bold transition-colors">
+                    <i class="fas fa-tv text-[9px]"></i>
+                    <span>एनीमे गाइड देखें →</span>
+                  </a>
+                  {% endif %}
                 </div>
               </td>
 
@@ -107,18 +102,28 @@
               <td class="py-3 px-4">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   {% if ch_num %}
-                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold font-mono text-[11px]">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 font-bold font-mono text-[11px]">
                     <i class="fas fa-file-lines text-[9px]"></i>
-                    <span>Chapter {{ ch_num }}</span>
+                    {% if 'finished' in status_lower or 'completed' in status_lower %}
+                    <span>कुल चैप्टर {{ ch_num }} (AniList)</span>
+                    {% else %}
+                    <span>Ch. {{ ch_num }}</span>
+                    {% endif %}
                   </span>
                   {% else %}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 text-gray-400 border border-white/10 text-[11px] font-mono">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/10 text-[11px] font-mono">
                     New Release
                   </span>
                   {% endif %}
-                  {% if m.volumes %}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10 text-[10px] font-mono">
+                  {% if m.volumes and ('ongoing' not in status_lower and 'releasing' not in status_lower or m.chapters is not none) %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 text-[10px] font-mono">
                     Vol. {{ m.volumes }}
+                  </span>
+                  {% endif %}
+                  {% if m.next_volume_date and (not now_utc or m.next_volume_date > now_utc) %}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 text-[10px] font-mono">
+                    <i class="fas fa-calendar-alt text-[8px]"></i>
+                    <span>अगला: {{ m.next_volume_date | hindi_date }}</span>
                   </span>
                   {% endif %}
                 </div>
@@ -126,30 +131,46 @@
 
               <!-- Status -->
               <td class="py-3 px-4">
-                {% if 'finished' in status_lower or 'completed' in status_lower %}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40 text-[10px] font-bold">Completed</span>
-                {% elif 'hiatus' in status_lower %}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40 text-[10px] font-bold">Hiatus</span>
-                {% else %}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 text-[10px] font-bold">Ongoing</span>
+                {% if m.publication_status %}
+                  {% if 'finished' in status_lower or 'completed' in status_lower %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 text-[10px] font-bold">Completed</span>
+                  {% elif 'hiatus' in status_lower %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 text-[10px] font-bold">Hiatus</span>
+                  {% else %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 text-[10px] font-bold">Ongoing</span>
+                  {% endif %}
+                {% endif %}
+                {% if m.score %}
+                <span class="ml-1 text-[10px] text-amber-500 dark:text-amber-400 font-mono"><i class="fas fa-star text-[9px] mr-0.5"></i>{{ m.score }}</span>
                 {% endif %}
               </td>
 
               <!-- Release Date -->
-              <td class="py-3 px-4 text-gray-400">
-                {{ (m.published_at | hindi_date) if m.published_at else (m.created_at | hindi_date) }}
+              <td class="py-3 px-4 text-gray-500 dark:text-gray-400">
+                <div>{{ (m.published_at | hindi_date) if m.published_at else (m.created_at | hindi_date) }}</div>
+                <div class="text-[10px] text-gray-400 dark:text-gray-500">{{ (m.published_at | relative_time_hindi) if m.published_at else '' }}</div>
               </td>
 
               <!-- Official Source -->
               <td class="py-3 px-4 text-right">
-                {% if m.source_url %}
-                <a href="{{ m.source_url }}" target="_blank" rel="nofollow noopener" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 hover:bg-emerald-600/20 text-emerald-400 border border-white/10 hover:border-emerald-500/40 transition-all font-semibold">
-                  <span>{{ m.source_name }}</span>
-                  <i class="fas fa-external-link-alt text-[9px]"></i>
-                </a>
-                {% else %}
-                <span class="text-gray-500">{{ m.source_name }}</span>
-                {% endif %}
+                <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                  {% set p_links = manga_links_map.get(m.id, []) if manga_links_map else [] %}
+                  {% if p_links and p_links|length > 0 %}
+                    {% for l in p_links[:2] %}
+                    <a href="{{ l.url }}" target="_blank" rel="nofollow noopener" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-600/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 text-[11px] font-semibold transition-all">
+                      <span>{{ l.title }}</span>
+                      <i class="fas fa-external-link-alt text-[8px]"></i>
+                    </a>
+                    {% endfor %}
+                  {% elif m.source_url %}
+                    <a href="{{ m.source_url }}" target="_blank" rel="nofollow noopener" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-emerald-50 dark:bg-white/5 dark:hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-gray-200 dark:border-white/10 text-[11px] font-semibold transition-all">
+                      <span>{{ m.source_name }}</span>
+                      <i class="fas fa-external-link-alt text-[8px]"></i>
+                    </a>
+                  {% else %}
+                    <span class="text-gray-400 dark:text-gray-500 text-[11px]">{{ m.source_name }}</span>
+                  {% endif %}
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -160,57 +181,84 @@
       <!-- MOBILE STACKED CARDS -->
       <div class="md:hidden space-y-3">
         {% for m in group_items %}
-        {% set ch_num = m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
-        {% set status_lower = (m.publication_status or 'Ongoing')|lower %}
-        <article class="p-4 rounded-xl bg-neutral-900/80 border border-white/10 shadow-sm flex items-start gap-3.5">
-          <a href="/updates/{{ m.id }}" class="w-14 h-20 rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-white/10">
+        {% set ch_num = m.latest_chapter or m.chapters or (m.external_id | extract_episode) or (m.title_en | extract_episode) %}
+        {% set status_lower = (m.publication_status or '')|lower %}
+        <article class="p-4 rounded-xl bg-white dark:bg-neutral-900/80 border border-gray-200 dark:border-white/10 shadow-sm flex items-start gap-3.5">
+          <a href="/updates/{{ m.id }}" class="w-14 h-20 rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-gray-200 dark:border-white/10">
             {% if m.image_url %}
-            <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-3','opacity-40');">
+            <img src="{{ m.image_url }}" alt="{{ m.title_en }}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ m.title_en | urlencode }}&category=Manga';">
             {% else %}
-            <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs"><i class="fas fa-book"></i></div>
+            <img src="/static/placeholder.svg" alt="{{ m.title_en }}" class="w-full h-full object-cover">
             {% endif %}
           </a>
           <div class="flex-1 min-w-0 space-y-2">
             <div>
-              <h3 class="text-sm font-bold text-white line-clamp-2 leading-snug">
+              <h3 class="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug">
                 <a href="/updates/{{ m.id }}">{{ m.title_hi or m.title_en }}</a>
               </h3>
-              <p class="text-[11px] text-gray-400 font-mono truncate">{{ m.title_en }}</p>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">{{ m.title_en }}</p>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap text-[10px]">
               {% if ch_num %}
-              <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold font-mono">
+              <span class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 font-bold font-mono">
+                {% if 'finished' in status_lower or 'completed' in status_lower %}
+                कुल चैप्टर {{ ch_num }} (AniList)
+                {% else %}
                 Ch. {{ ch_num }}
+                {% endif %}
               </span>
               {% endif %}
-              {% if m.volumes %}
-              <span class="px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10 font-mono">
+              {% if m.volumes and ('ongoing' not in status_lower and 'releasing' not in status_lower or m.chapters is not none) %}
+              <span class="px-2 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 font-mono">
                 Vol. {{ m.volumes }}
               </span>
               {% endif %}
-              {% if 'finished' in status_lower or 'completed' in status_lower %}
-              <span class="px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40 font-bold">
-                Completed
-              </span>
-              {% elif 'hiatus' in status_lower %}
-              <span class="px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40 font-bold">
-                Hiatus
-              </span>
-              {% else %}
-              <span class="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold">
-                Ongoing
+              {% if m.next_volume_date and (not now_utc or m.next_volume_date > now_utc) %}
+              <span class="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 font-mono">
+                Next: {{ m.next_volume_date | hindi_date }}
               </span>
               {% endif %}
-              <span class="text-gray-400">
+              {% if m.publication_status %}
+                {% if 'finished' in status_lower or 'completed' in status_lower %}
+                <span class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 font-bold">
+                  Completed
+                </span>
+                {% elif 'hiatus' in status_lower %}
+                <span class="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 font-bold">
+                  Hiatus
+                </span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 font-bold">
+                  Ongoing
+                </span>
+                {% endif %}
+              {% endif %}
+              <span class="text-gray-500 dark:text-gray-400">
                 {{ (m.published_at | relative_time_hindi) }}
               </span>
             </div>
 
+            {% set anime_art = anime_articles_map.get(m.id) if anime_articles_map else None %}
+            {% if anime_art %}
+            <div class="text-[11px]">
+              <a href="/article/{{ anime_art.slug }}" class="text-red-600 dark:text-red-400 hover:underline font-bold inline-flex items-center gap-1">
+                <span>📺 एनीमे रूपांतरण गाइड देखें</span>
+                <i class="fas fa-arrow-right text-[8px]"></i>
+              </a>
+            </div>
+            {% endif %}
+
             <div class="pt-1 flex items-center justify-between text-xs">
-              <a href="/updates/{{ m.id }}" class="text-emerald-400 font-bold hover:underline">विवरण →</a>
-              {% if m.source_url %}
-              <a href="{{ m.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-white inline-flex items-center gap-1">
+              <a href="/updates/{{ m.id }}" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">विवरण →</a>
+              {% set p_links = manga_links_map.get(m.id, []) if manga_links_map else [] %}
+              {% if p_links and p_links|length > 0 %}
+              <a href="{{ p_links[0].url }}" target="_blank" rel="nofollow noopener" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 inline-flex items-center gap-1 font-semibold">
+                <span>{{ p_links[0].title }}</span>
+                <i class="fas fa-external-link-alt text-[8px]"></i>
+              </a>
+              {% elif m.source_url %}
+              <a href="{{ m.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white inline-flex items-center gap-1">
                 <span>{{ m.source_name }}</span>
                 <i class="fas fa-external-link-alt text-[8px]"></i>
               </a>
@@ -224,10 +272,11 @@
     {% endif %}
     {% endmacro %}
 
-    <!-- Render Groups -->
-    {{ render_manga_group(ns.today, 'आज के नए चैप्टर्स', 'Today', 'bg-emerald-600 text-white') }}
-    {{ render_manga_group(ns.week, 'इस हफ़्ते के रिलीज़', 'This Week', 'bg-purple-600 text-white') }}
-    {{ render_manga_group(ns.earlier, 'पहले के चैप्टर्स', 'Earlier', 'bg-neutral-800 text-gray-300 border border-white/10') }}
+    <!-- 4 SECTIONS AS MANDATED BY TASK 3 -->
+    {{ render_manga_group(this_week_chapters, 'इस हफ़्ते के नए चैप्टर', 'New Chapters This Week', 'bg-emerald-600 text-white') }}
+    {{ render_manga_group(ongoing_series, 'चालू (Ongoing)', 'Ongoing Manga', 'bg-blue-600 text-white') }}
+    {{ render_manga_group(completed_series, 'पूर्ण (Completed)', 'Completed Manga', 'bg-purple-600 text-white') }}
+    {{ render_manga_group(new_volumes, 'नए वॉल्यूम', 'New & Upcoming Volumes', 'bg-amber-600 text-white', show_next_volume=true) }}
 
   {% else %}
     {{ render_empty_state('मंगा अपडेट्स तैयार हैं', 'Manga Updates Coming Soon', 'MangaUpdates और आधिकारिक प्रकाशक फ़ीड्स से नए चैप्टर्स जल्द जोड़े जाएंगे।', 'Latest manga chapters will appear here.', 'fas fa-book-open', lang) }}

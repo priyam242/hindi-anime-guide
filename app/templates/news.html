@@ -42,63 +42,62 @@
       </div>
     </div>
 
-    <!-- Category Filter Chips -->
+    <!-- Category Filter Chips & Archive Toggle -->
     <div class="flex items-center gap-2 pt-5 overflow-x-auto pb-1 scrollbar-thin">
-      <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+      <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category and not is_archive %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
         सभी (All)
       </a>
-      <a href="/news?category=news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'news' %}bg-blue-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
-        एनीमे समाचार
+      {% for cat in news_categories %}
+      <a href="/news?category={{ cat.slug }}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if current_news_category == cat.slug %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+        <i class="fas {{ cat.icon }} text-[10px]"></i>
+        <span>{{ cat.name_hi }} ({{ cat.name_en }})</span>
       </a>
-      <a href="/news?category=schedule" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'schedule' %}bg-purple-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
-        सीज़न अपडेट्स
-      </a>
-      <a href="/news?category=manga" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'manga' %}bg-emerald-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
-        मंगा रिलीज़
-      </a>
-      <a href="/news?category=award" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'award' %}bg-amber-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
-        अवॉर्ड्स
-      </a>
-      <a href="/news?category=trailer" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_news_category == 'trailer' %}bg-pink-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
-        ट्रेलर्स
+      {% endfor %}
+      <a href="/news/archive" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if is_archive %}bg-amber-600 text-white shadow-sm{% else %}bg-white/5 text-amber-400 hover:bg-white/10 border border-amber-500/20{% endif %}" title="View 30+ days historical archive">
+        <i class="fas fa-box-archive text-[10px]"></i>
+        <span>पुरालेख (Archive)</span>
       </a>
     </div>
   </div>
 
-  {% if items and items|length > 0 %}
-    <!-- FEATURED HERO ITEM (Item 0 on Page 1) -->
-    {% if page == 1 and items|length > 0 %}
-      {% set feat = items[0] %}
-      <div class="relative overflow-hidden rounded-2xl bg-neutral-900/80 border border-white/10 hover:border-red-500/30 transition-all duration-300 shadow-xl group">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
-          <!-- Hero Poster / Image -->
-          <a href="/updates/{{ feat.id }}" class="lg:col-span-7 relative aspect-[16/9] lg:aspect-auto overflow-hidden bg-neutral-950 block">
-            {% if feat.image_url %}
-            <img src="{{ feat.image_url }}" alt="{{ feat.title_en }}"
-                 loading="lazy"
-                 referrerpolicy="no-referrer"
-                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                 onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-12','opacity-40');">
-            {% else %}
-            <div class="w-full h-full min-h-[280px] flex items-center justify-center text-gray-500 text-5xl">
-              <i class="fas fa-newspaper"></i>
-            </div>
-            {% endif %}
-            <div class="absolute top-4 left-4 flex items-center gap-2">
-              <span class="bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded shadow flex items-center gap-1.5">
-                <i class="fas fa-star text-[10px]"></i>
-                <span>प्रमुख समाचार • FEATURED</span>
-              </span>
-            </div>
-          </a>
+  {% if (items and items|length > 0) or featured_item %}
+    <!-- ANIMECORNER-STYLE HERO SECTION (Page 1): Featured Story + Editor's Picks -->
+    {% if page == 1 and featured_item %}
+      {% set feat = featured_item %}
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Main Featured Hero Block (Col 8) -->
+        <div class="lg:col-span-8 relative overflow-hidden rounded-2xl bg-neutral-900/80 border border-white/10 hover:border-red-500/30 transition-all duration-300 shadow-xl group flex flex-col justify-between">
+          <div>
+            <a href="/updates/{{ feat.id }}" class="relative aspect-[16/9] overflow-hidden bg-neutral-950 block">
+              {% if feat.image_url %}
+              <img src="{{ feat.image_url }}" alt="{{ feat.title_en }}"
+                   loading="eager"
+                   fetchpriority="high"
+                   referrerpolicy="no-referrer"
+                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                   onerror="this.onerror=null; this.src='/placeholder.svg?title={{ feat.title_en | urlencode }}&category=News';">
+              {% else %}
+              <img src="/static/placeholder.svg" alt="{{ feat.title_en }}" class="w-full h-full object-cover">
+              {% endif %}
+              <div class="absolute top-4 left-4 flex items-center gap-2">
+                <span class="bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded shadow flex items-center gap-1.5">
+                  <i class="fas fa-star text-[10px]"></i>
+                  <span>प्रमुख समाचार • FEATURED</span>
+                </span>
+                {% if feat.news_category %}
+                <span class="bg-neutral-950/80 backdrop-blur-md text-red-400 text-xs font-bold px-2 py-0.5 rounded border border-red-500/30">
+                  {{ feat.news_category }}
+                </span>
+                {% endif %}
+              </div>
+            </a>
 
-          <!-- Hero Details -->
-          <div class="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between space-y-4">
-            <div class="space-y-3">
-              <div class="flex items-center gap-3 text-xs text-gray-400">
-                <span class="flex items-center gap-1 text-red-400 font-semibold">
+            <div class="p-6 sm:p-7 space-y-3">
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                <span class="flex items-center gap-1.5 text-red-400 font-semibold">
                   <i class="far fa-clock text-[11px]"></i>
-                  <span>{{ feat.published_at | relative_time_hindi }}</span>
+                  <span>{{ (feat.published_at | hindi_date) if feat.published_at else '' }}</span>
+                  <span>({{ (feat.published_at | relative_time_hindi) if feat.published_at else '' }})</span>
                 </span>
                 <span>•</span>
                 <span class="text-gray-300 font-medium">{{ feat.source_name }}</span>
@@ -115,68 +114,132 @@
               </p>
 
               <p class="text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
-                {{ (feat.summary_hi or feat.summary_en) | short_description(220) }}...
+                {{ (feat.summary_hi or feat.summary_en) | short_description(220) }}
               </p>
             </div>
+          </div>
 
-            <div class="pt-4 border-t border-white/10 flex items-center justify-between">
-              <a href="/updates/{{ feat.id }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow">
-                <span>पूरी रिपोर्ट पढ़ें</span>
-                <i class="fas fa-arrow-right text-[10px]"></i>
-              </a>
+          <div class="px-6 pb-6 pt-3 border-t border-white/5 flex items-center justify-between flex-wrap gap-2">
+            {% if feat.source_url %}
+            <a href="{{ feat.source_url }}" target="_blank" rel="nofollow noopener" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow">
+              <span>Read full story (मूल लेख पढ़ें)</span>
+              <i class="fas fa-external-link-alt text-[10px]"></i>
+            </a>
+            {% else %}
+            <a href="/updates/{{ feat.id }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow">
+              <span>विवरण पढ़ें</span>
+              <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+            {% endif %}
 
-              {% if feat.source_url %}
-              <a href="{{ feat.source_url }}" target="_blank" rel="nofollow noopener" class="text-xs text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                <span>{{ feat.source_name }}</span>
-                <i class="fas fa-external-link-alt text-[9px]"></i>
-              </a>
-              {% endif %}
+            {% if feat.source_url %}
+            <a href="{{ feat.source_url }}" target="_blank" rel="nofollow noopener" class="text-xs text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1.5" title="Original source article">
+              <span>स्रोत श्रेय: {{ feat.source_name }}</span>
+              <i class="fas fa-external-link-alt text-[9px]"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Editor's Picks Sidebar Widget (Col 4) -->
+        <div class="lg:col-span-4 rounded-2xl bg-neutral-900/60 border border-white/10 p-5 flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10">
+              <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400">
+                <i class="fas fa-bookmark text-sm"></i>
+                <span>संपादक की पसंद • EDITOR'S PICKS</span>
+              </div>
+              <span class="text-[10px] text-gray-500 font-mono">TOP CURATED</span>
             </div>
+
+            <div class="space-y-4">
+              {% for pick in editor_picks[:4] %}
+              <article class="flex gap-3 group/pick pb-3.5 border-b border-white/5 last:border-0 last:pb-0">
+                <a href="/updates/{{ pick.id }}" class="w-24 h-16 shrink-0 rounded-lg overflow-hidden bg-neutral-950 relative block">
+                  {% if pick.image_url %}
+                  <img src="{{ pick.image_url }}" alt="{{ pick.title_en }}"
+                       loading="lazy"
+                       referrerpolicy="no-referrer"
+                       class="w-full h-full object-cover group-hover/pick:scale-105 transition-transform"
+                       onerror="this.onerror=null; this.src='/placeholder.svg?title={{ pick.title_en | urlencode }}&category=News';">
+                  {% else %}
+                  <img src="/static/placeholder.svg" alt="{{ pick.title_en }}" class="w-full h-full object-cover">
+                  {% endif %}
+                </a>
+                <div class="flex-1 min-w-0 flex flex-col justify-between">
+                  <div class="flex items-center gap-1.5 text-[10px] text-gray-400 mb-1">
+                    <span class="text-amber-400 font-semibold truncate">{{ pick.source_name }}</span>
+                    <span>•</span>
+                    <span class="whitespace-nowrap">{{ (pick.published_at | relative_time_hindi) if pick.published_at else '' }}</span>
+                  </div>
+                  <h4 class="text-xs font-bold text-white group-hover/pick:text-red-400 transition-colors line-clamp-2 leading-snug">
+                    <a href="/updates/{{ pick.id }}">
+                      {{ pick.title_hi or pick.title_en }}
+                    </a>
+                  </h4>
+                  <div class="text-[10px] text-gray-500 mt-1">
+                    {{ (pick.published_at | hindi_date) if pick.published_at else '' }}
+                  </div>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-white/5 text-right">
+            <span class="text-[11px] text-gray-400 font-medium">दैनिक रूप से अपडेटेड</span>
           </div>
         </div>
       </div>
     {% endif %}
 
-    <!-- NEWS CARDS GRID (Remaining Items) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
-      {% for item in (items[1:] if page == 1 else items) %}
+    <!-- Section Heading for News Feed Grid -->
+    <div class="flex items-center justify-between pt-6 border-t border-white/10">
+      <div>
+        <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+          <i class="fas fa-rss text-red-500 text-sm"></i>
+          <span>{% if is_archive %}एनीमे समाचार पुरालेख (Complete Historical Archive){% elif current_news_category %}{{ current_news_category }} — ताज़ा रिपोर्टें{% else %}ताज़ा संपादकीय समाचार (Latest News Grid){% endif %}</span>
+        </h3>
+        <p class="text-xs text-gray-400 mt-0.5">
+          {% if is_archive %}30 दिन से पुराने सभी ऐतिहासिक लेख और रिकॉर्ड्स मूल तारीखों के साथ।{% else %}पिछले 30 दिनों के सत्यापित उद्योग समाचार (Real Timestamps & Sources)।{% endif %}
+        </p>
+      </div>
+      <span class="text-xs font-mono text-gray-400 bg-white/5 px-2.5 py-1 rounded border border-white/10">
+        कुल: {{ total_count }}
+      </span>
+    </div>
+
+    <!-- NEWS CARDS GRID -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {% for item in items %}
+      {% if page != 1 or not featured_item or item.id != featured_item.id %}
       <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-red-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
-               loading="lazy"
+               loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}"
                referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-               onerror="this.onerror=null; this.src='/static/favicon.svg'; this.classList.add('p-8','opacity-40');">
+               onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <div class="w-full h-full flex items-center justify-center text-gray-500 text-3xl">
-            <i class="fas fa-play"></i>
-          </div>
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
           {% endif %}
 
           <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-            {% if item.content_type == 'news' %}
-              <span class="bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">NEWS</span>
-            {% elif item.content_type == 'schedule' %}
-              <span class="bg-purple-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">SCHEDULE</span>
-            {% elif item.content_type == 'manga' %}
-              <span class="bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">MANGA</span>
-            {% elif item.content_type == 'award' %}
-              <span class="bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">AWARD</span>
-            {% else %}
-              <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">UPDATE</span>
-            {% endif %}
+            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              {{ item.news_category or item.content_type or 'NEWS' }}
+            </span>
           </div>
         </a>
 
         <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
           <div>
             <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
-              <span class="flex items-center gap-1 text-red-400">
+              <span class="truncate max-w-[120px] font-semibold text-gray-300">{{ item.source_name }}</span>
+              <span class="flex items-center gap-1 text-red-400 text-[11px] whitespace-nowrap">
                 <i class="far fa-clock text-[10px]"></i>
-                <span>{{ item.published_at | relative_time_hindi }}</span>
+                <span title="{{ item.published_at | hindi_date }}">{{ item.published_at | hindi_date }} ({{ item.published_at | relative_time_hindi }})</span>
               </span>
-              <span class="truncate max-w-[110px]">{{ item.source_name }}</span>
             </div>
 
             <h3 class="text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
@@ -185,29 +248,48 @@
               </a>
             </h3>
 
-            <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
-              {{ (item.summary_hi or item.summary_en) | short_description(120) }}...
+            {% if item.title_hi and item.title_en %}
+            <p class="text-[11px] text-gray-500 font-mono truncate mt-0.5">
+              {{ item.title_en }}
             </p>
+            {% endif %}
+
+            {% if item.summary_hi or item.summary_en %}
+            <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+              {{ (item.summary_hi or item.summary_en) | short_description(120) }}
+            </p>
+            {% endif %}
           </div>
 
           <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-            <a href="/updates/{{ item.id }}" class="text-red-400 hover:text-red-300 font-bold inline-flex items-center gap-1">
-              <span>पूरा पढ़ें</span>
-              <i class="fas fa-arrow-right text-[10px]"></i>
-            </a>
             {% if item.source_url %}
-            <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-200 transition-colors" title="Original source">
+            <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-red-400 hover:text-red-300 font-bold inline-flex items-center gap-1" title="Read full story on {{ item.source_name }}">
+              <span>Read full story</span>
               <i class="fas fa-external-link-alt text-[10px]"></i>
             </a>
+            {% else %}
+            <a href="/updates/{{ item.id }}" class="text-red-400 hover:text-red-300 font-bold inline-flex items-center gap-1">
+              <span>विवरण</span>
+              <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+            {% endif %}
+            {% if item.source_url %}
+            <a href="{{ item.source_url }}" target="_blank" rel="nofollow noopener" class="text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1" title="Original article: {{ item.source_name }}">
+              <span class="text-[11px]">{{ item.source_name }}</span>
+              <i class="fas fa-external-link-alt text-[9px]"></i>
+            </a>
+            {% else %}
+            <span class="text-gray-400 text-[11px]">{{ item.source_name }}</span>
             {% endif %}
           </div>
         </div>
       </article>
+      {% endif %}
       {% endfor %}
     </div>
 
     <!-- Pagination -->
-    {{ render_pagination(page, total_pages, '/news') }}
+    {{ render_pagination(page, total_pages, ('/news/archive' if is_archive else '/news')) }}
 
   {% else %}
     {{ render_empty_state('कोई समाचार उपलब्ध नहीं है', 'No News Available', 'इस श्रेणी में अभी कोई समाचार आइटम प्रकाशित नहीं है।', 'No published news items match this category.', 'fas fa-newspaper', lang) }}
