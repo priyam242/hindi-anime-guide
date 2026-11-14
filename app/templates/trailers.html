@@ -139,10 +139,12 @@
         <div>
           <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5 flex-wrap gap-1">
             <span class="text-pink-600 dark:text-pink-400 font-semibold truncate max-w-[120px]">{{ item.source_name }}</span>
+            {% if item.published_at %}
             <span class="flex items-center gap-1 text-[11px] whitespace-nowrap text-gray-600 dark:text-gray-300">
               <i class="far fa-clock text-[10px]"></i>
               <span title="{{ item.published_at | hindi_date }}">{{ item.published_at | hindi_date }}</span>
             </span>
+            {% endif %}
           </div>
 
           {% if item.premiere_date %}

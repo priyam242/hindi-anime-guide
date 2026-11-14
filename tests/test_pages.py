@@ -744,4 +744,31 @@ def test_homepage_no_category_pills_under_hero():
     assert "test-art-pills-check" in html
 
 
+def test_updates_numeric_id_unpublished_draft_returns_404_for_non_admin():
+    """Confirm that /updates/<numeric id> returns 404 for drafts that are not published when visitor is not an admin."""
+    from app.models import AnimeDraft
+    with Session(engine) as session:
+        draft = AnimeDraft(
+            content_type="news",
+            status="draft",
+            external_id="secret_draft_404_test",
+            title_en="Unpublished Secret News",
+            title_hi="अप्रकाशित गोपनीय समाचार",
+            summary_en="Confidential info",
+            summary_hi="गोपनीय जानकारी",
+            source_name="Test Source",
+            source_url="https://example.com/secret",
+            is_stale=False,
+        )
+        session.add(draft)
+        session.commit()
+        session.refresh(draft)
+        draft_id = draft.id
+
+    # Non-admin visitor request must return 404
+    response = client.get(f"/updates/{draft_id}")
+    assert response.status_code == 404
+
+
+
 

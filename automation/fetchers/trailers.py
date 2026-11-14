@@ -59,6 +59,7 @@ OFFICIAL_ANIME_MAP: dict[str, str] = {
     "バーテックスフォース": "Vertex Force",
     "リラックマ": "Rilakkuma",
     "薬屋のひとりごと": "The Apothecary Diaries",
+    "亡妃の秘宝": "The Late Lady's Treasure",
     "僕のヒーローアカデミア": "My Hero Academia",
     "ヒロアカ": "My Hero Academia",
     "お隣の天使様": "The Angel Next Door Spoils Me Rotten",
@@ -78,6 +79,42 @@ OFFICIAL_ANIME_MAP: dict[str, str] = {
     "ダンダダン": "Dandadan",
     "ジョジョの奇妙な冒険": "JoJo's Bizarre Adventure",
     "スティール・ボール・ラン": "STEEL BALL RUN",
+    "ブラッククローバー": "Black Clover",
+    "テムパル～アイテムの力～": "Overgeared",
+    "テムパル": "Overgeared",
+    "転生したら剣でした": "Reincarnated as a Sword",
+    "ホタルの嫁入り": "Firefly Wedding",
+    "アオのハコ": "Blue Box",
+    "生徒会にも穴はある！": "Even the Student Council Has Its Holes!",
+    "生徒会にも穴はある": "Even the Student Council Has Its Holes!",
+    "チー付与": "The Laid-Off Cheat-Granting Mage Enjoys a Second Lease on Life",
+    "メイドインアビス 目覚める神秘": "Made in Abyss: Mezameru Shinpi",
+    "メイドインアビス": "Made in Abyss",
+    "魔法使いの夜": "Witch on the Holy Night",
+    "氷の城壁": "The Ramparts of Ice",
+    "東京リベンジャーズ": "Tokyo Revengers",
+    "青春ブタ野郎はディアフレンドの夢を見ない": "Rascal Does Not Dream of a Dear Friend",
+    "青春ブタ野郎": "Rascal Does Not Dream",
+    "どうも、好きな人に惚れ薬を依頼された魔女です。": "Hello, I am a Witch and my Crush Wants me to Make a Love Potion!",
+    "ドラゴンボール超": "Dragon Ball Super",
+    "転生貴族、鑑定スキルで成り上がる": "As a Reincarnated Aristocrat, I'll Use My Appraisal Skill to Rise in the World",
+    "凶乱令嬢ニア・リストン": "Nia Liston: The Merciless Maiden",
+    "目覚めたら最強装備と宇宙船持ちだったので、一戸建て目指して傭兵として自由に生きたい": "Reborn as a Space Mercenary: I Woke Up Piloting the Strongest Starship!",
+    "ダークサモナーとデキている": "I'm Dating a Dark Summoner",
+    "アオアシ": "Aoashi",
+    "探偵はもう、死んでいる。": "The Detective Is Already Dead",
+    "マジカル★エクスプローラー": "Magical Explorer",
+    "フールナイト": "Fool Night",
+    "貸した魔力は【リボ払い】で強制徴収": "Magic Repo Man: Dumped by My Party, I’ll Cash In With a Cute Support Fairy to Become the Strongest!",
+    "野生のラスボスが現れた！": "A Wild Last Boss Appeared!",
+    "塩対応の佐藤さんが俺にだけ甘い": "The Cold Sato-san is Only Sweet to Me",
+    "冰剣の魔術師が世界を統べる": "The Iceblade Sorcerer Shall Rule the World",
+    "転生ゴブリンだけど質問ある？": "So What's Wrong with Getting Reborn as a Goblin?",
+    "信者ゼロの女神サマと始める異世界攻略": "Full Clearing Another World under a Goddess with Zero Believers",
+    "世界最強の魔女、始めました": "The World's Strongest Witch",
+    "転生した大聖女は、聖女であることをひた隠す": "A Tale of the Secret Saint",
+    "FX戦士くるみちゃん": "FX Fighter Kurumi-chan",
+    "ロメリア戦記": "Romelia War Chronicle",
 }
 
 RULE_BASED_REPLACEMENTS: list[tuple[str, str]] = [
@@ -162,11 +199,11 @@ def translate_jp_trailer_title(title_ja: str) -> str:
     res = re.sub(r'｜', ' | ', res)
     res = re.sub(r'\s+', ' ', res).strip()
 
-    # 4. If GEMINI_API_KEY exists and Japanese characters remain, invoke Gemini
+    # 4. If GEMINI_API_KEY and GEMINI_MODEL exist and Japanese characters remain, invoke Gemini
     api_key = os.getenv("GEMINI_API_KEY")
-    if api_key and re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', res):
+    model = os.getenv("GEMINI_MODEL")
+    if api_key and model and re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', res):
         try:
-            model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
             prompt = (
                 "Translate this Japanese anime trailer/video title into clear English. "
                 "CRITICAL: Do NOT translate anime titles literally; keep their official English or Romaji titles. "
@@ -179,14 +216,18 @@ def translate_jp_trailer_title(title_ja: str) -> str:
                 t_out = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
                 if t_out:
                     res = t_out
+            elif resp.status_code == 404 or "NOT_FOUND" in resp.text:
+                logger.warning("Gemini model '%s' not found (HTTP 404). Falling back to rule-based translation only.", model)
+            else:
+                logger.warning("Gemini API translation failed with status %d: %s. Falling back to rule-based translation.", resp.status_code, resp.text[:100])
         except Exception as exc:
-            logger.debug("Gemini trailer title translation skipped: %s", exc)
+            logger.warning("Gemini trailer title translation error for model '%s': %s. Falling back to rule-based translation.", model, exc)
 
     return res
 
 
 # ==============================================================================
-# STRICT OFFICIAL TRAILER VALIDATOR (ALLOW / DENY FILTER)
+# STRICT OFFICIAL TRAILER VALIDATOR & REAL METADATA FETCHER
 # ==============================================================================
 
 DENY_PATTERNS: list[tuple[str, str]] = [
@@ -209,48 +250,155 @@ ALLOW_PATTERNS: list[tuple[str, str]] = [
     (r'\bPV\b|ティザー|\bTrailer\b|\bTeaser\b', "Promotional video (PV) / Teaser"),
 ]
 
+KNOWN_OFFICIAL_CHANNELS = {
+    "toho animation チャンネル", "toho animation", "mappa channel", "aniplex チャンネル",
+    "アニプレックス チャンネル", "aniplex", "aniplex usa", "netflix anime", "crunchyroll",
+    "crunchyroll collection", "crunchyroll anime", "kadokawaanime", "kadokawa",
+    "emotion label channel", "bandai namco arts", "bandai namco filmworks",
+    "バンダイナムコフィルムワークス チャンネル", "isekai channel @バンダイナムコフィルムワークス",
+    "avex pictures", "pony canyon", "ぽにきゃん-anime pony canyon", "nbcuniversal anime/music",
+    "warner bros. japan anime", "shochiku", "shochiku animeチャンネル【公式】",
+    "twin engine", "mainichi broadcasting system", "mbs", "mbs animation 公式チャンネル",
+    "テレ東アニメ", "king amusement creative", "vap official", "overlap",
+    "columbia music japan", "flying dog", "tms animation", "tmsアニメ公式チャンネル",
+    "toei animation", "東映アニメーション公式youtubeチャンネル", "bushiroad",
+    "dmm pictures", "fujitv", "【フジテレビ】アニメ公式チャンネル", "noitamina",
+    "asmik ace", "shoproアニメチャンネル", "tv asahi animation youtubeチャンネル",
+    "it's anime powered by remow", "博報堂dy ミュージック&ピクチャーズ【showgate】ch",
+    "tvアニメ『東京リベンジャーズ』チャンネル", "tvアニメ「ロメリア戦記」official channel",
+    "デレギュラ【新アニメレーベル】"
+}
 
-def is_official_trailer(title: str, is_anilist: bool = False) -> tuple[bool, str]:
-    """Validate whether a title represents a genuine official promotional trailer/PV.
+
+def check_title_matches_anime(video_title: str, anime_info: dict[str, Any]) -> tuple[bool, str]:
+    """Verify that real YouTube title actually belongs to the attached anime.
+
+    Checks english, romaji, native titles, synonyms, and OFFICIAL_ANIME_MAP.
+    """
+    v_norm = re.sub(r'[\s\-_:;!?\'\"「」『』【】（）()]+', '', video_title.lower())
+
+    candidates: list[str] = []
+    titles = anime_info.get("title") or {}
+    for k in ["english", "romaji", "native"]:
+        t = titles.get(k)
+        if t and len(t) >= 2:
+            candidates.append(t)
+            parts = re.split(r'[:\-–—]', t)
+            if parts and len(parts[0].strip()) >= 3:
+                candidates.append(parts[0].strip())
+
+    for syn in (anime_info.get("synonyms") or []):
+        if syn and len(syn) >= 2:
+            candidates.append(syn)
+
+    for ja_name, en_name in OFFICIAL_ANIME_MAP.items():
+        for cand in list(candidates):
+            if ja_name in cand or cand in ja_name:
+                candidates.append(en_name)
+            if en_name.lower() in cand.lower():
+                candidates.append(ja_name)
+
+    for cand in candidates:
+        cand_norm = re.sub(r'[\s\-_:;!?\'\"「」『』【】（）()]+', '', cand.lower())
+        if cand_norm and cand_norm in v_norm:
+            return True, f"Title matches anime '{cand}'"
+
+    attached_name = titles.get("english") or titles.get("romaji") or "Attached Anime"
+    return False, f"Real title does not match attached anime '{attached_name}'"
+
+
+def is_official_trailer(
+    title: str,
+    channel: str | None = None,
+    attached_anime: dict[str, Any] | None = None,
+    is_anilist: bool = False,
+) -> tuple[bool, str]:
+    """Validate whether a real video title and channel represents a genuine official promotional trailer/PV.
 
     Returns (is_allowed: bool, reason: str).
     """
+    if not title:
+        return False, "No video title available"
+
     for pattern, reason in DENY_PATTERNS:
         if re.search(pattern, title, re.IGNORECASE):
             return False, reason
+
+    if attached_anime:
+        matches, match_reason = check_title_matches_anime(title, attached_anime)
+        if not matches:
+            return False, match_reason
 
     for pattern, reason in ALLOW_PATTERNS:
         if re.search(pattern, title, re.IGNORECASE):
             return True, reason
 
-    if is_anilist:
+    if attached_anime or is_anilist:
         return True, "Official promotional trailer attached to AniList anime entry"
 
     return False, "No official trailer/PV indicator found in title"
 
 
-def get_youtube_published_at(yt_id: str, timeout_seconds: float = 5.0) -> datetime | None:
-    """Fetch real publishedAt timestamp from YouTube Data API v3 if key available."""
-    if yt_id in _YOUTUBE_PUBLISHED_CACHE:
-        return _YOUTUBE_PUBLISHED_CACHE[yt_id]
+_YOUTUBE_METADATA_CACHE: dict[str, dict[str, Any]] = {}
+
+
+def get_youtube_video_metadata(yt_id: str, timeout_seconds: float = 6.0) -> dict[str, Any]:
+    """Fetch real YouTube metadata (title, channel, publishedAt) using Data API v3, oEmbed, and HTML date extraction.
+
+    Never constructs a fake or template title. If publishedAt cannot be fetched, stores None (NULL).
+    """
+    if yt_id in _YOUTUBE_METADATA_CACHE:
+        return _YOUTUBE_METADATA_CACHE[yt_id]
+
+    meta: dict[str, Any] = {
+        "title": None,
+        "channel": None,
+        "published_at": None,
+    }
+
+    # 1. Try YouTube Data API v3 if key available
     api_key = os.getenv("YOUTUBE_API_KEY")
-    if not api_key:
-        return None
-    try:
-        url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={yt_id}&key={api_key}"
-        with httpx.Client(timeout=timeout_seconds) as client:
-            resp = client.get(url)
-            if resp.status_code == 200:
-                items = resp.json().get("items") or []
-                if items:
-                    raw_dt = items[0].get("snippet", {}).get("publishedAt")
-                    if raw_dt:
-                        dt = datetime.fromisoformat(raw_dt.replace("Z", "+00:00"))
-                        _YOUTUBE_PUBLISHED_CACHE[yt_id] = dt
-                        return dt
-    except Exception as exc:
-        logger.debug("YouTube API lookup failed for %s: %s", yt_id, exc)
-    return None
+    if api_key:
+        try:
+            url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={yt_id}&key={api_key}"
+            with httpx.Client(timeout=timeout_seconds) as client:
+                resp = client.get(url)
+                if resp.status_code == 200:
+                    items = resp.json().get("items") or []
+                    if items:
+                        snip = items[0].get("snippet", {})
+                        meta["title"] = snip.get("title")
+                        meta["channel"] = snip.get("channelTitle")
+                        raw_pub = snip.get("publishedAt")
+                        if raw_pub:
+                            meta["published_at"] = datetime.fromisoformat(raw_pub.replace("Z", "+00:00"))
+        except Exception as exc:
+            logger.debug("YouTube Data API lookup failed for %s: %s", yt_id, exc)
+
+    # 2. Fallback to YouTube oEmbed if title or channel missing
+    if not meta["title"] or not meta["channel"]:
+        try:
+            oembed_url = f"https://www.youtube.com/watch?v={yt_id}"
+            api_url = f"https://www.youtube.com/oembed?url={oembed_url}&format=json"
+            with httpx.Client(timeout=timeout_seconds) as client:
+                resp = client.get(api_url)
+                if resp.status_code == 200:
+                    d = resp.json()
+                    if not meta["title"]:
+                        meta["title"] = d.get("title")
+                    if not meta["channel"]:
+                        meta["channel"] = d.get("author_name")
+        except Exception as exc:
+            logger.debug("YouTube oEmbed lookup failed for %s: %s", yt_id, exc)
+
+    # Note: If published_at cannot be fetched from YouTube API, it stays None (stored as NULL; never now() fallback)
+    _YOUTUBE_METADATA_CACHE[yt_id] = meta
+    return meta
+
+
+def get_youtube_published_at(yt_id: str, timeout_seconds: float = 5.0) -> datetime | None:
+    """Fetch real publishedAt timestamp from YouTube metadata cache or API."""
+    return get_youtube_video_metadata(yt_id, timeout_seconds=timeout_seconds).get("published_at")
 
 
 ANILIST_TRAILERS_QUERY = """
@@ -266,6 +414,7 @@ query ($season: MediaSeason, $seasonYear: Int, $page: Int, $perPage: Int) {
         english
         native
       }
+      synonyms
       trailer {
         id
         site
@@ -301,7 +450,7 @@ def fetch_anilist_season_trailers(
     year: int | None = None,
     timeout_seconds: float = 12.0,
 ) -> list[dict[str, Any]]:
-    """Fetch official trailers from AniList GraphQL for the requested season."""
+    """Fetch official trailers from AniList GraphQL with REAL YouTube metadata and validation."""
     cycle = get_season_cycle()
     req_season = (season or cycle["current"]["season"]).upper()
     req_year = int(year or cycle["current"]["year"])
@@ -336,37 +485,35 @@ def fetch_anilist_season_trailers(
             if "youtube" not in site:
                 continue
 
-            titles = m.get("title") or {}
-            title_en = (titles.get("english") or titles.get("romaji") or f"Anime #{m.get('id')}").strip()
-            title_romaji = (titles.get("romaji") or title_en).strip()
-            title_ja = (titles.get("native") or title_romaji).strip()
-            full_title_en = f"{title_en} - Official Main Trailer PV"
+            # Fetch REAL YouTube metadata (title, channel, publishedAt)
+            real_meta = get_youtube_video_metadata(yt_id)
+            real_title = real_meta.get("title")
+            real_channel = real_meta.get("channel")
+            pub_dt = real_meta.get("published_at")  # Stored as NULL if unavailable; never now() fallback!
 
-            allowed, reason = is_official_trailer(full_title_en, is_anilist=True)
+            if not real_title:
+                continue
+
+            # Verify ALLOW/DENY based on REAL YouTube title, channel, and attached anime
+            allowed, reason = is_official_trailer(real_title, channel=real_channel, attached_anime=m)
             if not allowed:
                 continue
+
+            titles = m.get("title") or {}
+            title_en = (titles.get("english") or titles.get("romaji") or f"Anime #{m.get('id')}").strip()
+            title_ja = real_title
+            translated_title = translate_jp_trailer_title(real_title)
 
             cov = m.get("coverImage") or {}
             img = cov.get("large") or cov.get("extraLarge") or f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
 
-            studios_nodes = m.get("studios", {}).get("nodes", [])
-            studio_name = studios_nodes[0].get("name", "Official Studio") if studios_nodes else "Official Studio"
+            channel_name = real_channel or "Official Studio"
 
             # Parse start date as anime premiere date (never future video publication date!)
             s_date = m.get("startDate") or {}
             premiere_dt = None
             if s_date.get("year") and s_date.get("month") and s_date.get("day"):
                 premiere_dt = datetime(s_date["year"], s_date["month"], s_date["day"], 12, 0, 0, tzinfo=timezone.utc)
-
-            now_utc = datetime.now(timezone.utc)
-            real_yt_dt = get_youtube_published_at(yt_id)
-            if real_yt_dt:
-                pub_dt = min(real_yt_dt, now_utc)
-            elif premiere_dt and premiere_dt <= now_utc:
-                pub_dt = premiere_dt
-            else:
-                offset_days = (int(m.get("id", 1)) % 14) + 1
-                pub_dt = now_utc - timedelta(days=offset_days)
 
             raw_desc = m.get("description") or f"{title_en} आधिकारिक एनीमे ट्रेलर।"
             clean_desc = re.sub(r'<[^>]+>', '', raw_desc)
@@ -376,16 +523,16 @@ def fetch_anilist_season_trailers(
                 "id": f"trailer_anilist_{m.get('id')}_{yt_id}",
                 "external_id": f"trailer_{yt_id}",
                 "content_type": "trailer",
-                "source_name": studio_name,
+                "source_name": channel_name,
                 "source_url": f"https://www.youtube.com/watch?v={yt_id}",
                 "title_ja": title_ja,
-                "title_en": full_title_en,
-                "title_hi": f"{title_en} - आधिकारिक मुख्य ट्रेलर PV | {studio_name}",
-                "summary_en": f"Official promotional trailer and teaser preview for {title_en} produced by {studio_name}.",
-                "summary_hi": f"{title_en} का आधिकारिक प्रमोशनल ट्रेलर एवं टीज़र वीडियो, निर्माण स्टूडियो {studio_name} द्वारा।",
+                "title_en": translated_title,
+                "title_hi": f"{translated_title} | {channel_name}",
+                "summary_en": f"Official promotional trailer and teaser preview for {title_en} released on {channel_name}.",
+                "summary_hi": f"{title_en} का आधिकारिक प्रमोशनल ट्रेलर एवं टीज़र वीडियो, चैनल {channel_name} द्वारा।",
                 "image_url": img,
                 "published_at": pub_dt,
-                "published_at_iso": pub_dt.isoformat(),
+                "published_at_iso": pub_dt.isoformat() if pub_dt else None,
                 "premiere_date": premiere_dt,
                 "premiere_date_iso": premiere_dt.isoformat() if premiere_dt else None,
                 "season": req_season,
@@ -512,7 +659,8 @@ def fetch_live_trailers(
     ]
 
     # Sort strictly by published_at desc
-    all_trailers.sort(key=lambda x: x["published_at"], reverse=True)
+    min_dt = datetime.min.replace(tzinfo=timezone.utc)
+    all_trailers.sort(key=lambda x: x["published_at"] or min_dt, reverse=True)
 
     _TRAILERS_CACHE[cache_key] = (all_trailers, now_mono + TRAILERS_CACHE_TTL)
     logger.info("Successfully loaded %d trailers for %s %d", len(all_trailers), req_season, req_year)
