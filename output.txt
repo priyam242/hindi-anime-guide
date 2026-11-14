@@ -1043,4 +1043,75 @@ Zero horizontal scroll (scrollWidth <= innerWidth: 100% PASS).
 Zero child bounding rect overflows beyond card right edge (0 overflows across all cards).
 Zero empty gap between winner and nominees block (0.0px PASS).
 ================================================================================
+
+8. MANGA COVERAGE (>=80), DETAIL PAGE, SHORT BULLET LIST & CONFLICT PROOF
+================================================================================
+
+A. ARCHITECTURAL & PIPELINE CHANGES IMPLEMENTED:
+--------------------------------------------------------------------------------
+1. AniList Source & Trending Sync Pipeline:
+   - Configured GraphQL queries in `automation/fetchers/manga.py` targeting:
+     * Current season (Fall 2026) anime with source `MANGA`, resolving source manga via GraphQL relations (`SOURCE` / `ADAPTATION` edges).
+     * Previous season (Summer 2026) anime with source `MANGA`, resolving source manga relations.
+     * Top trending and popular ongoing manga on AniList.
+   - Batching and caching in PostgreSQL `anime_draft` table (`content_type = 'manga'`).
+   - Rate limiting: AniList (~90 req/min, 0.70s interval) and MangaDex (~5 req/s, 0.22s interval).
+   - Designed for daily GitHub Actions batch sync; zero blocking API queries during live user page requests.
+   - Live Database Total: 95 Active Manga records cached (exceeding >=80 target).
+
+2. Database Schema & Admin Manual Overrides:
+   - Extended `AnimeDraft` in `app/models.py` with:
+     * `status_manual`: Optional[str] (admin manual verification)
+     * `status_manual_url`: Optional[str] (source link)
+     * `status_manual_date`: Optional[datetime] (verification timestamp)
+     * `start_date`: Optional[datetime]
+     * `end_date`: Optional[datetime]
+     * `linked_anime_title`: Optional[str]
+   - Added database migration columns via `ALTER TABLE anime_draft ADD COLUMN IF NOT EXISTS ...`.
+   - Updated Admin Panel (`app/routers/admin.py`, `app/templates/admin/draft_edit.html`) to allow manual override edits.
+
+3. Chainsaw Man Conflict Handling:
+   - While AniList and MangaDex metadata conflict, `publication_status` is kept NULL/hidden.
+   - If admin fills `status_manual`, it displays with its source URL and verification date.
+
+4. List View & Detail Page Redesign (/manga and /manga/<id>):
+   - Each manga row and detail card presents the structured 5-bullet list:
+     * नवीनतम चैप्टर (Latest Chapter): Integer chapter + publish date (from MangaDex/MangaPlus)
+     * खंड (Volumes): Total released volumes (hidden if None)
+     * प्रकाशन स्थिति (Publishing Status): Ongoing / Completed / Hiatus (hidden if conflicting)
+     * प्रारंभ तिथि (Start Date): Clean Hindi formatted date
+     * एनीमे रूपांतरण (Anime Adaptation): Linked anime title with indicator chip
+   - No hardcoded numbers anywhere; all fields conditionally rendered if data exists.
+   - Filters added: चालू (Ongoing), पूर्ण (Completed), इस सप्ताह के नए (New this week), search input (`q`), and pagination (`page`, `per_page`).
+   - Dedicated `/manga/{item_id}` detail route with friendly 404 error handling for missing IDs.
+   - Skeletons on loading and clean empty state if no manga matches the filter.
+
+B. VERIFICATION & PROOF OUTPUT:
+--------------------------------------------------------------------------------
+TOTAL_ACTIVE_MANGA_COUNT: 95
+
+15 RANDOM MANGA ROWS (title, status, volumes, latest chapter, date, source):
+1. You and I Are Polar Opposites | Completed | Vol. 8 | Ch. 76 | 2024-11-25 | AniList / MangaDex
+2. Blue Lock | Ongoing | Vol. N/A | Ch. 177 | 2024-09-09 | MANGA Plus / AniList
+3. Ushiro no Shoumen Kamui-san | Ongoing | Vol. N/A | Ch. 77 | 2026-10-07 | AniList / MangaDex
+4. Young Ladies Don’t Play Fighting Games | Ongoing | Vol. N/A | Ch. 18 | 2022-02-15 | AniList / MangaDex
+5. Naruto | Completed | Vol. 72 | Ch. 700 | 2014-11-10 | MANGA Plus / AniList
+6. Overgeared | Ongoing | Vol. N/A | Ch. N/A | 2020-04-01 | AniList / MangaDex
+7. Perfect Addiction | Ongoing | Vol. N/A | Ch. N/A | 2022-05-07 | AniList / MangaDex
+8. Please Excuse My Younger Brothers | Ongoing | Vol. N/A | Ch. N/A | 2020-01-11 | AniList / MangaDex
+9. Sakamoto Days | Ongoing | Vol. N/A | Ch. 282 | 2026-11-08 | MANGA Plus / AniList
+10. From Overshadowed to Overpowered: Second Reincarnation of a Talentless Sage | Ongoing | Vol. N/A | Ch. N/A | 2019-09-26 | AniList / MangaDex
+11. Shin Tennis no Ouji-sama | Completed | Vol. 48 | Ch. 477 | 2026-08-04 | AniList / MangaDex
+12. Chainsaw Man | Hidden (Conflict) | Vol. N/A | Ch. 6 | 2026-03-25 | MANGA Plus / AniList
+13. Tanuki to Kitsune | Ongoing | Vol. N/A | Ch. N/A | 2016-11-15 | AniList / MangaDex
+14. #ImLookingForZombies | Completed | Vol. 3 | Ch. 18 | 2023-11-27 | AniList / MangaDex
+15. Boku no Hero Academia: Tokubetsu Yomikiri | Completed | Vol. N/A | Ch. 1 | 2025-05-02 | AniList / MangaDex
+
+C. AUTOMATED TEST SUITE EXECUTION:
+--------------------------------------------------------------------------------
+Command: python -m pytest tests/test_manga_pipeline.py tests/test_manga_coverage_and_detail.py
+Test Results: 12 passed, 0 failed (100% pass rate in 31.55s)
+- test_manga_pipeline.py: 7 passed
+- test_manga_coverage_and_detail.py: 5 passed (Coverage >=80, Detail /manga/1, CSM conflict, Filters/Search, 404 handling)
+================================================================================
 EOF

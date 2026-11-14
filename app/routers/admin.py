@@ -1099,6 +1099,9 @@ async def admin_draft_edit(
     hindi_dub: Optional[str] = Form(None),
     dub_platform: Optional[str] = Form(None),
     dub_source_url: Optional[str] = Form(None),
+    status_manual: Optional[str] = Form(None),
+    status_manual_url: Optional[str] = Form(None),
+    status_manual_date: Optional[str] = Form(None),
     action: Optional[str] = Form("save"),
     csrf_token: Optional[str] = Form(None),
     session: Session = Depends(get_session),
@@ -1125,6 +1128,15 @@ async def admin_draft_edit(
     draft.hindi_dub = bool(hindi_dub and hindi_dub in ("1", "true", "on", "yes"))
     draft.dub_platform = dub_platform.strip() if dub_platform else None
     draft.dub_source_url = dub_source_url.strip() if dub_source_url else None
+    draft.status_manual = status_manual.strip() if status_manual else None
+    draft.status_manual_url = status_manual_url.strip() if status_manual_url else None
+    if status_manual_date and status_manual_date.strip():
+        try:
+            draft.status_manual_date = datetime.strptime(status_manual_date.strip(), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except Exception:
+            pass
+    else:
+        draft.status_manual_date = None
 
     if action == "save_and_publish":
         if not draft.source_url or not draft.published_at:

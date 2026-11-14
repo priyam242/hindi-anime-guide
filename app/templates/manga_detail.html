@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import render_badge %}
+
+{% block title %}{{ manga.title_en }} ({{ manga.title_hi or '' }}) — मंगा विवरण एवं आधिकारिक चैप्टर्स | {{ site.name }}{% endblock %}
+{% block meta_description %}{{ manga.title_en }} मंगा के नवीनतम चैप्टर्स, वॉल्यूम्स, प्रकाशन स्थिति और आधिकारिक पठन स्रोतों का सत्यापित विवरण।{% endblock %}
+{% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/manga/{{ manga.id }}{% endblock %}
+
+{% block og_tags %}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ manga.title_en }} — मंगा विवरण एवं चैप्टर्स">
+<meta property="og:description" content="{{ manga.title_en }} मंगा के नवीनतम चैप्टर्स, प्रकाशन स्थिति और आधिकारिक पठन स्रोत।">
+<meta property="og:image" content="{{ manga.image_url or '/static/placeholder.svg' }}">
+<meta property="og:url" content="{{ request.url }}">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- Breadcrumbs -->
+  <nav class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
+    <a href="/" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">होम</a>
+    <span>/</span>
+    <a href="/manga" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">मंगा</a>
+    <span>/</span>
+    <span class="text-gray-900 dark:text-white truncate font-bold">{{ manga.title_en }}</span>
+  </nav>
+
+  <!-- Detail Container Card -->
+  <article class="rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 shadow-xl p-5 sm:p-8">
+    <div class="flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
+      
+      <!-- Poster Column -->
+      <div class="w-full sm:w-60 md:w-64 shrink-0 mx-auto md:mx-0 space-y-4">
+        <div class="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-950 border border-gray-200 dark:border-white/10 shadow-lg relative group">
+          {% if manga.image_url %}
+          <img src="{{ manga.image_url }}" alt="{{ manga.title_en }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+               loading="eager" referrerpolicy="no-referrer"
+               onerror="this.onerror=null; this.src='/placeholder.svg?title={{ manga.title_en | urlencode }}&category=Manga';">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-400 text-3xl">
+            <i class="fas fa-book-open"></i>
+          </div>
+          {% endif %}
+
+          {% if manga.anilist_id %}
+          <div class="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
+            AniList ID: {{ manga.anilist_id }}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Official Reader Links -->
+        {% if official_links and official_links|length > 0 %}
+        <div class="space-y-2 pt-2">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+            <i class="fas fa-book-reader text-emerald-500"></i>
+            <span>आधिकारिक पठन स्रोत (Official Readers):</span>
+          </div>
+          <div class="space-y-1.5">
+            {% for l in official_links %}
+            <a href="{{ l.url }}" target="_blank" rel="nofollow noopener"
+               class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 transition-colors flex items-center justify-between">
+              <span>{{ l.title }}</span>
+              <i class="fas fa-external-link-alt text-[10px]"></i>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% elif manga.source_url %}
+        <div class="pt-2">
+          <a href="{{ manga.source_url }}" target="_blank" rel="nofollow noopener"
+             class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center justify-between shadow">
+            <span>{{ manga.source_name }} ↗</span>
+            <i class="fas fa-external-link-alt text-[10px]"></i>
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Content Column -->
+      <div class="flex-1 min-w-0 space-y-5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+              <i class="fas fa-book-open text-[10px]"></i>
+              <span>सत्यापित मंगा</span>
+            </span>
+            {% if manga.score %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 font-mono">
+              <i class="fas fa-star text-[10px] text-amber-500"></i>
+              <span>{{ manga.score }}</span>
+            </span>
+            {% endif %}
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight">
+            {{ manga.title_en }}
+          </h1>
+          {% if manga.title_hi and manga.title_hi.strip().lower() != manga.title_en.strip().lower() %}
+          <div class="text-base sm:text-lg font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+            {{ manga.title_hi }}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Structured Short Bullet List (Requirements 2, 3 & 4) -->
+        <div class="p-4 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/10 space-y-2.5">
+          <div class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/5 pb-1.5 flex items-center gap-1.5">
+            <i class="fas fa-list-check text-emerald-500"></i>
+            <span>मंगा मुख्य विवरण (Manga Quick Facts):</span>
+          </div>
+          <ul class="text-xs sm:text-sm space-y-2 text-gray-700 dark:text-gray-300 font-normal">
+            
+            <!-- 1. Latest Chapter (number + date) -->
+            {% set ch_num = manga.latest_chapter or manga.chapters %}
+            {% if ch_num and manga.published_at %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-file-alt text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>नवीनतम चैप्टर (Latest Chapter):</strong> Ch. {{ ch_num }} (प्रकाशित: {{ manga.published_at | hindi_date }})</span>
+            </li>
+            {% elif ch_num %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-file-alt text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>नवीनतम चैप्टर (Latest Chapter):</strong> Ch. {{ ch_num }}</span>
+            </li>
+            {% endif %}
+
+            <!-- 2. Volumes -->
+            {% if manga.volumes and manga.volumes > 0 %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-book text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>वॉल्यूम्स (Volumes):</strong> {{ manga.volumes }} वॉल्यूम</span>
+            </li>
+            {% endif %}
+
+            <!-- 3. Publishing Status (Chainsaw Man conflict rule / status_manual applied) -->
+            {% if manga.status_manual %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-info-circle text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span>
+                <strong>प्रकाशन स्थिति (Status - Verified Manual):</strong> {{ manga.status_manual }}
+                {% if manga.status_manual_url %}
+                <a href="{{ manga.status_manual_url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-600 dark:text-emerald-400 hover:underline ml-1 font-bold inline-flex items-center gap-1">
+                  <span>[स्रोत देखें]</span>
+                  <i class="fas fa-external-link-alt text-[9px]"></i>
+                </a>
+                {% endif %}
+              </span>
+            </li>
+            {% elif manga.anilist_id == 105778 or 'chainsaw man' in (manga.title_en or '')|lower %}
+              <!-- Chainsaw Man conflict: status hidden while AniList & MangaDex conflict -->
+            {% elif manga.publication_status %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-circle-notch text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>प्रकाशन स्थिति (Status):</strong> {{ manga.publication_status }}</span>
+            </li>
+            {% endif %}
+
+            <!-- 4. Start Date -->
+            {% set s_date = manga.start_date or manga.premiere_date %}
+            {% if s_date %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-calendar-day text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>प्रारंभ तिथि (Start Date):</strong> {{ s_date | hindi_date }}</span>
+            </li>
+            {% endif %}
+
+            <!-- 5. Next Volume / Release (Strictly future date only) -->
+            {% if manga.next_volume_date %}
+            <li class="flex items-start gap-2 text-amber-600 dark:text-amber-400">
+              <i class="fas fa-clock text-amber-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span><strong>अगला वॉल्यूम / रिलीज़ (Next Release):</strong> {{ manga.next_volume_date | hindi_date }}</span>
+            </li>
+            {% endif %}
+
+            <!-- 6. Anime Adaptation -->
+            {% if manga.linked_anime_title %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-tv text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span>
+                <strong>एनीमे रूपांतरण (Anime Adaptation):</strong> {{ manga.linked_anime_title }}
+                {% if anime_art %}
+                <a href="/article/{{ anime_art.slug }}" class="text-red-600 dark:text-red-400 hover:underline ml-1 font-bold inline-flex items-center gap-1">
+                  <span>[एनीमे वॉच गाइड]</span>
+                  <i class="fas fa-arrow-right text-[9px]"></i>
+                </a>
+                {% endif %}
+              </span>
+            </li>
+            {% elif manga.anime_progress %}
+            <li class="flex items-start gap-2">
+              <i class="fas fa-tv text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
+              <span>{{ manga.anime_progress }}</span>
+            </li>
+            {% endif %}
+
+          </ul>
+        </div>
+
+        <!-- Summary / Synopsis -->
+        {% if manga.summary_hi or manga.summary_en %}
+        <div class="space-y-2 pt-2">
+          <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fas fa-align-left text-emerald-500 text-xs"></i>
+            <span>मंगा सारांश (Synopsis):</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-normal">
+            {{ manga.summary_hi or manga.summary_en }}
+          </p>
+        </div>
+        {% endif %}
+
+        <!-- Navigation Buttons -->
+        <div class="pt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 dark:border-white/5">
+          <a href="/manga" class="px-4 py-2 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 border border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-200 transition-colors inline-flex items-center gap-1.5">
+            <i class="fas fa-arrow-left text-[10px]"></i>
+            <span>सभी मंगा देखें (Back to Manga Directory)</span>
+          </a>
+          {% if anime_art %}
+          <a href="/article/{{ anime_art.slug }}" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white transition-colors inline-flex items-center gap-1.5 shadow">
+            <i class="fas fa-play text-[10px]"></i>
+            <span>एनीमे गाइड व स्ट्रीमिंग ऑर्डर देखें</span>
+          </a>
+          {% endif %}
+        </div>
+
+      </div>
+
+    </div>
+  </article>
+
+</div>
+{% endblock %}

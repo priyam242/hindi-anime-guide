@@ -1216,7 +1216,10 @@ def get_manga_page_data(session: Session) -> dict[str, Any]:
 @router.get("/manga", response_class=HTMLResponse)
 def manga_page(
     request: Request,
+    filter: str = Query("all"),
+    q: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
+    per_page: int = Query(24, ge=1, le=100),
     session: Session = Depends(get_session),
 ):
     categories = get_categories(session)
@@ -1224,7 +1227,7 @@ def manga_page(
     lang = request.cookies.get("site_lang", "hi")
 
     data = get_manga_page_data(session)
-    items = data["items"]
+    all_items = data["items"]
     this_week_chapters = data["this_week_chapters"]
     ongoing_series = data["ongoing_series"]
     completed_series = data["completed_series"]
@@ -1233,10 +1236,45 @@ def manga_page(
     manga_links_map = data["manga_links_map"]
     now_utc = data["now_utc"]
 
+    # Filter selection
+    filter_norm = (filter or "all").lower().strip()
+    if filter_norm in ("ongoing", "releasing"):
+        target_items = ongoing_series
+    elif filter_norm in ("completed", "finished"):
+        target_items = completed_series
+    elif filter_norm in ("this_week", "this-week", "new"):
+        target_items = this_week_chapters
+    else:
+        filter_norm = "all"
+        target_items = all_items
+
+    # Text Search Filter
+    search_query = (q or "").strip()
+    if search_query:
+        sq_lower = search_query.lower()
+        target_items = [
+            m for m in target_items
+            if sq_lower in (m.title_en or "").lower()
+            or sq_lower in (m.title_hi or "").lower()
+            or sq_lower in (m.linked_anime_title or "").lower()
+        ]
+
+    # Pagination
+    total_count = len(target_items)
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    offset = (page - 1) * per_page
+    paged_items = target_items[offset : offset + per_page]
+
     return render(
         "manga.html",
         categories=categories,
-        items=items,
+        items=paged_items,
+        all_items_count=len(all_items),
+        total_count=total_count,
+        page=page,
+        total_pages=total_pages,
+        current_filter=filter_norm,
+        search_query=search_query,
         this_week_chapters=this_week_chapters,
         ongoing_series=ongoing_series,
         completed_series=completed_series,
@@ -1246,6 +1284,65 @@ def manga_page(
         lang=lang,
         user=user,
         now_utc=now_utc,
+        active_nav="manga",
+        request=request,
+    )
+
+
+@router.get("/manga/{item_id}", response_class=HTMLResponse)
+def manga_detail_page(
+    request: Request,
+    item_id: str,
+    session: Session = Depends(get_session),
+):
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+
+    manga = None
+    if item_id.isdigit():
+        m_id = int(item_id)
+        manga = session.exec(
+            select(AnimeDraft).where(
+                AnimeDraft.id == m_id,
+                AnimeDraft.content_type == "manga",
+            )
+        ).first()
+        if not manga:
+            manga = session.exec(
+                select(AnimeDraft).where(
+                    AnimeDraft.anilist_id == m_id,
+                    AnimeDraft.content_type == "manga",
+                )
+            ).first()
+    else:
+        manga = session.exec(
+            select(AnimeDraft).where(
+                AnimeDraft.external_id == item_id,
+                AnimeDraft.content_type == "manga",
+            )
+        ).first()
+
+    is_admin = bool(user and getattr(user, "is_admin", False))
+    if not manga or (manga.status != "published" and not is_admin) or manga.is_stale:
+        raise HTTPException(status_code=404, detail="मंगा नहीं मिला / Manga not found")
+
+    try:
+        official_links = json.loads(manga.official_links) if manga.official_links else []
+    except Exception:
+        official_links = []
+
+    articles = list(session.exec(select(Article)).all())
+    anime_art = _match_anime_article_for_manga(manga, articles)
+
+    return render(
+        "manga_detail.html",
+        categories=categories,
+        manga=manga,
+        official_links=official_links,
+        anime_art=anime_art,
+        lang=lang,
+        user=user,
         active_nav="manga",
         request=request,
     )

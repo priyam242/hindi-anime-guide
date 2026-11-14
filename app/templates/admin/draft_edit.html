@@ -225,6 +225,30 @@
                 </div>
             </div>
 
+            <!-- Manga Manual Status Override (status_manual, status_manual_url, status_manual_date) -->
+            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                <div style="margin-bottom: 8px;">
+                    <label style="font-weight: 700; font-size: 13.5px; display: block; color: var(--primary);">
+                        📖 Manga Manual Status Override (status_manual)
+                    </label>
+                    <span style="font-size: 11.5px; color: var(--text-secondary); display: block;">When sources conflict (e.g. Chainsaw Man), status is hidden until this verified manual status with source URL and date is filled.</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label class="form-label" for="status_manual" style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Manual Status</label>
+                        <input type="text" name="status_manual" id="status_manual" class="input" value="{{ draft.status_manual or '' }}" placeholder="e.g. Ongoing (Part 2), Completed" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label class="form-label" for="status_manual_url" style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Source URL</label>
+                        <input type="url" name="status_manual_url" id="status_manual_url" class="input" value="{{ draft.status_manual_url or '' }}" placeholder="https://..." style="width: 100%;">
+                    </div>
+                    <div>
+                        <label class="form-label" for="status_manual_date" style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">Status Date</label>
+                        <input type="date" name="status_manual_date" id="status_manual_date" class="input" value="{{ draft.status_manual_date.strftime('%Y-%m-%d') if draft.status_manual_date else '' }}" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+
             <!-- English Title -->
             <div class="form-group" style="margin-bottom: 16px;">
                 <label class="form-label" for="title_en" style="font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 6px;">
