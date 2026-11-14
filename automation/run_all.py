@@ -277,6 +277,8 @@ def run_source_pipeline(
                 "title_hi": rewritten.get("title_hi"),
                 "summary_en": rewritten.get("summary_en"),
                 "summary_hi": rewritten.get("summary_hi"),
+                "key_points_en": rewritten.get("key_points_en"),
+                "key_points_hi": rewritten.get("key_points_hi"),
                 "image_url": item.get("image_url"),
                 "published_at": item.get("published_at") or item.get("pub_date_iso"),
                 "anilist_id": item.get("anilist_id"),

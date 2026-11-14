@@ -255,10 +255,10 @@ def test_trailers_page_returns_at_least_12_items(client, isolate_database_per_te
     trailers = fetch_live_trailers()
     assert len(trailers) >= 12, f"Expected at least 12 trailers, got {len(trailers)}"
 
-    # Check timestamps sorted descending
+    # Check timestamps sorted descending (handling None dates safely)
     for i in range(len(trailers) - 1):
-        t1 = trailers[i]["published_at"]
-        t2 = trailers[i+1]["published_at"]
+        t1 = trailers[i]["published_at"] or datetime.min.replace(tzinfo=timezone.utc)
+        t2 = trailers[i+1]["published_at"] or datetime.min.replace(tzinfo=timezone.utc)
         assert t1 >= t2, f"Trailers not sorted: {t1} < {t2}"
 
     # Verify season filter

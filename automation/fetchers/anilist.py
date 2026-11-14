@@ -735,18 +735,21 @@ def get_hindi_title_and_summary(
                 break
 
     # If no curated match or curated validation failed, translate English synopsis to Hindi
+    from app.transliteration import transliterate_anime_title
+    hi_title = transliterate_anime_title(title_en or title_romaji)
+
     if clean_desc:
         trans_hi, trans_ok = translate_english_synopsis_to_hindi(clean_desc, title_en)
         if trans_ok:
             val_ok, _ = validate_proper_nouns_in_hindi(clean_desc, trans_hi)
             if val_ok:
-                return title_en, trans_hi, "verified"
+                return hi_title, trans_hi, "verified"
 
     # Translation failed: show English text but set translation_status='failed'
     fallback_brief = clean_desc or f"{title_en} schedule update."
     sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', fallback_brief) if s.strip()]
     brief = " ".join(sentences[:3]) if sentences else fallback_brief
-    return title_en, brief, "failed"
+    return hi_title, brief, "failed"
 
 
 def extract_streaming_links(ext_links: list[dict[str, Any]] | None) -> list[dict[str, str]]:

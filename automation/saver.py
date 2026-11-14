@@ -304,6 +304,8 @@ def save_draft(
             title_hi=draft_data.get("title_hi"),
             summary_en=draft_data.get("summary_en"),
             summary_hi=draft_data.get("summary_hi"),
+            key_points_en=draft_data.get("key_points_en"),
+            key_points_hi=draft_data.get("key_points_hi"),
             image_url=draft_data.get("image_url"),
             news_category=draft_data.get("news_category", "Announcement"),
             is_featured=draft_data.get("is_featured", False),

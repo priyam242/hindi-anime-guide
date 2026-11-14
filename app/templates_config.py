@@ -348,7 +348,17 @@ def from_json(val: Any) -> Any:
         return []
 
 
+def render_bold(val: Any) -> str:
+    """Convert **bold** markers to strong HTML tags safely."""
+    if not val:
+        return ""
+    import html as py_html
+    safe_text = py_html.escape(str(val))
+    return re.sub(r'\*\*(.+?)\*\*', r'<strong class="text-white font-bold">\1</strong>', safe_text)
+
+
 templates.env.filters["from_json"] = from_json
+templates.env.filters["render_bold"] = render_bold
 templates.env.filters["hindi_date"] = hindi_date
 templates.env.filters["short_description"] = short_description
 templates.env.filters["first_words"] = first_words

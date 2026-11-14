@@ -185,25 +185,254 @@ def validate_and_sanitize_news_summary(
     return final_en, final_hi, removed_facts
 
 
+def bold_entities(sentence: str) -> str:
+    """Bold key names, dates, numbers, titles in an English factual sentence using markdown **...**."""
+    if not sentence:
+        return ""
+    
+    # 1. Quoted titles: "[^"]+"
+    def repl_quote(m):
+        inner = m.group(1).strip()
+        return f'**"{inner}"**' if len(inner) > 1 else m.group(0)
+    
+    res = re.sub(r'"([^"]+)"', repl_quote, sentence)
+
+    # 2. Recognized Studios, Publishers, Platforms, Franchises
+    entity_names = [
+        "Crunchyroll", "Anime News Network", "Anime Corner", "LiveChart", "Otaku USA",
+        "Shueisha", "Kodansha", "MAPPA", "TOHO animation", "TOHO", "Kadokawa", "Aniplex",
+        "Netflix", "JioHotstar", "Prime Video", "VIZ Media", "Tapas", "BookWalker",
+        "Gushing Over Magical Girls", "Magia Baiser", "Solo Leveling", "The Apothecary Diaries",
+        "One Piece", "Jujutsu Kaisen", "Chainsaw Man", "Demon Slayer", "Spy x Family",
+        "Frieren", "Dandadan", "Sakamoto Days", "Blue Lock", "Look Back", "Suzume",
+        "Patlabor", "Berserk of Gluttony", "Tsugumi Project", "Fei Ren Zai"
+    ]
+    for ent in entity_names:
+        pat = r'\b' + re.escape(ent) + r'\b'
+        if not re.search(r'\*\*' + re.escape(ent) + r'\*\*', res, flags=re.IGNORECASE):
+            res = re.sub(pat, f"**{ent}**", res, flags=re.IGNORECASE)
+
+    # 3. Dates and Years (e.g. November 14, January 6, etc.)
+    date_pat = r'\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?(?:\s*,\s*\d{4})?\b'
+    def repl_date(m):
+        val = m.group(0)
+        return f"**{val}**" if not val.startswith("**") else val
+    res = re.sub(date_pat, repl_date, res, flags=re.IGNORECASE)
+
+    # Standalone 4-digit years 2024-2035
+    res = re.sub(r'(?<![\*\d])(202[4-9]|203[0-5])(?![\*\d])', r'**\1**', res)
+
+    # Ratings or percentages like 3.5%
+    res = re.sub(r'(?<![\*\d])(\d+(?:\.\d+)?%)(?![\*])', r'**\1**', res)
+
+    # Seasons/Episodes like Season 2, Chapter 182, Episode 5
+    res = re.sub(r'(?<![\*])\b((?:Season|Episode|Chapter|Part)\s*\d+)\b(?![\*])', r'**\1**', res, flags=re.IGNORECASE)
+
+    return res
+
+
+def bold_entities_hi(sentence: str) -> str:
+    """Bold key names, dates, numbers, titles in a Hindi sentence."""
+    if not sentence:
+        return ""
+    res = sentence
+    res = re.sub(r'"([^"]+)"', r'**"\1"**', res)
+    hi_entities = [
+        "क्रंचीरोल", "एनीमे न्यूज़ नेटवर्क", "एनीमे कॉर्नर", "लाइवचार्ट", "नेटफ्लिक्स",
+        "वन पीस", "जुजुत्सु काइसेन", "चेनसॉ मैन", "डेमन स्लेयर", "स्पाई x फ़ैमिली",
+        "सोलो लेवलिंग", "लुक बैक", "फ़्रीरेन", "दांदादान", "साकामोटो डेज़", "ब्लू लॉक",
+        "सुज़ुमे", "गशिंग ओवर मैजिकल गर्ल्स", "मागीया बेसर", "द एपोथेकेरी डायरीज़",
+        "शी कबीले", "माओमाओ", "जिनशी"
+    ]
+    for ent in hi_entities:
+        pat = r'\b' + re.escape(ent) + r'\b'
+        if not re.search(r'\*\*' + re.escape(ent) + r'\*\*', res):
+            res = re.sub(pat, f"**{ent}**", res)
+    
+    hi_date_pat = r'\b\d{1,2}\s+(?:जनवरी|फ़रवरी|फरवरी|मार्च|अप्रैल|मई|जून|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर)(?:\s*,?\s*\d{4})?\b'
+    res = re.sub(hi_date_pat, r'**\g<0>**', res)
+    res = re.sub(r'(?<![\*\d])(202[4-9]|203[0-5])(?![\*\d])', r'**\1**', res)
+    res = re.sub(r'(?<![\*\d])(\d+(?:\.\d+)?%)(?![\*])', r'**\1**', res)
+    res = re.sub(r'(?<![\*])\b((?:सीज़न|एपिसोड|चैप्टर|पार्ट)\s*\d+)\b(?![\*])', r'**\1**', res)
+    return res
+
+
+def process_news_bilingual(
+    facts: dict[str, Any],
+    api_key: str | None = None,
+    timeout_seconds: float = 20.0,
+) -> dict[str, Any]:
+    """Process news items into bilingual English and Hindi with factual key points.
+    
+    Rules:
+    - English: RSS title and a short excerpt (2-3 lines, with source credit and 'Read full story' link).
+    - Hindi: Faithful translation through the existing faithfulness validator.
+    - If source text has narrative context (>= 20 words):
+      Intro paragraph + 3-5 factual bullets with bold names/dates/titles built ONLY from RSS description.
+    - If source text is too short (< 20 words):
+      Title, one summary line and source link without bullets.
+    - Never republish full article.
+    """
+    from app.transliteration import transliterate_anime_title
+    
+    raw_title = facts.get("title_english") or facts.get("title_en") or facts.get("title_romaji") or "Anime News"
+    clean_title_en = re.sub(
+        r'[:\-–—]\s*(?:Latest News and Official Announcement|ताज़ा समाचार और आधिकारिक घोषणा).*$',
+        '',
+        raw_title,
+        flags=re.IGNORECASE
+    ).strip()
+
+    source_name = facts.get("source_name", "Official Source")
+    source_url = facts.get("source_url", "")
+    raw_summary = facts.get("raw_summary", "") or facts.get("summary_en", "") or ""
+    clean_raw = re.sub(r'<[^>]+>', ' ', raw_summary)
+    clean_raw = re.sub(r'\s+', ' ', clean_raw).strip()
+    if clean_raw.lower().startswith("official anime news reporting regarding"):
+        clean_raw = ""
+
+    words = clean_raw.split()
+
+    # Generate transliterated Hindi title
+    clean_title_hi = transliterate_anime_title(clean_title_en)
+    if clean_title_hi == clean_title_en or not any('\u0900' <= ch <= '\u097f' for ch in clean_title_hi):
+        translated_title = clean_title_en
+        for en_act, hi_act in [
+            (r'\breveals main key visual\b', "ने जारी किया मुख्य की-विजुअल"),
+            (r'\breveals new visual, trailer, 2027 release date\b', "का नया विजुअल, ट्रेलर और 2027 रिलीज डेट घोषित"),
+            (r'\breveals new key visual, pv\b', "ने नया की-विजुअल और PV जारी किया"),
+            (r'\breveals teaser visual & april 2027 debut\b', "का टीज़र विजुअल जारी, अप्रैल 2027 में प्रसारण"),
+            (r'\breleases on blu-ray & dvd\b', "ब्लू-रे और डीवीडी पर होगी रिलीज"),
+            (r'\bcollaborate with "flight" visual\b', "का 'फ्लाइट' विजुअल सहयोग सामने आया"),
+            (r'\bconfirms 2027 broadcast in new visual\b', "ने नए विजुअल के साथ 2027 प्रसारण की पुष्टि की"),
+            (r'\bdebuts in 2027\b', "2027 में होगा प्रसारण"),
+            (r'\btv anime\b', "टीवी एनीमे"),
+            (r'\banime\b', "एनीमे"),
+            (r'\bseason 2\b', "सीज़न 2"),
+            (r'\bseason 3\b', "सीज़न 3"),
+        ]:
+            translated_title = re.sub(en_act, hi_act, translated_title, flags=re.IGNORECASE)
+        clean_title_hi = translated_title
+
+    # Short source text (< 20 words)
+    if len(words) < 20:
+        if len(words) >= 3:
+            intro_en = clean_raw
+            intro_hi = facts.get("summary_hi") or clean_raw
+        else:
+            intro_en = f"Official anime news update reported via {source_name}."
+            intro_hi = f"{source_name} के माध्यम से आधिकारिक घोषणा की पुष्टि।"
+            
+        summary_en = f"{intro_en} (Source: {source_name}. Read full story via official link.)"
+        summary_hi = f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)"
+        
+        val_en, val_hi, _ = validate_and_sanitize_news_summary(
+            title_en=clean_title_en,
+            raw_source_text=clean_raw,
+            summary_en=summary_en,
+            summary_hi=summary_hi,
+        )
+        return {
+            "title_en": clean_title_en,
+            "title_hi": clean_title_hi,
+            "summary_en": val_en or summary_en,
+            "summary_hi": val_hi or summary_hi,
+            "key_points_en": None,
+            "key_points_hi": None,
+        }
+
+    # Narrative context exists (>= 20 words): Extract short intro + 3-5 bullets
+    key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
+    if key:
+        model_name = os.getenv("GEMINI_MODEL") or PRIMARY_GEMINI_MODEL
+        endpoint = f"{GEMINI_API_BASE}/{model_name}:generateContent?key={key}"
+        prompt = f"""You are an anime news editor. Based ONLY on the following RSS news text, produce a bilingual news structure:
+1. intro_en: Short 1-2 sentence lead paragraph summarizing the announcement.
+2. intro_hi: Faithful natural Hindi translation of intro_en.
+3. title_hi: Faithful natural Hindi headline in Devanagari.
+4. bullets_en: A list of 3 to 5 factual bullet points extracted ONLY from the source text. Bold names, dates, numbers, titles using markdown **...** (e.g. **Crunchyroll**, **November 14**, **Solo Leveling**).
+5. bullets_hi: Faithful Hindi translation of the bullets preserving the exact bolded entities.
+
+STRICT MANDATES:
+- Use ONLY facts present in the source text below. ZERO hallucination, ZERO padding, NO filler sentences.
+- NEVER invent facts or dates.
+
+SOURCE TITLE: {clean_title_en}
+SOURCE TEXT:
+{clean_raw}
+
+OUTPUT JSON ONLY:
+{{
+  "title_hi": "...",
+  "intro_en": "...",
+  "intro_hi": "...",
+  "bullets_en": ["...", "..."],
+  "bullets_hi": ["...", "..."]
+}}
+"""
+        try:
+            with httpx.Client(timeout=timeout_seconds) as client:
+                resp = client.post(
+                    endpoint,
+                    json={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}
+                    }
+                )
+            if resp.status_code == 200:
+                raw_json = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                data = json.loads(raw_json)
+                b_en = [bold_entities(b) for b in data.get("bullets_en", []) if b.strip()]
+                b_hi = [bold_entities_hi(b) for b in data.get("bullets_hi", []) if b.strip()]
+                
+                intro_en = data.get("intro_en", clean_raw)
+                intro_hi = data.get("intro_hi", clean_raw)
+                t_hi = data.get("title_hi") or clean_title_hi
+                
+                chk = {"title_en": clean_title_en, "title_hi": t_hi, "summary_en": intro_en, "summary_hi": intro_hi}
+                is_ok, _ = validate_translation_numbers_and_dates({"raw": clean_raw, "title": clean_title_en}, chk)
+                if is_ok:
+                    return {
+                        "title_en": clean_title_en,
+                        "title_hi": t_hi,
+                        "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
+                        "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
+                        "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
+                        "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
+                    }
+        except Exception as exc:
+            logger.warning("Gemini news extraction error: %s", exc)
+
+    # Offline / deterministic extraction:
+    sents = split_sentences(clean_raw)
+    intro_en = sents[0] if sents else clean_raw
+    bullet_sents = sents[1:6] if len(sents) > 1 else [intro_en]
+    
+    b_en = [bold_entities(s) for s in bullet_sents]
+    b_hi = [bold_entities_hi(s) for s in bullet_sents]
+    intro_hi = facts.get("summary_hi") or intro_en
+    
+    return {
+        "title_en": clean_title_en,
+        "title_hi": clean_title_hi,
+        "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
+        "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
+        "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
+        "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
+    }
+
+
 def rewrite_anime_update(
     item_facts: dict[str, Any],
     api_key: str | None = None,
     allow_offline_fallback: bool = True,
     timeout_seconds: float = 25.0,
 ) -> dict[str, str] | None:
-    """Rewrite raw anime metadata into original English and Hindi drafts using Gemini API.
-
-    Args:
-        item_facts: Dictionary of verified factual metadata.
-        api_key: Google Gemini API key. Defaults to GEMINI_API_KEY environment variable.
-        allow_offline_fallback: If True and GEMINI_API_KEY is absent, generate a
-            high-quality deterministic factual draft for local testing and inspection.
-        timeout_seconds: Timeout for HTTP requests to Gemini.
-
-    Returns:
-        Dict with keys `title_en`, `title_hi`, `summary_en`, `summary_hi`, or None on failure.
-    """
+    """Rewrite raw anime metadata into original English and Hindi drafts using Gemini API."""
     key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
+
+    if item_facts.get("content_type") == "news":
+        return process_news_bilingual(item_facts, api_key=key, timeout_seconds=timeout_seconds)
 
     if not key:
         logger.warning(
@@ -458,34 +687,7 @@ def _generate_offline_factual_draft(facts: dict[str, Any]) -> dict[str, str]:
     raw_summary = facts.get("raw_summary", "")
 
     if content_type == "news":
-        headline_en = title_en
-        headline_hi = facts.get("title_hi") or title_en
-
-        # Rule 1: Use ONLY text present in RSS description. If none exists, show only translated title + 'Read full story'
-        clean_raw = (raw_summary or "").strip()
-        if clean_raw.lower().startswith("official anime news reporting regarding"):
-            clean_raw = ""
-
-        if not clean_raw or len(clean_raw.split()) < 3:
-            summary_en = ""
-            summary_hi = ""
-        else:
-            summary_en = clean_raw
-            summary_hi = facts.get("summary_hi") or clean_raw
-
-        # Run validator to sanitize against ungrounded extrapolations
-        clean_en, clean_hi, _ = validate_and_sanitize_news_summary(
-            title_en=headline_en,
-            raw_source_text=clean_raw,
-            summary_en=summary_en,
-            summary_hi=summary_hi,
-        )
-        return {
-            "title_en": headline_en,
-            "title_hi": headline_hi,
-            "summary_en": clean_en,
-            "summary_hi": clean_hi,
-        }
+        return process_news_bilingual(facts, api_key=None)
     elif content_type == "manga":
         ch_num = facts.get("chapter_number")
         manga_name = facts.get("manga_title") or title_en

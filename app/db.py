@@ -144,7 +144,19 @@ def init_db() -> None:
                 conn.execute(sa_text("ALTER TABLE article ADD COLUMN IF NOT EXISTS cover_image VARCHAR(500);"))
                 conn.execute(sa_text("ALTER TABLE notifications1 ADD COLUMN IF NOT EXISTS user_id INTEGER;"))
                 conn.execute(sa_text("ALTER TABLE notifications1 ALTER COLUMN admin_id DROP NOT NULL;"))
+                conn.execute(sa_text("ALTER TABLE anime_draft ADD COLUMN IF NOT EXISTS key_points_en TEXT;"))
+                conn.execute(sa_text("ALTER TABLE anime_draft ADD COLUMN IF NOT EXISTS key_points_hi TEXT;"))
                 conn.commit()
+            elif engine.dialect.name == "sqlite":
+                # Check and add columns for SQLite
+                cursor = conn.connection.cursor()
+                cursor.execute("PRAGMA table_info(anime_draft);")
+                cols = {row[1] for row in cursor.fetchall()}
+                if "key_points_en" not in cols:
+                    cursor.execute("ALTER TABLE anime_draft ADD COLUMN key_points_en TEXT;")
+                if "key_points_hi" not in cols:
+                    cursor.execute("ALTER TABLE anime_draft ADD COLUMN key_points_hi TEXT;")
+                cursor.close()
     except Exception as e:
         print(f"Database column compatibility note: {e}")
 

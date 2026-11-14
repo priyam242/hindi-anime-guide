@@ -196,16 +196,16 @@
               {% endif %}
             </div>
 
-            <!-- Title -->
+            <!-- Title: Primary official English/romaji, Hindi line transliteration -->
             <h3 class="text-base font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 leading-snug">
               <a href="{% if item.id %}/updates/{{ item.id }}{% else %}#{% endif %}">
-                {{ item.title_hi or item.title_en }}
+                {{ item.title_en }}
               </a>
             </h3>
 
-            <!-- Original Title / Subtitle -->
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1 font-mono">
-              {{ item.title_en }}
+            <!-- Hindi Transliteration line -->
+            <div class="text-xs text-purple-600 dark:text-purple-400 mt-1 line-clamp-1 font-medium">
+              {{ item.title_hi or '' }}
             </div>
 
             <!-- Studio / Source / Members Pills -->
@@ -322,10 +322,10 @@
               </div>
 
               <h3 class="text-base font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug">
-                {{ p_item.title_hi or p_item.title_en }}
-              </h3>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1 font-mono">
                 {{ p_item.title_en }}
+              </h3>
+              <div class="text-xs text-amber-600 dark:text-amber-400 mt-1 line-clamp-1 font-medium">
+                {{ p_item.title_hi or '' }}
               </div>
 
               <div class="flex items-center gap-2 mt-2 flex-wrap">

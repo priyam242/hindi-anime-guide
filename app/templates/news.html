@@ -32,13 +32,27 @@
         </p>
       </div>
       
-      <!-- Quick Section Pills -->
-      <div class="flex flex-wrap items-center gap-2">
-        <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white shadow-sm">ताज़ा समाचार</a>
-        <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
-        <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
-        <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
-        <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+      <!-- Quick Section Pills & Language Toggle -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Bilingual News Language Toggle -->
+        <div class="inline-flex items-center rounded-lg border border-white/10 p-0.5 bg-neutral-900 text-xs shadow-sm">
+          <button type="button" id="news-lang-hi-btn" onclick="setNewsPageLang('hi')"
+            class="px-3 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm">
+            हिंदी
+          </button>
+          <button type="button" id="news-lang-en-btn" onclick="setNewsPageLang('en')"
+            class="px-3 py-1 rounded-md font-bold transition-all text-gray-400 hover:text-white">
+            English
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white shadow-sm">ताज़ा समाचार</a>
+          <a href="/schedule" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">शेड्यूल</a>
+          <a href="/manga" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">मंगा</a>
+          <a href="/awards" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">अवॉर्ड्स</a>
+          <a href="/trailers" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">ट्रेलर्स</a>
+        </div>
       </div>
     </div>
 
@@ -104,7 +118,10 @@
               </div>
 
               <h2 class="text-xl sm:text-2xl lg:text-3xl font-black text-white group-hover:text-red-400 transition-colors leading-tight">
-                <a href="/updates/{{ feat.id }}">
+                <a href="/updates/{{ feat.id }}" class="news-card-title"
+                   data-title-hi="{{ feat.title_hi or feat.title_en }}"
+                   data-title-en="{{ feat.title_en }}"
+                   data-has-hi="{{ '1' if (feat.title_hi and feat.title_hi != feat.title_en) else '0' }}">
                   {{ feat.title_hi or feat.title_en }}
                 </a>
               </h2>
@@ -113,7 +130,10 @@
                 {{ feat.title_en }}
               </p>
 
-              <p class="text-xs sm:text-sm text-gray-300 leading-relaxed font-normal">
+              <p class="news-card-summary text-xs sm:text-sm text-gray-300 leading-relaxed font-normal"
+                 data-summary-hi="{{ (feat.summary_hi or feat.summary_en or '') | short_description(220) }}"
+                 data-summary-en="{{ (feat.summary_en or feat.summary_hi or '') | short_description(220) }}"
+                 data-has-hi="{{ '1' if (feat.summary_hi and feat.summary_hi != feat.summary_en) else '0' }}">
                 {{ (feat.summary_hi or feat.summary_en) | short_description(220) }}
               </p>
             </div>
@@ -173,7 +193,10 @@
                     <span class="whitespace-nowrap">{{ (pick.published_at | relative_time_hindi) if pick.published_at else '' }}</span>
                   </div>
                   <h4 class="text-xs font-bold text-white group-hover/pick:text-red-400 transition-colors line-clamp-2 leading-snug">
-                    <a href="/updates/{{ pick.id }}">
+                    <a href="/updates/{{ pick.id }}" class="news-card-title"
+                       data-title-hi="{{ pick.title_hi or pick.title_en }}"
+                       data-title-en="{{ pick.title_en }}"
+                       data-has-hi="{{ '1' if (pick.title_hi and pick.title_hi != pick.title_en) else '0' }}">
                       {{ pick.title_hi or pick.title_en }}
                     </a>
                   </h4>
@@ -243,7 +266,10 @@
             </div>
 
             <h3 class="text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
-              <a href="/updates/{{ item.id }}">
+              <a href="/updates/{{ item.id }}" class="news-card-title"
+                 data-title-hi="{{ item.title_hi or item.title_en }}"
+                 data-title-en="{{ item.title_en }}"
+                 data-has-hi="{{ '1' if (item.title_hi and item.title_hi != item.title_en) else '0' }}">
                 {{ item.title_hi or item.title_en }}
               </a>
             </h3>
@@ -255,7 +281,10 @@
             {% endif %}
 
             {% if item.summary_hi or item.summary_en %}
-            <p class="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+            <p class="news-card-summary text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed"
+               data-summary-hi="{{ (item.summary_hi or item.summary_en or '') | short_description(120) }}"
+               data-summary-en="{{ (item.summary_en or item.summary_hi or '') | short_description(120) }}"
+               data-has-hi="{{ '1' if (item.summary_hi and item.summary_hi != item.summary_en) else '0' }}">
               {{ (item.summary_hi or item.summary_en) | short_description(120) }}
             </p>
             {% endif %}
@@ -296,4 +325,55 @@
   {% endif %}
 
 </div>
+
+<script>
+  function setNewsPageLang(lang) {
+    try {
+      document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      localStorage.setItem('site_lang', lang);
+    } catch (e) {}
+
+    const isHi = (lang === 'hi');
+    const btnHi = document.getElementById('news-lang-hi-btn');
+    const btnEn = document.getElementById('news-lang-en-btn');
+    if (btnHi && btnEn) {
+      if (isHi) {
+        btnHi.className = "px-3 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
+        btnEn.className = "px-3 py-1 rounded-md font-bold transition-all text-gray-400 hover:text-white";
+      } else {
+        btnEn.className = "px-3 py-1 rounded-md font-bold transition-all bg-red-600 text-white shadow-sm";
+        btnHi.className = "px-3 py-1 rounded-md font-bold transition-all text-gray-400 hover:text-white";
+      }
+    }
+
+    // Switch all news card titles and summaries
+    document.querySelectorAll('.news-card-title').forEach(el => {
+      const hasHi = el.getAttribute('data-has-hi') !== '0';
+      if (!hasHi) {
+        el.textContent = el.getAttribute('data-title-en');
+      } else {
+        el.textContent = isHi ? el.getAttribute('data-title-hi') : el.getAttribute('data-title-en');
+      }
+    });
+
+    document.querySelectorAll('.news-card-summary').forEach(el => {
+      const hasHi = el.getAttribute('data-has-hi') !== '0';
+      if (!hasHi) {
+        el.textContent = el.getAttribute('data-summary-en');
+      } else {
+        el.textContent = isHi ? el.getAttribute('data-summary-hi') : el.getAttribute('data-summary-en');
+      }
+    });
+  }
+
+  // Restore language preference
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const savedLang = localStorage.getItem('site_lang');
+      if (savedLang && (savedLang === 'hi' || savedLang === 'en')) {
+        setNewsPageLang(savedLang);
+      }
+    } catch (e) {}
+  });
+</script>
 {% endblock %}

@@ -34,7 +34,7 @@ import app.db as app_db
 import app.main as app_main
 from app.main import app
 from app.db import get_session, seed_data
-from app.models import Article
+from app.models import Article, AnimeDraft, AwardCeremony, AwardEntry
 
 # Resolve the absolute path of the development database
 DEV_DB_PATH = os.path.abspath(str(BASE_DIR / "anime_hindi.db"))

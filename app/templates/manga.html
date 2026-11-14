@@ -85,9 +85,9 @@
                 </a>
                 <div class="min-w-0 space-y-1">
                   <a href="/updates/{{ m.id }}" class="font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1 text-sm">
-                    {{ m.title_hi or m.title_en }}
+                    {{ m.title_en }}
                   </a>
-                  <span class="text-[11px] text-gray-500 dark:text-gray-400 font-mono block truncate">{{ m.title_en }}</span>
+                  <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium block truncate">{{ m.title_hi or '' }}</span>
                   {% set anime_art = anime_articles_map.get(m.id) if anime_articles_map else None %}
                   {% if anime_art %}
                   <a href="/article/{{ anime_art.slug }}" class="inline-flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400 hover:underline font-bold transition-colors">
@@ -194,9 +194,9 @@
           <div class="flex-1 min-w-0 space-y-2">
             <div>
               <h3 class="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug">
-                <a href="/updates/{{ m.id }}">{{ m.title_hi or m.title_en }}</a>
+                <a href="/updates/{{ m.id }}">{{ m.title_en }}</a>
               </h3>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">{{ m.title_en }}</p>
+              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium truncate">{{ m.title_hi or '' }}</p>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap text-[10px]">

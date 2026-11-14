@@ -121,10 +121,10 @@
           <div>
             <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">ग्रैंड प्राइज विजेता (Grand Prize Winner)</span>
             <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white mt-1 leading-tight">
-              {{ hero_entry.winner_title_hi or hero_entry.winner_title }}
+              {{ hero_entry.winner_title }}
             </h2>
-            <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
-              {{ hero_entry.winner_title }} • {{ hero_entry.category_hi or hero_entry.category }}
+            <div class="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1">
+              {{ hero_entry.winner_title_hi }} • {{ hero_entry.category_hi or hero_entry.category }}
             </div>
           </div>
 
@@ -261,10 +261,10 @@
                   <span>WINNER • विजेता</span>
                 </div>
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-snug line-clamp-2">
-                  {{ entry.winner_title_hi or entry.winner_title }}
-                </h3>
-                <div class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                   {{ entry.winner_title }}
+                </h3>
+                <div class="text-xs text-amber-600 dark:text-amber-400 line-clamp-1 font-medium">
+                  {{ entry.winner_title_hi or '' }}
                 </div>
 
                 <div class="pt-2 flex flex-wrap items-center gap-2 text-xs">

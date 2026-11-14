@@ -570,6 +570,8 @@ class AnimeDraft(SQLModel, table=True):
     title_hi: Optional[str] = Field(default=None, max_length=300, nullable=True)
     summary_en: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     summary_hi: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    key_points_en: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    key_points_hi: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     image_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
     news_category: Optional[str] = Field(default="Announcement", max_length=50, nullable=True)
     is_featured: bool = Field(default=False, nullable=False)

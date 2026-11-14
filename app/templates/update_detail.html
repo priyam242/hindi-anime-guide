@@ -92,7 +92,9 @@
       <span class="text-white font-medium truncate max-w-[280px] sm:max-w-md">{{ current_title }}</span>
     </nav>
 
-    <!-- Inline English / Hindi Reader Toggle -->
+    <!-- Inline English / Hindi Reader Toggle (Hidden if Hindi is missing) -->
+    {% set has_hi = item.title_hi and item.summary_hi and item.title_hi != item.title_en %}
+    {% if has_hi %}
     <div class="inline-flex items-center rounded-lg border border-white/10 p-0.5 bg-neutral-900 text-xs self-start sm:self-auto">
       <button type="button" id="toggle-hi-btn" onclick="toggleDetailLang('hi')"
         class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'hi' %}bg-red-600 text-white shadow-sm{% else %}text-gray-400 hover:text-white{% endif %}">
@@ -103,6 +105,7 @@
         English (EN)
       </button>
     </div>
+    {% endif %}
   </div>
 
   <!-- Main Content Layout -->
@@ -232,14 +235,20 @@
       </div>
       {% endif %}
 
-      <!-- Synopsis with Hindi / English toggle -->
-      {% if current_summary and current_summary.strip() %}
-      <div class="p-6 rounded-2xl bg-neutral-950/80 border border-white/10 space-y-3">
-        <div class="flex items-center justify-between gap-3 flex-wrap">
+      <!-- Synopsis & Key Points with Hindi / English toggle -->
+      {% set bullets_hi = item.key_points_hi | from_json if item.key_points_hi else [] %}
+      {% set bullets_en = item.key_points_en | from_json if item.key_points_en else [] %}
+      {% set has_bullets = (bullets_hi|length > 0) or (bullets_en|length > 0) %}
+      {% set has_intro = current_summary and current_summary.strip() %}
+
+      {% if has_intro or has_bullets %}
+      <div class="p-6 rounded-2xl bg-neutral-950/80 border border-white/10 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-white/10">
           <div class="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
-            <i class="fas fa-book-open text-xs"></i>
+            <i class="fas fa-newspaper text-xs"></i>
             <span>संपादकीय सारांश • Synopsis (Executive Summary)</span>
           </div>
+          {% if has_hi %}
           <div class="inline-flex items-center rounded-lg border border-white/10 p-0.5 bg-neutral-900 text-xs">
             <button type="button" id="synopsis-hi-btn" onclick="toggleDetailLang('hi')"
               class="px-2.5 py-1 rounded-md font-bold transition-all {% if lang == 'hi' %}bg-red-600 text-white shadow-sm{% else %}text-gray-400 hover:text-white{% endif %}">
@@ -250,10 +259,45 @@
               English
             </button>
           </div>
+          {% endif %}
         </div>
+
+        <!-- Optional short intro paragraph (only if narrative context exists) -->
+        {% if has_intro %}
         <p id="detail-body-text" class="text-base sm:text-lg leading-relaxed text-gray-200">
           {{ current_summary }}
         </p>
+        {% endif %}
+
+        <!-- Key Points Bullet List (3-5 bullets with bold names/dates/titles) -->
+        {% if has_bullets %}
+        <div class="space-y-2 pt-2">
+          <div class="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+            <i class="fas fa-list-check text-xs"></i>
+            <span>मुख्य बिंदु • Key Points:</span>
+          </div>
+
+          <!-- Hindi Bullets -->
+          <ul id="bullets-hi-list" class="space-y-2 text-sm text-gray-300 {% if lang != 'hi' %}hidden{% endif %}">
+            {% for bullet in bullets_hi %}
+            <li class="flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+              <span class="text-red-500 font-bold shrink-0 mt-0.5">•</span>
+              <span class="leading-relaxed">{{ bullet | render_bold | safe }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <!-- English Bullets -->
+          <ul id="bullets-en-list" class="space-y-2 text-sm text-gray-300 {% if lang == 'hi' %}hidden{% endif %}">
+            {% for bullet in bullets_en %}
+            <li class="flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+              <span class="text-red-500 font-bold shrink-0 mt-0.5">•</span>
+              <span class="leading-relaxed">{{ bullet | render_bold | safe }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
       </div>
       {% endif %}
 
@@ -415,6 +459,28 @@
     if (bodyText) {
       bodyText.textContent = isHi ? DRAFT_TEXTS.summary_hi : DRAFT_TEXTS.summary_en;
     }
+
+    const bulletsHi = document.getElementById('bullets-hi-list');
+    const bulletsEn = document.getElementById('bullets-en-list');
+    if (bulletsHi && bulletsEn) {
+      if (isHi) {
+        bulletsHi.classList.remove('hidden');
+        bulletsEn.classList.add('hidden');
+      } else {
+        bulletsEn.classList.remove('hidden');
+        bulletsHi.classList.add('hidden');
+      }
+    }
   }
+
+  // Restore user language choice from localStorage if present
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const savedLang = localStorage.getItem('site_lang');
+      if (savedLang && (savedLang === 'hi' || savedLang === 'en')) {
+        toggleDetailLang(savedLang);
+      }
+    } catch (e) {}
+  });
 </script>
 {% endblock %}
