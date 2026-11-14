@@ -976,4 +976,71 @@ Results:
 Status: 5 passed in 5.90s.
 ======================================================================================================================================================
 
+================================================================================
+7. AWARDS LAYOUT OVERHAUL & PLAYWRIGHT RESPONSIVENESS PROOF
+================================================================================
+
+A. ARCHITECTURAL & LAYOUT CHANGES IMPLEMENTED:
+--------------------------------------------------------------------------------
+1. Responsive Grid & Alignment:
+   - Configured `grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-6`.
+   - Cards use `flex flex-col` with direct vertical flow.
+   - Removed `flex-1` and `justify-end` from nominees section (`app/templates/awards.html` line 288).
+     Nominees list now sits directly and snuggly below the winner card (0.0px artificial gap).
+2. Winner Poster & Titles:
+   - Winner poster uses fixed aspect ratio box `aspect-[2/3]` with `object-fit: cover`.
+   - Mobile poster size reduced (`w-20 sm:w-24`) to ensure compact, breathable layout.
+   - "विजेता" (Winner) badge positioned strictly inside the poster (`absolute top-1.5 left-1.5`).
+   - Winner title clamped to 2 lines (`line-clamp-2 break-words overflow-hidden`).
+   - Subtitle line shows Hindi transliteration only, clamped to 1 line (`line-clamp-1 font-medium`).
+     Subtitle is hidden if missing or identical to the primary English title.
+3. Nominees Section:
+   - Compact nominee rows showing thumbnail, title (with `truncate`), and status badge.
+   - At most 5 nominees visible initially.
+   - "+N और नामांकन दिखाएं" Alpine.js expander for entries with more than 5 nominees.
+4. Mobile & Header Wrap:
+   - Outer container configured with `px-3.5 sm:px-6 overflow-hidden`.
+   - Header action pills and Year selector tabs wrap cleanly (`flex-wrap`) without horizontal scrolling.
+   - Zero horizontal overflow across both dark and light modes.
+5. Loading Skeletons & Empty State:
+   - Added pulsing skeleton card grid (`x-show="loading"`) triggered on year switches.
+   - Added dedicated responsive empty state card when a requested year has no data.
+
+B. PLAYWRIGHT AUTOMATED RESPONSIVENESS & OVERFLOW PROOF:
+--------------------------------------------------------------------------------
+Command: python tests/test_awards_layout.py
+Engine: Playwright Chromium Headless (v1255)
+
+=== PLAYWRIGHT AWARDS LAYOUT PROOF ===
+[LIGHT] Mobile (360px) (w=360):
+  - document.scrollWidth (360) <= window.innerWidth (360): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+[LIGHT] Tablet (768px) (w=768):
+  - document.scrollWidth (768) <= window.innerWidth (768): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+[LIGHT] Desktop (1280px) (w=1280):
+  - document.scrollWidth (1280) <= window.innerWidth (1280): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+[DARK] Mobile (360px) (w=360):
+  - document.scrollWidth (360) <= window.innerWidth (360): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+[DARK] Tablet (768px) (w=768):
+  - document.scrollWidth (768) <= window.innerWidth (768): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+[DARK] Desktop (1280px) (w=1280):
+  - document.scrollWidth (1280) <= window.innerWidth (1280): True
+  - Cards checked: 5, Child element overflows: 0
+  - Max gap between winner & nominees: 0.0px (no margin-top: auto / justify-end)
+
+Final Result: ALL TESTS PASSED
+--------------------------------------------------------------------------------
+Zero horizontal scroll (scrollWidth <= innerWidth: 100% PASS).
+Zero child bounding rect overflows beyond card right edge (0 overflows across all cards).
+Zero empty gap between winner and nominees block (0.0px PASS).
+================================================================================
 EOF
