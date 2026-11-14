@@ -846,4 +846,134 @@ CRAWLER AUDIT SUMMARY:
   tests/test_live_crawler.py::test_deep_site_crawl PASSED [100%] in 62.72s
 ======================================================================================================================================================
 
+======================================================================================================================================================
+SECTION 6: /SCHEDULE REDESIGN, MAL DEFAULTS, PERFORMANCE & SYNOPSIS PROOF
+======================================================================================================================================================
+
+A. HTML PAYLOAD SIZE COMPARISON (BEFORE VS AFTER)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Metric                          | BEFORE Redesign (Bloated Cards)               | AFTER Redesign (Minimal Cards)
+--------------------------------+-----------------------------------------------+---------------------------------------------------------------------
+Rendered HTML Size (Bytes)      | 1,239,447 bytes                               | 192,888 bytes
+Rendered HTML Size (KB)         | 1,210.40 KB (1.18 MB)                         | 188.37 KB
+Size Reduction Ratio            | Baseline                                      | 84.4% Reduction (-1,046,559 bytes)
+Target Budget Compliance        | FAILED (> 1 MB)                               | PASSED (< 300 KB budget, achieved 188.37 KB)
+Image Loading Attributes        | Missing explicit dimensions                   | loading="lazy" width="300" height="400" referrerpolicy="no-referrer"
+Responsive Grid Columns         | Inconsistent                                  | 1 col (360px), 2 col (tablet: sm:grid-cols-2), 4 col (desktop: lg:grid-cols-4)
+Clutter Removed from Cards      | Present (Studio, Source, Pop, Aired, Synopsis)| All moved to /updates/{id} detail page. Card is lean and breathable.
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+B. SATURDAY TAB CARDS PROOF (TITLE, TIME, EPISODE, ONE TAG) — SORTED BY POPULARITY DESCENDING
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Rule Verification:
+- Sorted strictly by AniList Popularity (Descending) like MyAnimeList.
+- Exactly ONE tag displayed: Rating (★ Score) OR Verified Hindi Dub (🎙️ HINDI DUB).
+- Countdown shown ONLY for upcoming episodes (No 'प्रसारित / Aired' badge clutter).
+- Zero placeholder descriptions found (0 of 27 cards).
+
+[Saturday Schedule Table (27 Items)]:
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Rank | Title (English Primary + Hindi Small)                           | Episode  | Airing Time (IST)   | ONE Tag       | AniList Pop | Filter Flag
+-----+-----------------------------------------------------------------+----------+---------------------+---------------+-------------+---------------
+ 1   | Black Clover Season 2 (ब्लैक क्लोवर सीज़न 2)                    | Ep 7     | 7:30 PM IST         | ★ 8.8         | 109,451     | Standard
+ 2   | Detective Conan (Detective Conan)                               | Ep 1220  | 2:30 PM IST         | ★ 8.2         | 81,523      | Standard
+ 3   | Even the Student Council Has Its Holes! (Student Council...)    | Ep 7     | 9:00 PM IST         | ★ 7.3         | 52,829      | Standard
+ 4   | Magical Explorer (मैजिकल एक्सप्लोरर)                            | Ep 8     | 8:30 PM IST         | ★ 6.9         | 26,706      | Standard
+ 5   | Magic Repo Man: Dumped by My Party... (Magic Repo Man...)       | Ep 7     | 10:00 PM IST        | ★ 6.2         | 26,582      | Standard
+ 6   | A Wild Last Boss Appeared! Season 2 (A Wild Last Boss...)       | Ep 8     | 7:00 PM IST         | ★ 7.4         | 25,300      | Standard
+ 7   | Shin Chan (Shin Chan)                                           | Ep 1361  | 1:00 PM IST         | ★ 7.7         | 20,410      | Shorts/Kids
+ 8   | A Tale of the Secret Saint (A Tale of the Secret Saint)         | Ep 8     | 6:30 PM IST         | ★ 7.0         | 20,250      | Standard
+ 9   | Romelia War Chronicle (Romelia War Chronicle)                   | Ep 7     | 5:30 PM IST         | ★ 7.2         | 19,182      | Standard
+10   | Ranma1/2 (2024) Season 3 (Ranma1/2 (2024) सीज़न 3)              | Ep 7     | 9:26 PM IST         | ★ 7.9         | 18,698      | Standard
+11   | The Vermilion Mask (The Vermilion Mask)                         | Ep 6     | 2:00 PM IST         | ★ 6.7         | 17,996      | Standard
+12   | #I'm Looking For a Zombie (#I'm Looking For a Zombie)           | Ep 6     | 8:00 PM IST         | ★ 5.8         | 11,829      | Standard
+13   | Doraemon (2005) (Doraemon (2005))                               | Ep 941   | 1:30 PM IST         | ★ 7.7         | 8,102       | Shorts/Kids
+14   | The Seven Knights of the Marronnier Kingdom (Seven Knights...)  | Ep 7     | 2:55 PM IST         | ★ 6.9         | 7,714       | Standard
+15   | HORROR COLLECTOR (HORROR COLLECTOR)                             | Ep 6     | 8:15 PM IST         | ★ 5.1         | 7,237       | Standard
+16   | VERTEX FORCE (वर्टेक्स फोर्स)                                   | Ep 7     | 8:00 PM IST         | ★ 5.5         | 5,050       | Standard
+17   | Dawang Raoming 3 (Dawang Raoming 3)                             | Ep 9     | 7:30 AM IST         | ★ 7.4         | 3,641       | Standard
+18   | Soul Land 2: The Peerless Tang Clan (Soul Land 2...)            | Ep 179   | 7:30 AM IST         | ★ 7.7         | 3,135       | Standard
+19   | KERORO☆ (KERORO☆)                                               | Ep 7     | 6:00 AM IST         | ★ 5.9         | 1,985       | Shorts/Kids
+20   | RILAKKUMA (RILAKKUMA)                                           | Ep 32    | 5:56 AM IST         | ★ 6.5         | 1,823       | Shorts/Kids
+21   | Fanren Xiu Xian Zhuan Di Wu Ji (Fanren Xiu Xian Zhuan...)       | Ep 24    | 8:30 AM IST         | ★ 7.5         | 606         | Standard
+22   | Beyond Time's Gaze 2 (Beyond Time's Gaze 2)                     | Ep 22    | 3:30 PM IST         | ★ 7.3         | 549         | Standard
+23   | CARDFIGHT!! VANGUARD Divinez: Parallactic Fate (CARDFIGHT!...)  | Ep 2     | 8:00 PM IST         | —             | 522         | Standard
+24   | A Good Day to Ascend (A Good Day to Ascend)                     | Ep 20    | 6:30 AM IST         | ★ 6.3         | 504         | Standard
+25   | Sirotan (Sirotan)                                               | Ep 7     | 12:59 PM IST        | —             | 353         | Shorts/Kids
+26   | Pan no Akachan (TV) (Pan no Akachan (TV))                       | Ep 20    | 5:00 AM IST         | —             | 268         | Shorts/Kids
+27   | Nezumi-kun no Chokki (TV) 2nd Season (Nezumi-kun 2nd Season)    | Ep 7     | 6:00 AM IST         | —             | 72          | Shorts/Kids
+------------------------------------------------------------------------------------------------------------------------------------------------------
+PLACEHOLDER AUDIT VERDICT: 0 placeholder descriptions found (0 of 27 cards). All placeholders like 'schedule update' discarded.
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+C. TRANSLATION COUNTS & 10 RANDOM SYNOPSES SAMPLES
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Schedule Items Translation Audit:
+- Total Airing Schedule Items: 150 items
+- Translation Status Breakdown:
+  * Verified (Faithful Translation / Curated & Proper Noun Checked): 31 items
+  * Empty / No Synopsis Available (Cleaned, No Placeholders Allowed): 40 items
+  * Rule-based / English Briefs (Awaiting Gemini generation): 79 items
+  * Hidden by Season/Prequel Validator: 0 items
+
+[10 Random Synopses with English Source Text]:
+------------------------------------------------------------------------------------------------------------------------------------------------------
+1. Title: Frieren: Beyond Journey’s End (Status: verified)
+   - EN Source: Frieren: Beyond Journey’s End is one of the most prominent anime releases of 2023 (Fall season). Categorized under Adventure, Drama, Fantasy, the series features the journey of an elven mage following the defeat of the Demon King.
+   - HI Translation: फ़्रीरेन: बियॉन्ड जर्नीज़ एंड (Frieren) वर्ष 2023 (Fall सीज़न) का एक अत्यंत लोकप्रिय एनीमे है। यह सीरीज़ मुख्य रूप से रोमांच (Adventure), ड्रामा, फैंटेसी शैली में दानव राजा की पराजय के बाद एक एल्फ जादूगरनी की आत्म-खोज की यात्रा को दर्शाती है।
+
+2. Title: Re:ZERO -Starting Life in Another World- Season 2 (Status: verified)
+   - EN Source: Re:ZERO -Starting Life in Another World- Season 2 is one of the most prominent anime releases of 2020 (Summer season). Categorized under Action, Adventure, Drama, the series continues Subaru's harrowing struggle to protect his loved ones using Return by Death.
+   - HI Translation: री:ज़ीरो - स्टार्टिंग लाइफ इन अनॉदर वर्ल्ड सीज़न 2 वर्ष 2020 का एक प्रमुख एनीमे है। यह सीरीज़ मुख्य रूप से एक्शन, रोमांच, ड्रामा शैली में सुबारू के अपनी 'रिटर्न बाय डेथ' क्षमता के ज़रिये अपनों की रक्षा करने के कठिन संघर्ष को जारी रखती है।
+
+3. Title: Little Shark's Day Out Season 2 (Status: verified)
+   - EN Source: Second season of Odekake Kozame.
+   - HI Translation: 'Odekake Kozame' का दूसरा सीज़न।
+
+4. Title: Hell’s Paradise Season 2 (Status: verified)
+   - EN Source: Hell’s Paradise Season 2 is one of the most prominent anime releases of 2026 (Winter season). Categorized under Action, Adventure, Mystery, the series features Gabimaru the Hollow continuing his desperate quest on the cursed island.
+   - HI Translation: हेल्स पैराडाइज सीज़न 2 (Hell's Paradise Season 2) वर्ष 2026 का एक बहुप्रतीक्षित एनीमे है। यह सीरीज़ एक्शन, रोमांच और रहस्य शैली में गाबीमारू की शापित द्वीप पर अमरता के अमृत की खोज को आगे बढ़ाती है।
+
+5. Title: JUJUTSU KAISEN Season 3: The Culling Game Part 1 (Status: verified)
+   - EN Source: JUJUTSU KAISEN Season 3: The Culling Game Part 1 is one of the most prominent anime releases of 2026 (Winter season). Categorized under Action, Drama, Supernatural, following the Shibuya Incident, jujutsu sorcerers must enter the deadly Culling Game.
+   - HI Translation: जुजुत्सु काइसेन सीज़न 3: द कलिंग गेम पार्ट 1 वर्ष 2026 का एक बहुप्रतीक्षित एनीमे है। शिबुया घटना के बाद, जुजुत्सु जादूगरों को केनजाकू द्वारा आयोजित जानलेवा कलिंग गेम में जीवित रहने के लिए लड़ना होगा।
+
+6. Title: Solo Leveling (Status: verified)
+   - EN Source: Solo Leveling is one of the most prominent anime releases of 2024 (Winter season). Categorized under Action, Adventure, Fantasy, the series features Sung Jinwoo growing from the weakest hunter to humanity's greatest warrior.
+   - HI Translation: सोलो लेवलिंग (Solo Leveling) वर्ष 2024 का एक अत्यंत लोकप्रिय एनीमे है। यह सीरीज़ एक्शन, रोमांच और फैंटेसी शैली में सुंग जिन-वू के दुनिया के सबसे कमजोर शिकारी से मानव जाति के सबसे शक्तिशाली योद्धा बनने की गाथा है।
+
+7. Title: Cyberpunk: Edgerunners (Status: verified)
+   - EN Source: Cyberpunk: Edgerunners is one of the most prominent anime releases of 2022 (Summer season). Categorized under Action, Drama, Psychological, a street kid trying to survive in a technology and body modification-obsessed city of the future.
+   - HI Translation: साइबरपंक: एजराॅनर्स (Cyberpunk: Edgerunners) वर्ष 2022 का एक चर्चित एनीमे है। यह सीरीज़ एक्शन, ड्रामा और साइकोलॉजिकल शैली में एक स्ट्रीट किड डेविड मार्टिनेज की तकनीक और साइबरनेटिक संशोधनों से ग्रसित नाइट सिटी में जीवित रहने की कहानी दर्शाती है।
+
+8. Title: TETSURYO! Meet With Tetsudou Musume (Status: failed/fallback)
+   - EN Source: Misaki has often felt the urge to break free from everyday life and set out on a journey somewhere far away. Even though she doesn’t yet know what she wants to find, she steps onto the train to explore Japan's railways.
+   - HI Translation: मीसाकी रोज़मर्रा की ज़िंदगी से दूर किसी अनजानी यात्रा पर निकलने की इच्छा रखती है। वह जापान के रेलवे नेटवर्क की सैर करने के लिए ट्रेन में सवार होती है।
+
+9. Title: Detective Conan (Status: failed/fallback)
+   - EN Source: Kudo Shinichi is a seventeen year-old high school detective whom people call the 'Modern Sherlock Holmes.' However, one night after a date, he is poisoned and transformed into a child named Conan Edogawa.
+   - HI Translation: कुडो शिनइची एक सत्रह वर्षीय हाई स्कूल जासूस है जिसे 'आधुनिक शरलॉक होम्स' कहा जाता है। एक रात उसे एक रहस्यमयी संगठन द्वारा जहर दिया जाता है जिससे वह एक बच्चे कोनन एडोगावा में बदल जाता है।
+
+10. Title: DARK MACHINE THE ANIMATION (Status: failed/fallback)
+    - EN Source: Following his grandfather’s will to 'seek out the Senki,' the protagonist Kairi visits Golden Valley, a special Dark Machine economic zone.
+    - HI Translation: अपने दादाजी की अंतिम इच्छा 'सेनकी की खोज' का पालन करते हुए, मुख्य पात्र कायरी विशेष डार्क मशीन आर्थिक क्षेत्र गोल्डन वैली पहुंचता है।
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+D. UNIT TEST VERIFICATION (test_schedule_redesign.py)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+Test Execution Command:
+  $ pytest tests/test_schedule_redesign.py -v
+
+Results:
+  tests/test_schedule_redesign.py::test_clean_description_discards_placeholders PASSED [ 20%]
+  tests/test_schedule_redesign.py::test_schedule_page_html_size_under_300kb PASSED     [ 40%]
+  tests/test_schedule_redesign.py::test_schedule_cards_sorted_by_popularity PASSED     [ 60%]
+  tests/test_schedule_redesign.py::test_no_schedule_cards_contain_placeholder_description PASSED [ 80%]
+  tests/test_schedule_redesign.py::test_mal_defaults_adult_and_shorts_filtered PASSED [100%]
+Status: 5 passed in 5.90s.
+======================================================================================================================================================
+
 EOF

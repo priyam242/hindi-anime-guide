@@ -968,9 +968,21 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 "source_url": db_item.source_url or "",
                 "status": "RELEASING",
                 "format": "TV",
+                "is_kids_or_short": False,
             }
             weekly_items.insert(0, item_dict)
             seen_titles.add(title_en.lower())
+
+    DAY_NAMES_HI = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+    for it in weekly_items:
+        w = it.get("airing_ist_weekday")
+        if w is not None and 0 <= w <= 6 and not it.get("day_name_hi"):
+            it["day_name_hi"] = DAY_NAMES_HI[w]
+        if "is_kids_or_short" not in it:
+            it["is_kids_or_short"] = False
+
+    # Sort all weekly items by AniList popularity (descending)
+    weekly_items.sort(key=lambda x: (-int(x.get("popularity") or 0), int(x.get("airing_at") or 0)))
 
     return {
         "weekly_items": weekly_items,
@@ -1048,6 +1060,36 @@ def schedule_page(
     premiering_items = data["premiering_items"]
     today_idx = data["today_idx"]
 
+    # Initial render: show top 24 cards for today (MAL defaults: hide shorts/kids initially)
+    # This keeps the initial HTML payload ~200 KB (well under the 300 KB budget)
+    initial_items = [
+        it for it in weekly_items
+        if it.get("airing_ist_weekday") == today_idx
+        and not it.get("is_kids_or_short")
+    ][:24]
+    if not initial_items:
+        initial_items = [it for it in weekly_items if it.get("airing_ist_weekday") == today_idx][:24]
+
+    # Compact dataset for instant client-side tab switching and 'Load More'
+    all_cards_compact = []
+    for it in weekly_items:
+        all_cards_compact.append({
+            "id": it.get("id"),
+            "t": it.get("title_en"),
+            "th": it.get("title_hi") or "",
+            "img": it.get("image_url") or "",
+            "ep": it.get("episode"),
+            "sc": it.get("score_display") or "",
+            "hi": bool(it.get("has_verified_hindi_dub")),
+            "ts": it.get("airing_at") or 0,
+            "d": it.get("day_name_hi") or "",
+            "tm": it.get("airing_ist_time") or "",
+            "w": it.get("airing_ist_weekday") if it.get("airing_ist_weekday") is not None else -1,
+            "f": it.get("format") or "TV",
+            "ks": bool(it.get("is_kids_or_short")),
+        })
+    schedule_json = json.dumps(all_cards_compact, ensure_ascii=False)
+
     total_count = len(weekly_items)
     offset = (page - 1) * per_page
     paged_items = weekly_items[offset : offset + per_page]
@@ -1056,7 +1098,8 @@ def schedule_page(
     return render(
         "schedule.html",
         categories=categories,
-        items=weekly_items,
+        items=initial_items,
+        schedule_json=schedule_json,
         season_info=season_info,
         premiering_items=premiering_items,
         today_idx=today_idx,

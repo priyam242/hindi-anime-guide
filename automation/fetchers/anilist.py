@@ -284,6 +284,16 @@ MONTH_HI = {
     9: "सितंबर", 10: "अक्टूबर", 11: "नवंबर", 12: "दिसंबर"
 }
 
+DAY_NAMES_HI = [
+    "सोमवार",   # 0 = Monday
+    "मंगलवार",  # 1 = Tuesday
+    "बुधवार",   # 2 = Wednesday
+    "गुरुवार",   # 3 = Thursday
+    "शुक्रवार",  # 4 = Friday
+    "शनिवार",   # 5 = Saturday
+    "रविवार",   # 6 = Sunday
+]
+
 SOURCE_HI = {
     "MANGA": "मंगा",
     "LIGHT_NOVEL": "लाइट नॉवेल",
@@ -514,7 +524,9 @@ def validate_faithfulness_with_gemini(source_en: str, hindi_text: str) -> tuple[
 
 
 def clean_description(raw_desc: str) -> str:
-    """Strip HTML, spoilers, and markdown links from AniList descriptions."""
+    """Strip HTML, spoilers, and markdown links from AniList descriptions.
+    Discards empty strings and placeholder descriptions.
+    """
     if not raw_desc:
         return ""
     clean = re.sub(r'<br\s*/?>', ' ', raw_desc, flags=re.IGNORECASE)
@@ -523,6 +535,9 @@ def clean_description(raw_desc: str) -> str:
     clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean)
     clean = re.sub(r'\(Source:.*?\)', '', clean, flags=re.IGNORECASE)
     clean = re.sub(r'\s+', ' ', clean).strip()
+    lower = clean.lower()
+    if any(p in lower for p in ("schedule update", "no synopsis", "no description", "synopsis has not")):
+        return ""
     return clean
 
 
@@ -687,10 +702,17 @@ def get_hindi_title_and_summary(
     clean_desc = clean_description(raw_desc)
     combined = f"{title_en} {title_romaji}"
 
+    from app.transliteration import transliterate_anime_title
+    hi_title = transliterate_anime_title(title_en or title_romaji)
+
+    # If no real description, return empty summary immediately (never return placeholder descriptions)
+    if not clean_desc or clean_desc.strip() in ("", "TBA", "None") or "schedule update" in clean_desc.lower():
+        return hi_title, "", "empty"
+
     # Hotaru no Yomeiri (id: 205909): strictly use Anime entry. If empty, show short neutral line or hide.
     if media and media.get("id") == 205909:
         if not clean_desc or clean_desc.strip() in ("", "TBA", "None"):
-            return "होटारू नो योमेरी (Firefly Wedding)", "आगामी टीवी एनीमे श्रृंखला का आधिकारिक प्रसारण विवरण।", "verified"
+            return "होटारू नो योमेरी (Firefly Wedding)", "", "empty"
 
     # Step 1: Season & Prequel Validator FIRST
     if media:
@@ -746,9 +768,11 @@ def get_hindi_title_and_summary(
                 return hi_title, trans_hi, "verified"
 
     # Translation failed: show English text but set translation_status='failed'
-    fallback_brief = clean_desc or f"{title_en} schedule update."
-    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', fallback_brief) if s.strip()]
-    brief = " ".join(sentences[:3]) if sentences else fallback_brief
+    # If no real synopsis exists, return empty summary (never return placeholder descriptions)
+    if not clean_desc or "schedule update" in clean_desc.lower() or "no synopsis" in clean_desc.lower():
+        return hi_title, "", "empty"
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', clean_desc) if s.strip()]
+    brief = " ".join(sentences[:3]) if sentences else clean_desc
     return hi_title, brief, "failed"
 
 
@@ -882,6 +906,8 @@ query ($start: Int, $end: Int, $page: Int) {
         seasonYear
         episodes
         duration
+        genres
+        isAdult
         startDate {
           year
           month
@@ -941,6 +967,8 @@ query ($season: MediaSeason, $seasonYear: Int) {
       seasonYear
       episodes
       duration
+      genres
+      isAdult
       startDate {
         year
         month
@@ -1046,6 +1074,12 @@ def fetch_live_weekly_schedule(
                     if m_status == "FINISHED" or m_status == "CANCELLED":
                         continue
 
+                    # MAL Defaults: 1. Hide adult (R18/hentai) shows completely
+                    is_adult = bool(media.get("isAdult"))
+                    genres = media.get("genres") or []
+                    if is_adult or any(g.lower() == "hentai" for g in genres):
+                        continue
+
                     airing_at = s.get("airingAt")
                     if not airing_at:
                         continue
@@ -1056,6 +1090,16 @@ def fetch_live_weekly_schedule(
                     titles = media.get("title") or {}
                     title_en = (titles.get("english") or titles.get("romaji") or f"Anime #{media.get('id')}").strip()
                     title_romaji = (titles.get("romaji") or title_en).strip()
+
+                    # MAL Defaults: 2. Identify Kids genre & Shorts (<= 10 min)
+                    comb_title = f"{title_en} {title_romaji}".lower()
+                    is_kids = any(g.lower() == "kids" for g in genres) or any(
+                        k in comb_title for k in ("doraemon", "shin chan", "pan no akachan", "sirotan", "nezumi-kun", "keroro", "chibi")
+                    )
+                    dur = media.get("duration")
+                    fmt_raw = media.get("format") or "TV"
+                    is_short = (dur is not None and dur <= 10) or (fmt_raw == "TV_SHORT")
+                    is_kids_or_short = is_kids or is_short
 
                     cov = media.get("coverImage") or {}
                     image_url = cov.get("large") or cov.get("extraLarge")
@@ -1125,6 +1169,12 @@ def fetch_live_weekly_schedule(
                         "duration": media.get("duration"),
                         "seasonYear": media_year,
                         "startDate": start_date,
+                        "is_adult": is_adult,
+                        "is_kids": is_kids,
+                        "is_short": is_short,
+                        "is_kids_or_short": is_kids_or_short,
+                        "genres": genres,
+                        "day_name_hi": DAY_NAMES_HI[dt_ist.weekday()] if 0 <= dt_ist.weekday() <= 6 else "",
                     }
                     weekly_items.append(item_dict)
                     seen_media_ids.add(media.get("id"))
@@ -1132,6 +1182,9 @@ def fetch_live_weekly_schedule(
                 if not data.get("pageInfo", {}).get("hasNextPage"):
                     break
                 page += 1
+
+            # Sort weekly items by AniList popularity (descending), then airing time
+            weekly_items.sort(key=lambda x: (-int(x.get("popularity") or 0), int(x.get("airing_at") or 0)))
 
             # 2. Fetch "Premiering this season"
             premiering_items: list[dict[str, Any]] = []
@@ -1143,6 +1196,12 @@ def fetch_live_weekly_schedule(
             if prem_resp.status_code == 200:
                 prem_media = prem_resp.json().get("data", {}).get("Page", {}).get("media", [])
                 for pm in prem_media:
+                    # MAL Default: Hide adult shows from season premieres
+                    is_prem_adult = bool(pm.get("isAdult"))
+                    pm_genres = pm.get("genres") or []
+                    if is_prem_adult or any(g.lower() == "hentai" for g in pm_genres):
+                        continue
+
                     pm_titles = pm.get("title") or {}
                     pm_title_en = (pm_titles.get("english") or pm_titles.get("romaji") or f"Anime #{pm.get('id')}").strip()
                     pm_title_romaji = (pm_titles.get("romaji") or pm_title_en).strip()
