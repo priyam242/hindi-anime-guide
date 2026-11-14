@@ -141,7 +141,7 @@ endblock %}
                referrerpolicy="no-referrer"
                onerror="this.onerror=null; this.src='/placeholder.svg?title={{ upd.title_en | urlencode }}&category=News';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ upd.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ upd.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
             {{ upd.content_type }}

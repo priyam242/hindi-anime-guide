@@ -219,7 +219,11 @@ async def admin_logout(request: Request, session: Session = Depends(get_session)
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def admin_register_page(request: Request):
+async def admin_register_page(request: Request, session: Session = Depends(get_session)):
+    # If an admin already exists, require active admin authentication
+    has_admin = session.exec(select(Admin1)).first() is not None
+    if has_admin:
+        await require_admin(request)
     return render("admin/register.html", error=None, request=request)
 
 
@@ -232,6 +236,10 @@ async def admin_register(
     confirm_password: str = Form(...),
     session: Session = Depends(get_session)
 ):
+    # If an admin already exists, require active admin authentication
+    has_admin = session.exec(select(Admin1)).first() is not None
+    if has_admin:
+        await require_admin(request)
     valid_name, err = validate_english_name(name)
     if not valid_name:
         return HTMLResponse(status_code=400, content=render("admin/register.html", error=err, request=request))

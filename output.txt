@@ -1114,4 +1114,140 @@ Test Results: 12 passed, 0 failed (100% pass rate in 31.55s)
 - test_manga_pipeline.py: 7 passed
 - test_manga_coverage_and_detail.py: 5 passed (Coverage >=80, Detail /manga/1, CSM conflict, Filters/Search, 404 handling)
 ================================================================================
+
+9. PRODUCTION RESPONSIVE, PAGE WEIGHT, DATA QUALITY, SECURITY & SEO AUDIT
+================================================================================
+
+A. RESPONSIVE AUDIT RESULTS (360px, 768px, 1280px):
+--------------------------------------------------------------------------------
+Engine: Playwright Chromium Headless
+Checks: document.documentElement.scrollWidth <= window.innerWidth (0 horizontal scroll)
+        Child bounding box horizontal overflow check (rect.right <= viewport.width + 1.5px)
+
+Route: Home (/) (HTTP 200)
+  Page Weight: 207.35 KB | Images: 14 (Lazy: 10, Eager: 4)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: News (/news) (HTTP 200)
+  Page Weight: 200.31 KB | Images: 16 (Lazy: 15, Eager: 1)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Schedule (/schedule) (HTTP 200)
+  Page Weight: 291.56 KB | Images: 20 (Lazy: 20, Eager: 0)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Manga (/manga) (HTTP 200)
+  Page Weight: 271.97 KB | Images: 28 (Lazy: 28, Eager: 0)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Awards (/awards) (HTTP 200)
+  Page Weight: 211.80 KB | Images: 33 (Lazy: 32, Eager: 1)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Trailers (/trailers) (HTTP 200)
+  Page Weight: 198.43 KB | Images: 12 (Lazy: 8, Eager: 4)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Article Detail (/article/naruto-hindi-dub-guide) (HTTP 200)
+  Page Weight: 184.73 KB | Images: 5 (Lazy: 4, Eager: 1)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Manga Detail (/manga/240) (HTTP 200)
+  Page Weight: 146.43 KB | Images: 1 (Lazy: 0, Eager: 1)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Route: Update Detail (/updates/33) (HTTP 200)
+  Page Weight: 159.64 KB | Images: 5 (Lazy: 4, Eager: 1)
+  [360px]: PASS (scrollWidth: 360px, overflows: 0)
+  [768px]: PASS (scrollWidth: 768px, overflows: 0)
+  [1280px]: PASS (scrollWidth: 1280px, overflows: 0)
+
+Summary:
+- Zero horizontal scroll across all 9 routes (scrollWidth <= innerWidth: 100% PASS).
+- Zero child overflows on any viewport (0 overflows across all pages).
+- All routes well under 300 KB target weight.
+- 100% of below-the-fold images equipped with loading="lazy" and decoding="async".
+
+--------------------------------------------------------------------------------
+B. DATA QUALITY PYTEST SUITE EXECUTION:
+--------------------------------------------------------------------------------
+Command: python -m pytest tests/test_data_quality.py
+Result: 6 passed, 0 failed in 11.89s
+1. test_no_placeholder_descriptions_in_db_and_schedule : PASSED
+   - Verified zero occurrences of "schedule update." in DB drafts and rendered schedule page.
+2. test_no_literal_translation_blacklist_titles        : PASSED
+   - Zero occurrences of "एक टुकड़ा", "ओशी नहीं को", "ज़ासूस एक्स परिवार", "चेनसॉ आदमी", "भीतर के रंग" across AnimeDraft, Article, and AwardEntry.
+3. test_no_trailer_published_at_in_future             : PASSED
+   - All trailer published_at timestamps verified <= now_utc (zero future dates).
+4. test_trailer_titles_fetched_from_youtube_not_constructed : PASSED
+   - Zero constructed titles matching '<Title> - Official Main Trailer PV'; all fetched from real YouTube metadata.
+5. test_no_untranslated_japanese_title_on_allowed_trailers : PASSED
+   - Zero raw Kanji/Kana in displayed title_en for allowed trailers.
+6. test_no_manga_next_volume_date_in_past              : PASSED
+   - Zero past next_release dates across all manga drafts.
+
+--------------------------------------------------------------------------------
+C. SECURITY HARDENING & SECRET SCAN:
+--------------------------------------------------------------------------------
+1. Admin Authentication Enforcement:
+   - All administrative actions require valid admin JWT (`require_admin`).
+   - `/admin/register` strictly requires existing admin auth once an admin account exists.
+2. Unpublished Drafts Isolation:
+   - Non-admin visitors querying unpublished articles or anime drafts receive HTTP 404.
+3. Basic Security Headers Active:
+   - X-Content-Type-Options: nosniff
+   - X-Frame-Options: SAMEORIGIN
+   - Referrer-Policy: strict-origin-when-cross-origin
+   - Permissions-Policy: geolocation=(), microphone=(), camera=()
+   - Cross-Origin-Opener-Policy: same-origin-allow-popups
+   - X-XSS-Protection: 1; mode=block
+   - Strict-Transport-Security: max-age=31536000; includeSubDomains (production)
+4. Repository Secret Scan:
+   - Scanned: 227 git-tracked repository files.
+   - Flagged: 0 files. Zero committed secrets detected.
+
+--------------------------------------------------------------------------------
+D. SEO ESSENTIALS VERIFICATION:
+--------------------------------------------------------------------------------
+1. Title & Meta Description:
+   - Unique, descriptive <title> and <meta name="description"> per template and detail page.
+2. Open Graph & Social Sharing:
+   - Configured og:site_name, og:type, og:title, og:description, og:url, og:image, and twitter:card.
+3. Dynamic XML Sitemap & Robots.txt:
+   - /robots.txt: Allow: /, Disallow: /admin/, Disallow: /settings/, Disallow: /auth/, Sitemap link.
+   - /sitemap.xml: Dynamic generator including all static pages, categories, legal pages, published articles, published anime updates, and all 95 published manga detail pages.
+4. Canonical & Internationalization:
+   - <link rel="canonical"> on every route.
+   - <html lang="hi"> with <link rel="alternate" hreflang="en"> and <link rel="alternate" hreflang="hi"> where language toggle exists.
+
+--------------------------------------------------------------------------------
+E. SYSTEM HEALTH PROBE & GITHUB ACTIONS:
+--------------------------------------------------------------------------------
+1. /healthz Endpoint Probe:
+   - Route: GET /healthz
+   - HTTP Status: 200 OK
+   - Payload: {"status": "ok", "app": "Hindi Anime Guide", "database": "connected", "timestamp": "2026-11-14T..."}
+2. GitHub Actions Workflows:
+   - awards_check.yml (Awards Weekly Verification Check): Configured & Green
+   - manga_sync.yml (Manga Daily Sync): Configured & Green
+   - news_trailers_sync.yml (News & Trailers Sync): Configured & Green
+   - schedule_sync.yml (Schedule Daily Sync): Configured & Green
+   - Secrets verified in GitHub Actions: DATABASE_URL, GEMINI_API_KEY, SITE_BASE_URL, YOUTUBE_API_KEY
+================================================================================
 EOF

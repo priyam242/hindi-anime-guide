@@ -68,7 +68,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">NEWS</span>
         </a>
@@ -115,7 +115,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Schedule';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           {% if ep_num %}
           <div class="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1">
@@ -166,7 +166,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Manga';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">MANGA</span>
         </a>
@@ -208,7 +208,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           <span class="absolute top-2.5 left-2.5 bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1">
             <i class="fas fa-crown text-[9px]"></i>
@@ -253,7 +253,7 @@
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Trailer';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
           <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/10 transition-colors">
             <div class="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">

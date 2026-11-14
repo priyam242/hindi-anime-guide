@@ -81,7 +81,7 @@ async def performance_and_security_headers(request: Request, call_next):
             response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=86400"
-    elif path in ("/favicon.ico", "/health", "/ads.txt"):
+    elif path in ("/favicon.ico", "/health", "/healthz", "/ads.txt"):
         response.headers["Cache-Control"] = "public, max-age=86400"
     else:
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -91,8 +91,11 @@ async def performance_and_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     if "Content-Security-Policy" not in response.headers:
         response.headers["X-XSS-Protection"] = "1; mode=block"
+    if settings.env.lower() == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
     return response
 
@@ -102,7 +105,7 @@ async def inject_user_context(request: Request, call_next):
     """Make current user info available to all templates."""
     path = request.url.path.lower()
     # Fast path: Skip DB user lookup for static assets, media, favicon, and health checks
-    if path.startswith(("/static/", "/media/", "/favicon.ico", "/health", "/ads.txt", "/robots.txt")):
+    if path.startswith(("/static/", "/media/", "/favicon.ico", "/health", "/healthz", "/ads.txt", "/robots.txt")):
         request.state.user = None
         try:
             return await call_next(request)
@@ -206,6 +209,32 @@ def ads_txt():
 def health_check():
     """Health check endpoint for UptimeRobot keep-alive."""
     return {"status": "healthy", "app": settings.app_name, "version": "1.0.0"}
+
+
+@app.get("/healthz", tags=["System"])
+def healthz_check():
+    """Kubernetes / CI / Production health probe verifying database connectivity."""
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    try:
+        with Session(engine) as session:
+            session.exec(text("SELECT 1"))
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "database": "disconnected",
+                "detail": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
 
 # Routers

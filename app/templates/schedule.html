@@ -46,7 +46,7 @@
   </div>
 
   <!-- Season Tabs (MAL Style) -->
-  <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+  <div class="flex flex-wrap items-center gap-2">
     <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-1">सीज़न:</span>
     {% if season_info %}
     <a href="/schedule?season={{ season_info.previous.season }}&year={{ season_info.previous.year }}"
@@ -68,7 +68,7 @@
   <div class="space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <!-- Days Tabs -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin max-w-full" role="tablist">
+      <div class="flex flex-wrap items-center gap-1.5" role="tablist">
         <button type="button" @click="setDay('all')"
                 :class="activeDay === 'all' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
                 class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">

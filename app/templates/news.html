@@ -57,7 +57,7 @@
     </div>
 
     <!-- Category Filter Chips & Archive Toggle -->
-    <div class="flex items-center gap-2 pt-5 overflow-x-auto pb-1 scrollbar-thin">
+    <div class="flex flex-wrap items-center gap-2 pt-5">
       <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category and not is_archive %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
         सभी (All)
       </a>
@@ -91,7 +91,7 @@
                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                    onerror="this.onerror=null; this.src='/placeholder.svg?title={{ feat.title_en | urlencode }}&category=News';">
               {% else %}
-              <img src="/static/placeholder.svg" alt="{{ feat.title_en }}" class="w-full h-full object-cover">
+              <img src="/static/placeholder.svg" alt="{{ feat.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
               {% endif %}
               <div class="absolute top-4 left-4 flex items-center gap-2">
                 <span class="bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded shadow flex items-center gap-1.5">
@@ -183,7 +183,7 @@
                        class="w-full h-full object-cover group-hover/pick:scale-105 transition-transform"
                        onerror="this.onerror=null; this.src='/placeholder.svg?title={{ pick.title_en | urlencode }}&category=News';">
                   {% else %}
-                  <img src="/static/placeholder.svg" alt="{{ pick.title_en }}" class="w-full h-full object-cover">
+                  <img src="/static/placeholder.svg" alt="{{ pick.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
                   {% endif %}
                 </a>
                 <div class="flex-1 min-w-0 flex flex-col justify-between">
@@ -245,7 +245,7 @@
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
 
           <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">

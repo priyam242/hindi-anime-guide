@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="{{ 'en' if (lang == 'en' or (request and request.cookies.get('site_lang') == 'en')) else 'hi' }}">
 
 <head>
   <meta charset="UTF-8">
@@ -16,15 +16,26 @@
 
   <link rel="icon" type="image/svg+xml" href="/favicon.ico">
   <link rel="canonical" href="{% block canonical %}{{ canonical_url or request.url }}{% endblock %}">
+
+  {% block hreflang %}
+  {% if request and (request.url.path in ['/news'] or request.url.path.startswith('/updates/') or (item and (item.title_en or item.summary_en))) %}
+  <link rel="alternate" hreflang="hi" href="{{ request.url.include_query_params(lang='hi') }}">
+  <link rel="alternate" hreflang="en" href="{{ request.url.include_query_params(lang='en') }}">
+  <link rel="alternate" hreflang="x-default" href="{{ request.url.include_query_params(lang='hi') }}">
+  {% endif %}
+  {% endblock %}
+
   {% block og_tags %}
   <meta property="og:site_name" content="{{ site.name }}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="{% block og_title %}{{ site.name }} — {{ site.description }}{% endblock %}">
   <meta property="og:description" content="{% block og_description %}{{ site.description }}{% endblock %}">
+  <meta property="og:image" content="{% block og_image %}{{ og_image or (site.url ~ '/static/images/hero-og.webp') }}{% endblock %}">
   <meta property="og:url" content="{{ request.url }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{% block twitter_title %}{{ site.name }} — {{ site.description }}{% endblock %}">
   <meta name="twitter:description" content="{% block twitter_description %}{{ site.description }}{% endblock %}">
+  <meta name="twitter:image" content="{% block twitter_image %}{{ og_image or (site.url ~ '/static/images/hero-og.webp') }}{% endblock %}">
   {% endblock %}
 
   <!-- Inline Light/Dark Theme Controller: LIGHT IS DEFAULT -->

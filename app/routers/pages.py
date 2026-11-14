@@ -511,6 +511,11 @@ def article_page(request: Request, slug: str, session: Session = Depends(get_ses
     article = session.exec(stmt).first()
     if article is None:
         raise HTTPException(status_code=404, detail="लेख नहीं मिला")
+
+    user = getattr(request.state, "user", None)
+    is_admin = bool(user and (user.get("user_type") == "admin" or user.get("is_superuser")))
+    if article.published_at is None and not is_admin:
+        raise HTTPException(status_code=404, detail="लेख अभी प्रकाशित नहीं हुआ है / Article not published")
     
     # Load approved comments with user info
     comments = session.exec(
@@ -2118,6 +2123,26 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
     <lastmod>{upd_lastmod_str}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>"""
+        )
+
+    # Published Manga Detail Pages ONLY
+    published_mangas = session.exec(
+        select(AnimeDraft).where(
+            AnimeDraft.content_type == "manga",
+            AnimeDraft.status == "published",
+            AnimeDraft.is_stale == False,
+        )
+    ).all()
+    for m in published_mangas:
+        m_lastmod = m.updated_at or m.published_at or m.created_at
+        m_lastmod_str = m_lastmod.strftime("%Y-%m-%d") if m_lastmod else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        urls.append(
+            f"""  <url>
+    <loc>{base_url}/manga/{m.id}</loc>
+    <lastmod>{m_lastmod_str}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>"""
         )
 

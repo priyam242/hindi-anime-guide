@@ -43,7 +43,7 @@
     </div>
 
     <!-- Season Filter Tabs -->
-    <div class="flex items-center gap-2 pt-5 overflow-x-auto pb-1 scrollbar-thin">
+    <div class="flex flex-wrap items-center gap-2 pt-5">
       <a href="/trailers?season=all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if current_season == 'all' %}bg-pink-600 text-white shadow-sm{% else %}bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10{% endif %}">
         सभी सीज़न (All)
       </a>
@@ -108,7 +108,7 @@
                class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
                onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=Trailer';">
           {% else %}
-          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" class="w-full h-full object-cover">
+          <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}
 
           <!-- Dark Gradient Scrim -->

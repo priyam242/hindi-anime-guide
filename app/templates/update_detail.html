@@ -390,7 +390,7 @@
                  referrerpolicy="no-referrer"
                  onerror="this.onerror=null; this.src='/placeholder.svg?title={{ rel.title_en | urlencode }}';">
             {% else %}
-            <img src="/static/placeholder.svg" alt="{{ rel.title_en }}" class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10">
+            <img src="/static/placeholder.svg" alt="{{ rel.title_en }}" loading="lazy" decoding="async" class="w-16 h-16 object-cover rounded-lg shrink-0 border border-white/10">
             {% endif %}
             <div class="min-w-0 flex-1">
               <h4 class="text-xs font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
