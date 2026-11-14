@@ -165,6 +165,11 @@
             </a>
             {% endif %}
           </h3>
+          {% if item.title_ja and item.title_ja != (item.title_hi or item.title_en) %}
+          <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-sans" title="{{ item.title_ja }}">
+            {{ item.title_ja }}
+          </div>
+          {% endif %}
 
           <p class="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
             {{ (item.summary_hi or item.summary_en) | short_description(120) }}
@@ -201,7 +206,7 @@
   {{ render_pagination(page, total_pages, ('/trailers?season=' ~ current_season if current_season and current_season != 'all' else '/trailers')) }}
 
   {% else %}
-    {{ render_empty_state('वर्तमान में कोई नया ट्रेलर उपलब्ध नहीं है', 'No Trailers Available', 'ऑटोमेशन पाइपलाइन नए एनीमे पीवी और ट्रेलर घोषणाओं को फेच कर रही है।', 'Trailers and promotional videos are being updated.', 'fas fa-film', lang) }}
+    {{ render_empty_state('कोई आधिकारिक ट्रेलर उपलब्ध नहीं', 'No Official Trailers Available', 'ऑटोमेशन पाइपलाइन केवल सत्यापित आधिकारिक एनीमे पीवी और ट्रेलर फेच करती है।', 'Only verified official anime PVs and trailers are shown.', 'fas fa-film', lang) }}
   {% endif %}
 
 </div>
