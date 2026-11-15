@@ -269,6 +269,12 @@ async def admin_register(
 
 
 # ---------- DASHBOARD ----------
+@router.get("", response_class=RedirectResponse)
+@router.get("/", response_class=RedirectResponse)
+async def admin_root():
+    return RedirectResponse(url="/admin/dashboard", status_code=303)
+
+
 @router.get("/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, session: Session = Depends(get_session)):
     admin = await require_admin(request)

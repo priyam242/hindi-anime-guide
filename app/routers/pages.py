@@ -2228,7 +2228,7 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
         )
     ).all()
     for m in published_mangas:
-        m_lastmod = m.updated_at or m.published_at or m.created_at
+        m_lastmod = m.published_at or m.created_at
         m_lastmod_str = m_lastmod.strftime("%Y-%m-%d") if m_lastmod else datetime.now(timezone.utc).strftime("%Y-%m-%d")
         urls.append(
             f"""  <url>

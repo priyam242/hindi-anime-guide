@@ -120,7 +120,8 @@
         </div>
     </div>
 
-    <table id="users-table" class="data-table">
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+    <table id="users-table" class="data-table" style="min-width: 760px; width: 100%;">
         <thead>
             <tr>
                 <th style="width: 40px; text-align: center;">
@@ -226,6 +227,7 @@
             {% endif %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}
 
