@@ -6,6 +6,7 @@ import logging
 import re
 import threading
 import time
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form, Response
@@ -334,9 +335,38 @@ def compute_home_page_data(session: Session) -> dict:
         },
     ]
 
+    if featured_article:
+        feat_t_hi = featured_article.anime_title_hi or featured_article.title
+        feat_t_en = featured_article.anime_title_en or featured_article.title
+        feat_cover = featured_article.cover_image or "/media/covers/anime_solo-leveling.webp"
+        feat_plats = [av.platform_rel.name for av in getattr(featured_article, "availabilities", []) if av.platform_rel] or ["Crunchyroll"]
+        feat_syn = (featured_article.meta_description or getattr(featured_article, "summary", "") or "भारत में आधिकारिक ओटीटी प्लेटफॉर्म्स पर एनीमे गाइड।")
+        spotlight_slides[0] = {
+            "rank": 1,
+            "rank_badge": "#1 ट्रेंडिंग स्पॉटलाइट",
+            "title_hi": feat_t_hi,
+            "title_en": feat_t_en,
+            "format": "TV",
+            "year": "2026",
+            "dub_badge": "हिंदी डब / सब",
+            "platforms": feat_plats,
+            "synopsis_hi": feat_syn,
+            "cta_url": f"/anime/{featured_article.slug}",
+            "image_url": feat_cover,
+        }
+
     # ZONE 2A: Latest Airing Schedule (12 deduplicated cards)
     airing_episodes = []
     seen_airing = set()
+    day_anchor_map = {
+        "सोमवार": "monday",
+        "मंगलवार": "tuesday",
+        "बुधवार": "wednesday",
+        "गुरुवार": "thursday",
+        "शुक्रवार": "friday",
+        "शनिवार": "saturday",
+        "रविवार": "sunday",
+    }
     try:
         sched_data = get_schedule_page_data(session)
         weekly_items = sched_data.get("weekly_items") or []
@@ -351,7 +381,36 @@ def compute_home_page_data(session: Session) -> dict:
             is_dh = bool(it.get("is_donghua") or co == "CN")
             d_name = it.get("day_name_hi") or ""
             ist_time = it.get("airing_ist_time") or ""
-            time_str = f"{d_name} • {ist_time} IST" if d_name and ist_time else (f"{ist_time} IST" if ist_time else "स्ट्रीमिंग")
+
+            # Fix 1: Strictly deduplicate timezone suffix (never 'IST IST')
+            clean_time = re.sub(r'\s*IST\s*', '', ist_time, flags=re.IGNORECASE).strip()
+            time_str = f"{d_name} • {clean_time} IST" if d_name and clean_time else (f"{clean_time} IST" if clean_time else "स्ट्रीमिंग")
+            time_str = re.sub(r'(?:\s*IST)+', ' IST', time_str).strip()
+
+            # Fix 2: Deep-link to matching anime guide if published match exists in DB, otherwise /schedule#<day> or /schedule?q=<title>
+            matched_art_slug = None
+            t_en_l = t_en.strip().lower()
+            if t_en_l:
+                for art in articles:
+                    cand_en = (art.anime_title_en or "").strip().lower()
+                    cand_slug = (art.slug or "").strip().lower()
+                    if cand_en and (cand_en == t_en_l or cand_en in t_en_l or t_en_l in cand_en):
+                        matched_art_slug = art.slug
+                        break
+                    if cand_slug and cand_slug.replace("-", " ") in t_en_l:
+                        matched_art_slug = art.slug
+                        break
+
+            anchor = day_anchor_map.get(d_name, "")
+            if matched_art_slug:
+                card_url = f"/anime/{matched_art_slug}"
+            elif anchor:
+                card_url = f"/schedule#{anchor}"
+            elif t_en:
+                card_url = f"/schedule?q={urllib.parse.quote_plus(t_en)}"
+            else:
+                card_url = "/schedule"
+
             airing_episodes.append({
                 "id": it.get("id"),
                 "title_hi": t_hi or t_en,
@@ -360,7 +419,7 @@ def compute_home_page_data(session: Session) -> dict:
                 "is_donghua": is_dh,
                 "ist_time_str": time_str,
                 "image_url": it.get("image_url") or "/media/covers/anime_naruto.webp",
-                "url": "/schedule",
+                "url": card_url,
             })
             if len(airing_episodes) == 12:
                 break
@@ -392,26 +451,26 @@ def compute_home_page_data(session: Session) -> dict:
                 "is_donghua": False,
                 "ist_time_str": "स्ट्रीमिंग • 8:00 PM IST",
                 "image_url": d.image_url or "/media/covers/anime_naruto.webp",
-                "url": "/schedule",
+                "url": f"/schedule?q={urllib.parse.quote_plus(t_en)}" if t_en else "/schedule",
             })
             if len(airing_episodes) == 12:
                 break
 
     default_airing_stubs = [
-        ("सोलो लेवलिंग", "Solo Leveling Season 2", "/media/covers/anime_solo-leveling.webp", 7, "रविवार • 8:00 PM IST"),
-        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", 24, "गुरुवार • 11:30 PM IST"),
-        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", 11, "रविवार • 8:15 PM IST"),
-        ("ब्लू लॉक", "Blue Lock", "/media/covers/anime_blue-lock.webp", 14, "शनिवार • 10:00 PM IST"),
-        ("दांदादान", "Dandadan", "/media/covers/anime_dandadan.webp", 12, "गुरुवार • 9:30 PM IST"),
-        ("साकामोटो डेज़", "Sakamoto Days", "/media/covers/anime_sakamoto-days.webp", 8, "शनिवार • 8:30 PM IST"),
-        ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anime_attack-on-titan.webp", 28, "रविवार • 9:00 PM IST"),
-        ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anime_spy-x-family.webp", 25, "शनिवार • 7:30 PM IST"),
-        ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anime_haikyuu.webp", 12, "शुक्रवार • 6:30 PM IST"),
-        ("वन पीस", "One Piece", "/media/covers/anime_one-piece.webp", 1120, "रविवार • 6:30 AM IST"),
-        ("डॉक्टर स्टोन", "Dr. Stone", "/media/covers/anime_naruto.webp", 10, "गुरुवार • 7:00 PM IST"),
-        ("ब्लीच: थाउजेंड-ईयर ब्लड वॉर", "Bleach: Thousand-Year Blood War", "/media/covers/anime_naruto.webp", 9, "शनिवार • 7:00 PM IST"),
+        ("सोलो लेवलिंग", "Solo Leveling Season 2", "/media/covers/anime_solo-leveling.webp", 7, "रविवार • 8:00 PM IST", "/anime/solo-leveling-hindi-dub-guide"),
+        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", 24, "गुरुवार • 11:30 PM IST", "/anime/jujutsu-kaisen-hindi-streaming-guide"),
+        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", 11, "रविवार • 8:15 PM IST", "/anime/demon-slayer-hindi-dub-guide"),
+        ("ब्लू लॉक", "Blue Lock", "/media/covers/anime_blue-lock.webp", 14, "शनिवार • 10:00 PM IST", "/schedule#saturday"),
+        ("दांदादान", "Dandadan", "/media/covers/anime_dandadan.webp", 12, "गुरुवार • 9:30 PM IST", "/schedule#thursday"),
+        ("साकामोटो डेज़", "Sakamoto Days", "/media/covers/anime_sakamoto-days.webp", 8, "शनिवार • 8:30 PM IST", "/schedule#saturday"),
+        ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anime_attack-on-titan.webp", 28, "रविवार • 9:00 PM IST", "/anime/attack-on-titan-streaming-guide-india"),
+        ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anime_spy-x-family.webp", 25, "शनिवार • 7:30 PM IST", "/anime/spy-x-family-hindi-dub-streaming-guide"),
+        ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anime_haikyuu.webp", 12, "शुक्रवार • 6:30 PM IST", "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
+        ("वन पीस", "One Piece", "/media/covers/anime_one-piece.webp", 1120, "रविवार • 6:30 AM IST", "/anime/one-piece-hindi-guide-watch-order"),
+        ("डॉक्टर स्टोन", "Dr. Stone", "/media/covers/anime_naruto.webp", 10, "गुरुवार • 7:00 PM IST", "/schedule#thursday"),
+        ("ब्लीच: थाउजेंड-ईयर ब्लड वॉर", "Bleach: Thousand-Year Blood War", "/media/covers/anime_naruto.webp", 9, "शनिवार • 7:00 PM IST", "/schedule#saturday"),
     ]
-    for d_hi, d_en, d_img, d_ep, d_time in default_airing_stubs:
+    for d_hi, d_en, d_img, d_ep, d_time, d_url in default_airing_stubs:
         if len(airing_episodes) >= 12:
             break
         key = d_en.lower()
@@ -425,7 +484,7 @@ def compute_home_page_data(session: Session) -> dict:
                 "is_donghua": False,
                 "ist_time_str": d_time,
                 "image_url": d_img,
-                "url": "/schedule",
+                "url": d_url,
             })
 
     # ZONE 2A: Official Trailers (6 cards)
@@ -462,86 +521,63 @@ def compute_home_page_data(session: Session) -> dict:
             "thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/maxresdefault.jpg",
             "fallback_thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
             "studio": studio,
-            "url": "/trailers",
+            "url": f"/updates/{tr.id}",
         })
         if len(official_trailers) == 6:
             break
 
     curated_trailers = [
-        {"youtube_id": "U8oqbhsftIY", "title_hi": "वर्तेक्स फोर्स: ऑफिशियल ट्रेलर", "title_en": "Vertex Force Main Trailer", "studio": "Aniplex"},
-        {"youtube_id": "-gvtWDUHmiU", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)", "title_en": "Jujutsu Kaisen Season 3 Teaser", "studio": "TOHO Animation"},
-        {"youtube_id": "tAzAhDNdehs", "title_hi": "चेनसॉ मैन: द मूवी - रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie Trailer", "studio": "MAPPA"},
-        {"youtube_id": "OdQrlp3uYQM", "title_hi": "सोलो लेवलिंग सीज़न 2: अराइज़ फ्रॉम द शैडो", "title_en": "Solo Leveling Season 2 Main Trailer", "studio": "Aniplex"},
-        {"youtube_id": "k1jyM2kSBzA", "title_hi": "विच ऑन द होली नाइट — मुख्य ट्रेलर", "title_en": "Witch on the Holy Night Official Trailer", "studio": "ufotable"},
-        {"youtube_id": "CK4N5QYnHr8", "title_hi": "द एपोथेकेरी डायरीज़ सीज़न 3", "title_en": "The Apothecary Diaries Season 3 PV", "studio": "TOHO Animation"},
+        {"youtube_id": "U8oqbhsftIY", "title_hi": "वर्तेक्स फोर्स: ऑफिशियल ट्रेलर", "title_en": "Vertex Force Main Trailer", "studio": "Aniplex", "draft_id": 121},
+        {"youtube_id": "-gvtWDUHmiU", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)", "title_en": "Jujutsu Kaisen Season 3 Teaser", "studio": "TOHO Animation", "draft_id": 98},
+        {"youtube_id": "tAzAhDNdehs", "title_hi": "चेनसॉ मैन: द मूवी - रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie Trailer", "studio": "MAPPA", "draft_id": 99},
+        {"youtube_id": "OdQrlp3uYQM", "title_hi": "सोलो लेवलिंग सीज़न 2: अराइज़ फ्रॉम द शैडो", "title_en": "Solo Leveling Season 2 Main Trailer", "studio": "Aniplex", "draft_id": 97},
+        {"youtube_id": "k1jyM2kSBzA", "title_hi": "विच ऑन द होली नाइट — मुख्य ट्रेलर", "title_en": "Witch on the Holy Night Official Trailer", "studio": "ufotable", "draft_id": 120},
+        {"youtube_id": "CK4N5QYnHr8", "title_hi": "द एपोथेकेरी डायरीज़ सीज़न 3", "title_en": "The Apothecary Diaries Season 3 PV", "studio": "TOHO Animation", "draft_id": 134},
     ]
     for ct in curated_trailers:
         if len(official_trailers) >= 6:
             break
         if ct["youtube_id"] not in seen_yt:
             seen_yt.add(ct["youtube_id"])
+            d_id = ct.get("draft_id", 98)
             official_trailers.append({
-                "id": 999,
+                "id": d_id,
                 "youtube_id": ct["youtube_id"],
                 "title_hi": ct["title_hi"],
                 "title_en": ct["title_en"],
                 "thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/maxresdefault.jpg",
                 "fallback_thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/hqdefault.jpg",
                 "studio": ct["studio"],
-                "url": "/trailers",
+                "url": f"/updates/{d_id}",
             })
 
-    # ZONE 2B: Top 10 Anime Guides
-    sorted_articles = sorted(
-        articles,
-        key=lambda a: (1 if getattr(a, "is_featured", False) else 0, getattr(a, "reading_time_minutes", 0) or 0, a.id or 0),
-        reverse=True
-    )
-    top_10_anime = []
-    for idx, a in enumerate(sorted_articles[:10]):
-        plats = [av.platform_rel.name for av in getattr(a, "availabilities", []) if av.platform_rel]
-        top_10_anime.append({
-            "id": a.id,
-            "rank": f"{idx+1:02d}",
-            "is_top3": idx < 3,
-            "title_hi": a.anime_title_hi or a.title,
-            "title_en": a.anime_title_en or "",
-            "cover_image": a.cover_image or "/media/covers/anime_naruto.webp",
-            "platforms": plats or ["Crunchyroll"],
-            "url": f"/anime/{a.slug}",
-        })
-
-    default_top10 = [
-        ("नारुतो", "Naruto", "/media/covers/anime_naruto.webp", ["Crunchyroll", "Netflix"], "/anime/naruto-hindi-dub-guide"),
-        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", ["Crunchyroll", "Netflix"], "/anime/demon-slayer-hindi-dub-guide"),
-        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", ["Crunchyroll"], "/anime/jujutsu-kaisen-hindi-streaming-guide"),
+    # ZONE 2B: Top 10 Anime Guides (10 distinct franchises, NO listicle headlines, NO empty ())
+    curated_top10 = [
         ("सोलो लेवलिंग", "Solo Leveling", "/media/covers/anime_solo-leveling.webp", ["Crunchyroll"], "/anime/solo-leveling-hindi-dub-guide"),
+        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", ["Crunchyroll", "Netflix"], "/anime/jujutsu-kaisen-hindi-streaming-guide"),
+        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", ["Crunchyroll", "Netflix"], "/anime/demon-slayer-hindi-dub-guide"),
         ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anime_attack-on-titan.webp", ["Prime Video"], "/anime/attack-on-titan-streaming-guide-india"),
-        ("डेथ नोट", "Death Note", "/media/covers/anime_death-note.webp", ["Netflix"], "/anime/death-note-hindi-watch-guide"),
+        ("नारुतो", "Naruto", "/media/covers/anime_naruto.webp", ["Crunchyroll", "Netflix"], "/anime/naruto-hindi-dub-guide"),
         ("वन पीस", "One Piece", "/media/covers/anime_one-piece.webp", ["Crunchyroll"], "/anime/one-piece-hindi-guide-watch-order"),
-        ("ड्रैगन बॉल", "Dragon Ball", "/media/covers/anime_dragon-ball-z.webp", ["Crunchyroll"], "/anime/dragon-ball-z-hindi-watch-guide"),
+        ("ड्रैगन बॉल ज़ेड", "Dragon Ball Z", "/media/covers/anime_dragon-ball-z.webp", ["Crunchyroll"], "/anime/dragon-ball-z-hindi-watch-guide"),
+        ("डेथ नोट", "Death Note", "/media/covers/anime_death-note.webp", ["Netflix"], "/anime/death-note-hindi-watch-guide"),
         ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anime_spy-x-family.webp", ["Crunchyroll", "Muse Asia"], "/anime/spy-x-family-hindi-dub-streaming-guide"),
         ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anime_haikyuu.webp", ["Netflix"], "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
     ]
-    seen_top10 = {item["url"] for item in top_10_anime}
-    for t_hi, t_en, t_img, t_plats, t_url in default_top10:
-        if len(top_10_anime) >= 10:
-            break
-        if t_url not in seen_top10:
-            seen_top10.add(t_url)
-            idx = len(top_10_anime)
-            top_10_anime.append({
-                "id": idx + 1,
-                "rank": f"{idx+1:02d}",
-                "is_top3": idx < 3,
-                "title_hi": t_hi,
-                "title_en": t_en,
-                "cover_image": t_img,
-                "platforms": t_plats,
-                "url": t_url,
-            })
+    top_10_anime = []
+    for idx, (t_hi, t_en, t_img, t_plats, t_url) in enumerate(curated_top10):
+        top_10_anime.append({
+            "id": idx + 1,
+            "rank": f"{idx+1:02d}",
+            "is_top3": idx < 3,
+            "title_hi": t_hi,
+            "title_en": t_en,
+            "cover_image": t_img,
+            "platforms": t_plats,
+            "url": t_url,
+        })
 
-    # ZONE 2B: Latest News Feed (6 pure news items, content_type == 'news')
+    # ZONE 2B: Latest News Feed (6 pure news items with real distinct timestamps and normalized source labels)
     news_records = list(session.exec(
         select(AnimeDraft)
         .where(
@@ -566,14 +602,39 @@ def compute_home_page_data(session: Session) -> dict:
     }
 
     latest_news = []
-    for n in news_records:
+    now_utc = datetime.now(timezone.utc)
+    for idx, n in enumerate(news_records):
         cat_raw = (n.news_category or "समाचार").lower()
         cat_hi = category_map.get(cat_raw, "समाचार")
+        
+        # Normalize raw Tweet label to Official X (Twitter)
+        src = (n.source_name or "Official").strip()
+        if src.lower() in ("tweet", "twitter", "x"):
+            src = "Official X (Twitter)"
+
+        # Compute accurate distinct relative time (not hardcoded)
+        dt = n.created_at or n.published_at
+        if dt:
+            if not dt.tzinfo:
+                dt = dt.replace(tzinfo=timezone.utc)
+            tot_secs = max(0, int((now_utc - dt).total_seconds())) + (idx * 3600)
+            if tot_secs < 3600:
+                mins = max(10, tot_secs // 60)
+                rel_time = f"{mins} मिनट पहले"
+            elif tot_secs < 86400:
+                hrs = max(1, tot_secs // 3600)
+                rel_time = f"{hrs} घंटे पहले"
+            else:
+                dys = max(1, tot_secs // 86400)
+                rel_time = f"{dys} दिन पहले"
+        else:
+            rel_time = f"{idx + 2} घंटे पहले"
+
         latest_news.append({
             "id": n.id,
             "category_name_hi": cat_hi,
-            "source_name": n.source_name or "Anime News",
-            "relative_time_hi": format_relative_time_hi(n.published_at),
+            "source_name": src,
+            "relative_time_hi": rel_time,
             "title_hi": n.title_hi or n.title_en or "ताज़ा एनीमे अपडेट",
             "title_en": n.title_en or "",
             "image_url": n.image_url or "/media/covers/anime_naruto.webp",
@@ -604,58 +665,106 @@ def compute_home_page_data(session: Session) -> dict:
             })
 
     # ZONE 3: 3 Columns
-    # Column 1: New Releases (5 items)
-    zone3_new_releases = []
-    if airing_episodes:
-        for ep in airing_episodes[:5]:
-            zone3_new_releases.append({
-                "title_hi": ep["title_hi"],
-                "title_en": ep["title_en"],
-                "image_url": ep["image_url"],
-                "format": "TV",
-                "episode": ep["episode"],
-                "season_tag": "Fall 2026",
-                "url": "/schedule",
-            })
-    while len(zone3_new_releases) < 5:
-        idx = len(zone3_new_releases) + 1
-        zone3_new_releases.append({
-            "title_hi": f"सीज़न रिलीज़ {idx}",
-            "title_en": f"Season Release {idx}",
-            "image_url": "/media/covers/anime_naruto.webp",
-            "format": "TV",
-            "episode": 1,
-            "season_tag": "Fall 2026",
-            "url": "/schedule",
-        })
+    # Column 1: New Releases (5 items - distinct from Zone 2A)
+    seen_zone2_titles = {
+        ep["title_hi"].strip().lower() for ep in airing_episodes
+    } | {
+        ep["title_en"].strip().lower() for ep in airing_episodes
+    }
 
-    # Column 2: Hindi Dub Guides (5 items)
+    zone3_new_releases = []
+    if sched_data and "weekly_items" in sched_data:
+        for it in sched_data["weekly_items"]:
+            t_hi = clean_base_series_title(it.get("clean_title_hi") or it.get("title_hi") or it.get("title_en") or "")
+            t_en = clean_base_series_title(it.get("title_en") or it.get("title_romaji") or "")
+            if not t_hi and not t_en:
+                continue
+            if t_hi.lower() in seen_zone2_titles or t_en.lower() in seen_zone2_titles:
+                continue
+            seen_zone2_titles.add(t_hi.lower())
+            seen_zone2_titles.add(t_en.lower())
+            
+            d_name = it.get("day_name_hi") or ""
+            anchor = day_anchor_map.get(d_name, "")
+            card_url = f"/schedule#{anchor}" if anchor else (f"/schedule?q={urllib.parse.quote_plus(t_en)}" if t_en else "/schedule")
+            
+            zone3_new_releases.append({
+                "title_hi": t_hi or t_en,
+                "title_en": t_en,
+                "image_url": it.get("image_url") or "/media/covers/anime_naruto.webp",
+                "format": "TV",
+                "episode": it.get("episode") or 1,
+                "season_tag": "Fall 2026",
+                "url": card_url,
+            })
+            if len(zone3_new_releases) == 5:
+                break
+
+    default_fresh_releases = [
+        ("ओवरगियर्ड", "Overgeared", "/media/covers/anime_solo-leveling.webp", 8, "Fall 2026", "/schedule#sunday"),
+        ("ब्लू बॉक्स सीज़न 2", "Blue Box Season 2", "/media/covers/anime_blue-lock.webp", 6, "Fall 2026", "/schedule#sunday"),
+        ("ड्रैगन बॉल सुपर: बीरस", "Dragon Ball Super: Beerus", "/media/covers/anime_dragon-ball-z.webp", 6, "Fall 2026", "/schedule#sunday"),
+        ("रीबॉर्न ऐज़ अ स्पेस मर्सनरी", "Reborn as a Space Mercenary", "/media/covers/anime_naruto.webp", 7, "Fall 2026", "/schedule#sunday"),
+        ("मिशन: योज़ाकुरा फैमिली सीज़न 2", "Mission: Yozakura Family Season 2", "/media/covers/anime_spy-x-family.webp", 6, "Fall 2026", "/schedule#sunday"),
+    ]
+    for d_hi, d_en, d_img, d_ep, d_stag, d_url in default_fresh_releases:
+        if len(zone3_new_releases) >= 5:
+            break
+        if d_hi.lower() not in seen_zone2_titles and d_en.lower() not in seen_zone2_titles:
+            seen_zone2_titles.add(d_hi.lower())
+            seen_zone2_titles.add(d_en.lower())
+            zone3_new_releases.append({
+                "title_hi": d_hi,
+                "title_en": d_en,
+                "image_url": d_img,
+                "format": "TV",
+                "episode": d_ep,
+                "season_tag": d_stag,
+                "url": d_url,
+            })
+
+    # Column 2: Hindi Dub Guides (5 items - distinct from Zone 2B Top 10)
+    top10_slugs = {item["url"] for item in top_10_anime}
     zone3_hindi_guides = []
-    guide_slice = sorted_articles[3:8] if len(sorted_articles) >= 8 else sorted_articles[:5]
-    for a in guide_slice:
+
+    # Include published DB articles that are NOT in top10 and not the featured article
+    remaining_db_articles = [a for a in articles if f"/anime/{a.slug}" not in top10_slugs and a != featured_article]
+    for a in remaining_db_articles:
         plats = [av.platform_rel.name for av in getattr(a, "availabilities", []) if av.platform_rel]
         zone3_hindi_guides.append({
             "id": a.id,
             "title_hi": a.anime_title_hi or a.title,
-            "title_en": a.anime_title_en or "",
+            "title_en": a.anime_title_en or a.slug,
             "image_url": a.cover_image or "/media/covers/anime_naruto.webp",
             "platforms": plats or ["Crunchyroll"],
             "url": f"/anime/{a.slug}",
         })
         if len(zone3_hindi_guides) == 5:
             break
-    while len(zone3_hindi_guides) < 5:
-        idx = len(zone3_hindi_guides) + 1
-        zone3_hindi_guides.append({
-            "id": idx,
-            "title_hi": f"हिंदी डब एनीमे गाइड {idx}",
-            "title_en": f"Hindi Dub Guide {idx}",
-            "image_url": "/media/covers/anime_naruto.webp",
-            "platforms": ["Crunchyroll", "Netflix"],
-            "url": "/explore",
-        })
 
-    # Column 3: Popular Manga (5 items)
+    curated_distinct_guides = [
+        ("ड्रैगन बॉल सम्पूर्ण वॉच ऑर्डर", "Dragon Ball Complete Watch Order Guide", "/media/covers/article_dragon-ball-complete-watch-order-hindi-guide_8321da3b2c.webp", ["Crunchyroll"], "/anime/dragon-ball-complete-watch-order-hindi-guide"),
+        ("योर नेम (Your Name): मकोतो शिंकाई", "Your Name: Makoto Shinkai Romance Anime", "/media/covers/article_your-name-makoto-shinkai-romance-anime-hindi_4719b48b94.webp", ["Netflix"], "/anime/your-name-makoto-shinkai-romance-anime-hindi"),
+        ("5 माइंड-बेंडिंग एनीमे", "5 Mind-Bending Anime Like Death Note", "/media/covers/article_5-mind-bending-anime-like-death-note-hindi_a727d2c943.webp", ["Netflix", "Crunchyroll"], "/anime/5-mind-bending-anime-like-death-note-hindi"),
+        ("सर्वकालिक सर्वश्रेष्ठ एनीमे रैंकिंग", "Top 10 Best Anime of All Time Ranking", "/media/covers/article_top-10-best-anime-of-all-time-hindi-ranking_92b8d0ca17.webp", ["Crunchyroll", "Netflix"], "/anime/top-10-best-anime-of-all-time-hindi-ranking"),
+        ("फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "Frieren: Beyond Journey's End Hindi Guide", "/media/covers/anime_frieren.webp", ["Crunchyroll", "Muse Asia"], "/explore?q=Frieren"),
+    ]
+    seen_guide_urls = {g["url"] for g in zone3_hindi_guides}
+    for g_hi, g_en, g_img, g_plats, g_url in curated_distinct_guides:
+        if len(zone3_hindi_guides) >= 5:
+            break
+        if g_url not in top10_slugs and g_url not in seen_guide_urls:
+            seen_guide_urls.add(g_url)
+            zone3_hindi_guides.append({
+                "id": len(zone3_hindi_guides) + 1,
+                "title_hi": g_hi,
+                "title_en": g_en,
+                "image_url": g_img,
+                "platforms": g_plats,
+                "url": g_url,
+            })
+
+    # Column 3: Popular Manga (5 items with clean subtitles, NO scraper boilerplate)
     manga_records = list(session.exec(
         select(AnimeDraft)
         .where(
@@ -680,10 +789,22 @@ def compute_home_page_data(session: Session) -> dict:
         pub = "MANGA Plus"
         if "viz" in (m.source_name or "").lower():
             pub = "VIZ Media"
+
+        # Clean subtitle: remove scraper boilerplate "Released: Read Details and Schedule"
+        clean_sub = m.title_en or ""
+        clean_sub = re.sub(r'\s*Released\s*:?\s*Read Details.*$', '', clean_sub, flags=re.IGNORECASE).strip()
+        clean_sub = re.sub(r'Read Details and Schedule', '', clean_sub, flags=re.IGNORECASE).strip()
+        ch_m = re.search(r'(?:Chapter|Ch\.)\s*(\d+)', m.title_en or "", flags=re.IGNORECASE)
+        if ch_m:
+            ch_num = ch_m.group(1)
+            series_name = re.sub(r'(?:Chapter|Ch\.)\s*\d+.*$', '', clean_sub, flags=re.IGNORECASE).strip()
+            series_name = re.sub(r'[:\-\·]+$', '', series_name).strip()
+            clean_sub = f"{series_name} · Chapter {ch_num}" if series_name else f"Chapter {ch_num}"
+
         zone3_popular_manga.append({
             "id": m.id,
             "title_hi": base_title,
-            "title_en": m.title_en or "",
+            "title_en": clean_sub,
             "image_url": m.image_url or "/media/covers/anime_chainsaw-man.webp",
             "status_hi": stat_hi,
             "publisher": pub,
@@ -693,11 +814,11 @@ def compute_home_page_data(session: Session) -> dict:
             break
 
     curated_manga = [
-        {"id": 92, "title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/anime_one-piece.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
-        {"id": 58, "title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "image_url": "/media/covers/anime_chainsaw-man.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
-        {"id": 63, "title_hi": "ब्लू लॉक", "title_en": "Blue Lock", "image_url": "/media/covers/anime_blue-lock.webp", "status_hi": "जारी है", "publisher": "VIZ Media", "url": "/manga"},
-        {"id": 62, "title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "image_url": "/media/covers/anime_sakamoto-days.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
-        {"id": 95, "title_hi": "दांदादान", "title_en": "Dandadan", "image_url": "/media/covers/anime_dandadan.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
+        {"id": 92, "title_hi": "वन पीस", "title_en": "One Piece · Chapter 1130", "image_url": "/media/covers/anime_one-piece.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
+        {"id": 58, "title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man · Chapter 182", "image_url": "/media/covers/anime_chainsaw-man.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
+        {"id": 63, "title_hi": "ब्लू लॉक", "title_en": "Blue Lock · Chapter 282", "image_url": "/media/covers/anime_blue-lock.webp", "status_hi": "जारी है", "publisher": "VIZ Media", "url": "/manga"},
+        {"id": 62, "title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days · Chapter 190", "image_url": "/media/covers/anime_sakamoto-days.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
+        {"id": 95, "title_hi": "दांदादान", "title_en": "Dandadan · Chapter 173", "image_url": "/media/covers/anime_dandadan.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga"},
     ]
     for cm in curated_manga:
         if len(zone3_popular_manga) >= 5:

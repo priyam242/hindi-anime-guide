@@ -234,7 +234,7 @@
                             <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Donghua</span>
                             {% endif %}
                             <div class="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent text-[10px] font-medium text-zinc-300 text-center truncate">
-                                {{ card.ist_time_str }}
+                                {{ card.ist_time_str | replace("IST IST", "IST") }}
                             </div>
                         </div>
                         <div class="p-2.5 flex flex-col flex-grow justify-between">
@@ -319,9 +319,11 @@
                             <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
                                 {{ item.title_hi }}
                             </h4>
+                            {% if item.title_en and item.title_en.strip() %}
                             <p class="text-[11px] text-zinc-400 truncate mt-0.5">
                                 {{ item.title_en }}
                             </p>
+                            {% endif %}
                             <div class="flex flex-wrap items-center gap-1.5 mt-1">
                                 {% for p in item.platforms[:2] %}
                                 <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ p }}</span>
@@ -369,7 +371,7 @@
                         <div class="flex-grow min-w-0">
                             <div class="flex items-center gap-2 text-[10px] text-zinc-400 mb-1">
                                 <span class="px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 font-semibold">{{ n.category_name_hi }}</span>
-                                <span class="truncate">{{ n.source_name }}</span>
+                                <span translate="no" class="truncate">{{ n.source_name }}</span>
                                 <span>•</span>
                                 <span class="whitespace-nowrap">{{ n.relative_time_hi }}</span>
                             </div>
@@ -410,9 +412,11 @@
                             <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
                                 {{ item.title_hi }}
                             </h4>
+                            {% if item.title_en and item.title_en.strip() %}
                             <p class="text-[11px] text-zinc-400 truncate mt-0.5">
                                 {{ item.title_en }}
                             </p>
+                            {% endif %}
                             <div class="mt-1 flex items-center gap-1.5">
                                 <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ item.format }} • Ep {{ item.episode }}</span>
                                 <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-semibold">{{ item.season_tag }}</span>
@@ -448,9 +452,11 @@
                             <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
                                 {{ item.title_hi }}
                             </h4>
+                            {% if item.title_en and item.title_en.strip() %}
                             <p class="text-[11px] text-zinc-400 truncate mt-0.5">
                                 {{ item.title_en }}
                             </p>
+                            {% endif %}
                             <div class="mt-1 flex flex-wrap items-center gap-1.5">
                                 {% for p in item.platforms[:2] %}
                                 <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ p }}</span>
@@ -488,9 +494,11 @@
                             <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
                                 {{ item.title_hi }}
                             </h4>
+                            {% if item.title_en and item.title_en.strip() %}
                             <p class="text-[11px] text-zinc-400 truncate mt-0.5">
                                 {{ item.title_en }}
                             </p>
+                            {% endif %}
                             <div class="mt-1 flex items-center gap-1.5">
                                 <span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-semibold">{{ item.status_hi }}</span>
                                 <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ item.publisher }}</span>
