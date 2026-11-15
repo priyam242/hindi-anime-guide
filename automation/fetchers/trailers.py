@@ -615,7 +615,7 @@ def fetch_anilist_season_trailers(
             clean_title_hi = f"{anime_hi} — {translated_title or 'आधिकारिक ट्रेलर'} | {clean_channel}"
 
             cov = m.get("coverImage") or {}
-            img = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg" if yt_id else (cov.get("large") or cov.get("extraLarge"))
+            img = f"https://img.youtube.com/vi/{yt_id}/maxresdefault.jpg" if yt_id else (cov.get("extraLarge") or cov.get("large"))
 
             # Parse start date as anime premiere date (never future video publication date!)
             s_date = m.get("startDate") or {}
@@ -702,7 +702,7 @@ def fetch_youtube_channel_trailers(limit_per_channel: int = 5, timeout_seconds: 
                     "title_hi": f"{translated_en} | {clean_name} आधिकारिक प्रोमो",
                     "summary_en": f"Official trailer release from {clean_name}: {translated_en}.",
                     "summary_hi": f"{clean_name} द्वारा आधिकारिक तौर पर जारी नया एनीमे टीज़र और प्रमोशनल वीडियो।",
-                    "image_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                    "image_url": f"https://img.youtube.com/vi/{yt_id}/maxresdefault.jpg",
                     "published_at": pub_dt,
                     "published_at_iso": pub_dt.isoformat(),
                     "season": "FALL",

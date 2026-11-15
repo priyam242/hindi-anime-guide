@@ -117,13 +117,25 @@ def clean_html(raw_html: str | None) -> str:
 
 
 def extract_image_from_item(item_elem: ET.Element, raw_description: str, title: str) -> str | None:
-    """Extract thumbnail image URL from RSS XML elements or description HTML."""
+    """Extract highest-resolution image URL from RSS XML elements or description HTML."""
     # 1. Look for <media:thumbnail url="..."> or <media:content url="...">
+    media_candidates = []
     for elem in item_elem.iter():
-        if "thumbnail" in elem.tag.lower() or "content" in elem.tag.lower():
+        tag_lower = elem.tag.lower()
+        if "thumbnail" in tag_lower or "content" in tag_lower:
             url = elem.attrib.get("url")
-            if url and ("jpg" in url.lower() or "png" in url.lower() or "webp" in url.lower()):
-                return url
+            if url and any(ext in url.lower() for ext in ["jpg", "png", "webp", "jpeg"]):
+                w = 0
+                try:
+                    w = int(elem.attrib.get("width") or 0)
+                except Exception:
+                    w = 0
+                is_content = "content" in tag_lower
+                media_candidates.append((1 if is_content else 0, w, url))
+
+    if media_candidates:
+        media_candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        return media_candidates[0][2]
 
     # 2. Look for <enclosure url="..." type="image/...">
     enclosure = item_elem.find("enclosure")

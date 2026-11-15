@@ -212,13 +212,21 @@ def extract_youtube_id(url: Optional[str]) -> Optional[str]:
 
 
 def youtube_thumbnail(val: Optional[str]) -> Optional[str]:
-    """Given a YouTube video ID or a URL, return the high-quality thumbnail URL."""
+    """Given a YouTube video ID or a URL, return the crisp 720p/1080p maxresdefault thumbnail URL."""
     if not val:
         return None
     yt_id = extract_youtube_id(val) if ("http" in val or "/" in val) else (val if len(val) == 11 else extract_youtube_id(val))
     if yt_id:
-        return f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+        return f"https://img.youtube.com/vi/{yt_id}/maxresdefault.jpg"
     return None
+
+
+def strip_parenthetical_english(title: Optional[str]) -> str:
+    """Strip redundant trailing parenthetical English text from a Hindi headline/title."""
+    if not title:
+        return ""
+    cleaned = re.sub(r"\s*\([A-Za-z0-9\s:,\'\-\.\?!\/—–]+\)\s*$", "", str(title)).strip()
+    return cleaned if cleaned else str(title)
 
 
 def airing_weekday(val: Any) -> int:
@@ -387,6 +395,7 @@ templates.env.filters["airing_weekday"] = airing_weekday
 templates.env.filters["relative_time_hindi"] = relative_time_hindi
 templates.env.filters["extract_youtube_id"] = extract_youtube_id
 templates.env.filters["youtube_thumbnail"] = youtube_thumbnail
+templates.env.filters["strip_parenthetical_english"] = strip_parenthetical_english
 
 from app.utils import get_initials, get_avatar_color
 templates.env.globals["get_initials"] = get_initials
@@ -398,6 +407,7 @@ templates.env.globals["airing_weekday"] = airing_weekday
 templates.env.globals["relative_time_hindi"] = relative_time_hindi
 templates.env.globals["extract_youtube_id"] = extract_youtube_id
 templates.env.globals["youtube_thumbnail"] = youtube_thumbnail
+templates.env.globals["strip_parenthetical_english"] = strip_parenthetical_english
 templates.env.filters["initials"] = get_initials
 templates.env.filters["avatar_color"] = get_avatar_color
 

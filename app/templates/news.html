@@ -90,7 +90,7 @@
                    fetchpriority="high"
                    referrerpolicy="no-referrer"
                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                   onerror="this.onerror=null; this.src='/placeholder.svg?title={{ feat.title_en | urlencode }}&category=News';">
+                   onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); } else { this.onerror=null; this.src='/placeholder.svg?title={{ feat.title_en | urlencode }}&category=News'; }">
               {% else %}
               <img src="/static/placeholder.svg" alt="{{ feat.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
               {% endif %}
@@ -255,7 +255,7 @@
                loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}"
                referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-               onerror="this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News';">
+               onerror="if (this.src.includes('maxresdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); } else { this.onerror=null; this.src='/placeholder.svg?title={{ item.title_en | urlencode }}&category=News'; }">
           {% else %}
           <img src="/static/placeholder.svg" alt="{{ item.title_en }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
           {% endif %}

@@ -93,13 +93,13 @@
         <!-- Thumbnail + Click to Play Trigger -->
         <div x-show="activeTrailer !== '{{ trailer_uid }}'" @click="activeTrailer = '{{ trailer_uid }}'" class="w-full h-full cursor-pointer relative group/thumb">
           {% if yt_id %}
-          <img src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg"
+          <img src="https://img.youtube.com/vi/{{ yt_id }}/maxresdefault.jpg"
                alt="{{ item.title_en }}"
                loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}"
                {% if loop.index <= 2 %}fetchpriority="high"{% endif %}
                referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
-               onerror="this.onerror=null; this.src='{{ item.image_url or '/static/placeholder.svg' }}';">
+               onerror="if (!this.src.includes('hqdefault.jpg')) { this.src = this.src.replace('maxresdefault.jpg', 'hqdefault.jpg'); } else { this.onerror=null; this.src='{{ item.image_url or '/static/placeholder.svg' }}'; }">
           {% elif item.image_url %}
           <img src="{{ item.image_url }}"
                alt="{{ item.title_en }}"

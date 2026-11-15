@@ -821,24 +821,18 @@ def news_page(
                         )
                     )
                 else:
-                    base_query = base_query.where(AnimeDraft.news_category == category)
-            elif category in ["news", "trailer"]:
-                base_query = base_query.where(AnimeDraft.content_type == category)
-            else:
-                base_query = base_query.where(
-                    or_(
+                    base_query = base_query.where(
+                        AnimeDraft.news_category == category,
                         AnimeDraft.content_type == "news",
-                        AnimeDraft.content_type == "trailer",
-                    ),
-                    AnimeDraft.content_type.notin_(["manga", "schedule", "award"]),
-                )
+                    )
+            elif category == "trailer":
+                base_query = base_query.where(AnimeDraft.content_type == "trailer")
+            else:
+                base_query = base_query.where(AnimeDraft.content_type == "news")
         else:
             base_query = base_query.where(
-                or_(
-                    AnimeDraft.content_type == "news",
-                    AnimeDraft.content_type == "trailer",
-                ),
-                AnimeDraft.content_type.notin_(["manga", "schedule", "award"]),
+                AnimeDraft.content_type == "news",
+                or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)),
             )
 
         total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
@@ -853,14 +847,19 @@ def news_page(
         featured_item = None
         editor_picks = []
         if page == 1:
+            is_trailer_cat = (category == "Trailer" or category == "trailer")
+            allowed_content_types = ["trailer"] if is_trailer_cat else ["news"]
+
             feat_query = select(AnimeDraft).where(
                 AnimeDraft.status == "published",
                 AnimeDraft.is_stale == False,
                 AnimeDraft.is_featured == True,
                 AnimeDraft.published_at.is_not(None),
                 AnimeDraft.source_url.is_not(None),
-                AnimeDraft.content_type.in_(["news", "trailer"]),
+                AnimeDraft.content_type.in_(allowed_content_types),
             )
+            if not is_trailer_cat:
+                feat_query = feat_query.where(or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)))
             if not is_archive:
                 feat_query = feat_query.where(AnimeDraft.published_at >= cutoff_30d)
             featured_item = session.exec(feat_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())).first()
@@ -874,8 +873,10 @@ def news_page(
                 AnimeDraft.is_editor_pick == True,
                 AnimeDraft.published_at.is_not(None),
                 AnimeDraft.source_url.is_not(None),
-                AnimeDraft.content_type.in_(["news", "trailer"]),
+                AnimeDraft.content_type.in_(allowed_content_types),
             )
+            if not is_trailer_cat:
+                ed_query = ed_query.where(or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)))
             if not is_archive:
                 ed_query = ed_query.where(AnimeDraft.published_at >= cutoff_30d)
             if featured_item:
@@ -890,9 +891,11 @@ def news_page(
                     AnimeDraft.is_stale == False,
                     AnimeDraft.published_at.is_not(None),
                     AnimeDraft.source_url.is_not(None),
-                    AnimeDraft.content_type.in_(["news", "trailer"]),
+                    AnimeDraft.content_type.in_(allowed_content_types),
                     AnimeDraft.id.notin_(excluded),
                 )
+                if not is_trailer_cat:
+                    fill_query = fill_query.where(or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)))
                 if not is_archive:
                     fill_query = fill_query.where(AnimeDraft.published_at >= cutoff_30d)
                 fill_items = list(session.exec(fill_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc()).limit(3 - len(editor_picks))).all())
@@ -988,7 +991,7 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 "title_en": title_en,
                 "title_romaji": db_item.title_en,
                 "title_hi": db_item.title_hi or title_en,
-                "image_url": db_item.image_url,
+                "image_url": (db_item.image_url or "").replace("/medium/", "/large/").replace("/small/", "/large/"),
                 "studio": normalize_studio_name("Official Studio"),
                 "source": "MANGA",
                 "source_display_hi": "मंगा",
@@ -1023,6 +1026,11 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
             it["is_kids_or_short"] = False
         if it.get("airing_ist_time") and "JST" in it["airing_ist_time"]:
             it["airing_ist_time"] = re.sub(r'\s*(?:at\s+)?\d{1,2}:\d{2}\s*JST', '', it["airing_ist_time"]).strip() or "8:30 PM IST"
+        if it.get("image_url") and isinstance(it["image_url"], str):
+            if "/medium/" in it["image_url"]:
+                it["image_url"] = it["image_url"].replace("/medium/", "/large/")
+            elif "/small/" in it["image_url"]:
+                it["image_url"] = it["image_url"].replace("/small/", "/large/")
         raw_t = it.get("title_hi") or ""
         if not raw_t or all(ord(c) < 128 for c in raw_t if c.isalpha()):
             from app.transliteration import transliterate_anime_title
@@ -1827,26 +1835,30 @@ def update_detail_page(
 
     item_db_id = getattr(item, "id", None)
     if isinstance(item_db_id, int):
-        related_items = session.exec(
+        related_items = list(session.exec(
             select(AnimeDraft)
             .where(
                 AnimeDraft.status == "published",
                 AnimeDraft.is_stale == False,
-                AnimeDraft.id != item_db_id
+                AnimeDraft.id != item_db_id,
+                AnimeDraft.image_url.is_not(None),
+                AnimeDraft.image_url != "",
             )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
-        ).all()
+        ).all())
     else:
-        related_items = session.exec(
+        related_items = list(session.exec(
             select(AnimeDraft)
             .where(
                 AnimeDraft.status == "published",
-                AnimeDraft.is_stale == False
+                AnimeDraft.is_stale == False,
+                AnimeDraft.image_url.is_not(None),
+                AnimeDraft.image_url != "",
             )
             .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
             .limit(4)
-        ).all()
+        ).all())
 
     return render(
         "update_detail.html",

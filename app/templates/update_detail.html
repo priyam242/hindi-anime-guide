@@ -143,11 +143,12 @@
 
       <!-- Main Headline -->
       <h1 id="detail-headline" class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight heading-gradient">
-        {{ current_title }}
+        {{ current_title | strip_parenthetical_english }}
       </h1>
 
       {% set sub_t = (item.title_en or item.title_romaji or '').strip() %}
-      {% if sub_t and sub_t.lower() != (current_title or '').strip().lower() and sub_t != (item.title_hi or '').strip() and not (sub_t == current_title) %}
+      {% set clean_curr = (current_title | strip_parenthetical_english).strip() %}
+      {% if sub_t and sub_t.lower() != clean_curr.lower() and sub_t.lower() != (item.title_hi or '').strip().lower() %}
       <div class="text-xs text-gray-400 font-mono -mt-2">
         {{ sub_t }}
       </div>
@@ -167,9 +168,11 @@
         </iframe>
       </div>
       {% elif item.image_url %}
-      <div class="rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shadow-lg max-h-[480px] flex items-center justify-center">
+      <div class="relative rounded-2xl overflow-hidden bg-neutral-950 border border-white/10 shadow-2xl max-h-[500px] flex items-center justify-center">
+        <!-- Atmospheric blurred background -->
+        <div class="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-110 pointer-events-none" style="background-image: url('{{ item.image_url }}');"></div>
         <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
-             class="w-full h-full object-cover max-h-[480px]"
+             class="relative z-10 max-h-[500px] w-auto max-w-full object-contain mx-auto drop-shadow-xl"
              loading="eager"
              fetchpriority="high"
              referrerpolicy="no-referrer"
@@ -460,7 +463,7 @@
             {% endif %}
             <div class="min-w-0 flex-1">
               <h4 class="text-xs font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
-                {{ rel.title_hi or rel.title_en }}
+                {{ (rel.title_hi or rel.title_en) | strip_parenthetical_english }}
               </h4>
               <span class="text-[10px] text-gray-400 mt-1 block">
                 {{ (rel.published_at | hindi_date) if rel.published_at else '' }}

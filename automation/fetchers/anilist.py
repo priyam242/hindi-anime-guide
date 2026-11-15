@@ -145,6 +145,20 @@ def fetch_current_season_schedule(
     return []
 
 
+def extract_hd_cover_url(cov: dict | None) -> str | None:
+    """Extract crisp, high-resolution official AniList cover image (extraLarge/large, never medium)."""
+    if not cov or not isinstance(cov, dict):
+        return None
+    url = cov.get("extraLarge") or cov.get("large")
+    if url and isinstance(url, str):
+        if "/medium/" in url:
+            url = url.replace("/medium/", "/large/")
+        elif "/small/" in url:
+            url = url.replace("/small/", "/large/")
+        return url
+    return None
+
+
 def _normalize_media_item(media: dict[str, Any]) -> dict[str, Any] | None:
     """Normalize raw AniList media GraphQL response into a factual dictionary."""
     media_id = media.get("id")
@@ -168,7 +182,7 @@ def _normalize_media_item(media: dict[str, Any]) -> dict[str, Any] | None:
         airing_at_formatted = dt.strftime("%Y-%m-%d %H:%M UTC")
 
     cover_images = media.get("coverImage") or {}
-    image_url = cover_images.get("large") or cover_images.get("extraLarge")
+    image_url = extract_hd_cover_url(cover_images)
 
     site_url = media.get("siteUrl") or f"https://anilist.co/anime/{media_id}"
     score = media.get("averageScore")
@@ -263,7 +277,7 @@ def search_anilist_cover(query_title: str, timeout_seconds: float = 8.0) -> str 
             media = resp.json().get("data", {}).get("Media")
             if media:
                 cov = media.get("coverImage") or {}
-                return cov.get("large") or cov.get("extraLarge")
+                return extract_hd_cover_url(cov)
     except Exception as exc:
         logger.debug("AniList cover search failed for '%s': %s", clean, exc)
 
@@ -1136,7 +1150,7 @@ def fetch_live_weekly_schedule(
                     is_kids_or_short = is_kids or is_short
 
                     cov = media.get("coverImage") or {}
-                    image_url = cov.get("large") or cov.get("extraLarge")
+                    image_url = extract_hd_cover_url(cov)
 
                     raw_desc = media.get("description") or ""
                     media_year = media.get("seasonYear") or (media.get("startDate") or {}).get("year")
@@ -1243,7 +1257,7 @@ def fetch_live_weekly_schedule(
                     pm_title_en = (pm_titles.get("english") or pm_titles.get("romaji") or f"Anime #{pm.get('id')}").strip()
                     pm_title_romaji = (pm_titles.get("romaji") or pm_title_en).strip()
                     pm_cov = pm.get("coverImage") or {}
-                    pm_img = pm_cov.get("large") or pm_cov.get("extraLarge")
+                    pm_img = extract_hd_cover_url(pm_cov)
                     pm_s_date = pm.get("startDate") or {}
                     pm_year = pm_s_date.get("year") or pm.get("seasonYear")
                     pm_month = pm_s_date.get("month")
@@ -1500,7 +1514,7 @@ def fetch_anilist_media_by_id(media_id: int, timeout_seconds: float = 8.0) -> di
                 title_native = (titles.get("native") or "").strip()
 
                 cov = media.get("coverImage") or {}
-                image_url = cov.get("extraLarge") or cov.get("large") or cov.get("medium")
+                image_url = extract_hd_cover_url(cov)
 
                 studios_nodes = (media.get("studios") or {}).get("nodes") or []
                 studio_name = normalize_studio_name(studios_nodes[0].get("name")) if studios_nodes else None
