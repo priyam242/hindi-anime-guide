@@ -99,7 +99,15 @@
                   <i class="fas fa-star text-[10px]"></i>
                   <span>प्रमुख समाचार • FEATURED</span>
                 </span>
-                {% if feat.news_category %}
+                {% if feat.content_type == 'trailer' or feat.news_category == 'Trailer' %}
+                <span class="bg-amber-600 text-white text-xs font-bold px-2.5 py-1 rounded shadow">
+                  ट्रेलर
+                </span>
+                {% elif feat.news_category == 'Announcement' %}
+                <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded shadow">
+                  घोषणा
+                </span>
+                {% elif feat.news_category %}
                 <span class="bg-neutral-950/80 backdrop-blur-md text-red-400 text-xs font-bold px-2 py-0.5 rounded border border-red-500/30">
                   {{ feat.news_category }}
                 </span>
@@ -127,9 +135,11 @@
                 </a>
               </h2>
 
+              {% if feat.title_en and feat.title_en.strip().lower() != (feat.title_hi or '').strip().lower() and not (feat.title_en in (feat.title_hi or '')) %}
               <p class="text-xs text-gray-400 font-mono">
                 {{ feat.title_en }}
               </p>
+              {% endif %}
 
               <p class="news-card-summary text-xs sm:text-sm text-gray-300 leading-relaxed font-normal"
                  data-summary-hi="{{ (feat.summary_hi or feat.summary_en or '') | short_description(220) }}"
@@ -251,9 +261,23 @@
           {% endif %}
 
           <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
-              {{ item.news_category or item.content_type or 'NEWS' }}
+            {% if item.content_type == 'trailer' or item.news_category == 'Trailer' %}
+            <span class="bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              ट्रेलर
             </span>
+            {% elif item.news_category == 'Announcement' %}
+            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              घोषणा
+            </span>
+            {% elif item.news_category %}
+            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              {{ item.news_category }}
+            </span>
+            {% else %}
+            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              समाचार
+            </span>
+            {% endif %}
           </div>
         </a>
 
@@ -276,7 +300,7 @@
               </a>
             </h3>
 
-            {% if item.title_hi and item.title_en %}
+            {% if item.title_en and item.title_en.strip().lower() != (item.title_hi or '').strip().lower() and not (item.title_en in (item.title_hi or '')) %}
             <p class="text-[11px] text-gray-500 font-mono truncate mt-0.5">
               {{ item.title_en }}
             </p>

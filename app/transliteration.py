@@ -88,11 +88,21 @@ PROTECTED_GLOSSARY: dict[str, str] = {
     "Kyoto Animation": "Kyoto Animation",
     "CoMix Wave Films": "CoMix Wave Films",
     "Pierrot": "Pierrot",
+    "Studio Pierrot": "Studio Pierrot",
     "A-1 Pictures": "A-1 Pictures",
     "Production I.G": "Production I.G",
     "Bandai Namco": "Bandai Namco",
     "Kodansha": "Kodansha",
     "Shogakukan": "Shogakukan",
+    "Pony Canyon": "Pony Canyon",
+    "NBCUniversal": "NBCUniversal",
+    "Fuji TV": "Fuji TV",
+    "TBS": "TBS",
+    "TMS": "TMS",
+    "Twin Engine": "Twin Engine",
+    "Shochiku": "Shochiku",
+    "Bushiroad": "Bushiroad",
+    "Science SARU": "Science SARU",
 }
 
 # Known literal machine translation corruptions and their clean canonical replacements
@@ -124,6 +134,12 @@ CORRUPTED_LITERAL_MAPPINGS: dict[str, str] = {
     "मौत का नोट": "डेथ नोट",
     "लड़का और बगुला": "द बॉय एंड द हेरॉन",
     "नीला ताला": "ब्लू लॉक",
+    "टट्टू घाटी": "Pony Canyon",
+    "सर्वज्ञ पाठक का दृष्टिकोण": "ओम्निसिएंट रीडर्स व्यूपॉइंट",
+    "सर्वज्ञ पाठक": "ओम्निसिएंट रीडर्स व्यूपॉइंट",
+    "महानतम एस्टेट डेवलपर": "द ग्रेटेस्ट एस्टेट डेवलपर",
+    "पतन 2026": "फ़ॉल 2026",
+    "पतझड़ 2026": "फ़ॉल 2026",
 }
 
 # Unit test blacklist: literal machine translation phrases forbidden inside anime titles
@@ -161,6 +177,9 @@ BLACKLIST_TRANSLATION_WORDS = [
     "नीला ताला",
     "आक्रमण पर टाइटन",
     "मौत का नोट",
+    "टट्टू घाटी",
+    "सर्वज्ञ पाठक",
+    "महानतम एस्टेट",
 ]
 
 
@@ -201,6 +220,9 @@ REVIEWED_TRANSLITERATION_MAP: dict[str, str] = {
     "suzume": "सुज़ुमे",
     "bocchi the rock!": "बोची द रॉक!",
     "bocchi the rock": "बोची द रॉक!",
+    "omniscient reader's viewpoint": "ओम्निसिएंट रीडर्स व्यूपॉइंट",
+    "omniscient reader": "ओम्निसिएंट रीडर्स व्यूपॉइंट",
+    "the greatest estate developer": "द ग्रेटेस्ट एस्टेट डेवलपर",
     "jujutsu kaisen": "जुजुत्सु काइसेन",
     "jujutsu kaisen 0": "जुजुत्सु काइसेन 0",
     "jujutsu kaisen season 2": "जुजुत्सु काइसेन सीज़न 2",

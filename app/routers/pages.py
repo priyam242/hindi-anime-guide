@@ -822,8 +822,24 @@ def news_page(
                     )
                 else:
                     base_query = base_query.where(AnimeDraft.news_category == category)
-            elif category in ["news", "schedule", "manga", "award", "trailer"]:
+            elif category in ["news", "trailer"]:
                 base_query = base_query.where(AnimeDraft.content_type == category)
+            else:
+                base_query = base_query.where(
+                    or_(
+                        AnimeDraft.content_type == "news",
+                        AnimeDraft.content_type == "trailer",
+                    ),
+                    AnimeDraft.content_type.notin_(["manga", "schedule", "award"]),
+                )
+        else:
+            base_query = base_query.where(
+                or_(
+                    AnimeDraft.content_type == "news",
+                    AnimeDraft.content_type == "trailer",
+                ),
+                AnimeDraft.content_type.notin_(["manga", "schedule", "award"]),
+            )
 
         total_count = session.exec(select(func.count()).select_from(base_query.subquery())).one()
         offset = (page - 1) * per_page
@@ -843,6 +859,7 @@ def news_page(
                 AnimeDraft.is_featured == True,
                 AnimeDraft.published_at.is_not(None),
                 AnimeDraft.source_url.is_not(None),
+                AnimeDraft.content_type.in_(["news", "trailer"]),
             )
             if not is_archive:
                 feat_query = feat_query.where(AnimeDraft.published_at >= cutoff_30d)
@@ -857,6 +874,7 @@ def news_page(
                 AnimeDraft.is_editor_pick == True,
                 AnimeDraft.published_at.is_not(None),
                 AnimeDraft.source_url.is_not(None),
+                AnimeDraft.content_type.in_(["news", "trailer"]),
             )
             if not is_archive:
                 ed_query = ed_query.where(AnimeDraft.published_at >= cutoff_30d)
@@ -872,6 +890,7 @@ def news_page(
                     AnimeDraft.is_stale == False,
                     AnimeDraft.published_at.is_not(None),
                     AnimeDraft.source_url.is_not(None),
+                    AnimeDraft.content_type.in_(["news", "trailer"]),
                     AnimeDraft.id.notin_(excluded),
                 )
                 if not is_archive:
@@ -930,6 +949,9 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
 
     seen_titles = {str(item.get("title_en", "")).lower() for item in weekly_items}
     for db_item in db_items:
+        # Strictly exclude completed/catalog anime with stale JST broadcast strings
+        if db_item.airing_time and "JST" in db_item.airing_time:
+            continue
         title_en = db_item.title_en or ""
         if title_en and title_en.lower() not in seen_titles:
             airing_ts = int(db_item.published_at.timestamp()) if db_item.published_at else 0
@@ -950,6 +972,10 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                     "class": p_cls["class"],
                 })
 
+            clean_air_time = db_item.airing_time
+            if not clean_air_time or "JST" in clean_air_time:
+                clean_air_time = dt_ist.strftime("%I:%M %p IST").lstrip("0")
+
             item_dict = {
                 "id": db_item.id,
                 "media_id": db_item.anilist_id or db_item.id,
@@ -958,7 +984,7 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 "airing_at": airing_ts,
                 "airing_at_iso": db_item.published_at.isoformat() if db_item.published_at else "",
                 "airing_ist_weekday": dt_ist.weekday(),
-                "airing_ist_time": db_item.airing_time or dt_ist.strftime("%I:%M %p IST").lstrip("0"),
+                "airing_ist_time": clean_air_time,
                 "title_en": title_en,
                 "title_romaji": db_item.title_en,
                 "title_hi": db_item.title_hi or title_en,
@@ -995,6 +1021,8 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
             it["day_name_hi"] = DAY_NAMES_HI[w]
         if "is_kids_or_short" not in it:
             it["is_kids_or_short"] = False
+        if it.get("airing_ist_time") and "JST" in it["airing_ist_time"]:
+            it["airing_ist_time"] = re.sub(r'\s*(?:at\s+)?\d{1,2}:\d{2}\s*JST', '', it["airing_ist_time"]).strip() or "8:30 PM IST"
         raw_t = it.get("title_hi") or ""
         if not raw_t or all(ord(c) < 128 for c in raw_t if c.isalpha()):
             from app.transliteration import transliterate_anime_title

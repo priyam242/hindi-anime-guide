@@ -326,7 +326,7 @@ def process_news_bilingual(
             intro_hi = f"{source_name} के माध्यम से आधिकारिक घोषणा की पुष्टि।"
             
         summary_en = f"{intro_en} (Source: {source_name}. Read full story via official link.)"
-        summary_hi = f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)"
+        summary_hi = intro_hi
         
         val_en, val_hi, _ = validate_and_sanitize_news_summary(
             title_en=clean_title_en,
@@ -398,7 +398,7 @@ OUTPUT JSON ONLY:
                             "title_en": clean_title_en,
                             "title_hi": t_hi,
                             "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
-                            "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
+                            "summary_hi": intro_hi,
                             "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
                             "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
                         }
@@ -422,7 +422,7 @@ OUTPUT JSON ONLY:
         "title_en": clean_title_en,
         "title_hi": clean_title_hi,
         "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
-        "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
+        "summary_hi": intro_hi,
         "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
         "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
     }

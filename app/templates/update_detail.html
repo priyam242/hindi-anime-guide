@@ -146,12 +146,27 @@
         {{ current_title }}
       </h1>
 
+      {% set sub_t = (item.title_en or item.title_romaji or '').strip() %}
+      {% if sub_t and sub_t.lower() != (current_title or '').strip().lower() and sub_t != (item.title_hi or '').strip() and not (sub_t == current_title) %}
       <div class="text-xs text-gray-400 font-mono -mt-2">
-        {{ item.title_en }}
+        {{ sub_t }}
       </div>
+      {% endif %}
 
-      <!-- Cover Image -->
-      {% if item.image_url %}
+      <!-- Media Player / Cover Image -->
+      {% set yt_id = (item.source_url | extract_youtube_id) or (item.external_id | extract_youtube_id) or (item.image_url | extract_youtube_id) %}
+      {% if item.content_type == 'trailer' and yt_id %}
+      <div class="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-950 mb-6">
+        <iframe class="w-full h-full"
+                src="https://www.youtube-nocookie.com/embed/{{ yt_id }}?rel=0&modestbranding=1&playsinline=1"
+                title="{{ current_title }}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen>
+        </iframe>
+      </div>
+      {% elif item.image_url %}
       <div class="rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shadow-lg max-h-[480px] flex items-center justify-center">
         <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
              class="w-full h-full object-cover max-h-[480px]"
@@ -204,7 +219,21 @@
           {% if item.season_display or item.season %}
           <li class="flex items-start gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
             <span class="text-gray-400 font-medium shrink-0">Season (सीज़न):</span>
-            <span class="text-white font-semibold">{{ item.season_display or (item.season ~ (' ' ~ item.season_year if item.season_year else '')) }}</span>
+            {% set s_raw = (item.season or '').upper() %}
+            {% set s_yr = item.season_year or '2026' %}
+            {% if 'FALL' in s_raw or (item.season_display and 'FALL' in item.season_display|upper) %}
+              <span class="text-white font-semibold notranslate" translate="no">फ़ॉल {{ s_yr }}</span>
+            {% elif 'WINTER' in s_raw or (item.season_display and 'WINTER' in item.season_display|upper) %}
+              <span class="text-white font-semibold notranslate" translate="no">विंटर {{ s_yr }}</span>
+            {% elif 'SPRING' in s_raw or (item.season_display and 'SPRING' in item.season_display|upper) %}
+              <span class="text-white font-semibold notranslate" translate="no">स्प्रिंग {{ s_yr }}</span>
+            {% elif 'SUMMER' in s_raw or (item.season_display and 'SUMMER' in item.season_display|upper) %}
+              <span class="text-white font-semibold notranslate" translate="no">समर {{ s_yr }}</span>
+            {% elif item.season_display %}
+              <span class="text-white font-semibold notranslate" translate="no">{{ item.season_display }}</span>
+            {% else %}
+              <span class="text-white font-semibold notranslate" translate="no">फ़ॉल {{ s_yr }}</span>
+            {% endif %}
           </li>
           {% endif %}
           {% if item.status_display or item.publication_status or item.status %}

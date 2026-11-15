@@ -198,7 +198,14 @@ def extract_youtube_id(url: Optional[str]) -> Optional[str]:
     """Extract 11-char YouTube ID from url or external_id string."""
     if not url:
         return None
-    m = re.search(r'(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})', url)
+    url_str = str(url).strip()
+    if len(url_str) == 11 and re.match(r'^[0-9A-Za-z_-]{11}$', url_str):
+        return url_str
+    if url_str.startswith("trailer_"):
+        candidate = url_str[len("trailer_"):]
+        if len(candidate) == 11 and re.match(r'^[0-9A-Za-z_-]{11}$', candidate):
+            return candidate
+    m = re.search(r'(?:v=|youtu\.be\/|embed\/|trailer_|\/vi\/|\/)([0-9A-Za-z_-]{11})', url_str)
     if m:
         return m.group(1)
     return None

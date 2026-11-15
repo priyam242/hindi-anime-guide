@@ -232,6 +232,9 @@ def translate_jp_trailer_title(title_ja: str) -> str:
     # 5. Clean any residual Japanese characters, unclosed brackets, and delimiters
     res = re.sub(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffef]', '', res)
     res = re.sub(r'[【『「\[]\s*[】』」\]]', '', res)
+    res = re.sub(r'\[\s*\]', '', res)
+    res = re.sub(r'\bTV\s*\[\s*\]\s*', '', res)
+    res = re.sub(r'^\s*TV\b', '', res)
     res = re.sub(r'\s*\|\s*$', '', res)
     res = re.sub(r'^\s*\|\s*', '', res)
     res = re.sub(r'\s*[-—–]\s*$', '', res)
@@ -633,8 +636,8 @@ def fetch_anilist_season_trailers(
                 "title_ja": title_ja,
                 "title_en": clean_title_en,
                 "title_hi": clean_title_hi,
-                "summary_en": f"Official promotional trailer and teaser preview for {title_en} released on {clean_channel}.",
-                "summary_hi": f"{anime_hi} का आधिकारिक प्रमोशनल ट्रेलर एवं टीज़र वीडियो, चैनल {clean_channel} द्वारा।",
+                "summary_en": f"Official promotional trailer and teaser preview for {title_en} released by {clean_channel}.",
+                "summary_hi": f"{anime_hi} का आधिकारिक प्रमोशनल ट्रेलर एवं टीज़र वीडियो, {clean_channel} द्वारा जारी किया गया है। इसमें आगामी सीज़न के मुख्य दृश्य और पात्रों की पहली झलक दिखाई गई है।",
                 "image_url": img,
                 "published_at": pub_dt or premiere_dt or datetime.now(timezone.utc),
                 "published_at_iso": (pub_dt or premiere_dt or datetime.now(timezone.utc)).isoformat(),
