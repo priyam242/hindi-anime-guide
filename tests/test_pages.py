@@ -716,8 +716,8 @@ def test_homepage_grid_excludes_hero_items():
 
     # Verify modern hero section and articles grid exist
     assert '<section class="notranslate' in html or '<section class="hero">' in html
-    assert 'href="/article/hero-grid-test-art-1"' in html
-    assert 'href="/article/hero-grid-test-art-2"' in html
+    assert 'href="/article/hero-grid-test-art-1"' in html or 'href="/anime/hero-grid-test-art-1"' in html
+    assert 'href="/article/hero-grid-test-art-2"' in html or 'href="/anime/hero-grid-test-art-2"' in html
 
 
 def test_homepage_no_category_pills_under_hero():

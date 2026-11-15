@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+
+{% block title %}Hindi Anime Guide — India's Legal Anime Streaming & Hindi Dub Directory{% endblock %}
+
+{% block meta_description %}Find where to legally watch anime in Hindi in India. Complete list of Hindi dubbed anime on Crunchyroll, Netflix, JioHotstar & YouTube with watch orders, schedules, trailers and guides.{% endblock %}
+
+{% block extra_head %}
+<!-- OpenGraph / Social Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hindi Anime Guide — Watch Anime in Hindi in India">
+<meta property="og:description" content="India's most trusted source for Hindi dubbed anime news, watch orders, and official streaming references.">
+<meta property="og:url" content="{{ request.url }}">
+
+<!-- JSON-LD Structured Data for Google Search Sitelinks & Organization -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.base_url }}#website",
+      "url": "{{ request.base_url }}",
+      "name": "{{ site.name }}",
+      "description": "India's Legal Anime Streaming & Hindi Dub Directory",
+      "inLanguage": "hi-IN",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ request.base_url }}explore?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ request.base_url }}#organization",
+      "name": "{{ site.name }}",
+      "url": "{{ request.base_url }}",
+      "logo": "{{ request.base_url }}favicon.ico",
+      "sameAs": [
+        "https://t.me/hindianimeguide"
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[1780px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 space-y-10 pb-16 pt-3">
+
+    <!-- ZONE 1: Top Full-Width "Trending Spotlight" Hero Carousel (Alpine.js) -->
+    <section class="notranslate relative w-full"
+             x-data="{
+                 active: 0,
+                 total: {{ spotlight_slides|length }},
+                 timer: null,
+                 start() {
+                     this.stop();
+                     if (this.total > 1) {
+                         this.timer = setInterval(() => {
+                             this.active = (this.active + 1) % this.total;
+                         }, 6000);
+                     }
+                 },
+                 stop() {
+                     if (this.timer) {
+                         clearInterval(this.timer);
+                         this.timer = null;
+                     }
+                 },
+                 prev() {
+                     this.active = (this.active - 1 + this.total) % this.total;
+                     this.start();
+                 },
+                 next() {
+                     this.active = (this.active + 1) % this.total;
+                     this.start();
+                 },
+                 goTo(idx) {
+                     this.active = idx;
+                     this.start();
+                 }
+             }"
+             x-init="start()"
+             @mouseenter="stop()"
+             @mouseleave="start()">
+
+        <div class="rounded-2xl overflow-hidden relative min-h-[280px] sm:min-h-[380px] lg:min-h-[420px] bg-zinc-950 border border-zinc-800/80 shadow-2xl">
+            {% for slide in spotlight_slides %}
+            <div x-show="active === {{ loop.index0 }}"
+                 x-transition:enter="transition ease-out duration-500"
+                 x-transition:enter-start="opacity-0 scale-[1.01]"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-300"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-[0.99]"
+                 class="absolute inset-0 w-full h-full {% if not loop.first %}hidden{% endif %}"
+                 :class="{ 'hidden': active !== {{ loop.index0 }} }">
+
+                <!-- Crisp HD background image -->
+                <img src="{{ slide.image_url }}"
+                     alt="{{ slide.title_hi }}"
+                     class="w-full h-full object-cover object-center absolute inset-0 select-none pointer-events-none"
+                     decoding="async"
+                     {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+
+                <!-- Dark Gradient Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/20"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent"></div>
+
+                <!-- Left Overlay Content -->
+                <div class="relative z-10 max-w-xl p-5 sm:p-8 lg:p-10 flex flex-col justify-end h-full min-h-[280px] sm:min-h-[380px] lg:min-h-[420px]">
+                    <!-- Rank badge pill -->
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-600/20 border border-red-500/40 text-xs font-bold text-red-400 mb-3 w-fit">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span>{{ slide.rank_badge }}</span>
+                    </div>
+
+                    <!-- Large Hindi heading -->
+                    <h1 class="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white line-clamp-2 leading-tight tracking-tight mb-1.5 drop-shadow-md">
+                        {{ slide.title_hi }}
+                    </h1>
+
+                    <!-- Clean English subtitle -->
+                    <p class="text-xs sm:text-sm text-zinc-300 truncate mb-3">
+                        {{ slide.title_en }}
+                    </p>
+
+                    <!-- Metadata chips row -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs mb-3">
+                        <span class="px-2 py-0.5 rounded bg-zinc-800/90 border border-zinc-700/60 font-semibold text-zinc-200">{{ slide.format }}</span>
+                        <span class="text-zinc-500">•</span>
+                        <span class="px-2 py-0.5 rounded bg-zinc-800/90 border border-zinc-700/60 font-semibold text-zinc-200">{{ slide.year }}</span>
+                        <span class="text-zinc-500">•</span>
+                        <span class="px-2 py-0.5 rounded bg-red-600/20 border border-red-500/30 text-red-400 font-semibold">{{ slide.dub_badge }}</span>
+                        <span class="text-zinc-500">•</span>
+                        {% for plat in slide.platforms %}
+                        <span translate="no" class="px-2 py-0.5 rounded bg-zinc-900/90 border border-zinc-700/80 text-[11px] font-semibold text-zinc-300">{{ plat }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Clean 2-line Hindi synopsis -->
+                    <p class="hidden sm:line-clamp-2 text-sm text-zinc-300 leading-relaxed mb-5 drop-shadow">
+                        {{ slide.synopsis_hi }}
+                    </p>
+
+                    <!-- Action buttons -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <a href="{{ slide.cta_url }}"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-red-600/30 transition transform hover:-translate-y-0.5">
+                            <i class="fas fa-play text-xs"></i>
+                            <span>कहाँ देखें (Watch Guide) →</span>
+                        </a>
+                        <a href="/schedule"
+                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs sm:text-sm border border-zinc-700/60 transition">
+                            <i class="fas fa-calendar-alt text-xs text-red-400"></i>
+                            <span>पूर्ण शेड्यूल</span>
+                        </a>
+                        <a href="/explore"
+                           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs sm:text-sm border border-zinc-700/60 transition">
+                            <i class="fas fa-compass text-xs text-amber-400"></i>
+                            <span>एक्सप्लोर</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Controls: compact < > arrow buttons on bottom-right + clickable dots -->
+            <div class="absolute bottom-4 right-4 z-20 flex items-center gap-3 bg-zinc-950/70 p-2 rounded-xl border border-zinc-800/80">
+                <!-- Clickable dots -->
+                <div class="flex items-center gap-1.5 px-1">
+                    {% for slide in spotlight_slides %}
+                    <button type="button"
+                            @click="goTo({{ loop.index0 }})"
+                            class="h-2 rounded-full transition-all duration-300"
+                            :class="active === {{ loop.index0 }} ? 'w-5 bg-red-500' : 'w-2 bg-zinc-600 hover:bg-zinc-400'"
+                            aria-label="Slide {{ loop.index }}"></button>
+                    {% endfor %}
+                </div>
+
+                <div class="h-4 w-px bg-zinc-700"></div>
+
+                <!-- Prev / Next arrows -->
+                <div class="flex items-center gap-1">
+                    <button type="button"
+                            @click="prev()"
+                            class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white flex items-center justify-center transition border border-zinc-700/50"
+                            aria-label="Previous Slide">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    <button type="button"
+                            @click="next()"
+                            class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white flex items-center justify-center transition border border-zinc-700/50"
+                            aria-label="Next Slide">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ZONE 2: Main 2-Column Portal Split (lg:grid-cols-12 gap-6) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Main Area (lg:col-span-8 xl:col-span-9 space-y-10) -->
+        <div class="lg:col-span-8 xl:col-span-9 space-y-10">
+
+            <!-- Section 1 — ताज़ा एपिसोड्स (Latest Airing Schedule) -->
+            <section class="w-full">
+                <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">ताज़ा एपिसोड्स (Latest Airing Schedule)</h2>
+                    </div>
+                    <a href="/schedule" class="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                    {% for card in airing_episodes %}
+                    <a href="{{ card.url }}" class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
+                        <div class="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950">
+                            <img src="{{ card.image_url }}"
+                                 alt="{{ card.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            {% if card.episode %}
+                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Ep {{ card.episode }}</span>
+                            {% endif %}
+                            {% if card.is_donghua %}
+                            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Donghua</span>
+                            {% endif %}
+                            <div class="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent text-[10px] font-medium text-zinc-300 text-center truncate">
+                                {{ card.ist_time_str }}
+                            </div>
+                        </div>
+                        <div class="p-2.5 flex flex-col flex-grow justify-between">
+                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-2 leading-snug">
+                                {{ card.title_hi }}
+                            </h3>
+                            <p class="text-[11px] text-zinc-400 truncate mt-1">
+                                {{ card.title_en }}
+                            </p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Section 2 — नए ऑफिशियल ट्रेलर्स (Latest Official Trailers) -->
+            <section class="w-full">
+                <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fas fa-play text-red-500 text-sm"></i>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">नए ऑफिशियल ट्रेलर्स (Latest Official Trailers)</h2>
+                    </div>
+                    <a href="/trailers" class="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                    {% for trailer in official_trailers %}
+                    <a href="{{ trailer.url }}" class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
+                        <div class="relative aspect-video w-full overflow-hidden bg-zinc-950">
+                            <img src="{{ trailer.thumbnail_url }}"
+                                 alt="{{ trailer.title_hi }}"
+                                 onerror="this.onerror=null; this.src='{{ trailer.fallback_thumbnail_url }}';"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div class="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                    <i class="fas fa-play text-xs ml-0.5"></i>
+                                </div>
+                            </div>
+                            {% if trailer.studio %}
+                            <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-zinc-950/80 text-zinc-300 text-[10px] font-semibold tracking-wider uppercase border border-zinc-800">
+                                {{ trailer.studio }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="p-2.5">
+                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-2 leading-snug">
+                                {{ trailer.title_hi }}
+                            </h3>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Right Sidebar Area (lg:col-span-4 xl:col-span-3 space-y-6) -->
+        <div class="lg:col-span-4 xl:col-span-3 space-y-6">
+
+            <!-- Widget 1 — टॉप 10 हिंदी एनीमे (Top 10 Anime Guides) -->
+            <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4">
+                <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2 mb-3.5 pb-2 border-b border-zinc-800/60">
+                    <i class="fas fa-trophy text-amber-500"></i>
+                    <span>टॉप 10 हिंदी एनीमे (Top 10 Anime Guides)</span>
+                </h3>
+                <div class="space-y-1.5">
+                    {% for item in top_10_anime %}
+                    <a href="{{ item.url }}" class="group flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-800/60 transition">
+                        <span class="w-6 text-center font-extrabold flex-shrink-0 {% if item.is_top3 %}text-red-500 text-base{% else %}text-zinc-500 text-sm{% endif %}">
+                            {{ item.rank }}
+                        </span>
+                        <div class="w-11 h-15 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
+                            <img src="{{ item.cover_image }}"
+                                 alt="{{ item.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                {{ item.title_hi }}
+                            </h4>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ item.title_en }}
+                            </p>
+                            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                {% for p in item.platforms[:2] %}
+                                <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ p }}</span>
+                                {% endfor %}
+                                <span class="px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 text-[10px] font-bold">Hindi Dub</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Widget 2 — ताज़ा एनीमे समाचार (Latest News Feed) -->
+            <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4">
+                <div class="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-800/60 flex-wrap gap-2">
+                    <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                        <i class="fas fa-newspaper text-red-500"></i>
+                        <span>ताज़ा एनीमे समाचार</span>
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <!-- Bilingual Toggle -->
+                        <div class="inline-flex items-center rounded-lg border border-zinc-700/60 p-0.5 bg-zinc-950 text-xs">
+                            <button type="button" id="home-upd-hi-btn" onclick="setHomeUpdatesLang('hi')"
+                                class="px-2 py-0.5 rounded text-[11px] font-bold transition-all bg-red-600 text-white">
+                                हिंदी
+                            </button>
+                            <button type="button" id="home-upd-en-btn" onclick="setHomeUpdatesLang('en')"
+                                class="px-2 py-0.5 rounded text-[11px] font-bold transition-all text-zinc-400 hover:text-white">
+                                EN
+                            </button>
+                        </div>
+                        <a href="/news" class="text-xs font-bold text-red-400 hover:text-red-300 transition">सभी न्यूज़ →</a>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    {% for n in latest_news %}
+                    <a href="{{ n.url }}" class="group flex gap-3 p-2 rounded-xl hover:bg-zinc-800/60 transition">
+                        <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
+                            <img src="{{ n.image_url }}"
+                                 alt="{{ n.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center gap-2 text-[10px] text-zinc-400 mb-1">
+                                <span class="px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 font-semibold">{{ n.category_name_hi }}</span>
+                                <span class="truncate">{{ n.source_name }}</span>
+                                <span>•</span>
+                                <span class="whitespace-nowrap">{{ n.relative_time_hi }}</span>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-2 leading-snug">
+                                {{ n.title_hi }}
+                            </h4>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ZONE 3: Bottom 3-Category Equal Columns (नई रिलीज़ | हिंदी डब गाइड्स | लोकप्रिय मंगा एवं हिट्स) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+
+        <!-- Column 1: नई रिलीज़ (New Releases) -->
+        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-4 flex flex-col justify-between">
+            <div>
+                <h3 class="text-base font-black text-white flex items-center gap-2 mb-3.5 pb-2 border-b border-zinc-800/60">
+                    <i class="fas fa-calendar-alt text-amber-500"></i>
+                    <span>नई रिलीज़ (New Releases)</span>
+                </h3>
+                <div class="space-y-2">
+                    {% for item in zone3_new_releases %}
+                    <a href="{{ item.url }}" class="group p-2.5 flex items-center gap-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700 transition">
+                        <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
+                            <img src="{{ item.image_url }}"
+                                 alt="{{ item.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                {{ item.title_hi }}
+                            </h4>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ item.title_en }}
+                            </p>
+                            <div class="mt-1 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ item.format }} • Ep {{ item.episode }}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-semibold">{{ item.season_tag }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <a href="/schedule" class="mt-4 block text-center py-2 px-3 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-xs font-bold text-red-400 hover:text-red-300 transition border border-zinc-700/40">
+                सभी नई रिलीज़ देखें →
+            </a>
+        </div>
+
+        <!-- Column 2: हिंदी डब गाइड्स (Hindi Dub Guides) -->
+        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-4 flex flex-col justify-between">
+            <div>
+                <h3 class="text-base font-black text-white flex items-center gap-2 mb-3.5 pb-2 border-b border-zinc-800/60">
+                    <i class="fas fa-headphones text-red-500"></i>
+                    <span>हिंदी डब गाइड्स (Hindi Dub Guides)</span>
+                </h3>
+                <div class="space-y-2">
+                    {% for item in zone3_hindi_guides %}
+                    <a href="{{ item.url }}" class="group p-2.5 flex items-center gap-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700 transition">
+                        <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
+                            <img src="{{ item.image_url }}"
+                                 alt="{{ item.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                {{ item.title_hi }}
+                            </h4>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ item.title_en }}
+                            </p>
+                            <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                {% for p in item.platforms[:2] %}
+                                <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ p }}</span>
+                                {% endfor %}
+                                <span class="px-1.5 py-0.5 rounded bg-red-600/20 text-red-400 text-[10px] font-bold">Hindi Dub</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <a href="/explore" class="mt-4 block text-center py-2 px-3 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-xs font-bold text-red-400 hover:text-red-300 transition border border-zinc-700/40">
+                सभी गाइड्स देखें →
+            </a>
+        </div>
+
+        <!-- Column 3: लोकप्रिय मंगा (Popular Manga) -->
+        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-4 flex flex-col justify-between">
+            <div>
+                <h3 class="text-base font-black text-white flex items-center gap-2 mb-3.5 pb-2 border-b border-zinc-800/60">
+                    <i class="fas fa-book-open text-blue-500"></i>
+                    <span>लोकप्रिय मंगा (Popular Manga)</span>
+                </h3>
+                <div class="space-y-2">
+                    {% for item in zone3_popular_manga %}
+                    <a href="{{ item.url }}" class="group p-2.5 flex items-center gap-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700 transition">
+                        <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
+                            <img src="{{ item.image_url }}"
+                                 alt="{{ item.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="text-xs font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                {{ item.title_hi }}
+                            </h4>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ item.title_en }}
+                            </p>
+                            <div class="mt-1 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-semibold">{{ item.status_hi }}</span>
+                                <span translate="no" class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ item.publisher }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <a href="/manga" class="mt-4 block text-center py-2 px-3 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-xs font-bold text-red-400 hover:text-red-300 transition border border-zinc-700/40">
+                सभी मंगा देखें →
+            </a>
+        </div>
+
+    </div>
+
+    {% if not articles or articles|length == 0 %}
+    <div class="py-8 text-center text-zinc-400">
+        <p class="text-base font-semibold">पहले लेख जल्द आ रहे हैं (No guides published yet)</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+  function setHomeUpdatesLang(lang) {
+    try {
+      document.cookie = "site_lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      localStorage.setItem('site_lang', lang);
+    } catch (e) {}
+    const isHi = (lang === 'hi');
+    const btnHi = document.getElementById('home-upd-hi-btn');
+    const btnEn = document.getElementById('home-upd-en-btn');
+    if (btnHi && btnEn) {
+      if (isHi) {
+        btnHi.className = "px-2 py-0.5 rounded text-[11px] font-bold transition-all bg-red-600 text-white";
+        btnEn.className = "px-2 py-0.5 rounded text-[11px] font-bold transition-all text-zinc-400 hover:text-white";
+      } else {
+        btnEn.className = "px-2 py-0.5 rounded text-[11px] font-bold transition-all bg-red-600 text-white";
+        btnHi.className = "px-2 py-0.5 rounded text-[11px] font-bold transition-all text-zinc-400 hover:text-white";
+      }
+    }
+  }
+</script>
+{% endblock %}
