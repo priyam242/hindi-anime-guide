@@ -222,7 +222,9 @@ def test_no_color_literals_except_tokens_css():
                 "app/templates/base.html",
                 "app/templates/admin/",
                 "app/static/placeholder.svg",
-                "app/routers/pages.py"
+                "app/routers/pages.py",
+                "app/static/manifest.webmanifest",
+                "app/static/sw.js"
             ]):
                 continue
             if f.endswith((".woff2", ".ttf", ".woff", ".pyc", ".db", ".db-wal", ".db-shm")):

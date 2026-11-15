@@ -49,8 +49,8 @@
   "image": {{ (request.base_url ~ article.cover_image.lstrip('/')) | tojson }},
   {% endif %}
   "potentialAction": [
-    {% if article.availabilities %}
-      {% for av in article.availabilities if av.platform_rel %}
+    {% if valid_availabilities %}
+      {% for av in valid_availabilities if av.platform_rel %}
       {
         "@type": "WatchAction",
         "target": {
