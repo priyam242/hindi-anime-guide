@@ -196,6 +196,20 @@ def _normalize_media_item(media: dict[str, Any]) -> dict[str, Any] | None:
     else:
         external_id = f"anilist_{media_id}"
 
+    aired_ep = max(1, next_episode_num - 1) if next_episode_num else 1
+    total_eps = media.get("episodes")
+    if total_eps and total_eps < aired_ep:
+        total_eps = None
+
+    if total_eps and total_eps >= aired_ep:
+        rem_eps = total_eps - aired_ep
+        badge_hi = f"{aired_ep} आ चुके • {rem_eps} बाकी"
+        badge_en = f"{aired_ep} Aired • {rem_eps} Left"
+    else:
+        nxt_val = next_episode_num if (next_episode_num and next_episode_num > aired_ep) else (aired_ep + 1)
+        badge_hi = f"Ep {aired_ep} आ चुके • अगला Ep {nxt_val}"
+        badge_en = f"{aired_ep} Aired • Next Ep {nxt_val}"
+
     return {
         "external_id": external_id,
         "content_type": "schedule",
@@ -209,7 +223,13 @@ def _normalize_media_item(media: dict[str, Any]) -> dict[str, Any] | None:
         "title_en": primary_title,
         "title_romaji": title_romaji,
         "title_english": title_english,
-        "next_episode": next_episode_num,
+        "episode": aired_ep,
+        "next_episode": next_episode_num or (aired_ep + 1),
+        "aired_episodes": aired_ep,
+        "total_episodes": total_eps,
+        "remaining_episodes": rem_eps if (total_eps and total_eps >= aired_ep) else None,
+        "badge_hi": badge_hi,
+        "badge_en": badge_en,
         "airing_at_iso": airing_at_iso,
         "airing_at_formatted": airing_at_formatted,
         "airing_at_timestamp": airing_at_unix,
@@ -961,6 +981,10 @@ query ($start: Int, $end: Int, $page: Int) {
         season
         seasonYear
         episodes
+        nextAiringEpisode {
+          episode
+          airingAt
+        }
         duration
         genres
         isAdult
@@ -1196,11 +1220,40 @@ def fetch_live_weekly_schedule(
 
                     streaming_links = extract_streaming_links(media.get("externalLinks"))
 
+                    next_ep_info = media.get("nextAiringEpisode") or {}
+                    next_ep_num = next_ep_info.get("episode")
+                    slot_ep = s.get("episode")
+                    if next_ep_num:
+                        aired_ep = max(1, next_ep_num - 1)
+                    elif slot_ep:
+                        aired_ep = slot_ep
+                    else:
+                        aired_ep = 1
+
+                    total_eps = media.get("episodes")
+                    if total_eps and total_eps < aired_ep:
+                        total_eps = None
+
+                    if total_eps and total_eps >= aired_ep:
+                        rem_eps = total_eps - aired_ep
+                        badge_hi = f"{aired_ep} आ चुके • {rem_eps} बाकी"
+                        badge_en = f"{aired_ep} Aired • {rem_eps} Left"
+                    else:
+                        nxt_val = next_ep_num if (next_ep_num and next_ep_num > aired_ep) else (aired_ep + 1)
+                        badge_hi = f"Ep {aired_ep} आ चुके • अगला Ep {nxt_val}"
+                        badge_en = f"{aired_ep} Aired • Next Ep {nxt_val}"
+
                     item_dict = {
                         "id": f"anilist_{media.get('id')}_ep{s.get('episode')}",
                         "media_id": media.get("id"),
                         "mal_id": media.get("idMal"),
-                        "episode": s.get("episode"),
+                        "episode": slot_ep or aired_ep,
+                        "next_episode": next_ep_num or (aired_ep + 1),
+                        "aired_episodes": aired_ep,
+                        "total_episodes": total_eps,
+                        "remaining_episodes": rem_eps if (total_eps and total_eps >= aired_ep) else None,
+                        "badge_hi": badge_hi,
+                        "badge_en": badge_en,
                         "airing_at": airing_at,
                         "airing_at_iso": datetime.fromtimestamp(airing_at, tz=timezone.utc).isoformat(),
                         "airing_ist_weekday": dt_ist.weekday(),  # 0=Mon, ..., 6=Sun

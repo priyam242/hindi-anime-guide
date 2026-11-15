@@ -165,6 +165,12 @@
             <template x-if="item.th && item.th.trim().toLowerCase() !== item.t.trim().toLowerCase()">
               <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5" x-text="item.th"></div>
             </template>
+            <template x-if="item.b_hi">
+              <div class="mt-1.5 flex items-center">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/40 truncate"
+                      x-text="currentLang === 'en' ? item.b_en : item.b_hi"></span>
+              </div>
+            </template>
           </div>
           <div class="mt-2 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
             <span class="truncate" x-text="(item.d || 'आज') + ' • ' + item.tm"></span>
@@ -200,6 +206,12 @@
           {% if sub_t and sub_t.lower() != main_t.lower() %}
           <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5">{{ sub_t }}</div>
           {% endif %}
+          {% if item.badge_hi %}
+          <div class="mt-1.5 flex items-center">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/40 truncate"
+                  data-hi="{{ item.badge_hi }}" data-en="{{ item.badge_en }}">{{ item.badge_hi }}</span>
+          </div>
+          {% endif %}
         </div>
         <div class="mt-2 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
           <span class="truncate">{{ (item.day_name_hi or 'आज') }} • {{ item.airing_ist_time }}</span>
@@ -222,6 +234,11 @@
           {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
           {% if sub_t and sub_t.lower() != main_t.lower() %}
           <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5">{{ sub_t }}</div>
+          {% endif %}
+          {% if item.badge_hi %}
+          <div class="mt-1 flex items-center">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">{{ item.badge_hi }}</span>
+          </div>
           {% endif %}
         </a>
       </div>

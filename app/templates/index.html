@@ -263,12 +263,20 @@
                             </div>
                         </div>
                         <div class="p-2.5 flex flex-col flex-grow justify-between">
-                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
-                                {{ card.title_hi }}
-                            </h3>
-                            <p class="text-[11px] text-zinc-400 truncate mt-1">
-                                {{ card.title_en }}
-                            </p>
+                            <div>
+                                <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                    {{ card.title_hi }}
+                                </h3>
+                                <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                    {{ card.title_en }}
+                                </p>
+                            </div>
+                            {% if card.badge_hi %}
+                            <div class="mt-2 flex items-center">
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-300 border border-zinc-700/40 truncate"
+                                      data-hi="{{ card.badge_hi }}" data-en="{{ card.badge_en }}">{{ card.badge_hi }}</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </a>
                     {% endfor %}
@@ -519,7 +527,11 @@
                             </p>
                             {% endif %}
                             <div class="mt-1 flex items-center gap-1.5">
+                                {% if item.format == 'Movie' or item.is_movie %}
+                                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300" data-hi="फिल्म (Movie)" data-en="Movie">फिल्म (Movie)</span>
+                                {% else %}
                                 <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-medium text-zinc-300">{{ item.format }} • Ep {{ item.episode }}</span>
+                                {% endif %}
                                 <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[10px] font-semibold">{{ item.season_tag }}</span>
                             </div>
                         </div>
