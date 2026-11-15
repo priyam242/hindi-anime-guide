@@ -1067,7 +1067,7 @@ def fetch_live_weekly_schedule(
     season: str | None = None,
     year: int | None = None,
     force_refresh: bool = False,
-    timeout_seconds: float = 15.0,
+    timeout_seconds: float = 25.0,
 ) -> dict[str, Any]:
     """Fetch live weekly anime airing schedule and season premieres from AniList GraphQL.
 
@@ -1366,7 +1366,8 @@ def fetch_live_weekly_schedule(
         "today_idx": now_ist.weekday(),
     }
 
-    _LIVE_SCHEDULE_CACHE[cache_key] = (result, now_mono + SCHEDULE_CACHE_TTL)
+    if weekly_items:
+        _LIVE_SCHEDULE_CACHE[cache_key] = (result, now_mono + SCHEDULE_CACHE_TTL)
     logger.info("Successfully fetched %d weekly items & %d premiering anime for %s %d", len(weekly_items), len(premiering_items), req_season, req_year)
     return result
 

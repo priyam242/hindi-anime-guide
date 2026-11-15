@@ -1170,12 +1170,13 @@ def get_schedule_page_data(session: Session, season: Optional[str] = None, year:
                     global _SCHEDULE_CACHE
                     try:
                         fresh = compute_schedule_page_data(bg_s, season, year)
-                        _SCHEDULE_CACHE[cache_key] = {
-                            "data": fresh,
-                            "fresh_until": time.monotonic() + SWR_FRESH_TTL,
-                            "stale_until": time.monotonic() + SWR_STALE_TTL,
-                            "is_refreshing": False,
-                        }
+                        if fresh and len(fresh.get("weekly_items") or []) > 20:
+                            _SCHEDULE_CACHE[cache_key] = {
+                                "data": fresh,
+                                "fresh_until": time.monotonic() + SWR_FRESH_TTL,
+                                "stale_until": time.monotonic() + SWR_STALE_TTL,
+                                "is_refreshing": False,
+                            }
                     except Exception:
                         if cache_key in _SCHEDULE_CACHE:
                             _SCHEDULE_CACHE[cache_key]["is_refreshing"] = False
@@ -1185,12 +1186,13 @@ def get_schedule_page_data(session: Session, season: Optional[str] = None, year:
 
     # 3. Cold miss
     data = compute_schedule_page_data(session, season, year)
-    _SCHEDULE_CACHE[cache_key] = {
-        "data": data,
-        "fresh_until": now + SWR_FRESH_TTL,
-        "stale_until": now + SWR_STALE_TTL,
-        "is_refreshing": False,
-    }
+    if data and len(data.get("weekly_items") or []) > 20:
+        _SCHEDULE_CACHE[cache_key] = {
+            "data": data,
+            "fresh_until": now + SWR_FRESH_TTL,
+            "stale_until": now + SWR_STALE_TTL,
+            "is_refreshing": False,
+        }
     return data
 
 
