@@ -244,6 +244,7 @@ def compute_home_page_data(session: Session) -> dict:
     featured_article = None
     side_articles = []
     grid_articles = []
+    other_articles = []
     if articles:
         featured_idx = 0
         for idx, art in enumerate(articles):
@@ -382,7 +383,7 @@ def compute_home_page_data(session: Session) -> dict:
             "episode": 7,
             "episode_badge": "Ep 7",
             "is_donghua": False,
-            "is_hindi_dub": True,
+            "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "शुक्रवार • 7:30 PM IST",
             "image_url": "/media/covers/anime_the-apothecary-diaries-season-3.webp",
@@ -395,7 +396,7 @@ def compute_home_page_data(session: Session) -> dict:
             "episode": 7,
             "episode_badge": "Ep 7",
             "is_donghua": False,
-            "is_hindi_dub": True,
+            "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "शनिवार • 7:30 PM IST",
             "image_url": "/media/covers/anime_black-clover-season-2.webp",
@@ -613,16 +614,17 @@ def compute_home_page_data(session: Session) -> dict:
 
     # ZONE 2A: Official Trailers (6 cards)
     curated_trailers = [
-        {"youtube_id": "OdQrlp3uYQM", "title_hi": "सोलो लेवलिंग सीज़न 2: अराइज़ फ्रॉम द शैडो", "title_en": "Solo Leveling Season 2 Main Trailer", "studio": "Aniplex", "draft_id": 97},
-        {"youtube_id": "-gvtWDUHmiU", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)", "title_en": "Jujutsu Kaisen Season 3 Teaser", "studio": "TOHO Animation", "draft_id": 98},
-        {"youtube_id": "tAzAhDNdehs", "title_hi": "चेनसॉ मैन: द मूवी - रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie Trailer", "studio": "MAPPA", "draft_id": 99},
-        {"youtube_id": "yo8rklUv1EY", "title_hi": "द अपोथेकेरी डायरीज़ सीज़न 2: ऑफिशियल ट्रेलर", "title_en": "The Apothecary Diaries Season 2 Trailer", "studio": "TOHO Animation", "draft_id": 134},
-        {"youtube_id": "k1jyM2kSBzA", "title_hi": "विच ऑन द होली नाइट — मुख्य ट्रेलर", "title_en": "Witch on the Holy Night Official Trailer", "studio": "ufotable", "draft_id": 120},
-        {"youtube_id": "qgQunxD0qCk", "title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड — ऑफिशियल ट्रेलर", "title_en": "Frieren: Beyond Journey's End Launch Trailer", "studio": "Madhouse", "draft_id": 121},
+        {"youtube_id": "tAzAhDNdehs", "title_hi": "चेनसॉ मैन: रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie", "studio": "Sony Pictures Entertainment", "draft_id": 99},
+        {"youtube_id": "wyiZWYMilgk", "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल", "title_en": "Demon Slayer: Infinity Castle", "studio": "Crunchyroll", "draft_id": 86},
+        {"youtube_id": "9TbmxbckSjE", "title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "studio": "Netflix", "draft_id": 120},
+        {"youtube_id": "-gvtWDUHmiU", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)", "title_en": "Jujutsu Kaisen: Culling Game", "studio": "TOHO animation", "draft_id": 98},
+        {"youtube_id": "fmWc9lWcuGc", "title_hi": "ब्लीच: थाउज़ेंड-यीयर ब्लड वॉर पार्ट 3", "title_en": "Bleach: Thousand-Year Blood War Part 3", "studio": "VIZ Media", "draft_id": 121},
+        {"youtube_id": "oh7bd-CDY6U", "title_hi": "वन पंच मैन सीज़न 3", "title_en": "One-Punch Man Season 3", "studio": "VIZ Media", "draft_id": 134},
     ]
     official_trailers = []
     for ct in curated_trailers:
         d_id = ct.get("draft_id", 98)
+        clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', ct["studio"]).strip()
         official_trailers.append({
             "id": d_id,
             "youtube_id": ct["youtube_id"],
@@ -630,7 +632,7 @@ def compute_home_page_data(session: Session) -> dict:
             "title_en": ct["title_en"],
             "thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/hqdefault.jpg",
             "fallback_thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/mqdefault.jpg",
-            "studio": ct["studio"],
+            "studio": clean_studio,
             "url": f"/updates/{d_id}",
         })
 
@@ -642,9 +644,9 @@ def compute_home_page_data(session: Session) -> dict:
         {"title_hi": "अटैक ऑन टाइटन", "title_en": "Attack on Titan", "image_url": "/media/covers/anime_attack-on-titan.webp", "url": "/anime/attack-on-titan-streaming-guide-india"},
         {"title_hi": "नारुतो", "title_en": "Naruto", "image_url": "/media/covers/anime_naruto.webp", "url": "/anime/naruto-hindi-dub-guide"},
         {"title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/anime_one-piece.webp", "url": "/anime/one-piece-hindi-guide-watch-order"},
-        {"title_hi": "टोक्यो रिवेंजर्स", "title_en": "Tokyo Revengers", "image_url": "/media/covers/anime_tokyo-revengers.webp", "url": "/anime/tokyo-revengers"},
-        {"title_hi": "वन पंच मैन", "title_en": "One-Punch Man", "image_url": "/media/covers/anime_one-punch-man.webp", "url": "/anime/one-punch-man"},
-        {"title_hi": "डिटेक्टिव कोनन", "title_en": "Detective Conan", "image_url": "/media/covers/anime_detective-conan.webp", "url": "/anime/detective-conan"},
+        {"title_hi": "डॉक्टर स्टोन", "title_en": "Dr. STONE", "image_url": "/media/covers/anime_dr-stone-science-future.webp", "url": "/anime/dr-stone-science-future"},
+        {"title_hi": "काइजू नंबर 8", "title_en": "Kaiju No. 8", "image_url": "/media/covers/anime_kaiju-no-8.webp", "url": "/anime/kaiju-no-8"},
+        {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "image_url": "/media/covers/anime_spy-x-family.webp", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
         {"title_hi": "ड्रैगन बॉल ज़ेड", "title_en": "Dragon Ball Z", "image_url": "/media/covers/anime_dragon-ball-z.webp", "url": "/anime/dragon-ball-z-hindi-watch-guide"},
         {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "image_url": "/media/covers/anime_chainsaw-man.webp", "url": "/anime/chainsaw-man"},
         {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anime_dandadan.webp", "url": "/anime/dandadan"},
@@ -686,8 +688,8 @@ def compute_home_page_data(session: Session) -> dict:
             "url": t_url,
         })
 
-    # ZONE 2B: Latest News Feed (6 pure news items in Right Sidebar)
-    latest_news = [
+    # ZONE 2B: Latest News Feed (populated from latest_updates with curated fallback)
+    curated_latest_news = [
         {"id": 86, "category_name_hi": "घोषणा", "source_name": "Official", "relative_time_hi": "2 घंटे पहले", "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल मूवी ट्रायलॉजी का नया अपडेट", "title_en": "Demon Slayer Infinity Castle Movie", "image_url": "/media/covers/anime_demon-slayer.webp", "url": "/updates/86"},
         {"id": 87, "category_name_hi": "ट्रेलर", "source_name": "MAPPA", "relative_time_hi": "4 घंटे पहले", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3) का आधिकारिक टीज़र जारी", "title_en": "Jujutsu Kaisen Season 3 Teaser", "image_url": "/media/covers/anime_jujutsu-kaisen.webp", "url": "/updates/87"},
         {"id": 106, "category_name_hi": "रैंकिंग", "source_name": "Anime Corner", "relative_time_hi": "6 घंटे पहले", "title_hi": "फ़ॉल 2026 एनीमे रैंकिंग्स: टॉप 10 ट्रेंडिंग शोज़ की नई सूची", "title_en": "Fall 2026 Anime Rankings", "image_url": "/media/covers/anime_solo-leveling.webp", "url": "/updates/106"},
@@ -695,6 +697,26 @@ def compute_home_page_data(session: Session) -> dict:
         {"id": 116, "category_name_hi": "विशेष", "source_name": "Crunchyroll", "relative_time_hi": "1 दिन पहले", "title_hi": "तीन प्रभावशाली बैक-टू-स्कूल एनीमे जो आपको ज़रूर देखने चाहिए", "title_en": "Top 3 Back to School Anime", "image_url": "/media/covers/anime_frieren.webp", "url": "/updates/116"},
         {"id": 147, "category_name_hi": "घोषणा", "source_name": "Kadokawa", "relative_time_hi": "2 दिन पहले", "title_hi": "'मल्टी-माइंड मेहेम' टीवी एनीमे रूपांतरण की आधिकारिक घोषणा", "title_en": "Multi-Mind Mayhem Anime Confirmed", "image_url": "/media/covers/anime_campfire-cooking-in-another-world-with-my-absurd-skill.webp", "url": "/updates/147"},
     ]
+    latest_news = []
+    if latest_updates:
+        for upd in latest_updates:
+            cat_name = upd.news_category or "समाचार"
+            rel_time = format_relative_time_hi(upd.published_at or upd.created_at)
+            latest_news.append({
+                "id": upd.id,
+                "category_name_hi": cat_name,
+                "source_name": upd.source_name or "Official",
+                "relative_time_hi": rel_time,
+                "title_hi": upd.title_hi or upd.title_en,
+                "title_en": upd.title_en or upd.title_hi,
+                "image_url": upd.image_url or "/media/covers/anime_demon-slayer.webp",
+                "url": f"/updates/{upd.id}",
+            })
+    for cur in curated_latest_news:
+        if len(latest_news) >= 6:
+            break
+        if not any(n["id"] == cur["id"] for n in latest_news):
+            latest_news.append(cur)
 
     # ZONE 3: 3 Columns Strictly Balanced (6 / 6 / 6)
     # Column 1: New Releases (Strictly 6 distinct items with real artwork and real episode numbers)
@@ -708,7 +730,7 @@ def compute_home_page_data(session: Session) -> dict:
     ]
 
     # Column 2: Hindi Dub Guides (Strictly 6 individual franchise guides with real official key art, 0 listicles!)
-    zone3_hindi_guides = [
+    curated_hindi_guides = [
         {"id": 1, "title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "image_url": "/media/covers/anime_frieren.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/frieren-beyond-journeys-end"},
         {"id": 2, "title_hi": "योर नेम (Your Name)", "title_en": "Your Name: Makoto Shinkai Romance Anime", "image_url": "/media/covers/anime_your-name.webp", "platforms": ["Netflix"], "url": "/anime/your-name-makoto-shinkai-romance-anime-hindi"},
         {"id": 3, "title_hi": "ड्रैगन बॉल वॉच ऑर्डर", "title_en": "Dragon Ball Complete Hindi Guide", "image_url": "/media/covers/anime_dragon-ball-z.webp", "platforms": ["Crunchyroll"], "url": "/anime/dragon-ball-complete-watch-order-hindi-guide"},
@@ -716,6 +738,26 @@ def compute_home_page_data(session: Session) -> dict:
         {"id": 5, "title_hi": "स्पाई x फैमिली (Spy x Family)", "title_en": "Spy x Family Hindi Dub Guide", "image_url": "/media/covers/anime_spy-x-family.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
         {"id": 6, "title_hi": "हाइक्यू!! और ब्लू लॉक", "title_en": "Haikyuu & Blue Lock Sports Anime Guide", "image_url": "/media/covers/anime_haikyuu.webp", "platforms": ["Netflix"], "url": "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"},
     ]
+    zone3_hindi_guides = []
+    if other_articles:
+        for art in other_articles:
+            g_title_hi = art.anime_title_hi or art.title
+            g_title_en = art.anime_title_en or art.title
+            g_image = art.cover_image or "/media/covers/anime_frieren.webp"
+            g_plats = [av.platform_rel.name for av in getattr(art, "availabilities", []) if av.platform_rel] or ["Crunchyroll"]
+            zone3_hindi_guides.append({
+                "id": art.id,
+                "title_hi": g_title_hi,
+                "title_en": g_title_en,
+                "image_url": g_image,
+                "platforms": g_plats,
+                "url": f"/article/{art.slug}",
+            })
+    for cur in curated_hindi_guides:
+        if len(zone3_hindi_guides) >= 6:
+            break
+        if not any(g.get("url") == cur["url"] for g in zone3_hindi_guides):
+            zone3_hindi_guides.append(cur)
 
     # Column 3: Popular Manga (Strictly 6 verified popular manga with 1:1 matching titles and official covers)
     zone3_popular_manga = [
@@ -2089,6 +2131,33 @@ def manga_detail_page(
             )
         ).first()
 
+    POPULAR_MANGA_FALLBACKS = {
+        92: {"title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/anime_one-piece.webp", "chapters_count": 1130, "publishing_status": "RELEASING", "publisher": "MANGA Plus", "synopsis_hi": "एइइचिरो ओडा की प्रसिद्ध मंगा श्रृंखला।", "official_links": json.dumps([{"title": "MANGA Plus by SHUEISHA", "url": "https://mangaplus.shueisha.co.jp/titles/100020"}])},
+        137: {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "image_url": "/media/covers/anime_chainsaw-man.webp", "chapters_count": 182, "publishing_status": "RELEASING", "publisher": "MANGA Plus", "synopsis_hi": "तातसुकी फुजिमोटो की एक्शन सुपरनैचुरल मंगा।", "official_links": json.dumps([{"title": "MANGA Plus by SHUEISHA", "url": "https://mangaplus.shueisha.co.jp/titles/100037"}])},
+        140: {"title_hi": "ब्लू लॉक", "title_en": "Blue Lock", "image_url": "/media/covers/anime_blue-box-season-2.webp", "chapters_count": 282, "publishing_status": "RELEASING", "publisher": "VIZ Media", "synopsis_hi": "मुनेयुकी कानेशिरो द्वारा लिखित फुटबॉल स्पोर्ट्स मंगा।", "official_links": json.dumps([{"title": "VIZ Media", "url": "https://www.viz.com/blue-lock"}])},
+        139: {"title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "image_url": "/media/covers/anime_sakamoto-days.webp", "chapters_count": 190, "publishing_status": "RELEASING", "publisher": "MANGA Plus", "synopsis_hi": "युतो सुजुकी की हिट एक्शन कॉमेडी मंगा।", "official_links": json.dumps([{"title": "MANGA Plus by SHUEISHA", "url": "https://mangaplus.shueisha.co.jp/titles/100127"}])},
+        60: {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anime_dandadan.webp", "chapters_count": 173, "publishing_status": "RELEASING", "publisher": "MANGA Plus", "synopsis_hi": "युकिनोबू तात्सु की सुपरनैचुरल कॉमेडी मंगा।", "official_links": json.dumps([{"title": "MANGA Plus by SHUEISHA", "url": "https://mangaplus.shueisha.co.jp/titles/100171"}])},
+        142: {"title_hi": "स्पाई x फ़ैमिली", "title_en": "SPY x FAMILY", "image_url": "/media/covers/anime_spy-x-family.webp", "chapters_count": 106, "publishing_status": "RELEASING", "publisher": "MANGA Plus", "synopsis_hi": "तत्सुया एन्डो की लोकप्रिय एक्शन फैमिली कॉमेडी मंगा।", "official_links": json.dumps([{"title": "MANGA Plus by SHUEISHA", "url": "https://mangaplus.shueisha.co.jp/titles/100056"}])},
+    }
+
+    if not manga and item_id.isdigit() and int(item_id) in POPULAR_MANGA_FALLBACKS:
+        f_data = POPULAR_MANGA_FALLBACKS[int(item_id)]
+        manga = AnimeDraft(
+            id=int(item_id),
+            title_hi=f_data["title_hi"],
+            title_en=f_data["title_en"],
+            image_url=f_data["image_url"],
+            content_type="manga",
+            status="published",
+            is_stale=False,
+            official_links=f_data["official_links"],
+            source_url="https://mangaplus.shueisha.co.jp/",
+            source_name=f_data["publisher"],
+            summary_hi=f_data["synopsis_hi"],
+            summary_en=f"{f_data['title_en']} Official Manga Series",
+            published_at=datetime.now(timezone.utc),
+        )
+
     is_admin = bool(user and getattr(user, "is_admin", False))
     if not manga or (manga.status != "published" and not is_admin) or manga.is_stale:
         raise HTTPException(status_code=404, detail="मंगा नहीं मिला / Manga not found")
@@ -2895,7 +2964,7 @@ def build_episode_tracker(
                 "is_aired": True,
                 "is_next": False,
                 "status_label": "✅ रिलीज़ हो चुका",
-                "status_class": "bg-emerald-950/40 text-emerald-400 border border-emerald-800/40",
+                "status_class": "",
             })
         return {
             "aired_count": aired_count,
@@ -2943,7 +3012,7 @@ def build_episode_tracker(
                 "is_aired": True,
                 "is_next": False,
                 "status_label": "✅ रिलीज़ हो चुका",
-                "status_class": "bg-emerald-950/40 text-emerald-400 border border-emerald-800/40",
+                "status_class": "",
             })
         elif ep == next_ep:
             ep_date = f"{dt_next.day} {HINDI_MONTHS[dt_next.month - 1]} {dt_next.year} · {time_str}"
@@ -2954,7 +3023,7 @@ def build_episode_tracker(
                 "is_aired": False,
                 "is_next": True,
                 "status_label": "⏳ आने वाला है",
-                "status_class": "bg-red-950/60 text-red-300 border border-red-600/60 animate-pulse font-bold",
+                "status_class": "",
             })
         else:
             diff_weeks = ep - next_ep
@@ -2967,7 +3036,7 @@ def build_episode_tracker(
                 "is_aired": False,
                 "is_next": False,
                 "status_label": "आगामी (Upcoming)",
-                "status_class": "bg-zinc-800/50 text-zinc-400 border border-zinc-700/40",
+                "status_class": "",
             })
 
     return {

@@ -1,8 +1,6 @@
 // Progressive Web App Service Worker for Anime Hindi Guide
-const CACHE_NAME = 'anime-hindi-cache-v1';
+const CACHE_NAME = 'anime-hindi-cache-v2';
 const PRECACHE_URLS = [
-  '/',
-  '/free',
   '/manifest.webmanifest',
   '/static/favicon.svg',
   '/static/css/tailwind.css',

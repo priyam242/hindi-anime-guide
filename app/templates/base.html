@@ -2714,6 +2714,10 @@
       if (lang !== 'en' && lang !== 'hi') lang = 'hi';
       const dict = window.I18N[lang] || window.I18N.hi;
 
+      document.querySelectorAll('[data-hi][data-en]').forEach(function (el) {
+        el.textContent = (lang === 'en') ? el.getAttribute('data-en') : el.getAttribute('data-hi');
+      });
+
       document.querySelectorAll('[data-i18n]').forEach(function (el) {
         const key = el.getAttribute('data-i18n');
         if (dict[key]) el.textContent = dict[key];

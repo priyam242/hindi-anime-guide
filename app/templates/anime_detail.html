@@ -106,13 +106,13 @@
       <!-- Left: Poster Column -->
       <div class="md:col-span-4 lg:col-span-4 shrink-0 flex flex-col items-center">
         <div class="w-full max-w-[280px] sm:max-w-[320px] aspect-[3/4] rounded-xl overflow-hidden bg-zinc-950 border border-gray-200 dark:border-white/10 shadow-2xl relative group">
-          <img src="{{ anime.cover_image or '/media/covers/anime_solo-leveling.webp' }}"
+          <img src="{{ anime.cover_image or '/placeholder.svg' }}"
                alt="{{ anime.title_hi }} ({{ anime.title_en }})"
                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                loading="eager"
                fetchpriority="high"
                referrerpolicy="no-referrer"
-               onerror="this.onerror=null; this.src='/media/covers/anime_solo-leveling.webp';">
+               onerror="this.onerror=null; this.src='/placeholder.svg';">
           
           {% if anime.is_donghua %}
           <span class="absolute top-3 left-3 bg-amber-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow uppercase">
@@ -312,9 +312,19 @@
           <span class="text-xs text-gray-500 dark:text-zinc-400 font-medium">
             {{ ep.ist_date }}
           </span>
-          <span class="px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold {{ ep.status_class }}">
+          {% if ep.is_aired %}
+          <span class="px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-800/40">
             {{ ep.status_label }}
           </span>
+          {% elif ep.is_next %}
+          <span class="px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold bg-red-950/60 text-red-300 border border-red-600/60 animate-pulse">
+            {{ ep.status_label }}
+          </span>
+          {% else %}
+          <span class="px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold bg-zinc-800/50 text-zinc-400 border border-zinc-700/40">
+            {{ ep.status_label }}
+          </span>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -354,14 +364,14 @@
       {% for rel in related_anime %}
       <div class="group rounded-xl overflow-hidden bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 hover:border-red-600/50 transition flex flex-col shadow-sm card-grid-item">
         <a href="{{ rel.url }}" class="block relative aspect-[3/4] overflow-hidden bg-zinc-950">
-          <img src="{{ rel.cover_image or '/media/covers/anime_solo-leveling.webp' }}"
+          <img src="{{ rel.cover_image or '/placeholder.svg' }}"
                alt="{{ rel.title_hi }} ({{ rel.title_en }})"
                loading="lazy"
                decoding="async"
                width="300" height="400"
                referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-               onerror="this.onerror=null; this.src='/media/covers/anime_solo-leveling.webp';">
+               onerror="this.onerror=null; this.src='/placeholder.svg';">
           {% if rel.is_hindi_dub %}
           <span class="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
             HINDI DUB
