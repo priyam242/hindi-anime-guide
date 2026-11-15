@@ -165,7 +165,7 @@ def test_zone3_column2_subtitles_clean(client):
         r'<p class="[^"]*text-\[11px\][^"]*"[^>]*>(.*?)</p>', z3_text, re.S
     )
     subtitles = [s.strip() for s in raw_subtitles]
-    assert len(subtitles) == 5, f"Expected 5 items in Zone 3 Col 2, found {len(subtitles)}"
+    assert len(subtitles) == 6, f"Expected 6 items in Zone 3 Col 2, found {len(subtitles)}"
     for sub in subtitles:
         assert not re.search(
             r"^[a-z0-9]+(-[a-z0-9]+){2,}$", sub

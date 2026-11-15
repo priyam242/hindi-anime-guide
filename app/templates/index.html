@@ -104,7 +104,7 @@
                      alt="{{ slide.title_hi }}"
                      class="w-full h-full object-cover object-center absolute inset-0 select-none pointer-events-none"
                      decoding="async"
-                     {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                     {% if loop.first %}fetchpriority="high"{% else %}loading="lazy" referrerpolicy="no-referrer"{% endif %}>
 
                 <!-- Dark Gradient Overlay -->
                 <div class="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-zinc-950/20"></div>
@@ -213,37 +213,55 @@
         <!-- Left Main Area (lg:col-span-8 xl:col-span-9 space-y-10) -->
         <div class="lg:col-span-8 xl:col-span-9 space-y-10">
 
-            <!-- Section 1 — ताज़ा एपिसोड्स (Latest Airing Schedule) -->
-            <section class="w-full">
-                <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+            <!-- Section 1 — ताज़ा एपिसोड्स (Latest Airing Schedule) with Alpine Filter Tabs -->
+            <section class="w-full" x-data="{ tab: 'all' }">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-zinc-800/80 mb-4 gap-3">
                     <div class="flex items-center gap-2.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
                         <h2 class="text-xl sm:text-2xl font-black text-white">ताज़ा एपिसोड्स (Latest Airing Schedule)</h2>
                     </div>
-                    <a href="/schedule" class="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
+
+                    <!-- Alpine Filter Tabs -->
+                    <div class="flex items-center gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800 text-xs font-semibold overflow-x-auto shrink-0">
+                        <button type="button" @click="tab = 'all'" :class="tab === 'all' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'" class="px-2.5 py-1 rounded-lg transition whitespace-nowrap">सभी (18)</button>
+                        <button type="button" @click="tab = 'today'" :class="tab === 'today' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'" class="px-2.5 py-1 rounded-lg transition whitespace-nowrap">आज के शोज़</button>
+                        <button type="button" @click="tab = 'dub'" :class="tab === 'dub' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'" class="px-2.5 py-1 rounded-lg transition whitespace-nowrap">हिंदी डब</button>
+                        <button type="button" @click="tab = 'donghua'" :class="tab === 'donghua' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'" class="px-2.5 py-1 rounded-lg transition whitespace-nowrap">डोंगहुआ</button>
+                    </div>
+
+                    <a href="/schedule" class="hidden sm:inline-block text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
                 </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
                     {% for card in airing_episodes %}
-                    <a href="{{ card.url }}" class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
+                    <a href="{{ card.url }}"
+                       x-show="tab === 'all' || (tab === 'today' && {{ 'true' if card.is_today else 'false' }}) || (tab === 'dub' && {{ 'true' if card.is_hindi_dub else 'false' }}) || (tab === 'donghua' && {{ 'true' if card.is_donghua else 'false' }})"
+                       class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
                         <div class="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950">
                             <img src="{{ card.image_url }}"
                                  alt="{{ card.title_hi }}"
                                  loading="lazy"
                                  decoding="async"
+                                 referrerpolicy="no-referrer"
                                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            {% if card.episode %}
+                            {% if card.episode_badge %}
+                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">{{ card.episode_badge }}</span>
+                            {% elif card.episode %}
                             <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Ep {{ card.episode }}</span>
+                            {% else %}
+                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">नया एपिसोड</span>
                             {% endif %}
                             {% if card.is_donghua %}
                             <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Donghua</span>
+                            {% elif card.is_hindi_dub %}
+                            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-extrabold text-[9px] tracking-wide shadow-md">HINDI DUB</span>
                             {% endif %}
                             <div class="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent text-[10px] font-medium text-zinc-300 text-center truncate">
                                 {{ card.ist_time_str | replace("IST IST", "IST") }}
                             </div>
                         </div>
                         <div class="p-2.5 flex flex-col flex-grow justify-between">
-                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-2 leading-snug">
+                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
                                 {{ card.title_hi }}
                             </h3>
                             <p class="text-[11px] text-zinc-400 truncate mt-1">
@@ -272,7 +290,7 @@
                             <img src="{{ trailer.thumbnail_url }}"
                                  alt="{{ trailer.title_hi }}"
                                  onerror="this.onerror=null; this.src='{{ trailer.fallback_thumbnail_url }}';"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -290,6 +308,77 @@
                             <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-2 leading-snug">
                                 {{ trailer.title_hi }}
                             </h3>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Section 3 — लोकप्रिय हिंदी डब एनीमे (Popular Hindi Dubs) -->
+            <section class="w-full">
+                <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-amber-500 text-lg">🔥</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">लोकप्रिय हिंदी डब एनीमे (Popular Hindi Dubs)</h2>
+                    </div>
+                    <a href="/explore?dub=hindi" class="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                    {% for card in popular_hindi_dubs %}
+                    <a href="{{ card.url }}" class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
+                        <div class="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950">
+                            <img src="{{ card.image_url }}"
+                                 alt="{{ card.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 referrerpolicy="no-referrer"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-bold text-[9px] shadow">HINDI DUB</span>
+                        </div>
+                        <div class="p-2.5 flex flex-col flex-grow justify-between">
+                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                {{ card.title_hi }}
+                            </h3>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ card.title_en }}
+                            </p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Section 4 — मुफ़्त में देखें (Free Legal Anime) -->
+            <section class="w-full">
+                <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-emerald-400 text-lg">🆓</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">मुफ़्त में देखें (Free Legal Anime)</h2>
+                    </div>
+                    <a href="/free" class="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">सभी देखें →</a>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                    {% for card in free_legal_anime %}
+                    <a href="{{ card.url }}" class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-emerald-500/50 transition flex flex-col">
+                        <div class="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950">
+                            <img src="{{ card.image_url }}"
+                                 alt="{{ card.title_hi }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 referrerpolicy="no-referrer"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[9px] shadow">FREE</span>
+                            <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-zinc-900/90 text-zinc-300 text-[9px] font-semibold border border-zinc-700">{{ card.platform }}</span>
+                        </div>
+                        <div class="p-2.5 flex flex-col flex-grow justify-between">
+                            <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-emerald-400 transition line-clamp-1 leading-snug">
+                                {{ card.title_hi }}
+                            </h3>
+                            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {{ card.title_en }}
+                            </p>
                         </div>
                     </a>
                     {% endfor %}
@@ -316,7 +405,7 @@
                         <div class="w-11 h-15 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
                             <img src="{{ item.cover_image }}"
                                  alt="{{ item.title_hi }}"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover">
                         </div>
@@ -369,7 +458,7 @@
                         <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
                             <img src="{{ n.image_url }}"
                                  alt="{{ n.title_hi }}"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover">
                         </div>
@@ -409,7 +498,7 @@
                         <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
                             <img src="{{ item.image_url }}"
                                  alt="{{ item.title_hi }}"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover">
                         </div>
@@ -449,7 +538,7 @@
                         <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
                             <img src="{{ item.image_url }}"
                                  alt="{{ item.title_hi }}"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover">
                         </div>
@@ -491,7 +580,7 @@
                         <div class="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-zinc-950 border border-zinc-800/60">
                             <img src="{{ item.image_url }}"
                                  alt="{{ item.title_hi }}"
-                                 loading="lazy"
+                                 loading="lazy" referrerpolicy="no-referrer"
                                  decoding="async"
                                  class="w-full h-full object-cover">
                         </div>
