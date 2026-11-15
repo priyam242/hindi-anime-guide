@@ -299,125 +299,211 @@ NEWS_CATEGORY_HI_MAP = {
 }
 
 
-def ensure_canonical_trailers(session: Session) -> list[AnimeDraft]:
+def ensure_canonical_trailers(session: Session) -> list[dict]:
     """Ensure the 6 canonical trailers exist in DB with 1:1 matching metadata.
-    Idempotent: updates existing rows or creates new ones.
+    Run ONLY once in startup lifespan or test fixtures, NEVER inside GET requests.
+    Idempotent: updates existing rows or creates new ones letting DB auto-generate IDs.
     """
     now = datetime.now(timezone.utc)
     results = []
-    for idx, item in enumerate(CANONICAL_HOMEPAGE_TRAILERS):
-        yt_id = item["youtube_id"]
-        canonical_source_url = f"https://www.youtube.com/watch?v={yt_id}"
-        draft = session.exec(
-            select(AnimeDraft).where(
-                or_(
-                    AnimeDraft.external_id == item["external_id"],
-                    AnimeDraft.source_url == canonical_source_url,
-                    AnimeDraft.source_url.like(f"%{yt_id}%"),
+    try:
+        for idx, item in enumerate(CANONICAL_HOMEPAGE_TRAILERS):
+            yt_id = item["youtube_id"]
+            canonical_source_url = f"https://www.youtube.com/watch?v={yt_id}"
+            draft = session.exec(
+                select(AnimeDraft).where(
+                    or_(
+                        AnimeDraft.external_id == item["external_id"],
+                        AnimeDraft.source_url == canonical_source_url,
+                        AnimeDraft.source_url.like(f"%{yt_id}%"),
+                    )
                 )
-            )
-        ).first()
+            ).first()
 
-        clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', item["studio"]).strip()
-        pub_time = now - timedelta(hours=idx + 1)
+            clean_studio = re.sub(
+                r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', item["studio"]
+            ).strip()
+            pub_time = now - timedelta(hours=idx + 1)
 
-        if draft:
-            draft.title_hi = item["title_hi"]
-            draft.title_en = item["title_en"]
-            draft.content_type = "trailer"
-            draft.status = "published"
-            draft.is_stale = False
-            draft.news_category = "Trailer"
-            draft.source_name = clean_studio
-            draft.source_url = canonical_source_url
-            draft.image_url = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
-            draft.summary_hi = item["summary_hi"]
-            draft.summary_en = item["summary_en"]
-            draft.season = "FALL"
-            draft.season_year = 2026
-            session.add(draft)
-            results.append(draft)
-        else:
-            max_id = session.exec(select(func.max(AnimeDraft.id))).one()
-            safe_id = max(500, max_id or 0) + idx + 1
-            draft = AnimeDraft(
-                id=safe_id,
-                external_id=item["external_id"],
-                title_hi=item["title_hi"],
-                title_en=item["title_en"],
-                content_type="trailer",
-                status="published",
-                is_stale=False,
-                news_category="Trailer",
-                source_name=clean_studio,
-                source_url=canonical_source_url,
-                image_url=f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
-                summary_hi=item["summary_hi"],
-                summary_en=item["summary_en"],
-                published_at=pub_time,
-                season="FALL",
-                season_year=2026,
-            )
-            session.add(draft)
-            results.append(draft)
+            if draft:
+                draft.title_hi = item["title_hi"]
+                draft.title_en = item["title_en"]
+                draft.content_type = "trailer"
+                draft.status = "published"
+                draft.is_stale = False
+                draft.news_category = "Trailer"
+                draft.source_name = clean_studio
+                draft.source_url = canonical_source_url
+                draft.image_url = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+                draft.summary_hi = item["summary_hi"]
+                draft.summary_en = item["summary_en"]
+                draft.season = "FALL"
+                draft.season_year = 2026
+                session.add(draft)
+                results.append({"id": draft.id, "youtube_id": yt_id, "title_hi": draft.title_hi})
+            else:
+                is_sqlite = bool(session.bind and str(session.bind.url).startswith("sqlite"))
+                kwargs = {
+                    "external_id": item["external_id"],
+                    "title_hi": item["title_hi"],
+                    "title_en": item["title_en"],
+                    "content_type": "trailer",
+                    "status": "published",
+                    "is_stale": False,
+                    "news_category": "Trailer",
+                    "source_name": clean_studio,
+                    "source_url": canonical_source_url,
+                    "image_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                    "summary_hi": item["summary_hi"],
+                    "summary_en": item["summary_en"],
+                    "published_at": pub_time,
+                    "season": "FALL",
+                    "season_year": 2026,
+                }
+                # For SQLite test DBs, use safe IDs > 500 to prevent collisions with fixture seed IDs (1..85)
+                # For PostgreSQL (Neon/production), omit id so PostgreSQL auto-generates id cleanly via sequence
+                if is_sqlite:
+                    kwargs["id"] = 500 + idx + 1
+                draft = AnimeDraft(**kwargs)
+                session.add(draft)
+                results.append({"id": getattr(draft, "id", None), "youtube_id": yt_id, "title_hi": item["title_hi"]})
 
-    session.commit()
-    for d in results:
-        session.refresh(d)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"ensure_canonical_trailers rolled back: {e}")
     return results
 
 
+class DictItem(dict):
+    """Dictionary supporting both item and attribute access without ORM session attachment."""
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'DictItem' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+
 def compute_home_page_data(session: Session) -> dict:
-    """Compute 3-Zone modern anime portal payload + backward compatible keys."""
-    articles = list(session.exec(
-        select(Article)
-        .where(or_(Article.published_at.is_not(None), Article.status == "published"))
-        .options(
-            selectinload(Article.category_rel),
-            selectinload(Article.categories),
-            selectinload(Article.availabilities).selectinload(Availability.platform_rel),
-        )
-        .order_by(Article.created_at.desc(), Article.id.desc())
-        .limit(24)
-    ).all())
+    """Compute 3-Zone modern anime portal payload + backward compatible keys.
+    Strictly read-only; zero database mutations, resilient fallbacks, and all
+    context items converted to plain Python dicts to eliminate DetachedInstanceError.
+    """
+    try:
+        articles_raw = list(session.exec(
+            select(Article)
+            .where(or_(Article.published_at.is_not(None), Article.status == "published"))
+            .options(
+                selectinload(Article.category_rel),
+                selectinload(Article.categories),
+                selectinload(Article.availabilities).selectinload(Availability.platform_rel),
+            )
+            .order_by(Article.created_at.desc(), Article.id.desc())
+            .limit(24)
+        ).all())
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Failed to query articles for homepage: {e}")
+        articles_raw = []
+
+    articles_list = []
+    for art in articles_raw:
+        cat_name = art.category
+        has_dub = False
+        plats = []
+        try:
+            for av in (getattr(art, "availabilities", []) or []):
+                if getattr(av, "has_hindi", False):
+                    has_dub = True
+                if getattr(av, "platform_rel", None) and av.platform_rel.name:
+                    plats.append(av.platform_rel.name)
+        except Exception:
+            pass
+        if not plats:
+            plats = ["Crunchyroll"]
+
+        art_dict = DictItem({
+            "id": art.id,
+            "slug": art.slug,
+            "title": art.title,
+            "anime_title_hi": art.anime_title_hi or art.title,
+            "anime_title_en": art.anime_title_en or art.title,
+            "cover_image": art.cover_image or "/media/covers/anime_solo-leveling.webp",
+            "meta_description": art.meta_description or "",
+            "is_featured": bool(getattr(art, "is_featured", False)),
+            "category": cat_name,
+            "has_hindi_dub": has_dub,
+            "platforms": plats,
+            "reading_time_minutes": getattr(art, "reading_time_minutes", 4) or 4,
+            "published_at": art.published_at,
+            "created_at": art.created_at,
+            "display_date": art.published_at or art.created_at,
+        })
+        articles_list.append(art_dict)
 
     featured_article = None
     side_articles = []
     grid_articles = []
     other_articles = []
-    if articles:
+    if articles_list:
         featured_idx = 0
-        for idx, art in enumerate(articles):
-            if getattr(art, "is_featured", False):
+        for idx, art_d in enumerate(articles_list):
+            if art_d.get("is_featured"):
                 featured_idx = idx
                 break
-        featured_article = articles[featured_idx]
-        other_articles = [a for i, a in enumerate(articles) if i != featured_idx]
+        featured_article = articles_list[featured_idx]
+        other_articles = [a for i, a in enumerate(articles_list) if i != featured_idx]
         side_articles = other_articles[:3]
         grid_articles = other_articles[3:]
 
     # Strict 14-day cutoff for Home latest updates - strictly editorial anime news
     cutoff_14d = datetime.now(timezone.utc) - timedelta(days=14)
-    latest_updates = list(session.exec(
-        select(AnimeDraft)
-        .where(
-            AnimeDraft.status == "published",
-            AnimeDraft.is_stale == False,
-            AnimeDraft.content_type == "news",
-            AnimeDraft.published_at.is_not(None),
-            AnimeDraft.source_url.is_not(None),
-            AnimeDraft.source_url != "",
-            AnimeDraft.published_at >= cutoff_14d,
-            not_(AnimeDraft.external_id.like("anilist_%")),
-            not_(AnimeDraft.source_name.like("%MangaDex%")),
-            not_(AnimeDraft.title_hi.like("%MangaDex%")),
-            not_(AnimeDraft.title_en.like("%MangaDex%")),
-            not_(AnimeDraft.title_hi.like("%प्रसारण शेड्यूल%")),
-            or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)),
-        )
-        .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
-        .limit(6)
-    ).all())
+    try:
+        latest_updates_raw = list(session.exec(
+            select(AnimeDraft)
+            .where(
+                AnimeDraft.status == "published",
+                AnimeDraft.is_stale == False,
+                AnimeDraft.content_type == "news",
+                AnimeDraft.published_at.is_not(None),
+                AnimeDraft.source_url.is_not(None),
+                AnimeDraft.source_url != "",
+                AnimeDraft.published_at >= cutoff_14d,
+                not_(AnimeDraft.external_id.like("anilist_%")),
+                not_(AnimeDraft.source_name.like("%MangaDex%")),
+                not_(AnimeDraft.title_hi.like("%MangaDex%")),
+                not_(AnimeDraft.title_en.like("%MangaDex%")),
+                not_(AnimeDraft.title_hi.like("%प्रसारण शेड्यूल%")),
+                or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)),
+            )
+            .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
+            .limit(6)
+        ).all())
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Failed to query latest_updates for homepage: {e}")
+        latest_updates_raw = []
+
+    latest_updates = []
+    for upd in latest_updates_raw:
+        latest_updates.append(DictItem({
+            "id": upd.id,
+            "external_id": upd.external_id,
+            "title_hi": upd.title_hi,
+            "title_en": upd.title_en,
+            "content_type": upd.content_type,
+            "status": upd.status,
+            "news_category": upd.news_category,
+            "source_name": upd.source_name,
+            "source_url": upd.source_url,
+            "image_url": upd.image_url,
+            "summary_hi": upd.summary_hi,
+            "summary_en": upd.summary_en,
+            "published_at": upd.published_at,
+        }))
 
     # ZONE 1: 6 Curated Spotlight Slides with valid HD images
     spotlight_slides = [
@@ -502,11 +588,11 @@ def compute_home_page_data(session: Session) -> dict:
     ]
 
     if featured_article:
-        feat_t_hi = featured_article.anime_title_hi or featured_article.title
-        feat_t_en = featured_article.anime_title_en or featured_article.title
-        feat_cover = featured_article.cover_image or "/media/covers/anime_solo-leveling.webp"
-        feat_plats = [av.platform_rel.name for av in getattr(featured_article, "availabilities", []) if av.platform_rel] or ["Crunchyroll"]
-        feat_syn = (featured_article.meta_description or getattr(featured_article, "summary", "") or "भारत में आधिकारिक ओटीटी प्लेटफॉर्म्स पर एनीमे गाइड।")
+        feat_t_hi = featured_article.get("anime_title_hi") or featured_article.get("title")
+        feat_t_en = featured_article.get("anime_title_en") or featured_article.get("title")
+        feat_cover = featured_article.get("cover_image") or "/media/covers/anime_solo-leveling.webp"
+        feat_plats = featured_article.get("platforms") or ["Crunchyroll"]
+        feat_syn = (featured_article.get("meta_description") or "भारत में आधिकारिक ओटीटी प्लेटफॉर्म्स पर एनीमे गाइड।")
         spotlight_slides[0] = {
             "rank": 1,
             "rank_badge": "#1 ट्रेंडिंग स्पॉटलाइट",
@@ -517,7 +603,7 @@ def compute_home_page_data(session: Session) -> dict:
             "dub_badge": "हिंदी डब / सब",
             "platforms": feat_plats,
             "synopsis_hi": feat_syn,
-            "cta_url": f"/anime/{featured_article.slug}",
+            "cta_url": f"/anime/{featured_article.get('slug', 'anime')}",
             "image_url": feat_cover,
         }
 
@@ -682,32 +768,67 @@ def compute_home_page_data(session: Session) -> dict:
     ]
 
     # ZONE 2A: Official Trailers (6 cards strictly synced 1:1 with DB AnimeDraft records)
-    ensure_canonical_trailers(session)
+    # Strictly read-only query; zero database writes inside GET /
     official_trailers = []
-    for ct in CANONICAL_HOMEPAGE_TRAILERS:
-        yt_id = ct["youtube_id"]
-        draft = session.exec(
-            select(AnimeDraft).where(
-                or_(
-                    AnimeDraft.external_id == ct["external_id"],
-                    AnimeDraft.source_url == f"https://www.youtube.com/watch?v={yt_id}",
-                    AnimeDraft.source_url.like(f"%{yt_id}%"),
-                ),
-                AnimeDraft.content_type == "trailer",
-                AnimeDraft.status == "published",
-            )
-        ).first()
-        if draft:
-            clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', draft.source_name or ct["studio"]).strip()
+    try:
+        for ct in CANONICAL_HOMEPAGE_TRAILERS:
+            yt_id = ct["youtube_id"]
+            canonical_url = f"https://www.youtube.com/watch?v={yt_id}"
+            draft = session.exec(
+                select(AnimeDraft).where(
+                    or_(
+                        AnimeDraft.external_id == ct["external_id"],
+                        AnimeDraft.source_url == canonical_url,
+                        AnimeDraft.source_url.like(f"%{yt_id}%"),
+                    ),
+                    AnimeDraft.content_type == "trailer",
+                ).order_by(AnimeDraft.id.desc())
+            ).first()
+            if draft:
+                clean_studio = re.sub(
+                    r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', draft.source_name or ct["studio"]
+                ).strip()
+                official_trailers.append({
+                    "id": draft.id,
+                    "youtube_id": yt_id,
+                    "title_hi": draft.title_hi or ct["title_hi"],
+                    "title_en": draft.title_en or ct["title_en"],
+                    "thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                    "fallback_thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/mqdefault.jpg",
+                    "studio": clean_studio,
+                    "url": f"/updates/{draft.id}",
+                })
+            else:
+                clean_studio = re.sub(
+                    r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', ct["studio"]
+                ).strip()
+                official_trailers.append({
+                    "id": 1,
+                    "youtube_id": yt_id,
+                    "title_hi": ct["title_hi"],
+                    "title_en": ct["title_en"],
+                    "thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                    "fallback_thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/mqdefault.jpg",
+                    "studio": clean_studio,
+                    "url": "/trailers",
+                })
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Failed to query trailers for homepage: {e}")
+        for ct in CANONICAL_HOMEPAGE_TRAILERS:
+            yt_id = ct["youtube_id"]
+            clean_studio = re.sub(
+                r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', ct["studio"]
+            ).strip()
             official_trailers.append({
-                "id": draft.id,
+                "id": 1,
                 "youtube_id": yt_id,
-                "title_hi": draft.title_hi,
-                "title_en": draft.title_en,
+                "title_hi": ct["title_hi"],
+                "title_en": ct["title_en"],
                 "thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
                 "fallback_thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/mqdefault.jpg",
                 "studio": clean_studio,
-                "url": f"/updates/{draft.id}",
+                "url": "/trailers",
             })
 
     # ZONE 2A: Popular Hindi Dubs (12 crisp poster cards)
@@ -774,19 +895,19 @@ def compute_home_page_data(session: Session) -> dict:
     latest_news = []
     if latest_updates:
         for upd in latest_updates:
-            raw_cat = upd.news_category or "News"
+            raw_cat = upd.get("news_category") or "News"
             cat_hi = NEWS_CATEGORY_HI_MAP.get(raw_cat, raw_cat)
-            rel_time = format_relative_time_hi(upd.published_at or upd.created_at)
+            rel_time = format_relative_time_hi(upd.get("published_at"))
             latest_news.append({
-                "id": upd.id,
+                "id": upd["id"],
                 "category_name_hi": cat_hi,
                 "category_name_en": raw_cat,
-                "source_name": upd.source_name or "Official",
+                "source_name": upd.get("source_name") or "Official",
                 "relative_time_hi": rel_time,
-                "title_hi": upd.title_hi or upd.title_en,
-                "title_en": upd.title_en or upd.title_hi,
-                "image_url": upd.image_url or "/media/covers/anime_demon-slayer.webp",
-                "url": f"/updates/{upd.id}",
+                "title_hi": upd.get("title_hi") or upd.get("title_en"),
+                "title_en": upd.get("title_en") or upd.get("title_hi"),
+                "image_url": upd.get("image_url") or "/media/covers/anime_demon-slayer.webp",
+                "url": f"/updates/{upd['id']}",
             })
     for cur in curated_latest_news:
         if len(latest_news) >= 6:
@@ -817,17 +938,17 @@ def compute_home_page_data(session: Session) -> dict:
     zone3_hindi_guides = []
     if other_articles:
         for art in other_articles:
-            g_title_hi = art.anime_title_hi or art.title
-            g_title_en = art.anime_title_en or art.title
-            g_image = art.cover_image or "/media/covers/anime_frieren.webp"
-            g_plats = [av.platform_rel.name for av in getattr(art, "availabilities", []) if av.platform_rel] or ["Crunchyroll"]
+            g_title_hi = art.get("anime_title_hi") or art.get("title")
+            g_title_en = art.get("anime_title_en") or art.get("title")
+            g_image = art.get("cover_image") or "/media/covers/anime_frieren.webp"
+            g_plats = art.get("platforms") or ["Crunchyroll"]
             zone3_hindi_guides.append({
-                "id": art.id,
+                "id": art["id"],
                 "title_hi": g_title_hi,
                 "title_en": g_title_en,
                 "image_url": g_image,
                 "platforms": g_plats,
-                "url": f"/article/{art.slug}",
+                "url": f"/anime/{art.get('slug', 'anime')}",
             })
     for cur in curated_hindi_guides:
         if len(zone3_hindi_guides) >= 6:
@@ -856,7 +977,7 @@ def compute_home_page_data(session: Session) -> dict:
         "zone3_new_releases": zone3_new_releases,
         "zone3_hindi_guides": zone3_hindi_guides,
         "zone3_popular_manga": zone3_popular_manga,
-        "articles": articles,
+        "articles": articles_list,
         "latest_updates": latest_updates,
         "featured_article": featured_article,
         "side_articles": side_articles,
@@ -911,8 +1032,20 @@ def get_home_page_data(session: Session) -> dict:
 
 @router.get("/", response_class=HTMLResponse)
 def home_page(request: Request, session: Session = Depends(get_session)):
-    data = get_home_page_data(session)
-    categories = get_categories(session)
+    try:
+        data = get_home_page_data(session)
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error getting home page data: {e}")
+        data = compute_home_page_data(session)
+
+    try:
+        categories = get_categories(session)
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Error getting categories for homepage: {e}")
+        categories = []
+
     user = getattr(request.state, "user", None)
 
     return render(
@@ -927,11 +1060,11 @@ def home_page(request: Request, session: Session = Depends(get_session)):
         zone3_new_releases=data.get("zone3_new_releases", []),
         zone3_hindi_guides=data.get("zone3_hindi_guides", []),
         zone3_popular_manga=data.get("zone3_popular_manga", []),
-        articles=data["articles"],
-        latest_updates=data["latest_updates"],
-        featured_article=data["featured_article"],
-        side_articles=data["side_articles"],
-        grid_articles=data["grid_articles"],
+        articles=data.get("articles", []),
+        latest_updates=data.get("latest_updates", []),
+        featured_article=data.get("featured_article"),
+        side_articles=data.get("side_articles", []),
+        grid_articles=data.get("grid_articles", []),
         categories=categories,
         user=user,
         active_nav="home",
@@ -2492,7 +2625,6 @@ def prewarm_public_pages() -> dict[str, Any]:
     stats = {}
     try:
         with Session(engine) as s:
-            ensure_canonical_trailers(s)
             get_categories(s)
             get_platforms(s)
             h = get_home_page_data(s)

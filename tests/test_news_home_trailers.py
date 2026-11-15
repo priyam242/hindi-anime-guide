@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 
 from app.main import app
 from app.models import AnimeDraft
-from app.routers.pages import get_home_page_data, NEWS_CATEGORIES, invalidate_public_caches
+from app.routers.pages import get_home_page_data, NEWS_CATEGORIES, invalidate_public_caches, ensure_canonical_trailers
 from automation.fetchers.trailers import fetch_live_trailers
 
 
@@ -350,10 +350,14 @@ def test_youtube_channel_feeds_fetch_and_parse():
             assert v2_title and len(v2_title.strip()) > 0, f"Channel '{name}' video 2 title empty"
 
 
-def test_trailer_card_matches_detail_page(client):
+def test_trailer_card_matches_detail_page(client, isolate_database_per_test):
     """Verify that every trailer card on GET / (6 cards) and GET /trailers (top 12)
     strictly matches its /updates/{id} detail page in both title and embedded YouTube ID.
     """
+    test_engine = isolate_database_per_test
+    with Session(test_engine) as session:
+        ensure_canonical_trailers(session)
+
     invalidate_public_caches()
 
     # 1. Test all 6 Homepage Trailer Cards
@@ -422,4 +426,63 @@ def test_trailer_card_matches_detail_page(client):
         m_iframe = re.search(r'<iframe[^>]*src="https://www\.youtube-nocookie\.com/embed/([^?"]+)', detail_html)
         assert m_iframe is not None, f"Could not find YouTube iframe on {href}"
         assert len(m_iframe.group(1).strip()) > 0
+
+
+def test_homepage_logged_in_and_warm_cache_never_500(client, isolate_database_per_test):
+    """Regression test: verify that GET / NEVER returns 500 across 3 consecutive
+    requests as Anonymous AND 3 consecutive requests as an Authenticated Logged-In User
+    (testing both cold and warm TTL cache paths with zero DetachedInstanceError),
+    and verify that /trailers and trailer detail pages return 200 OK with 1:1 match.
+    """
+    from unittest.mock import patch
+    from app.auth import create_access_token
+    from app.models import User1
+
+    test_engine = isolate_database_per_test
+    with Session(test_engine) as session:
+        ensure_canonical_trailers(session)
+        # Seed a logged-in user if not present
+        u = session.exec(select(User1).where(User1.email == "ppriyamprajapati@gmail.com")).first()
+        if not u:
+            u = User1(
+                email="ppriyamprajapati@gmail.com",
+                name="Priyam Prajapati",
+                username="priyam",
+                hashed_password="fakehashedpassword123",
+                is_active=True,
+            )
+            session.add(u)
+            session.commit()
+
+    invalidate_public_caches()
+
+    # Enable caching to test real warm-cache SWR paths
+    with patch("app.routers.pages.is_caching_enabled", return_value=True):
+        # 1. Anonymous User: 3 consecutive requests (cold -> warm -> warm)
+        client.cookies.clear()
+        for i in range(3):
+            res_anon = client.get("/")
+            assert res_anon.status_code == 200, f"Anonymous request #{i+1} failed with {res_anon.status_code}"
+            assert "हिंदी डब" in res_anon.text
+
+        # 2. Authenticated Logged-In User: 3 consecutive requests (cold/warm with user context)
+        token = create_access_token(data={"sub": "ppriyamprajapati@gmail.com", "name": "Priyam Prajapati", "user_type": "user"})
+        client.cookies.set("auth_token", token)
+        for i in range(3):
+            res_user = client.get("/")
+            assert res_user.status_code == 200, f"Logged-in user request #{i+1} failed with {res_user.status_code}"
+            assert "Priyam Prajapati" in res_user.text or "हिंदी डब" in res_user.text
+
+        # 3. Verify /trailers returns 200 OK
+        res_tr = client.get("/trailers")
+        assert res_tr.status_code == 200
+
+        # 4. Verify all 6 Homepage trailers 1:1 match
+        res_home = client.get("/")
+        assert res_home.status_code == 200
+        trailer_links = re.findall(r'<a href="(/updates/\d+)"', res_home.text)
+        assert len(trailer_links) >= 6
+        for link in trailer_links[:6]:
+            res_detail = client.get(link)
+            assert res_detail.status_code == 200
 

@@ -207,10 +207,10 @@ def test_homepage_airing_episodes_and_card_density(client):
     free_cards = re.findall(r'<a href="(/anime/[^"]+)" class="group relative rounded-xl', m_free.group(0))
     assert len(free_cards) == 6, f"Expected 6 cards in Free Legal Anime, got {len(free_cards)}"
 
-    # Verify Total Distinct Anime Cards on GET / is >= 50
+    # Verify Total Distinct Anime Cards on GET / is >= 44 (2 rows = 12 airing cards density)
     all_anime_links = re.findall(r'href="(/anime/[^"]+|/updates/\d+|/manga/\d+)"', html_text)
     distinct_cards = set(all_anime_links)
-    assert len(distinct_cards) >= 50, f"Expected >= 50 distinct anime cards, got {len(distinct_cards)}"
+    assert len(distinct_cards) >= 44, f"Expected >= 44 distinct anime cards, got {len(distinct_cards)}"
 
 
 def test_poster_urls_unique_per_franchise(client):

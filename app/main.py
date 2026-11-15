@@ -23,11 +23,19 @@ async def lifespan(app: FastAPI):
     init_db()
     try:
         with Session(engine) as session:
-            admin.ensure_admin_user(session)
-            from .routers.pages import ensure_canonical_trailers
-            ensure_canonical_trailers(session)
-    except Exception:
-        pass
+            try:
+                admin.ensure_admin_user(session)
+            except Exception as e:
+                session.rollback()
+                logger.warning(f"Failed to ensure admin user: {e}")
+            try:
+                from .routers.pages import ensure_canonical_trailers
+                ensure_canonical_trailers(session)
+            except Exception as e:
+                session.rollback()
+                logger.warning(f"Failed to ensure canonical trailers: {e}")
+    except Exception as e:
+        logger.warning(f"Database startup lifespan error: {e}")
 
     # Pre-warm in-memory caches for all Gunicorn workers
     try:
