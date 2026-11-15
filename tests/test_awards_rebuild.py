@@ -194,15 +194,15 @@ def seed_awards_test_data(isolate_database_per_test):
     return test_engine
 
 
-def test_awards_hero_is_strictly_latest_edition_2026(client, seed_awards_test_data):
-    """Verify hero is shown for latest 2026 edition (MHA Final Season) and hidden for past years."""
+def test_awards_hero_unified_across_all_years(client, seed_awards_test_data):
+    """Verify Grand Prize AoTY Hero Spotlight is present across all years (2026, 2025, 2024) with clean data."""
     # 1. Latest year (2026) -> Hero present with MHA Final Season
     resp_2026 = client.get("/awards?year=2026")
     assert resp_2026.status_code == 200
     html_2026 = resp_2026.text
     assert "वर्ष का सर्वश्रेष्ठ विजेता" in html_2026
     assert "My Hero Academia FINAL SEASON" in html_2026
-    assert "AniList ID: 182896" in html_2026
+    assert "AniList ID:" not in html_2026  # Raw debug pill eliminated
 
     # Default request without query param also defaults to 2026
     resp_default = client.get("/awards")
@@ -210,16 +210,18 @@ def test_awards_hero_is_strictly_latest_edition_2026(client, seed_awards_test_da
     assert "वर्ष का सर्वश्रेष्ठ विजेता" in resp_default.text
     assert "My Hero Academia FINAL SEASON" in resp_default.text
 
-    # 2. Older years (2025, 2024) -> Hero must NOT be present
+    # 2. Older years (2025, 2024) -> Hero present with Grand Prize AoTY spotlight and sleek archive pill
     resp_2025 = client.get("/awards?year=2025")
     assert resp_2025.status_code == 200
-    assert "वर्ष का सर्वश्रेष्ठ विजेता" not in resp_2025.text
-    assert "ऐतिहासिक पुरस्कार अभिलेखागार (Historical Award Archive — 2025)" in resp_2025.text
+    assert "वर्ष का सर्वश्रेष्ठ विजेता" in resp_2025.text
+    assert "Solo Leveling" in resp_2025.text
+    assert "आधिकारिक आर्काइव • 2025 विजेता सूची" in resp_2025.text
 
     resp_2024 = client.get("/awards?year=2024")
     assert resp_2024.status_code == 200
-    assert "वर्ष का सर्वश्रेष्ठ विजेता" not in resp_2024.text
-    assert "ऐतिहासिक पुरस्कार अभिलेखागार (Historical Award Archive — 2024)" in resp_2024.text
+    assert "वर्ष का सर्वश्रेष्ठ विजेता" in resp_2024.text
+    assert "JUJUTSU KAISEN Season 2" in resp_2024.text
+    assert "आधिकारिक आर्काइव • 2024 विजेता सूची" in resp_2024.text
 
 
 def test_every_award_ceremony_and_entry_has_working_source_url(client, seed_awards_test_data):

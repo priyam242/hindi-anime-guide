@@ -83,9 +83,10 @@
 
 {% macro render_pagination(page, total_pages, base_url) %}
 {% if total_pages > 1 %}
+{% set sep = '&' if '?' in base_url else '?' %}
 <nav class="flex items-center justify-center gap-2 pt-8" aria-label="Pagination">
   {% if page > 1 %}
-  <a href="{{ base_url }}?page={{ page - 1 }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors">
+  <a href="{{ base_url }}{{ sep }}page={{ page - 1 }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors">
     <i class="fas fa-chevron-left text-[10px] mr-1"></i> पिछला
   </a>
   {% endif %}
@@ -97,7 +98,7 @@
   </div>
 
   {% if page < total_pages %}
-  <a href="{{ base_url }}?page={{ page + 1 }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors">
+  <a href="{{ base_url }}{{ sep }}page={{ page + 1 }}" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors">
     अगला <i class="fas fa-chevron-right text-[10px] ml-1"></i>
   </a>
   {% endif %}

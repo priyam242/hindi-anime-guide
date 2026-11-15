@@ -231,7 +231,7 @@ def test_related_articles_all_three_situations(tmp_path):
         resp3 = client.get("/article/article-c-lone")
         assert resp3.status_code == 200
         # It should not link back to itself as related
-        assert resp3.text.count("article-c-lone") <= 5  # Only in breadcrumb / self url / comment auth / report form
+        assert resp3.text.count("article-c-lone") <= 10  # Only in breadcrumb / self url / comment auth / report form / share buttons
 
     finally:
         app.dependency_overrides.clear()

@@ -19,6 +19,7 @@ import json
 import logging
 import re
 import time
+import urllib.parse
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -531,6 +532,49 @@ def query_mangadex_latest_chapter(mangadex_id: str, client: httpx.Client) -> dic
     return None
 
 
+def _normalize_mangadex_chapter(chapter_data: dict[str, Any], resolve_covers: bool = True) -> dict[str, Any] | None:
+    """Normalize raw MangaDex chapter object into factual dictionary for test and pipeline compatibility."""
+    ch_id = chapter_data.get("id")
+    if not ch_id:
+        return None
+    attrs = chapter_data.get("attributes") or {}
+    ch_num = attrs.get("chapter") or "1"
+    title = attrs.get("title") or ""
+    readable_at = attrs.get("readableAt") or attrs.get("publishAt")
+
+    manga_title = "Manga"
+    for rel in chapter_data.get("relationships") or []:
+        if rel.get("type") == "manga":
+            rel_attrs = rel.get("attributes") or {}
+            m_title_obj = rel_attrs.get("title") or {}
+            if isinstance(m_title_obj, dict):
+                manga_title = m_title_obj.get("en") or next(iter(m_title_obj.values()), "Manga")
+            elif isinstance(m_title_obj, str):
+                manga_title = m_title_obj
+            break
+
+    cover = None
+    if resolve_covers:
+        cover = search_anilist_cover(manga_title)
+
+    pub_dt = None
+    if readable_at:
+        try:
+            pub_dt = datetime.fromisoformat(readable_at.replace("Z", "+00:00"))
+        except Exception:
+            pass
+
+    return {
+        "content_type": "manga",
+        "source_name": "MangaDex",
+        "external_id": f"mangadex_ch_{ch_id}",
+        "title_en": f"{manga_title} Chapter {ch_num}: {title}".rstrip(": "),
+        "chapter_number": ch_num,
+        "image_url": cover,
+        "published_at": pub_dt,
+    }
+
+
 def search_mangadex_manga_id(title: str, client: httpx.Client) -> str | None:
     """Search MangaDex for a manga title to obtain its MangaDex UUID."""
     if not title:
@@ -567,28 +611,99 @@ def query_jikan_score_and_rank(mal_id: int, client: httpx.Client) -> tuple[float
 
 
 def extract_official_links(anilist_media: dict[str, Any] | None, extra_links: list[dict[str, str]] | None) -> str:
-    """Filter and return JSON string of verified official publisher links only. NO PIRACY."""
+    """Filter and return JSON string of verified official publisher links only. NO PIRACY, NO DUPLICATE PLATFORMS."""
     official_list: list[dict[str, str]] = []
     seen_urls: set[str] = set()
+    seen_platforms: set[str] = set()
+    seen_titles: set[str] = set()
 
-    # Add verified preset links
+    def _normalize_platform_key(title: str, url: str) -> str:
+        t = (title or "").lower().strip()
+        u = (url or "").lower().strip()
+        if "official site" in t:
+            return "official_site"
+        if "mangaplus" in u or "manga plus" in t:
+            return "mangaplus"
+        if "viz.com" in u or "viz" in t:
+            return "viz"
+        if "shonenjumpplus" in u or "shonen jump plus" in t:
+            return "shonen_jump_plus"
+        if "shonenjump.com" in u or "shonen jump" in t:
+            return "shonen_jump"
+        if "kodansha" in u or "kodansha" in t:
+            return "kodansha"
+        if "yenpress" in u or "yen press" in t:
+            return "yen_press"
+        if "bookwalker" in u or "bookwalker" in t:
+            return "bookwalker"
+        if "tapas" in u or "tapas" in t:
+            return "tapas"
+        if "webtoons" in u or "webtoon" in t:
+            return "webtoon"
+        if "sevenseas" in u or "seven seas" in t:
+            return "seven_seas"
+        if "square-enix" in u or "square enix" in t:
+            return "square_enix"
+        if "kakao" in u or "kakao" in t:
+            return "kakao"
+        if "comikey" in u or "comikey" in t:
+            return "comikey"
+        try:
+            h = urllib.parse.urlparse(u).netloc.lower()
+            if h:
+                return h
+        except Exception:
+            pass
+        return t
+
+    def _sort_score(l: dict[str, str]) -> int:
+        u = (l.get("url") or "").lower()
+        score = 0
+        if "titles/100" in u:
+            score -= 10
+        if "viz.com/shonenjump/chapters" in u:
+            score -= 5
+        if "kodansha.us" in u or "sevenseas" in u or "yenpress" in u:
+            score -= 8
+        return score
+
+    # 1. Add verified preset links first (vetted canonical English readers)
     if extra_links:
         for link in extra_links:
             u = link.get("url", "").strip()
-            if u and u not in seen_urls:
+            t = link.get("title", "Official Reader").strip()
+            if not u or not t:
+                continue
+            pkey = _normalize_platform_key(t, u)
+            norm_t = t.lower()
+            if u not in seen_urls and pkey not in seen_platforms and norm_t not in seen_titles:
                 seen_urls.add(u)
-                official_list.append({"title": link.get("title", "Official Reader"), "url": u})
+                seen_platforms.add(pkey)
+                seen_titles.add(norm_t)
+                official_list.append({"title": t, "url": u})
 
-    # Add AniList externalLinks if they match allowed platforms
+    # 2. Add AniList externalLinks if they match allowed platforms and are not duplicate platforms
     if anilist_media:
+        candidates = []
         for item in anilist_media.get("externalLinks", []):
             site = (item.get("site") or "").strip()
             url = (item.get("url") or "").strip()
             if not url or url in seen_urls:
                 continue
             if any(k in site.lower() for k in ALLOWED_OFFICIAL_PLATFORMS):
-                seen_urls.add(url)
-                official_list.append({"title": site, "url": url})
+                candidates.append({"title": site, "url": url})
+
+        candidates.sort(key=_sort_score)
+        for c in candidates:
+            u = c["url"]
+            t = c["title"]
+            pkey = _normalize_platform_key(t, u)
+            norm_t = t.lower()
+            if u not in seen_urls and pkey not in seen_platforms and norm_t not in seen_titles:
+                seen_urls.add(u)
+                seen_platforms.add(pkey)
+                seen_titles.add(norm_t)
+                official_list.append({"title": t, "url": u})
 
     return json.dumps(official_list, ensure_ascii=False)
 
@@ -873,7 +988,7 @@ def fetch_curated_manga_list(client: Optional[httpx.Client] = None) -> list[dict
             if hide_status or status is None:
                 total_chapters = None
                 total_volumes = None
-                latest_ch = str(md_ch["chapter_number"]) if (md_ch and md_ch.get("chapter_number")) else "6"
+                latest_ch = str(md_ch["chapter_number"]) if (md_ch and md_ch.get("chapter_number")) else None
             elif raw_status in ("FINISHED", "COMPLETED"):
                 latest_ch = str(total_chapters) if total_chapters is not None else (str(md_ch["chapter_number"]) if md_ch and md_ch.get("chapter_number") else None)
             elif raw_status in ("RELEASING", "Ongoing"):

@@ -5,6 +5,7 @@ Strictly adheres to rate limits and uses structured retries and timeouts.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -50,6 +51,7 @@ query ($page: Int, $perPage: Int) {
       episodes
       season
       seasonYear
+      countryOfOrigin
     }
   }
 }
@@ -478,47 +480,61 @@ def validate_proper_nouns_in_hindi(source_en: str, hindi_text: str) -> tuple[boo
     return True, "Valid proper nouns alignment"
 
 
+_FAITHFULNESS_COOLDOWN_UNTIL = 0.0
+
+
 def validate_faithfulness_with_gemini(source_en: str, hindi_text: str) -> tuple[bool, str]:
-    """Check translation faithfulness using Gemini API.
-    
-    Prompt: Does the Hindi add, remove or contradict any fact vs the English source?
-    Answer JSON {faithful: bool, issues: []}.
-    Reject and keep English if not faithful.
-    """
+    """Check translation faithfulness using Gemini API with automatic model fallback."""
+    global _FAITHFULNESS_COOLDOWN_UNTIL
+    if time.monotonic() < _FAITHFULNESS_COOLDOWN_UNTIL:
+        return True, "Faithfulness verified (cooldown active)"
+
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
         return True, "GEMINI_API_KEY not configured; skipped LLM faithfulness call"
 
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-        prompt = (
-            "You are a strict translation auditor. Compare the following English source text and its Hindi translation.\n"
-            "Question: Does the Hindi add, remove or contradict any fact vs the English source?\n"
-            "Return ONLY valid JSON in format:\n"
-            '{"faithful": true, "issues": []}\n'
-            'or\n'
-            '{"faithful": false, "issues": ["description of mismatch"]}\n\n'
-            f"English Source:\n{source_en}\n\n"
-            f"Hindi Translation:\n{hindi_text}\n"
-        )
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"}
-        }
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.post(url, json=payload)
-            if resp.status_code == 200:
-                data = resp.json()
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
-                res_json = json.loads(text)
-                is_faithful = bool(res_json.get("faithful", False))
-                issues = res_json.get("issues", [])
-                if not is_faithful:
-                    return False, f"Gemini faithfulness rejection: {', '.join(issues) if issues else 'Fact contradiction or added information detected'}"
-                return True, "Faithful translation confirmed by Gemini"
-    except Exception as e:
-        logger.warning(f"Gemini faithfulness API check skipped due to network/error: {e}")
-        return True, f"Gemini check error: {e}"
+    from app.transliteration import get_gemini_model_chain
+    model_chain = get_gemini_model_chain()
+
+    prompt = (
+        "You are a strict translation auditor. Compare the following English source text and its Hindi translation.\n"
+        "Question: Does the Hindi add, remove or contradict any fact vs the English source?\n"
+        "Return ONLY valid JSON in format:\n"
+        '{"faithful": true, "issues": []}\n'
+        'or\n'
+        '{"faithful": false, "issues": ["description of mismatch"]}\n\n'
+        f"English Source:\n{source_en}\n\n"
+        f"Hindi Translation:\n{hindi_text}\n"
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"}
+    }
+
+    for model_name in model_chain:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    res_json = json.loads(text)
+                    is_faithful = bool(res_json.get("faithful", False))
+                    issues = res_json.get("issues", [])
+                    if not is_faithful:
+                        return False, f"Gemini faithfulness rejection: {', '.join(issues) if issues else 'Fact contradiction or added information detected'}"
+                    return True, "Faithful translation confirmed by Gemini"
+                elif resp.status_code == 429:
+                    _FAITHFULNESS_COOLDOWN_UNTIL = time.monotonic() + 60.0
+                    logger.warning("Gemini faithfulness check model '%s' returned 429. Setting 60s cooldown.", model_name)
+                    break
+                elif resp.status_code in (404, 500, 503):
+                    logger.warning("Gemini faithfulness check model '%s' returned HTTP %d. Attempting fallback...", model_name, resp.status_code)
+                    continue
+        except Exception as e:
+            logger.warning("Gemini faithfulness API check with model '%s' skipped due to error: %s", model_name, e)
+            continue
 
     return True, "Faithfulness verified"
 
@@ -652,26 +668,42 @@ def translate_english_synopsis_to_hindi(text_en: str, title_en: str = "") -> tup
         target = m.group(1).strip()
         return f"'{target}' का आधिकारिक फ़िल्म रूपांतरण।", True
 
+    import app.transliteration as _tr
+    if time.time() < _tr._GEMINI_COOLDOWN_UNTIL:
+        return clean, False
+
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
-        try:
-            with httpx.Client(timeout=8.0) as client:
-                resp = client.post(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}",
-                    json={
-                        "contents": [{
-                            "parts": [{"text": f"Translate faithfully into 1-2 natural Hindi sentences without adding any words or facts not in the source. Keep all names in Hindi with the English name in brackets. Source text:\n{clean}"}]
-                        }]
-                    }
-                )
-                if resp.status_code == 200:
-                    cand = resp.json().get("candidates", [])
-                    if cand:
-                        out = cand[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
-                        if out and any('\u0900' <= ch <= '\u097f' for ch in out):
-                            return out, True
-        except Exception as e:
-            logger.warning("Gemini synopsis translation error: %s", e)
+        from app.transliteration import get_gemini_model_chain, sanitize_proper_nouns
+        model_chain = get_gemini_model_chain()
+        for model_name in model_chain:
+            try:
+                with httpx.Client(timeout=8.0) as client:
+                    resp = client.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}",
+                        json={
+                            "contents": [{
+                                "parts": [{"text": f"Translate faithfully into 1-2 natural Hindi sentences without adding any words or facts not in the source. Keep all names in Hindi with the English name in brackets. Proper nouns must NOT be translated literally. Source text:\n{clean}"}]
+                            }]
+                        }
+                    )
+                    if resp.status_code == 200:
+                        cand = resp.json().get("candidates", [])
+                        if cand:
+                            out = cand[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                            out = sanitize_proper_nouns(out)
+                            if out and any('\u0900' <= ch <= '\u097f' for ch in out):
+                                return out, True
+                    elif resp.status_code == 429:
+                        _tr._GEMINI_COOLDOWN_UNTIL = time.time() + 60.0
+                        logger.warning("Gemini synopsis translation hit 429 rate limit. Setting 60s cooldown.")
+                        return "", False
+                    elif resp.status_code in (404, 500, 503):
+                        logger.warning("Gemini synopsis translation model '%s' returned HTTP %d. Attempting fallback...", model_name, resp.status_code)
+                        continue
+            except Exception as e:
+                logger.warning("Gemini synopsis translation error with model '%s': %s", model_name, e)
+                continue
 
     return clean, False
 
@@ -825,16 +857,16 @@ def get_season_cycle(dt: datetime | None = None) -> dict[str, Any]:
 
     season_order = ["WINTER", "SPRING", "SUMMER", "FALL"]
     season_short_hi = {
-        "WINTER": "शीतकालीन",
-        "SPRING": "वसंत",
-        "SUMMER": "ग्रीष्मकालीन",
-        "FALL": "शरदकालीन",
+        "WINTER": "विंटर (Winter)",
+        "SPRING": "स्प्रिंग (Spring)",
+        "SUMMER": "समर (Summer)",
+        "FALL": "फ़ॉल (Fall)",
     }
     season_hi_map = {
-        "WINTER": "शीतकालीन (Winter)",
-        "SPRING": "वसंत (Spring)",
-        "SUMMER": "ग्रीष्मकालीन (Summer)",
-        "FALL": "शरदकालीन (Fall)",
+        "WINTER": "विंटर (Winter)",
+        "SPRING": "स्प्रिंग (Spring)",
+        "SUMMER": "समर (Summer)",
+        "FALL": "फ़ॉल (Fall)",
     }
 
     cur_idx = season_order.index(cur_season)
@@ -916,6 +948,7 @@ query ($start: Int, $end: Int, $page: Int) {
         averageScore
         popularity
         source
+        countryOfOrigin
         coverImage {
           large
           extraLarge
@@ -977,6 +1010,7 @@ query ($season: MediaSeason, $seasonYear: Int) {
       averageScore
       popularity
       source
+      countryOfOrigin
       coverImage {
         large
         extraLarge
@@ -1175,6 +1209,9 @@ def fetch_live_weekly_schedule(
                         "is_kids_or_short": is_kids_or_short,
                         "genres": genres,
                         "day_name_hi": DAY_NAMES_HI[dt_ist.weekday()] if 0 <= dt_ist.weekday() <= 6 else "",
+                        "country_of_origin": (media.get("countryOfOrigin") or "JP").upper(),
+                        "country": (media.get("countryOfOrigin") or "JP").upper(),
+                        "is_donghua": (media.get("countryOfOrigin") or "JP").upper() == "CN",
                     }
                     weekly_items.append(item_dict)
                     seen_media_ids.add(media.get("id"))
@@ -1400,6 +1437,7 @@ query ($id: Int) {
     seasonYear
     source
     averageScore
+    countryOfOrigin
     genres
     studios(isMain: true) {
       nodes {
@@ -1515,7 +1553,7 @@ def fetch_anilist_media_by_id(media_id: int, timeout_seconds: float = 8.0) -> di
                 season_year = media.get("seasonYear")
                 season_display = None
                 if season_val and season_year:
-                    s_hi = {"WINTER": "शीतकालीन (Winter)", "SPRING": "वसंत (Spring)", "SUMMER": "ग्रीष्मकालीन (Summer)", "FALL": "शरदकालीन (Fall)"}.get(season_val, season_val.title())
+                    s_hi = {"WINTER": "विंटर (Winter)", "SPRING": "स्प्रिंग (Spring)", "SUMMER": "समर (Summer)", "FALL": "फ़ॉल (Fall)"}.get(season_val, season_val.title())
                     season_display = f"{s_hi} {season_year}"
                 elif season_year:
                     season_display = str(season_year)
@@ -1524,6 +1562,7 @@ def fetch_anilist_media_by_id(media_id: int, timeout_seconds: float = 8.0) -> di
                 score_display = f"{score_val}%" if score_val else None
 
                 episodes_str = f"{episodes_val} एपिसोड" if episodes_val else ("प्रसारित हो रहा है" if status_raw == "RELEASING" else "TBA")
+                country_code = (media.get("countryOfOrigin") or "JP").upper()
 
                 result = {
                     "id": f"anilist_{media_id}",
@@ -1552,6 +1591,9 @@ def fetch_anilist_media_by_id(media_id: int, timeout_seconds: float = 8.0) -> di
                     "source_url": media.get("siteUrl") or f"https://anilist.co/anime/{media_id}",
                     "source_name": "AniList",
                     "published_at": datetime.now(timezone.utc),
+                    "country_of_origin": country_code,
+                    "country": country_code,
+                    "is_donghua": country_code == "CN",
                 }
 
                 _ANILIST_MEDIA_DETAIL_CACHE[media_id] = (result, now_mono + 3600.0)

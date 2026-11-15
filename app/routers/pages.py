@@ -65,13 +65,13 @@ _AWARDS_CACHE: Dict[int, dict[str, Any]] = {}
 _TRAILERS_CACHE: Dict[tuple[int, int, str, int], tuple[list, int, float]] = {}
 
 NEWS_CATEGORIES = [
-    {"slug": "Announcement", "name_en": "Announcement", "name_hi": "घोषणाएं", "icon": "fa-bullhorn", "badge_class": "bg-blue-600"},
-    {"slug": "Trailer", "name_en": "Trailer", "name_hi": "ट्रेलर्स", "icon": "fa-film", "badge_class": "bg-pink-600"},
-    {"slug": "Release Date", "name_en": "Release Date", "name_hi": "रिलीज़ डेट्स", "icon": "fa-calendar-check", "badge_class": "bg-emerald-600"},
-    {"slug": "Movie", "name_en": "Movie", "name_hi": "फ़िल्में", "icon": "fa-film", "badge_class": "bg-purple-600"},
-    {"slug": "Interview", "name_en": "Interview", "name_hi": "इंटरव्यू", "icon": "fa-microphone", "badge_class": "bg-amber-600"},
-    {"slug": "Event Recap", "name_en": "Event Recap", "name_hi": "इवेंट्स", "icon": "fa-award", "badge_class": "bg-indigo-600"},
-    {"slug": "Industry", "name_en": "Industry", "name_hi": "इंडस्ट्री", "icon": "fa-chart-line", "badge_class": "bg-teal-600"},
+    {"slug": "Announcement", "name_en": "Announcement", "name_hi": "घोषणाएं", "icon": "fa-bullhorn"},
+    {"slug": "Trailer", "name_en": "Trailer", "name_hi": "ट्रेलर्स", "icon": "fa-film"},
+    {"slug": "Release Date", "name_en": "Release Date", "name_hi": "रिलीज़ डेट्स", "icon": "fa-calendar-check"},
+    {"slug": "Movie", "name_en": "Movie", "name_hi": "फ़िल्में", "icon": "fa-film"},
+    {"slug": "Interview", "name_en": "Interview", "name_hi": "इंटरव्यू", "icon": "fa-microphone"},
+    {"slug": "Event Recap", "name_en": "Event Recap", "name_hi": "इवेंट्स", "icon": "fa-award"},
+    {"slug": "Industry", "name_en": "Industry", "name_hi": "इंडस्ट्री", "icon": "fa-chart-line"},
 ]
 _UPDATES_HUB_CACHE: tuple[dict, float] | None = None
 HUB_CACHE_TTL: float = 300.0
@@ -903,6 +903,13 @@ def news_page(
     )
 
 
+def strip_parenthetical_english(title: str) -> str:
+    if not title:
+        return ""
+    cleaned = re.sub(r"\s*\([A-Za-z0-9\s:,\'\-\.\?!\/—–]+\)\s*$", "", title).strip()
+    return cleaned if cleaned else title
+
+
 def compute_schedule_page_data(session: Session, season: Optional[str] = None, year: Optional[int] = None) -> dict[str, Any]:
     """Fetch and aggregate live weekly airing schedule and season premieres."""
     schedule_data = fetch_live_weekly_schedule(season=season, year=year)
@@ -935,7 +942,7 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
             dub_links = []
             if getattr(db_item, "dub_platform", None):
                 p_name = db_item.dub_platform
-                p_cls = PLATFORM_CLASSES.get(p_name, {"name": p_name, "short": p_name[:2].upper(), "class": "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"})
+                p_cls = PLATFORM_CLASSES.get(p_name, {"name": p_name, "short": p_name[:2].upper(), "class": ""})
                 dub_links.append({
                     "name": p_cls["name"],
                     "short": p_cls["short"],
@@ -974,6 +981,9 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 "status": "RELEASING",
                 "format": "TV",
                 "is_kids_or_short": False,
+                "country_of_origin": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
+                "country": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
+                "is_donghua": (getattr(db_item, "country_of_origin", "JP") or "JP").upper() == "CN",
             }
             weekly_items.insert(0, item_dict)
             seen_titles.add(title_en.lower())
@@ -985,6 +995,14 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
             it["day_name_hi"] = DAY_NAMES_HI[w]
         if "is_kids_or_short" not in it:
             it["is_kids_or_short"] = False
+        raw_t = it.get("title_hi") or ""
+        if not raw_t or all(ord(c) < 128 for c in raw_t if c.isalpha()):
+            from app.transliteration import transliterate_anime_title
+            trans_t = transliterate_anime_title(it.get("title_en") or it.get("title_romaji") or "")
+            if trans_t:
+                it["title_hi"] = trans_t
+                raw_t = trans_t
+        it["clean_title_hi"] = strip_parenthetical_english(raw_t or it.get("title_en") or "")
 
     # Sort all weekly items by AniList popularity (descending)
     weekly_items.sort(key=lambda x: (-int(x.get("popularity") or 0), int(x.get("airing_at") or 0)))
@@ -1078,10 +1096,19 @@ def schedule_page(
     # Compact dataset for instant client-side tab switching and 'Load More'
     all_cards_compact = []
     for it in weekly_items:
+        t_clean = strip_parenthetical_english(it.get("clean_title_hi") or it.get("title_hi") or it.get("title_en") or "").strip()
+        t_main = t_clean or (it.get("title_hi") or it.get("title_en") or "").strip()
+        t_sub = (it.get("title_en") or it.get("title_romaji") or "").strip()
+        if not t_main:
+            t_main = t_sub
+        if t_sub.strip().lower() == t_main.strip().lower():
+            t_sub = ""
+        co = (it.get("country_of_origin") or it.get("country") or "JP").upper()
+        is_dh = bool(it.get("is_donghua") or co == "CN")
         all_cards_compact.append({
             "id": it.get("id"),
-            "t": it.get("title_en"),
-            "th": it.get("title_hi") or "",
+            "t": t_main,
+            "th": t_sub,
             "img": it.get("image_url") or "",
             "ep": it.get("episode"),
             "sc": it.get("score_display") or "",
@@ -1092,6 +1119,8 @@ def schedule_page(
             "w": it.get("airing_ist_weekday") if it.get("airing_ist_weekday") is not None else -1,
             "f": it.get("format") or "TV",
             "ks": bool(it.get("is_kids_or_short")),
+            "country": co,
+            "is_donghua": is_dh,
         })
     schedule_json = json.dumps(all_cards_compact, ensure_ascii=False)
 
@@ -1152,7 +1181,9 @@ def compute_manga_page_data(session: Session) -> dict[str, Any]:
         if (m.publication_status or "").lower() in ("ongoing", "releasing")
         and m.published_at and _ensure_utc(m.published_at) >= cutoff_7d
     ]
+    this_week_ids = {m.id for m in this_week_chapters if m.id}
     ongoing_series = [m for m in items if (m.publication_status or "").lower() in ("ongoing", "releasing")]
+    ongoing_series_deduped = [m for m in ongoing_series if m.id not in this_week_ids]
     completed_series = [m for m in items if (m.publication_status or "").lower() in ("completed", "finished")]
 
     new_volumes = sorted(
@@ -1164,6 +1195,7 @@ def compute_manga_page_data(session: Session) -> dict[str, Any]:
         "items": items,
         "this_week_chapters": this_week_chapters,
         "ongoing_series": ongoing_series,
+        "ongoing_series_deduped": ongoing_series_deduped,
         "completed_series": completed_series,
         "new_volumes": new_volumes,
         "anime_articles_map": anime_articles_map,
@@ -1235,6 +1267,7 @@ def manga_page(
     all_items = data["items"]
     this_week_chapters = data["this_week_chapters"]
     ongoing_series = data["ongoing_series"]
+    ongoing_series_deduped = data.get("ongoing_series_deduped") or [m for m in ongoing_series if m.id not in {w.id for w in this_week_chapters if w.id}]
     completed_series = data["completed_series"]
     new_volumes = data["new_volumes"]
     anime_articles_map = data["anime_articles_map"]
@@ -1282,6 +1315,7 @@ def manga_page(
         search_query=search_query,
         this_week_chapters=this_week_chapters,
         ongoing_series=ongoing_series,
+        ongoing_series_deduped=ongoing_series_deduped,
         completed_series=completed_series,
         new_volumes=new_volumes,
         anime_articles_map=anime_articles_map,
@@ -1421,8 +1455,8 @@ def compute_awards_page_data(session: Session, year: Optional[int] = None) -> di
                 "entries": entries_with_nominees,
             })
 
-            # Task 4: Anything older than the latest edition goes to the archive, never the hero
-            if is_latest_edition and not hero_entry and "crunchyroll" in c.name.lower():
+            # Feature: Grand Prize AoTY Hero Spotlight for all editions (2026, 2025, 2024, 2023)
+            if not hero_entry and "crunchyroll" in c.name.lower():
                 for e in entries:
                     if "anime of the year" in e.category.lower() or "grand prize" in e.category.lower():
                         hero_entry = e
@@ -1433,7 +1467,7 @@ def compute_awards_page_data(session: Session, year: Optional[int] = None) -> di
                             hero_nominees = []
                         break
 
-        if is_latest_edition and ceremonies_data and not hero_entry:
+        if ceremonies_data and not hero_entry:
             for c_block in ceremonies_data:
                 for (e, noms) in c_block["entries"]:
                     cat_lower = e.category.lower()

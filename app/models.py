@@ -1,7 +1,8 @@
 from enum import Enum
+import re
 from typing import Optional, Any
 from datetime import datetime, timezone, date, date as py_date
-from sqlalchemy import CheckConstraint, UniqueConstraint, Column, Text, func, Index
+from sqlalchemy import CheckConstraint, UniqueConstraint, Column, Text, func, Index, Integer, ForeignKey
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -285,6 +286,14 @@ class Article(SQLModel, table=True):
     @property
     def tags_list(self) -> list[str]:
         return []
+
+    @property
+    def country_of_origin(self) -> str:
+        return "JP"
+
+    @property
+    def is_donghua(self) -> bool:
+        return False
 
 
 class Availability(SQLModel, table=True):
@@ -604,7 +613,25 @@ class AnimeDraft(SQLModel, table=True):
     hindi_dub: bool = Field(default=False, nullable=False)
     dub_platform: Optional[str] = Field(default=None, max_length=100, nullable=True)
     dub_source_url: Optional[str] = Field(default=None, max_length=500, nullable=True)
+    country_of_origin: Optional[str] = Field(default="JP", max_length=10, nullable=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @property
+    def is_donghua(self) -> bool:
+        return (self.country_of_origin or "JP").upper() == "CN"
+
+    @property
+    def thumbnail_url(self) -> str:
+        """Return image_url or derive high-quality YouTube thumbnail from source_url / external_id."""
+        if self.image_url and self.image_url.strip():
+            return self.image_url.strip()
+        for candidate in (self.source_url, self.external_id):
+            if not candidate:
+                continue
+            m = re.search(r'(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})', candidate)
+            if m:
+                return f"https://img.youtube.com/vi/{m.group(1)}/hqdefault.jpg"
+        return ""
 
 
 class AwardCeremony(SQLModel, table=True):
@@ -629,7 +656,7 @@ class AwardEntry(SQLModel, table=True):
     __tablename__ = "award_entry"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    ceremony_id: int = Field(foreign_key="award_ceremony.id", index=True)
+    ceremony_id: int = Field(sa_column=Column(Integer, ForeignKey("award_ceremony.id", ondelete="CASCADE"), nullable=False, index=True))
     category: str = Field(max_length=200)
     category_hi: Optional[str] = Field(default=None, max_length=200, nullable=True)
     winner_media_id: int = Field(index=True)

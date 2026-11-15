@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import date, datetime, timezone, timedelta
 from typing import Optional, Union
@@ -44,7 +45,7 @@ def short_description(text: str, limit: int = 155) -> str:
     if not text:
         return ""
     
-    cleaned = text.replace("[नमूना]", "").strip()
+    cleaned = text.replace("[नमूना]", "").replace("**", "").strip()
     cleaned = re.sub(r'^\s+', '', cleaned)
 
     if len(cleaned) <= limit:
@@ -200,6 +201,16 @@ def extract_youtube_id(url: Optional[str]) -> Optional[str]:
     m = re.search(r'(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})', url)
     if m:
         return m.group(1)
+    return None
+
+
+def youtube_thumbnail(val: Optional[str]) -> Optional[str]:
+    """Given a YouTube video ID or a URL, return the high-quality thumbnail URL."""
+    if not val:
+        return None
+    yt_id = extract_youtube_id(val) if ("http" in val or "/" in val) else (val if len(val) == 11 else extract_youtube_id(val))
+    if yt_id:
+        return f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
     return None
 
 
@@ -368,6 +379,7 @@ templates.env.filters["airing_iso"] = airing_iso
 templates.env.filters["airing_weekday"] = airing_weekday
 templates.env.filters["relative_time_hindi"] = relative_time_hindi
 templates.env.filters["extract_youtube_id"] = extract_youtube_id
+templates.env.filters["youtube_thumbnail"] = youtube_thumbnail
 
 from app.utils import get_initials, get_avatar_color
 templates.env.globals["get_initials"] = get_initials
@@ -378,6 +390,7 @@ templates.env.globals["airing_iso"] = airing_iso
 templates.env.globals["airing_weekday"] = airing_weekday
 templates.env.globals["relative_time_hindi"] = relative_time_hindi
 templates.env.globals["extract_youtube_id"] = extract_youtube_id
+templates.env.globals["youtube_thumbnail"] = youtube_thumbnail
 templates.env.filters["initials"] = get_initials
 templates.env.filters["avatar_color"] = get_avatar_color
 

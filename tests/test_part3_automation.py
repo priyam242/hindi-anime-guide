@@ -103,7 +103,8 @@ def test_awards_fact_entry_and_draft_rewriter():
     assert "Frieren" in award_entry["title_en"]
 
     # Rewrite offline fallback
-    rewritten = rewrite_anime_update(award_entry, allow_offline_fallback=True)
+    with patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
+        rewritten = rewrite_anime_update(award_entry, allow_offline_fallback=True)
     assert rewritten is not None
     assert "Frieren" in rewritten["title_en"]
     assert "Anime of the Year" in rewritten["title_en"]

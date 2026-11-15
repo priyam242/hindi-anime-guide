@@ -146,15 +146,24 @@ endblock %}
           <span class="absolute top-2 left-2 bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
             {{ upd.content_type }}
           </span>
+          {% if upd.is_donghua or upd.country_of_origin == 'CN' %}
+          <span class="absolute top-2 right-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">
+            डोंगहुआ (Donghua)
+          </span>
+          {% endif %}
         </div>
         <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
           <div>
             <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-              {{ upd.title_en }}
+              {{ upd.title_hi or upd.title_en }}
             </h3>
-            <p class="text-[11px] text-red-600 dark:text-red-400 font-medium truncate mt-0.5">
-              {{ upd.title_hi or '' }}
+            {% set u_main = (upd.title_hi or upd.title_en or '') | trim %}
+            {% set u_sub = (upd.title_en or '') | trim %}
+            {% if u_sub and u_sub.lower() != u_main.lower() %}
+            <p class="text-[11px] text-purple-600 dark:text-purple-400 font-medium truncate mt-0.5">
+              {{ u_sub }}
             </p>
+            {% endif %}
           </div>
           <div class="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
             <span>{{ upd.source_name }}</span>
@@ -180,6 +189,9 @@ endblock %}
              {% if loop.index <= 2 %}fetchpriority="high"{% endif %}
              referrerpolicy="no-referrer"
              onerror="this.onerror=null; this.src='/placeholder.svg?title={{ article.title | urlencode }}';">
+        {% if article.is_donghua or article.country_of_origin == 'CN' %}
+        <span class="badge-donghua bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase"><i class="fas fa-film mr-1"></i>डोंगहुआ (Donghua)</span>
+        {% endif %}
         {% if article.has_hindi_dub %}
         <span class="badge-hindi badge-dub"><i class="fas fa-closed-captioning mr-1"></i>हिंदी डब</span>
         {% endif %}

@@ -276,6 +276,9 @@ def test_register_validation():
     with Session(app.dependency_overrides[get_session]().__next__().bind) as session:
         ensure_admin_user(session)
 
+    token = create_access_token({"sub": settings.admin_email, "name": "Admin", "user_type": "admin"})
+    client.cookies.set("admin_token", token)
+
     resp3 = client.post(
         "/admin/register",
         data={

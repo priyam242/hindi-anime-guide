@@ -206,7 +206,18 @@
           {% elif m.publication_status %}
           <li class="flex items-center gap-1.5 min-w-0">
             <i class="fas fa-circle-notch text-emerald-500 text-[10px] w-3.5 shrink-0"></i>
-            <span class="truncate"><strong>प्रकाशन स्थिति:</strong> {{ m.publication_status }}</span>
+            <span class="truncate"><strong>प्रकाशन स्थिति:</strong> 
+              {% set s = (m.publication_status or '') | lower %}
+              {% if 'ongoing' in s or 'releasing' in s %}
+                जारी है
+              {% elif 'completed' in s or 'finished' in s %}
+                पूरा हो चुका है
+              {% elif 'hiatus' in s %}
+                अस्थायी विराम (Hiatus)
+              {% else %}
+                {{ m.publication_status }}
+              {% endif %}
+            </span>
           </li>
           {% endif %}
 
@@ -293,7 +304,7 @@
           <span class="text-xs text-gray-400 font-mono">{{ ongoing_series|length }} सीरीज़</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {% for m in ongoing_series[:12] %}
+          {% for m in (ongoing_series_deduped if ongoing_series_deduped is defined else ongoing_series)[:12] %}
           {{ render_manga_card(m) }}
           {% endfor %}
         </div>

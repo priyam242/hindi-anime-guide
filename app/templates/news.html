@@ -83,8 +83,9 @@
         <div class="lg:col-span-8 relative overflow-hidden rounded-2xl bg-neutral-900/80 border border-white/10 hover:border-red-500/30 transition-all duration-300 shadow-xl group flex flex-col justify-between">
           <div>
             <a href="/updates/{{ feat.id }}" class="relative aspect-[16/9] overflow-hidden bg-neutral-950 block">
-              {% if feat.image_url %}
-              <img src="{{ feat.image_url }}" alt="{{ feat.title_en }}"
+              {% set feat_img = feat.image_url or feat.thumbnail_url or (feat.source_url | youtube_thumbnail) or (feat.external_id | youtube_thumbnail) %}
+              {% if feat_img %}
+              <img src="{{ feat_img }}" alt="{{ feat.title_en }}"
                    loading="eager"
                    fetchpriority="high"
                    referrerpolicy="no-referrer"
@@ -238,8 +239,9 @@
       {% if page != 1 or not featured_item or item.id != featured_item.id %}
       <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-red-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
         <a href="/updates/{{ item.id }}" class="block relative aspect-[16/10] overflow-hidden bg-neutral-950">
-          {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}"
+          {% set item_img = item.image_url or item.thumbnail_url or (item.source_url | youtube_thumbnail) or (item.external_id | youtube_thumbnail) %}
+          {% if item_img %}
+          <img src="{{ item_img }}" alt="{{ item.title_en }}"
                loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}"
                referrerpolicy="no-referrer"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

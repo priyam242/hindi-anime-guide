@@ -1,5 +1,6 @@
 import io
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from PIL import Image
 import pytest
@@ -105,7 +106,8 @@ def test_article_page_layout_and_community_discussions():
             summary="A comprehensive Naruto Hindi Guide.",
             content_md="## परिचय\nयह एक गाइड है।\n### विवरण\nविस्तृत जानकारी।",
             category_id=cat.id if cat else None,
-            is_sample=False
+            is_sample=False,
+            published_at=datetime.now(timezone.utc)
         )
         session.add(article)
         session.commit()

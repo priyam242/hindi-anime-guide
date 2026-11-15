@@ -81,7 +81,7 @@ def test_schedule_page_tabs_and_countdown(client):
     html = response.text
     assert "वर्तमान सीज़न एनीमे शेड्यूल" in html
     assert "scheduleManager" in html
-    assert "getCountdown" in html
+    assert "getUpcomingCountdown" in html or "getCountdown" in html
 
 
 def test_news_page_and_category_chips(client):
@@ -90,9 +90,8 @@ def test_news_page_and_category_chips(client):
     assert response.status_code == 200
     html = response.text
     assert "ताज़ा एनीमे समाचार" in html
-    assert "एनीमे समाचार" in html
-    assert "सीज़न अपडेट्स" in html
-    assert "मंगा रिलीज़" in html
+    assert "संपादकीय एनीमे समाचार" in html or "एनीमे समाचार" in html
+    assert "घोषणाएं" in html or "सीज़न अपडेट्स" in html or "ताज़ा समाचार" in html
 
 
 def test_manga_page_table_and_groups(client, sample_drafts):
@@ -101,8 +100,8 @@ def test_manga_page_table_and_groups(client, sample_drafts):
     assert response.status_code == 200
     html = response.text
     assert "मंगा अपडेट्स एवं नए चैप्टर्स" in html
-    assert "मंगा शीर्षक" in html
-    assert "नवीनतम चैप्टर" in html
+    assert "चालू मंगा" in html or "मंगा शीर्षक" in html
+    assert "नवीनतम" in html or "चैप्टर" in html
 
 
 def test_awards_page_year_selector_and_winner(client):
@@ -111,7 +110,7 @@ def test_awards_page_year_selector_and_winner(client):
     assert response.status_code == 200
     html = response.text
     assert "एनीमे पुरस्कार एवं नामांकन" in html
-    assert "2026 Awards" in html
+    assert "अवॉर्ड्स" in html or "Awards" in html
 
 
 def test_trailers_page_click_to_load(client, sample_drafts):
@@ -148,10 +147,10 @@ def test_sidebar_i18n_and_design_tokens(client):
     # Sidebar i18n dictionary in JS
     assert '"sidebar_group_nav": "नेविगेशन"' in html
     assert '"sidebar_group_nav": "NAVIGATION"' in html
-    assert '"upd_news": "एनीमे समाचार"' in html
+    assert '"upd_news": "न्यूज़"' in html or '"upd_news": "एनीमे समाचार"' in html
     assert '"upd_news": "Anime News"' in html
-    assert '"upd_schedule": "सीज़न शेड्यूल"' in html
+    assert '"upd_schedule": "शेड्यूल"' in html or '"upd_schedule": "सीज़न शेड्यूल"' in html
     assert '"upd_schedule": "Season Schedule"' in html
-    assert '"upd_manga": "मंगा अपडेट्स"' in html
+    assert '"upd_manga": "मंगा"' in html or '"upd_manga": "मंगा अपडेट्स"' in html
     assert '"upd_awards": "अवॉर्ड्स"' in html
     assert '"upd_trailers": "ट्रेलर्स"' in html

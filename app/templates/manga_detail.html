@@ -153,7 +153,18 @@
             {% elif manga.publication_status %}
             <li class="flex items-start gap-2">
               <i class="fas fa-circle-notch text-emerald-500 text-xs mt-1 shrink-0 w-4"></i>
-              <span><strong>प्रकाशन स्थिति (Status):</strong> {{ manga.publication_status }}</span>
+              <span><strong>प्रकाशन स्थिति (Status):</strong> 
+                {% set s = (manga.publication_status or '') | lower %}
+                {% if 'ongoing' in s or 'releasing' in s %}
+                  जारी है (Ongoing)
+                {% elif 'completed' in s or 'finished' in s %}
+                  पूरा हो चुका है (Completed)
+                {% elif 'hiatus' in s %}
+                  अस्थायी विराम (Hiatus)
+                {% else %}
+                  {{ manga.publication_status }}
+                {% endif %}
+              </span>
             </li>
             {% endif %}
 

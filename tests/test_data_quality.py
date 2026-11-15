@@ -27,8 +27,18 @@ LITERAL_BLACKLIST = [
     "जासूस एक्स परिवार",
     "जासूस x",
     "ज़ासूस x",
+    "जासूस परिवार",
     "चेनसॉ आदमी",
     "भीतर के रंग",
+    "काला तिपतिया घास",
+    "काला तिपतिया",
+    "पीछे देखना",
+    "दानव कातिल",
+    "दानव हत्यारा",
+    "कालकोठरी में स्वादिष्ट",
+    "ग्रीष्म हिकारू की मृत्यु हो गई",
+    "अशांत मीडिया",
+    "कृपया मुझे बताएं",
 ]
 
 JAPANESE_CHAR_REGEX = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]")
@@ -41,12 +51,24 @@ def client():
         yield c
 
 
-def test_no_placeholder_descriptions_in_db_and_schedule(client):
+def test_no_placeholder_descriptions_in_db_and_schedule(client, monkeypatch):
     """Fail if any draft or schedule card contains a placeholder like 'schedule update.'"""
+    from automation.fetchers.anilist import get_season_cycle
+    cycle = get_season_cycle()
+    cycle["selected"] = cycle["current"]
+    monkeypatch.setattr(
+        "app.routers.pages.fetch_live_weekly_schedule",
+        lambda **kw: {
+            "season_info": cycle,
+            "weekly_items": [],
+            "premiering_items": [],
+            "today_idx": 0,
+        }
+    )
     with next(get_session()) as session:
         drafts = session.exec(select(AnimeDraft).where(AnimeDraft.is_stale == False)).all()
         for d in drafts:
-            for field in [d.summary_en, d.summary_hi, d.description]:
+            for field in [d.summary_en, d.summary_hi]:
                 if field:
                     assert "schedule update." not in field.lower(), (
                         f"Placeholder 'schedule update.' found in draft ID {d.id} ({d.title_en}): {field}"

@@ -264,7 +264,7 @@ def test_trailers_page_returns_at_least_12_items(client, isolate_database_per_te
     # Verify season filter
     resp_season = client.get("/trailers?season=FALL&year=2026")
     assert resp_season.status_code == 200
-    assert "शरदकालीन" in resp_season.text
+    assert "फ़ॉल" in resp_season.text or "Fall" in resp_season.text
 
 
 # ============================================================================

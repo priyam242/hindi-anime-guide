@@ -88,7 +88,7 @@
                         Crunchyroll, Netflix, JioHotstar और Prime Video पर कानूनी रूप से उपलब्ध हिंदी डब एनीमे, आधिकारिक रिलीज़ गाइड्स और सटीक वॉच-ऑर्डर की संपूर्ण भारतीय डायरेक्टरी।
                     </p>
                     <div class="mt-4 flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
-                        <span>(026)</span>
+                        <span>2026</span>
                         <span>// HINDI DUB & STREAMING GUIDE</span>
                     </div>
                 </div>
@@ -178,8 +178,9 @@
             {% for upd in latest_updates[:4] %}
             <a href="/updates/{{ upd.id }}" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
                 <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                    {% if upd.image_url %}
-                    <img src="{{ upd.image_url }}" 
+                    {% set img_src = upd.image_url or upd.thumbnail_url or (upd.source_url | youtube_thumbnail) or (upd.external_id | youtube_thumbnail) %}
+                    {% if img_src %}
+                    <img src="{{ img_src }}" 
                          alt="{{ upd.title_en }}" 
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                          loading="{% if loop.index <= 4 %}eager{% else %}lazy{% endif %}" 
@@ -205,6 +206,11 @@
                     {% else %}
                     <span class="absolute top-2 left-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                         {{ upd.content_type }}
+                    </span>
+                    {% endif %}
+                    {% if upd.is_donghua or upd.country_of_origin == 'CN' %}
+                    <span class="absolute top-2 right-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">
+                        डोंगहुआ (Donghua)
                     </span>
                     {% endif %}
                 </div>
@@ -283,17 +289,21 @@
                             {% for p in article.platform_names[:3] %}
                                 {% set p_lower = p|lower %}
                                 {% if 'crunchy' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-crunchyroll py-1 px-2.5 text-[11px]"><i class="fas fa-play-circle text-[10px]"></i> CR</span>
+                                <span class="badge-neon-platform badge-neon-crunchyroll py-1 px-2.5 text-[11px]"><i class="fas fa-play-circle text-[10px]"></i> Crunchyroll</span>
                                 {% elif 'netflix' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-netflix py-1 px-2.5 text-[11px]"><i class="fas fa-film text-[10px]"></i> NF</span>
+                                <span class="badge-neon-platform badge-neon-netflix py-1 px-2.5 text-[11px]"><i class="fas fa-film text-[10px]"></i> Netflix</span>
                                 {% elif 'jiohotstar' in p_lower or 'hotstar' in p_lower or 'jiocinema' in p_lower or 'jio cinema' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JH</span>
+                                <span class="badge-neon-platform badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JioHotstar</span>
                                 {% elif 'prime' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-prime py-1 px-2.5 text-[11px]"><i class="fas fa-video text-[10px]"></i> Prime</span>
-                                {% elif 'youtube' in p_lower or 'muse' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> YT</span>
+                                <span class="badge-neon-platform badge-neon-prime py-1 px-2.5 text-[11px]"><i class="fas fa-video text-[10px]"></i> Prime Video</span>
+                                {% elif 'muse' in p_lower %}
+                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Muse Asia</span>
+                                {% elif 'ani-one' in p_lower or 'anione' in p_lower %}
+                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Ani-One Asia</span>
+                                {% elif 'youtube' in p_lower %}
+                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> YouTube</span>
                                 {% else %}
-                                <span class="badge-neon-platform badge-neon-default py-1 px-2.5 text-[11px]">{{ p[:8] }}</span>
+                                <span class="badge-neon-platform badge-neon-default py-1 px-2.5 text-[11px]">{{ p }}</span>
                                 {% endif %}
                             {% endfor %}
                             {% if article.platform_names|length > 3 %}

@@ -34,6 +34,8 @@ jobs:
       - name: Warm & Refresh Airing Schedule Cache
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-3.5-flash-lite' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PYTHONUNBUFFERED: "1"
         run: |
           python -c "from automation.fetchers.anilist import fetch_live_weekly_schedule; res = fetch_live_weekly_schedule(force_refresh=True); print(f'Successfully refreshed weekly schedule cache with {len(res)} days.')"

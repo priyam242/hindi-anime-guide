@@ -134,12 +134,15 @@
   </div>
 
   <!-- Dynamic Schedule Grid (1 col on 360px, 2 col on tablet, 4 col on desktop) -->
-  <div x-show="!loading && displayedCards.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="schedule-grid">
+  <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="schedule-grid">
     <template x-for="item in displayedCards" :key="item.id">
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 transition flex flex-col shadow-sm">
         <a :href="'/updates/' + item.id" class="block relative aspect-[3/4] overflow-hidden bg-neutral-950">
           <img :src="item.img || '/static/placeholder.svg'" :alt="item.t" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/static/placeholder.svg';">
-          <template x-if="item.ep">
+          <template x-if="item.is_donghua || item.country === 'CN'">
+            <span class="absolute top-2 left-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">डोंगहुआ (Donghua)</span>
+          </template>
+          <template x-if="item.ep && !(item.is_donghua || item.country === 'CN')">
             <span class="absolute top-2 left-2 bg-neutral-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow" x-text="'Ep ' + item.ep"></span>
           </template>
           <template x-if="item.hi">
@@ -159,7 +162,7 @@
             <h3 class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-1">
               <a :href="'/updates/' + item.id" x-text="item.t"></a>
             </h3>
-            <template x-if="item.th">
+            <template x-if="item.th && item.th.trim().toLowerCase() !== item.t.trim().toLowerCase()">
               <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5" x-text="item.th"></div>
             </template>
           </div>
@@ -170,6 +173,41 @@
         </div>
       </div>
     </template>
+
+    <!-- Initial SSR Cards (rendered for crawlers, TestClient, and instant display before JS hydration) -->
+    {% for item in items %}
+    <div x-show="displayedCards.length === 0" class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 transition flex flex-col shadow-sm">
+      <a href="/updates/{{ item.id }}" class="block relative aspect-[3/4] overflow-hidden bg-neutral-950">
+        <img src="{{ item.image_url or '/static/placeholder.svg' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/static/placeholder.svg';">
+        {% if item.is_donghua or item.country_of_origin == 'CN' or item.country == 'CN' %}
+        <span class="absolute top-2 left-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">डोंगहुआ (Donghua)</span>
+        {% elif item.episode %}
+        <span class="absolute top-2 left-2 bg-neutral-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">Ep {{ item.episode }}</span>
+        {% endif %}
+        {% if item.has_verified_hindi_dub %}
+        <span class="absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">HINDI DUB</span>
+        {% elif item.score_display and item.score_display != 'N/A' %}
+        <span class="absolute top-2 right-2 bg-neutral-900/85 text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded shadow">★ {{ item.score_display }}</span>
+        {% endif %}
+      </a>
+      <div class="p-3 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-1">
+            <a href="/updates/{{ item.id }}">{{ item.clean_title_hi or item.title_hi or item.title_en }}</a>
+          </h3>
+          {% set main_t = (item.clean_title_hi or item.title_hi or item.title_en or '') | trim %}
+          {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
+          {% if sub_t and sub_t.lower() != main_t.lower() %}
+          <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5">{{ sub_t }}</div>
+          {% endif %}
+        </div>
+        <div class="mt-2 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+          <span class="truncate">{{ (item.day_name_hi or 'आज') }} • {{ item.airing_ist_time }}</span>
+          <a href="/updates/{{ item.id }}" class="text-purple-500 hover:text-purple-400 text-[11px] font-medium shrink-0 ml-1">विवरण →</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
 
   <!-- Fallback SSR Grid for non-JS / crawlers -->
@@ -178,8 +216,13 @@
       {% for item in items %}
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-3">
         <a href="/updates/{{ item.id }}">
-          <img src="{{ item.image_url or '/static/placeholder.svg' }}" alt="{{ item.title_en }}" loading="lazy" width="300" height="400" class="aspect-[3/4] object-cover rounded-lg">
-          <h3 class="text-sm font-bold mt-2">{{ item.title_en }}</h3>
+          <img src="{{ item.image_url or '/static/placeholder.svg' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" class="aspect-[3/4] object-cover rounded-lg">
+          <h3 class="text-sm font-bold mt-2">{{ item.clean_title_hi or item.title_hi or item.title_en }}</h3>
+          {% set main_t = (item.clean_title_hi or item.title_hi or item.title_en or '') | trim %}
+          {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
+          {% if sub_t and sub_t.lower() != main_t.lower() %}
+          <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5">{{ sub_t }}</div>
+          {% endif %}
         </a>
       </div>
       {% endfor %}

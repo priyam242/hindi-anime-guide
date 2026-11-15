@@ -37,6 +37,9 @@
     {% endif %}
 
     <div class="card-badges">
+      {% if article.is_donghua or article.country_of_origin == 'CN' %}
+      <span class="badge-donghua bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">डोंगहुआ (Donghua)</span>
+      {% endif %}
       {% if article.has_hindi_dub %}
       <span class="badge-dub"><svg class="icon" width="13" height="13" aria-hidden="true"><use href="#i-audio-lines"></use></svg> <span data-i18n="filter_hindi_dub">हिंदी डब</span></span>
       {% endif %}

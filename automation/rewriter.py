@@ -17,11 +17,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from app.transliteration import get_gemini_model_chain, sanitize_proper_nouns
+
 logger = logging.getLogger("automation.rewriter")
 
-# Gemini REST endpoints (gemini-2.5-flash with fallback to gemini-1.5-flash)
-PRIMARY_GEMINI_MODEL = "gemini-2.5-flash"
-FALLBACK_GEMINI_MODEL = "gemini-1.5-flash"
+# Gemini REST endpoints with automatic model fallback chain
+PRIMARY_GEMINI_MODEL = "gemini-3.5-flash-lite"
+FALLBACK_GEMINI_MODELS = ["gemini-3.8-flash", "gemini-3.6-flash"]
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 DEVANAGARI_DIGITS_MAP = str.maketrans("०१२३४५६७८९", "0123456789")
@@ -298,7 +300,7 @@ def process_news_bilingual(
     if clean_title_hi == clean_title_en or not any('\u0900' <= ch <= '\u097f' for ch in clean_title_hi):
         translated_title = clean_title_en
         for en_act, hi_act in [
-            (r'\breveals main key visual\b', "ने जारी किया मुख्य की-विजुअल"),
+            (r'\breveals main key visual\b', "ने जारी किया नया की-विजुअल"),
             (r'\breveals new visual, trailer, 2027 release date\b', "का नया विजुअल, ट्रेलर और 2027 रिलीज डेट घोषित"),
             (r'\breveals new key visual, pv\b', "ने नया की-विजुअल और PV जारी किया"),
             (r'\breveals teaser visual & april 2027 debut\b', "का टीज़र विजुअल जारी, अप्रैल 2027 में प्रसारण"),
@@ -312,7 +314,7 @@ def process_news_bilingual(
             (r'\bseason 3\b', "सीज़न 3"),
         ]:
             translated_title = re.sub(en_act, hi_act, translated_title, flags=re.IGNORECASE)
-        clean_title_hi = translated_title
+        clean_title_hi = sanitize_proper_nouns(translated_title)
 
     # Short source text (< 20 words)
     if len(words) < 20:
@@ -341,21 +343,19 @@ def process_news_bilingual(
             "key_points_hi": None,
         }
 
-    # Narrative context exists (>= 20 words): Extract short intro + 3-5 bullets
+    # Narrative context exists (>= 20 words): Extract short intro + 1-4 strictly extractive bullets
     key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
     if key:
-        model_name = os.getenv("GEMINI_MODEL") or PRIMARY_GEMINI_MODEL
-        endpoint = f"{GEMINI_API_BASE}/{model_name}:generateContent?key={key}"
-        prompt = f"""You are an anime news editor. Based ONLY on the following RSS news text, produce a bilingual news structure:
-1. intro_en: Short 1-2 sentence lead paragraph summarizing the announcement.
-2. intro_hi: Faithful natural Hindi translation of intro_en.
-3. title_hi: Faithful natural Hindi headline in Devanagari.
-4. bullets_en: A list of 3 to 5 factual bullet points extracted ONLY from the source text. Bold names, dates, numbers, titles using markdown **...** (e.g. **Crunchyroll**, **November 14**, **Solo Leveling**).
-5. bullets_hi: Faithful Hindi translation of the bullets preserving the exact bolded entities.
+        prompt = f"""You are an anime news editor and bilingual journalist. Based ONLY on the following RSS news text, produce a bilingual news structure:
+1. intro_en: Short 1-2 sentence lead paragraph summarizing the announcement facts.
+2. intro_hi: Natural, fluent Hindi translation of intro_en. Proper nouns, character names, and studio names must be phonetically transliterated into Devanagari, NEVER literally translated.
+3. title_hi: Complete, natural Hindi headline in Devanagari. NEVER mix untranslated English sentence fragments (e.g. write 'लाइव-एक्शन फिल्म अडैप्टेशन' instead of 'Live-Action फिल्म Adaptation', write 'वैश्विक स्ट्रीमिंग पुष्टि' instead of 'Confirmed for Global Streaming'). Anime titles must be phonetically transliterated in Devanagari.
+4. bullets_en: A list of 1 to 4 factual bullet points extracted ONLY from the source text (if only 1 or 2 facts exist, return only 1 or 2 bullets; do NOT pad). Bold names, dates, numbers, titles using markdown **...** (e.g. **Crunchyroll**, **November 14**, **Solo Leveling**).
+5. bullets_hi: Fluent, 100% Hindi translations of bullets_en preserving the exact bolded entities. Must be completely in Hindi Devanagari (NO English sentences allowed in bullets_hi).
 
 STRICT MANDATES:
-- Use ONLY facts present in the source text below. ZERO hallucination, ZERO padding, NO filler sentences.
-- NEVER invent facts or dates.
+- Use ONLY facts explicitly present in the source text below. ZERO hallucination, ZERO padding, NO invented release dates, episode counts, or plot details.
+- NEVER invent facts. NEVER translate proper titles into literal Hindi meanings.
 
 SOURCE TITLE: {clean_title_en}
 SOURCE TEXT:
@@ -370,38 +370,44 @@ OUTPUT JSON ONLY:
   "bullets_hi": ["...", "..."]
 }}
 """
-        try:
-            with httpx.Client(timeout=timeout_seconds) as client:
-                resp = client.post(
-                    endpoint,
-                    json={
-                        "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}
-                    }
-                )
-            if resp.status_code == 200:
-                raw_json = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                data = json.loads(raw_json)
-                b_en = [bold_entities(b) for b in data.get("bullets_en", []) if b.strip()]
-                b_hi = [bold_entities_hi(b) for b in data.get("bullets_hi", []) if b.strip()]
-                
-                intro_en = data.get("intro_en", clean_raw)
-                intro_hi = data.get("intro_hi", clean_raw)
-                t_hi = data.get("title_hi") or clean_title_hi
-                
-                chk = {"title_en": clean_title_en, "title_hi": t_hi, "summary_en": intro_en, "summary_hi": intro_hi}
-                is_ok, _ = validate_translation_numbers_and_dates({"raw": clean_raw, "title": clean_title_en}, chk)
-                if is_ok:
-                    return {
-                        "title_en": clean_title_en,
-                        "title_hi": t_hi,
-                        "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
-                        "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
-                        "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
-                        "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
-                    }
-        except Exception as exc:
-            logger.warning("Gemini news extraction error: %s", exc)
+        for model_name in get_gemini_model_chain():
+            endpoint = f"{GEMINI_API_BASE}/{model_name}:generateContent?key={key}"
+            try:
+                with httpx.Client(timeout=timeout_seconds) as client:
+                    resp = client.post(
+                        endpoint,
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}
+                        }
+                    )
+                if resp.status_code == 200:
+                    raw_json = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    data = json.loads(raw_json)
+                    b_en = [bold_entities(b) for b in data.get("bullets_en", []) if b.strip()]
+                    b_hi = [bold_entities_hi(sanitize_proper_nouns(b)) for b in data.get("bullets_hi", []) if b.strip()]
+                    
+                    intro_en = data.get("intro_en", clean_raw)
+                    intro_hi = sanitize_proper_nouns(data.get("intro_hi", clean_raw))
+                    t_hi = sanitize_proper_nouns(data.get("title_hi") or clean_title_hi)
+                    
+                    chk = {"title_en": clean_title_en, "title_hi": t_hi, "summary_en": intro_en, "summary_hi": intro_hi}
+                    is_ok, _ = validate_translation_numbers_and_dates({"raw": clean_raw, "title": clean_title_en}, chk)
+                    if is_ok:
+                        return {
+                            "title_en": clean_title_en,
+                            "title_hi": t_hi,
+                            "summary_en": f"{intro_en} (Source: {source_name}. Read full story via official link.)",
+                            "summary_hi": f"{intro_hi} (स्रोत: {source_name}। पूर्ण आधिकारिक विवरण के लिए मूल लेख पढ़ें।)",
+                            "key_points_en": json.dumps(b_en, ensure_ascii=False) if b_en else None,
+                            "key_points_hi": json.dumps(b_hi, ensure_ascii=False) if b_hi else None,
+                        }
+                elif resp.status_code in (404, 429, 500, 503):
+                    logger.warning("Gemini news extraction model '%s' returned HTTP %d. Attempting fallback model...", model_name, resp.status_code)
+                else:
+                    logger.warning("Gemini news extraction error with model %s (%d): %s", model_name, resp.status_code, resp.text[:100])
+            except Exception as exc:
+                logger.warning("Gemini news extraction call failed for model '%s': %s", model_name, exc)
 
     # Offline / deterministic extraction:
     sents = split_sentences(clean_raw)
@@ -445,7 +451,7 @@ def rewrite_anime_update(
 
     prompt = _build_gemini_prompt(item_facts)
 
-    for model_name in (PRIMARY_GEMINI_MODEL, FALLBACK_GEMINI_MODEL):
+    for model_name in get_gemini_model_chain():
         endpoint = f"{GEMINI_API_BASE}/{model_name}:generateContent?key={key}"
         request_body = {
             "contents": [
@@ -466,14 +472,12 @@ def rewrite_anime_update(
                 response = client.post(endpoint, json=request_body)
 
             if response.status_code == 429:
-                logger.warning("Gemini API rate limit reached (HTTP 429). Retrying after 3s backoff...")
-                import time
-                time.sleep(3.0)
-                with httpx.Client(timeout=timeout_seconds) as client:
-                    response = client.post(endpoint, json=request_body)
-                if response.status_code == 429:
-                    logger.warning("Gemini rate limit still active. Skipping item safely.")
-                    return None
+                logger.warning("Gemini model '%s' rate limit reached (HTTP 429). Attempting fallback...", model_name)
+                continue
+
+            if response.status_code in (404, 500, 503):
+                logger.warning("Gemini model '%s' returned HTTP %d. Attempting fallback model...", model_name, response.status_code)
+                continue
 
             if response.status_code in (400, 403):
                 err_text = response.text
@@ -484,17 +488,21 @@ def rewrite_anime_update(
             result_json = response.json()
             candidates = result_json.get("candidates") or []
             if not candidates:
-                logger.warning("Gemini returned empty candidates. Skipping item.")
+                logger.warning("Gemini returned empty candidates with model %s. Skipping to fallback.", model_name)
                 continue
 
             content_parts = candidates[0].get("content", {}).get("parts", [])
             if not content_parts:
-                logger.warning("Gemini returned empty parts in response. Skipping item.")
+                logger.warning("Gemini returned empty parts with model %s. Skipping to fallback.", model_name)
                 continue
 
             raw_text = content_parts[0].get("text", "").strip()
             parsed = _parse_gemini_json_response(raw_text)
             if parsed:
+                # Sanitize proper nouns against central glossary and blacklist
+                parsed["title_hi"] = sanitize_proper_nouns(parsed.get("title_hi", ""))
+                parsed["summary_hi"] = sanitize_proper_nouns(parsed.get("summary_hi", ""))
+
                 # Task 4 Validator: Reject Hindi output if it contains unauthorized dates or numbers
                 is_valid, reason = validate_translation_numbers_and_dates(item_facts, parsed)
                 if not is_valid:

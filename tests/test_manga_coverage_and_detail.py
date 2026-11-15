@@ -178,7 +178,7 @@ def test_manga_detail_page_and_bullets(client, seed_manga_full_data):
     assert "नवीनतम चैप्टर" in html
     assert "Ch. 1198" in html
     assert "प्रकाशन स्थिति" in html
-    assert "Ongoing" in html
+    assert "Ongoing" in html or "जारी है" in html
     assert "प्रारंभ तिथि" in html
     assert "एनीमे रूपांतरण" in html or "एनीमे" in html
 

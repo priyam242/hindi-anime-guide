@@ -493,9 +493,12 @@
                 Vol. {{ manga_info.volumes }}
               </span>
               {% endif %}
+              {% set st = (manga_info.status or manga_info.publication_status or '') | lower %}
+              {% if st %}
               <span class="px-2 py-0.5 rounded bg-white/5 text-gray-300 font-bold">
-                {{ manga_info.status }}
+                {% if 'ongoing' in st or 'releasing' in st %}जारी है{% elif 'completed' in st or 'finished' in st %}पूरा हो चुका है{% elif 'hiatus' in st %}अस्थायी विराम (Hiatus){% else %}{{ manga_info.status or manga_info.publication_status }}{% endif %}
               </span>
+              {% endif %}
             </div>
             {% if manga_info.official_links and manga_info.official_links|length > 0 %}
             <a href="{{ manga_info.official_links[0].url }}" target="_blank" rel="nofollow noopener" class="mt-2 block text-center py-1.5 px-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-bold transition text-xs">

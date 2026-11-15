@@ -1544,13 +1544,13 @@
         <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300 mr-2">
           <nav
             class="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium text-gray-600 dark:text-gray-300 mr-2">
-            <a href="/" class="hover:text-red-600 transition-colors" data-i18n="nav_home">Home</a>
-            <a href="/explore" class="hover:text-red-600 transition-colors" data-i18n="nav_explore">Explore</a>
-            <a href="/news" class="hover:text-red-600 transition-colors">News</a>
-            <a href="/schedule" class="hover:text-red-600 transition-colors">Schedule</a>
-            <a href="/manga" class="hidden xl:inline-block hover:text-red-600 transition-colors">Manga</a>
-            <a href="/awards" class="hidden xl:inline-block hover:text-red-600 transition-colors">Awards</a>
-            <a href="/trailers" class="hidden xl:inline-block hover:text-red-600 transition-colors">Trailers</a>
+            <a href="/" class="hover:text-red-600 transition-colors" data-i18n="nav_home">होम</a>
+            <a href="/explore" class="hover:text-red-600 transition-colors" data-i18n="nav_explore">एक्सप्लोर</a>
+            <a href="/news" class="hover:text-red-600 transition-colors" data-i18n="upd_news">न्यूज़</a>
+            <a href="/schedule" class="hover:text-red-600 transition-colors" data-i18n="upd_schedule">शेड्यूल</a>
+            <a href="/manga" class="hidden xl:inline-block hover:text-red-600 transition-colors" data-i18n="upd_manga">मंगा</a>
+            <a href="/awards" class="hidden xl:inline-block hover:text-red-600 transition-colors" data-i18n="upd_awards">अवॉर्ड्स</a>
+            <a href="/trailers" class="hidden xl:inline-block hover:text-red-600 transition-colors" data-i18n="upd_trailers">ट्रेलर्स</a>
 
             <!-- "और देखें" (More) dropdown for 1024px - 1279px -->
             <div class="relative xl:hidden" x-data="{ moreNavOpen: false }" @click.outside="moreNavOpen = false">
@@ -1778,17 +1778,17 @@
           Links)</span>
         <div class="flex flex-wrap gap-2 mt-2">
           <a href="/explore?q=Action"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Action</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">एक्शन</a>
           <a href="/explore?q=Romance"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Romance</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">रोमांस</a>
           <a href="/explore?q=Isekai"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Isekai</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">इसेकाई</a>
           <a href="/explore?q=Shonen"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Shonen</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">शोनेन</a>
           <a href="/trailers"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Trailers</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">ट्रेलर्स</a>
           <a href="/schedule"
-            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">Schedule</a>
+            class="px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40">शेड्यूल</a>
         </div>
       </div>
     </div>
@@ -2041,7 +2041,7 @@
   },
   {
   "id": "cat_romance",
-  "title": "Romance",
+  "title": "रोमांस",
   "i18n": "cat_romance",
   "url": "/explore?category=romance",
   "icon": "fas fa-heart",
@@ -2284,11 +2284,11 @@
               <h4 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4"
                 data-i18n="footer_guides">Guides</h4>
               <ul class="space-y-2.5 text-sm">
-                <li><a href="/explore?category=action" class="hover:text-red-600 transition-colors">Action Anime</a>
+                <li><a href="/explore?category=action" class="hover:text-red-600 transition-colors">एक्शन एनीमे</a>
                 </li>
-                <li><a href="/explore?category=romance" class="hover:text-red-600 transition-colors">Romance Anime</a>
+                <li><a href="/explore?category=romance" class="hover:text-red-600 transition-colors">रोमांस एनीमे</a>
                 </li>
-                <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">Hindi Dubbed Only</a>
+                <li><a href="/explore?hindi_dub=true" class="hover:text-red-600 transition-colors">हिंदी डब एनीमे</a>
                 </li>
               </ul>
             </div>
@@ -2341,9 +2341,9 @@
         "nav_home": "होम",
         "nav_explore": "एक्सप्लोर",
         "nav_hindi_dub": "हिंदी डब एनीमे",
-        "upd_news": "एनीमे समाचार",
-        "upd_schedule": "सीज़न शेड्यूल",
-        "upd_manga": "मंगा अपडेट्स",
+        "upd_news": "न्यूज़",
+        "upd_schedule": "शेड्यूल",
+        "upd_manga": "मंगा",
         "upd_awards": "अवॉर्ड्स",
         "upd_trailers": "ट्रेलर्स",
         "guide_latest": "ताज़ा गाइड्स",
@@ -2355,7 +2355,7 @@
         "guide_rankings": "टॉप 10 / रैंकिंग",
         "cat_all_anime": "सभी एनीमे",
         "cat_action": "एक्शन",
-        "cat_romance": "Romance",
+        "cat_romance": "रोमांस",
         "cat_comedy": "कॉमेडी",
         "cat_fantasy": "फैंटेसी",
         "cat_thriller": "थ्रिलर / हॉरर",
@@ -2734,27 +2734,27 @@
       <a href="/"
         class="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors {% if request and request.url and request.url.path == '/' %}text-red-600 font-semibold{% else %}text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400{% endif %}">
         <i class="fas fa-home text-base"></i>
-        <span class="text-[10px]" data-i18n="nav_home">Home</span>
+        <span class="text-[10px]" data-i18n="nav_home">होम</span>
       </a>
       <a href="/schedule"
         class="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors {% if request and request.url and request.url.path.startswith('/schedule') %}text-red-600 font-semibold{% else %}text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400{% endif %}">
         <i class="fas fa-calendar-alt text-base"></i>
-        <span class="text-[10px]">Schedule</span>
+        <span class="text-[10px]" data-i18n="upd_schedule">शेड्यूल</span>
       </a>
       <a href="/manga"
         class="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors {% if request and request.url and request.url.path.startswith('/manga') %}text-red-600 font-semibold{% else %}text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400{% endif %}">
         <i class="fas fa-book-open text-base"></i>
-        <span class="text-[10px]">Manga</span>
+        <span class="text-[10px]" data-i18n="upd_manga">मंगा</span>
       </a>
       <a href="/news"
         class="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors {% if request and request.url and request.url.path.startswith('/news') %}text-red-600 font-semibold{% else %}text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400{% endif %}">
         <i class="fas fa-newspaper text-base"></i>
-        <span class="text-[10px]">News</span>
+        <span class="text-[10px]" data-i18n="upd_news">न्यूज़</span>
       </a>
       <a href="/explore"
         class="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors {% if request and request.url and request.url.path.startswith('/explore') %}text-red-600 font-semibold{% else %}text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400{% endif %}">
         <i class="fas fa-compass text-base"></i>
-        <span class="text-[10px]" data-i18n="nav_explore">Explore</span>
+        <span class="text-[10px]" data-i18n="nav_explore">एक्सप्लोर</span>
       </a>
     </div>
   </nav>

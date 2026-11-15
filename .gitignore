@@ -6,6 +6,7 @@
 *.env
 
 # === REPORTS containing credentials ===
+output.txt
 report.txt
 reports/
 *.dump

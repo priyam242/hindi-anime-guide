@@ -23,9 +23,14 @@
           <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
           <span>100% आधिकारिक वार्षिक सम्मान • Official Anime Honors</span>
         </div>
-        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center gap-3">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center flex-wrap gap-3">
           <i class="fas fa-trophy text-amber-500"></i>
           <span class="heading-gradient">एनीमे पुरस्कार एवं नामांकन {% if selected_year %}({{ selected_year }}){% endif %}</span>
+          {% if not is_latest_edition and selected_year %}
+          <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+            आधिकारिक आर्काइव • {{ selected_year }} विजेता सूची
+          </span>
+          {% endif %}
         </h1>
         <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-2xl font-normal leading-relaxed">
           Crunchyroll Anime Awards एवं Tokyo Anime Award Festival (TAAF) के आधिकारिक स्रोत से सत्यापित विजेता एवं नामांकित टाइटल्स।
@@ -98,8 +103,8 @@
 
   <div x-show="!loading" class="space-y-8 sm:space-y-10">
   {% if ceremonies_data %}
-    <!-- 1. LATEST CEREMONY HERO (Displayed ONLY for the latest edition, NEVER for older archives) -->
-    {% if is_latest_edition and hero_entry and hero_ceremony %}
+    <!-- 1. GRAND PRIZE HERO (Displayed for all verified editions: 2026, 2025, 2024, 2023) -->
+    {% if hero_entry and hero_ceremony %}
     <section class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-100/40 dark:from-amber-950/40 dark:via-neutral-900 dark:to-neutral-950 border border-amber-300 dark:border-amber-500/30 p-5 sm:p-8 shadow-2xl">
       <div class="absolute right-0 top-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -117,12 +122,9 @@
             </div>
             {% endif %}
 
-            <div class="absolute top-3 left-3 bg-amber-500 text-black text-[10px] font-black px-2.5 py-1 rounded shadow-lg flex items-center gap-1.5 uppercase tracking-wide z-10 pointer-events-none">
+            <div class="absolute top-3 left-3 bg-amber-500 text-black text-[10px] font-black px-2.5 py-1 rounded shadow-lg flex items-center gap-1.5 uppercase tracking-wide z-10 pointer-events-none" translate="no">
               <i class="fas fa-crown text-[10px]"></i>
               <span>वर्ष का सर्वश्रेष्ठ विजेता</span>
-            </div>
-            <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30 z-10">
-              AniList ID: {{ hero_entry.winner_media_id }}
             </div>
           </div>
         </div>
@@ -151,22 +153,20 @@
           <div>
             <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">ग्रैंड प्राइज विजेता (Grand Prize Winner)</span>
             <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white mt-1 leading-tight break-words">
-              {{ hero_entry.winner_title }}
+              {{ hero_entry.winner_title_hi or hero_entry.winner_title }}
             </h2>
             {% set hero_hi = (hero_entry.winner_title_hi or '')|trim %}
-            {% if hero_hi and hero_hi.lower() != hero_entry.winner_title.strip().lower() %}
-            <div class="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1 break-words">
-              {{ hero_hi }} • {{ hero_entry.category_hi or hero_entry.category }}
-            </div>
-            {% else %}
-            <div class="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1 break-words">
+            <div class="text-sm sm:text-base font-semibold text-amber-600 dark:text-amber-400 mt-1 break-words">
+              {% if hero_hi and hero_hi.lower() != hero_entry.winner_title.strip().lower() %}
+              {{ hero_entry.winner_title }} • {{ hero_entry.category_hi or hero_entry.category }}
+              {% else %}
               {{ hero_entry.category_hi or hero_entry.category }}
+              {% endif %}
             </div>
-            {% endif %}
           </div>
 
           <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-w-3xl">
-            आधिकारिक {{ hero_ceremony.name }} {{ hero_ceremony.edition_year }} में इस टाइटल ने सर्वश्रेष्ठ प्रदर्शन के लिए शीर्ष सम्मान प्राप्त किया। विजेता पोस्टर एवं मेटाडेटा आधिकारिक AniList रिकॉर्ड से सत्यापित हैं।
+            आधिकारिक {{ hero_ceremony.name }} {{ hero_ceremony.edition_year }} में इस टाइटल ने '{{ hero_entry.category_hi or hero_entry.category }}' का प्रतिष्ठित सर्वोच्च सम्मान प्राप्त किया। विजेता पोस्टर एवं मेटाडेटा आधिकारिक AniList एवं समारोह रिकॉर्ड से सत्यापित हैं।
           </p>
 
           <div class="flex flex-wrap items-center gap-3 pt-2">
@@ -211,27 +211,6 @@
         </div>
       </div>
     </section>
-    {% elif not is_latest_edition %}
-    <!-- Archive Notice Banner (For past years like 2023) -->
-    <div class="p-4 sm:p-5 rounded-xl bg-amber-50/50 dark:bg-neutral-900 border border-amber-200 dark:border-white/10 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0">
-          <i class="fas fa-history text-lg"></i>
-        </div>
-        <div>
-          <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
-            ऐतिहासिक पुरस्कार अभिलेखागार (Historical Award Archive — {{ selected_year }})
-          </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-            यह पृष्ठ {{ selected_year }} के आधिकारिक समारोहों के सत्यापित विजेताओं और नामांकनों का ऐतिहासिक रिकॉर्ड प्रदर्शित कर रहा है।
-          </p>
-        </div>
-      </div>
-      <a href="/awards?year={{ latest_year }}" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shrink-0 hidden sm:inline-flex items-center gap-1.5 transition-colors">
-        <span>नवीनतम {{ latest_year }} संस्करण देखें</span>
-        <i class="fas fa-arrow-right text-[10px]"></i>
-      </a>
-    </div>
     {% endif %}
 
     <!-- 2. CEREMONIES & CATEGORIES -->
@@ -289,16 +268,16 @@
                   <i class="fas fa-trophy"></i>
                 </div>
                 {% endif %}
-                <span class="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow z-10 pointer-events-none">
+                <span class="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow z-10 pointer-events-none" translate="no">
                   विजेता
                 </span>
               </div>
 
               <!-- Winner Info: line-clamp-2 title, line-clamp-1 subtitle, no overflow -->
               <div class="flex-1 min-w-0 space-y-1.5 overflow-hidden">
-                <div class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <div class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1" translate="no">
                   <i class="fas fa-trophy text-[9px]"></i>
-                  <span>WINNER • विजेता</span>
+                  <span>विजेता (WINNER)</span>
                 </div>
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-snug line-clamp-2 break-words overflow-hidden" title="{{ entry.winner_title }}">
                   {{ entry.winner_title }}
@@ -330,7 +309,7 @@
             {% if nominees %}
             <div x-data="{ expanded: false }" class="p-3.5 sm:p-4 border-t border-gray-100 dark:border-white/5 space-y-2 min-w-0">
               <div class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1" translate="no">
                   <i class="fas fa-list text-[10px] text-amber-500"></i>
                   <span>नामांकन (Nominees):</span>
                 </div>
@@ -347,7 +326,7 @@
                     {% endif %}
                     <span class="text-gray-800 dark:text-gray-300 truncate text-[11.5px] font-medium min-w-0" title="{{ nom.title }}">{{ nom.title }}</span>
                   </div>
-                  <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 font-medium">Nominee</span>
+                  <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 font-medium" translate="no">नामांकित</span>
                 </div>
                 {% endfor %}
 
@@ -363,7 +342,7 @@
                       {% endif %}
                       <span class="text-gray-800 dark:text-gray-300 truncate text-[11.5px] font-medium min-w-0" title="{{ nom.title }}">{{ nom.title }}</span>
                     </div>
-                    <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 font-medium">Nominee</span>
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 font-medium" translate="no">नामांकित</span>
                   </div>
                   {% endfor %}
                 </div>
@@ -418,11 +397,13 @@
         {% endfor %}
       </div>
 
-      <!-- Upcoming Note -->
+      <!-- Upcoming Note (Displayed only for future editions with no published results) -->
+      {% if selected_year and selected_year > latest_year %}
       <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
         <strong class="text-amber-600 dark:text-amber-400">आगामी संस्करण सूचना (Upcoming Editions Notice):</strong>
-        Crunchyroll Anime Awards 2025 और Tokyo Anime Award Festival 2025 के आधिकारिक अंतिम परिणाम समारोह समापन व सार्वजनिक घोषणा के तुरंत बाद यहाँ प्रकाशित किए जाएंगे। हमारा डेटाबेस केवल 100% सत्यापित आधिकारिक परिणामों को ही प्रदर्शित करता है।
+        Crunchyroll Anime Awards {{ selected_year }} के आधिकारिक अंतिम परिणाम समारोह समापन व सार्वजनिक घोषणा के तुरंत बाद यहाँ प्रकाशित किए जाएंगे। हमारा डेटाबेस केवल 100% सत्यापित आधिकारिक परिणामों को ही प्रदर्शित करता है।
       </div>
+      {% endif %}
     </section>
 
   {% else %}

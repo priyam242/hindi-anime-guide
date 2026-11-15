@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     # Content Automation Settings
     daily_source_draft_cap: int = 10
     gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     # Device Trust (days to remember device and skip email OTP; 0 disables)
     otp_trust_device_days: int = 30
