@@ -2,13 +2,13 @@
 {% from "components/macros.html" import render_badge, render_section_header, render_empty_state %}
 
 {% block title %}एनीमे पुरस्कार एवं सम्मान {{ selected_year or '' }} | Anime Awards & Winners — {{ site.name }}{% endblock %}
-{% block meta_description %}वार्षिक एनीमे पुरस्कार, क्रंचीरोल एनीमे अवार्ड्स {{ selected_year or '' }}, और तोक्यो एनीमे अवार्ड्स के 100% आधिकारिक सत्यापित विजेता व नामांकनों की सूची।{% endblock %}
+{% block meta_description %}वार्षिक एनीमे पुरस्कार, क्रंचीरोल एनीमे अवार्ड्स {{ selected_year or '' }}, और तोक्यो एनीमे अवार्ड्स के आधिकारिक सत्यापित विजेता व नामांकनों की सूची।{% endblock %}
 {% block canonical %}{{ request.url.scheme }}://{{ request.url.netloc }}/awards{% if selected_year and selected_year != latest_year %}?year={{ selected_year }}{% endif %}{% endblock %}
 
 {% block og_tags %}
 <meta property="og:type" content="website">
 <meta property="og:title" content="एनीमे पुरस्कार एवं नामांकन {{ selected_year or '' }} — {{ site.name }}">
-<meta property="og:description" content="Crunchyroll Anime Awards एवं Tokyo Anime Award Festival के 100% आधिकारिक सत्यापित विजेता व नामांकन।">
+<meta property="og:description" content="Crunchyroll Anime Awards एवं Tokyo Anime Award Festival के आधिकारिक सत्यापित विजेता व नामांकन।">
 <meta property="og:url" content="{{ request.url }}">
 {% endblock %}
 
@@ -21,7 +21,7 @@
       <div>
         <div class="flex items-center gap-2 text-xs font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-1.5">
           <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          <span>100% आधिकारिक वार्षिक सम्मान • Official Anime Honors</span>
+          <span>आधिकारिक वार्षिक सम्मान • Official Anime Honors</span>
         </div>
         <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight flex items-center flex-wrap gap-3">
           <i class="fas fa-trophy text-amber-500"></i>
@@ -401,7 +401,7 @@
       {% if selected_year and selected_year > latest_year %}
       <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
         <strong class="text-amber-600 dark:text-amber-400">आगामी संस्करण सूचना (Upcoming Editions Notice):</strong>
-        Crunchyroll Anime Awards {{ selected_year }} के आधिकारिक अंतिम परिणाम समारोह समापन व सार्वजनिक घोषणा के तुरंत बाद यहाँ प्रकाशित किए जाएंगे। हमारा डेटाबेस केवल 100% सत्यापित आधिकारिक परिणामों को ही प्रदर्शित करता है।
+        Crunchyroll Anime Awards {{ selected_year }} के आधिकारिक अंतिम परिणाम समारोह समापन व सार्वजनिक घोषणा के तुरंत बाद यहाँ प्रकाशित किए जाएंगे। हमारा डेटाबेस केवल सत्यापित आधिकारिक परिणामों को ही प्रदर्शित करता है।
       </div>
       {% endif %}
     </section>

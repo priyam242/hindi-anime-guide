@@ -5,7 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#dc2626">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HindiAnimeGuide">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <meta name="google-site-verification" content="YV5XGsvZulzaCWZilyv4eJFv6yo_wpJTm963Uxk43lI">
   <title>{% block title %}{{ site.name }} — {{ site.description }}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ site.description }}{% endblock %}">
@@ -1912,6 +1917,18 @@
   "badge_type": "pink",
   "active": (current_path == '/trailers'),
   "enabled": true
+  },
+  {
+  "id": "nav_free",
+  "title": "मुफ़्त एनीमे (Free)",
+  "i18n": "nav_free",
+  "url": "/free",
+  "icon": "fas fa-play-circle",
+  "color": "text-emerald-500",
+  "badge": "FREE",
+  "badge_type": "green",
+  "active": (current_path == '/free'),
+  "enabled": true
   }
   ]
   },
@@ -2130,6 +2147,8 @@
   "upd_manga": "Manga Updates",
   "upd_awards": "Awards",
   "upd_trailers": "Trailers",
+  "nav_free": "Free Anime (YouTube)",
+  "pwa_install": "Install App",
   "guide_latest": "Latest Guides",
   "guide_beginners": "Beginner's Guide",
   "guide_watch_order": "Watch Order",
@@ -2228,6 +2247,12 @@
   </div>
   {% endif %}
   {% endfor %}
+  <div class="pwa-install-container px-3 py-2 mt-2" style="display: none;">
+    <button type="button" class="pwa-install-btn w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600/20 to-red-600/10 hover:from-red-600/30 hover:to-red-600/20 border border-red-500/30 text-red-500 font-bold text-xs transition shadow-sm cursor-pointer">
+      <span class="text-sm">📲</span>
+      <span data-i18n="pwa_install">{{ 'Install App' if lang == 'en' else 'ऐप इंस्टॉल करें (Install App)' }}</span>
+    </button>
+  </div>
   {% endmacro %}
 
   <!-- Mobile Drawer Menu -->
@@ -2441,6 +2466,8 @@
         "upd_manga": "मंगा",
         "upd_awards": "अवॉर्ड्स",
         "upd_trailers": "ट्रेलर्स",
+        "nav_free": "मुफ़्त एनीमे (Free)",
+        "pwa_install": "ऐप इंस्टॉल करें (Install App)",
         "guide_latest": "ताज़ा गाइड्स",
         "guide_beginners": "शुरुआती गाइड",
         "guide_watch_order": "वॉच ऑर्डर",
@@ -2497,6 +2524,8 @@
                           "upd_manga": "Manga Updates",
                             "upd_awards": "Awards",
                               "upd_trailers": "Trailers",
+                              "nav_free": "Free Anime (YouTube)",
+                              "pwa_install": "Install App",
                                 "guide_latest": "Latest Guides",
                                   "guide_beginners": "Beginner's Guide",
                                     "guide_watch_order": "Watch Order",
@@ -2829,6 +2858,38 @@
         document.addEventListener('DOMContentLoaded', window.init3DCardTilt);
       } else {
         window.init3DCardTilt();
+      }
+    })();
+  </script>
+
+  <!-- PWA Service Worker & Install Prompt Registration -->
+  <script>
+    (function () {
+      let deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        document.querySelectorAll('.pwa-install-container').forEach(function (el) {
+          el.style.display = 'block';
+        });
+      });
+
+      document.addEventListener('click', async function (e) {
+        const btn = e.target.closest('.pwa-install-btn');
+        if (btn && deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          document.querySelectorAll('.pwa-install-container').forEach(function (el) {
+            el.style.display = 'none';
+          });
+        }
+      });
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        });
       }
     })();
   </script>

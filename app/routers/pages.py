@@ -8,9 +8,10 @@ import threading
 import time
 import urllib.parse
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form, Response
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, FileResponse
 from sqlmodel import Session, select
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
@@ -727,14 +728,38 @@ def compute_home_page_data(session: Session) -> dict:
     top10_slugs = {item["url"] for item in top_10_anime}
     zone3_hindi_guides = []
 
+    # Helper functions to guarantee clean subtitles without raw slugs or empty ()
+    def _clean_guide_title_en(t_en: Optional[str], slug: Optional[str], t_hi: Optional[str] = None) -> str:
+        raw = (t_en or "").strip()
+        if raw and not raw.startswith("http") and (" " in raw or "-" not in raw):
+            return raw
+        if t_hi and "(" in t_hi and ")" in t_hi:
+            m = re.search(r'\(([A-Za-z0-9\s:!?,.\'-]+)\)', t_hi)
+            if m and re.search(r'[A-Za-z]{2,}', m.group(1)):
+                return m.group(1).strip()
+        src = raw or slug or "Anime Guide"
+        cleaned = re.sub(r'(?i)-(hindi|dub|streaming|guide|watch|order|romance|anime)+', '', src)
+        cleaned = re.sub(r'[-_]+', ' ', cleaned).strip().title()
+        return cleaned or "Anime Guide"
+
+    def _clean_guide_title_hi(t_hi: Optional[str], default_t: Optional[str] = None) -> str:
+        raw = (t_hi or default_t or "एनीमे गाइड").strip()
+        if ":" in raw:
+            part = raw.split(":")[0].strip()
+            if len(part) >= 3:
+                return part
+        return raw
+
     # Include published DB articles that are NOT in top10 and not the featured article
     remaining_db_articles = [a for a in articles if f"/anime/{a.slug}" not in top10_slugs and a != featured_article]
     for a in remaining_db_articles:
         plats = [av.platform_rel.name for av in getattr(a, "availabilities", []) if av.platform_rel]
+        cleaned_hi = _clean_guide_title_hi(a.anime_title_hi, a.title)
+        cleaned_en = _clean_guide_title_en(a.anime_title_en, a.slug, a.title)
         zone3_hindi_guides.append({
             "id": a.id,
-            "title_hi": a.anime_title_hi or a.title,
-            "title_en": a.anime_title_en or a.slug,
+            "title_hi": cleaned_hi,
+            "title_en": cleaned_en,
             "image_url": a.cover_image or "/media/covers/anime_naruto.webp",
             "platforms": plats or ["Crunchyroll"],
             "url": f"/anime/{a.slug}",
@@ -2550,6 +2575,388 @@ def trailers_page(
     )
 
 
+# ---------- FREE LEGAL ANIME HUB ----------
+FREE_LEGAL_ANIME_DATA = [
+    {
+        "id": "spy-family",
+        "title_hi": "स्पाई x फैमिली",
+        "title_en": "Spy x Family",
+        "cover_image": "/media/covers/anime_spy-x-family.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "सीज़न 1-2 • 37 एपिसोड्स",
+        "synopsis_hi": "ऑपरेशन स्ट्रिक्स, जासूस पिता, कातिल माँ और टेलीपैथिक बेटी आन्या। आधिकारिक यूट्यूब चैनल पर मुफ़्त उपलब्ध।",
+        "url": "/anime/spy-x-family-hindi-dub-streaming-guide",
+        "is_airing": False,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "muse-asia", "hindi-dub"],
+    },
+    {
+        "id": "frieren",
+        "title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड",
+        "title_en": "Frieren: Beyond Journey's End",
+        "cover_image": "/media/covers/anime_frieren.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "28 एपिसोड्स",
+        "synopsis_hi": "एल्फ जादूगरनी फ्रीरेन की आत्म-खोज और पुरानी यादों का भावुक सफर।",
+        "url": "/explore?q=Frieren",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia"],
+    },
+    {
+        "id": "attack-on-titan",
+        "title_hi": "अटैक ऑन टाइटन",
+        "title_en": "Attack on Titan",
+        "cover_image": "/media/covers/anime_attack-on-titan.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-4 • 89 एपिसोड्स",
+        "synopsis_hi": "विशालकाय टाइटन्स और दीवारों के भीतर जीवित बचे इंसानों की लड़ाई।",
+        "url": "/anime/attack-on-titan-streaming-guide-india",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia"],
+    },
+    {
+        "id": "jujutsu-kaisen",
+        "title_hi": "जुजुत्सु काइसेन",
+        "title_en": "Jujutsu Kaisen",
+        "cover_image": "/media/covers/anime_jujutsu-kaisen.webp",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-2 • 47 एपिसोड्स",
+        "synopsis_hi": "युजी इतादोरी और जुजुत्सु सोरसरर्स की शापित आत्माओं के विरुद्ध रोमांचक लड़ाई।",
+        "url": "/anime/jujutsu-kaisen-hindi-streaming-guide",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one"],
+    },
+    {
+        "id": "chainsaw-man",
+        "title_hi": "चेनसॉ मैन",
+        "title_en": "Chainsaw Man",
+        "cover_image": "/media/covers/anime_chainsaw-man.webp",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "12 एपिसोड्स",
+        "synopsis_hi": "डेन्जी और पोचिता का डेविल हंटर रूपांतरण और खूंखार शैतानों से मुकाबला।",
+        "url": "/explore?q=Chainsaw+Man",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one"],
+    },
+    {
+        "id": "blue-lock",
+        "title_hi": "ब्लू लॉक",
+        "title_en": "Blue Lock",
+        "cover_image": "/media/covers/anime_blue-lock.webp",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-2 • 38 एपिसोड्स",
+        "synopsis_hi": "जापान के सर्वश्रेष्ठ स्ट्राइकर को खोजने की अत्यंत प्रतिस्पर्धी फुटबॉल ट्रेनिंग।",
+        "url": "/anime/haikyuu-blue-lock-sports-anime-hindi-guide",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one"],
+    },
+    {
+        "id": "haikyuu",
+        "title_hi": "हाइक्यू!!",
+        "title_en": "Haikyuu!!",
+        "cover_image": "/media/covers/anime_haikyuu.webp",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-4 • 85 एपिसोड्स",
+        "synopsis_hi": "शोयो हिनाता और करासुनो वॉलीबॉल टीम का प्रेरणादायक सफर।",
+        "url": "/anime/haikyuu-blue-lock-sports-anime-hindi-guide",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one"],
+    },
+    {
+        "id": "dandadan",
+        "title_hi": "डैनडाडैन",
+        "title_en": "DanDaDan",
+        "cover_image": "/media/covers/anime_dandadan.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "12 एपिसोड्स",
+        "synopsis_hi": "एलियंस, भूत और सुपरनैचुरल शक्तियों का धमाकेदार आधुनिक एक्शन कॉमेडी एनीमे।",
+        "url": "/explore?q=DanDaDan",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia"],
+    },
+    {
+        "id": "tokyo-revengers",
+        "title_hi": "टोक्यो रिवेंजर्स",
+        "title_en": "Tokyo Revengers",
+        "cover_image": "/media/covers/anime_one-piece.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "सीज़न 1-3 • 50 एपिसोड्स",
+        "synopsis_hi": "ताकेमिची की टाइम-ट्रैवल कहानी और तोक्यो मानजी गैंग की पुरानी यादें व लड़ाइयाँ।",
+        "url": "/explore?q=Tokyo+Revengers",
+        "is_airing": False,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "muse-asia", "hindi-dub"],
+    },
+    {
+        "id": "one-punch-man",
+        "title_hi": "वन-पंच मैन",
+        "title_en": "One-Punch Man",
+        "cover_image": "/media/covers/anime_solo-leveling.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
+        "synopsis_hi": "साइतामा का एक घूंसे में किसी भी दुश्मन को हरा देने का बेजोड़ एक्शन-कॉमेडी सफर।",
+        "url": "/explore?q=One+Punch+Man",
+        "is_airing": False,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "muse-asia", "hindi-dub"],
+    },
+    {
+        "id": "link-click",
+        "title_hi": "लिंक क्लिक",
+        "title_en": "Link Click",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx126403-1TjhVqW84FqT.png",
+        "primary_platform": "YouTube",
+        "platforms": ["YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
+        "synopsis_hi": "तस्वीरों के भीतर जाकर रहस्यों को सुलझाने वाले दो जासूस दोस्तों की थ्रिलर गाथा।",
+        "url": "/schedule#saturday",
+        "is_airing": False,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "hindi-dub"],
+    },
+    {
+        "id": "apothecary-diaries-s3",
+        "title_hi": "द अपोथेकेरी डायरीज़ सीज़न 3",
+        "title_en": "The Apothecary Diaries Season 3",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-5N9gq2U62DkR.jpg",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "चालू शोज़ (Airing)",
+        "audio_type": "sub",
+        "episodes": "चालू • Ep 7",
+        "synopsis_hi": "इंपीरियल पैलेस की रहस्यमयी औषधि विशेषज्ञ माओमाओ के दरबारी केस।",
+        "url": "/schedule#friday",
+        "is_airing": True,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia", "airing"],
+    },
+    {
+        "id": "firefly-wedding",
+        "title_hi": "फायरफ्लाई वेडिंग",
+        "title_en": "Firefly Wedding",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx183204-p4g6j2kL4k0P.jpg",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "चालू शोज़ (Airing)",
+        "audio_type": "sub",
+        "episodes": "चालू • Ep 6",
+        "synopsis_hi": "मीजी काल की एक बीमार कुलीन लड़की और उसके हत्यारे पति का रोमांचक ड्रामा।",
+        "url": "/schedule#friday",
+        "is_airing": True,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one", "airing"],
+    },
+    {
+        "id": "reincarnated-sword-s2",
+        "title_hi": "रीइन्कारनेटेड ऐज़ अ सोर्ड सीज़न 2",
+        "title_en": "Reincarnated as a Sword Season 2",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx158091-E66o2kY41g9P.jpg",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "चालू शोज़ (Airing)",
+        "audio_type": "sub",
+        "episodes": "चालू • Ep 7",
+        "synopsis_hi": "जादुई तलवार और बिल्ली-लड़की फ्रैंकी की रोमांचक यात्रा।",
+        "url": "/schedule#wednesday",
+        "is_airing": True,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia", "airing"],
+    },
+    {
+        "id": "overgeared",
+        "title_hi": "ओवरगियर्ड",
+        "title_en": "Overgeared",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx181747-q92kL5m3P2a1.jpg",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "चालू शोज़ (Airing)",
+        "audio_type": "sub",
+        "episodes": "चालू • Ep 8",
+        "synopsis_hi": "वर्चुअल Reality गेम में ग्रिड का दिग्गज लोहार बनने का सफर।",
+        "url": "/schedule#sunday",
+        "is_airing": True,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one", "airing"],
+    },
+    {
+        "id": "swallowed-star",
+        "title_hi": "स्वॉलोव्ड स्टार",
+        "title_en": "Swallowed Star",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx125299-FkM2rK5s9uP0.jpg",
+        "primary_platform": "YouTube",
+        "platforms": ["YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "चालू • Ep 1",
+        "synopsis_hi": "भविष्य के पृथ्वी रक्षक योद्धा लुओ फेंग का शक्तिशाली अंतरिक्ष युद्ध।",
+        "url": "/schedule#saturday",
+        "is_airing": True,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "hindi-dub", "airing"],
+    },
+    {
+        "id": "battle-through-heavens",
+        "title_hi": "बैटल थ्रू द हेवन्स",
+        "title_en": "Battle Through the Heavens",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98782-z9Yg2T6p4k1Q.jpg",
+        "primary_platform": "YouTube",
+        "platforms": ["YouTube"],
+        "audio_badge": "हिंदी डब व सब",
+        "audio_type": "hindi-dub",
+        "episodes": "चालू • Ep 1",
+        "synopsis_hi": "शियाओ यान का अपनी खोई हुई शक्ति को पुनः प्राप्त करने का कल्टीवेशन सफर।",
+        "url": "/schedule#saturday",
+        "is_airing": True,
+        "is_hindi_dub": True,
+        "filter_tags": ["all", "hindi-dub", "airing"],
+    },
+    {
+        "id": "mob-psycho",
+        "title_hi": "मॉब साइको 100",
+        "title_en": "Mob Psycho 100",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-3 • 37 एपिसोड्स",
+        "synopsis_hi": "शिगेओ कागेयामा (मॉब) की अविश्वसनीय मानसिक शक्तियां और जीवन का सबक।",
+        "url": "/explore?q=Mob+Psycho",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia"],
+    },
+    {
+        "id": "mashle",
+        "title_hi": "मैशले: मैजिक एंड मसल्स",
+        "title_en": "Mashle: Magic and Muscles",
+        "cover_image": "/media/covers/anime_death-note.webp",
+        "primary_platform": "Ani-One Asia",
+        "platforms": ["Ani-One Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
+        "synopsis_hi": "जादू की दुनिया में बिना किसी जादू के केवल मांसपेशियों की ताकत से मुकाबला।",
+        "url": "/updates/8",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "ani-one"],
+    },
+    {
+        "id": "classroom-elite",
+        "title_hi": "क्लासरूम ऑफ द एलीट",
+        "title_en": "Classroom of the Elite",
+        "cover_image": "/media/covers/anime_demon-slayer.webp",
+        "primary_platform": "Muse Asia",
+        "platforms": ["Muse Asia", "YouTube"],
+        "audio_badge": "सबटाइटल",
+        "audio_type": "sub",
+        "episodes": "सीज़न 1-3 • 38 एपिसोड्स",
+        "synopsis_hi": "टोक्यो कोडो इकुसेई हाई स्कूल में अयानकोजी का मनोवैज्ञानिक खेल।",
+        "url": "/explore?q=Classroom+of+the+Elite",
+        "is_airing": False,
+        "is_hindi_dub": False,
+        "filter_tags": ["all", "muse-asia"],
+    },
+]
+
+
+@router.get("/free", response_class=HTMLResponse)
+def free_anime_hub(
+    request: Request,
+    platform: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    session: Session = Depends(get_session)
+):
+    categories = session.exec(select(Category)).all()
+    user = request.state.user if hasattr(request.state, "user") else None
+    lang = request.cookies.get("preferred_language", "hi")
+
+    all_cards = list(FREE_LEGAL_ANIME_DATA)
+    filter_counts = {
+        "all": len(all_cards),
+        "muse_asia": sum(1 for c in all_cards if "muse-asia" in c["filter_tags"]),
+        "ani_one": sum(1 for c in all_cards if "ani-one" in c["filter_tags"]),
+        "hindi_dub": sum(1 for c in all_cards if "hindi-dub" in c["filter_tags"]),
+        "airing": sum(1 for c in all_cards if "airing" in c["filter_tags"]),
+    }
+
+    return render(
+        "free.html",
+        categories=categories,
+        free_cards=all_cards,
+        filter_counts=filter_counts,
+        active_filter=platform or "all",
+        search_query=q or "",
+        lang=lang,
+        user=user,
+        active_nav="free",
+        request=request,
+    )
+
+
+# ---------- PWA: MANIFEST, SERVICE WORKER & ICONS ----------
+@router.get("/manifest.webmanifest", include_in_schema=False)
+@router.get("/manifest.json", include_in_schema=False)
+def pwa_manifest():
+    manifest_path = Path(__file__).resolve().parent.parent / "static" / "manifest.webmanifest"
+    return FileResponse(manifest_path, media_type="application/manifest+json")
+
+
+@router.get("/sw.js", include_in_schema=False)
+def pwa_service_worker():
+    sw_path = Path(__file__).resolve().parent.parent / "static" / "sw.js"
+    return FileResponse(sw_path, media_type="application/javascript")
+
+
+@router.get("/icons/{filename}", include_in_schema=False)
+def pwa_icon(filename: str):
+    icon_path = Path(__file__).resolve().parent.parent / "static" / "icons" / filename
+    if icon_path.exists():
+        media_type = "image/png" if filename.endswith(".png") else "image/svg+xml"
+        return FileResponse(icon_path, media_type=media_type)
+    return Response(status_code=404)
+
+
 @router.get("/updates/{item_id}", response_class=HTMLResponse)
 @router.get("/news/{item_id}", response_class=HTMLResponse)
 @router.get("/anime/{item_id}", response_class=HTMLResponse)
@@ -2958,6 +3365,7 @@ def sitemap_xml(request: Request, session: Session = Depends(get_session)):
     for hub_slug, hub_pri in [
         ("news", "0.9"),
         ("schedule", "0.9"),
+        ("free", "0.9"),
         ("manga", "0.7"),
         ("awards", "0.7"),
         ("trailers", "0.7"),

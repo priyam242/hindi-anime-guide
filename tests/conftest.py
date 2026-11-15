@@ -5,6 +5,7 @@ from typing import Generator
 import pytest
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel, Session, create_engine, select
 
 # 1. Force test environment settings before any app modules or settings are loaded
@@ -81,7 +82,8 @@ def isolate_database_per_test(tmp_path, monkeypatch):
     test_engine = create_engine(
         f"sqlite:///{test_db_file}",
         echo=False,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
+        poolclass=NullPool
     )
 
     # Create all tables and seed standard categories and platforms
@@ -127,6 +129,8 @@ def isolate_database_per_test(tmp_path, monkeypatch):
 
     app.dependency_overrides.clear()
     test_engine.dispose()
+    import gc
+    gc.collect()
 
 
 @pytest.fixture(autouse=True)

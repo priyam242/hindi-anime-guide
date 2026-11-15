@@ -28,13 +28,58 @@
   "datePublished": "{{ article.published_at.isoformat() if article.published_at else (article.created_at.isoformat() if article.created_at else '') }}",
   "dateModified": "{{ article.updated_at.isoformat() if article.updated_at else (article.created_at.isoformat() if article.created_at else '') }}",
   {% if article.cover_image %}
-  "image": "{{ request.base_url }}{{ article.cover_image.lstrip('/') }}",
+  "image": {{ (request.base_url ~ article.cover_image.lstrip('/')) | tojson }},
   {% endif %}
   "publisher": {
     "@type": "Organization",
     "name": "{{ site.name }}",
     "url": "{{ request.base_url }}"
   }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TVSeries",
+  "name": {{ (article.anime_title_hi or article.title) | tojson }},
+  "alternateName": {{ (article.anime_title_en or article.title) | tojson }},
+  "description": {{ (article.meta_description or article.summary or article.title) | tojson }},
+  "inLanguage": "hi",
+  {% if article.cover_image %}
+  "image": {{ (request.base_url ~ article.cover_image.lstrip('/')) | tojson }},
+  {% endif %}
+  "potentialAction": [
+    {% if article.availabilities %}
+      {% for av in article.availabilities if av.platform_rel %}
+      {
+        "@type": "WatchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": {{ (av.custom_url or av.platform_rel.official_url or (request.base_url ~ 'anime/' ~ article.slug)) | tojson }},
+          "actionPlatform": [
+            "http://schema.org/DesktopWebPlatform",
+            "http://schema.org/MobileWebPlatform"
+          ]
+        },
+        "expectsAcceptanceOf": {
+          "@type": "Offer",
+          "seller": {
+            "@type": "Organization",
+            "name": {{ av.platform_rel.name | tojson }}
+          }
+        }
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    {% else %}
+      {
+        "@type": "WatchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": {{ (request.base_url ~ 'anime/' ~ article.slug) | tojson }}
+        }
+      }
+    {% endif %}
+  ]
 }
 </script>
 <script type="application/ld+json">
