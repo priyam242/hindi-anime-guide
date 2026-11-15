@@ -68,20 +68,14 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
-  <!-- Cross-Document Speculation Rules: Instant Prerender & Prefetch on Hover/Pointerdown -->
+  <!-- Cross-Document Speculation Rules: Lightweight Prefetch on Hover/Pointerdown -->
   <script type="speculationrules">
   {
-    "prerender": [
+    "prefetch": [
       {
         "source": "list",
         "urls": ["/", "/free", "/schedule", "/manga", "/trailers", "/news", "/awards", "/explore"]
       },
-      {
-        "where": { "href_matches": "/*" },
-        "eagerness": "moderate"
-      }
-    ],
-    "prefetch": [
       {
         "where": { "href_matches": "/*" },
         "eagerness": "conservative"

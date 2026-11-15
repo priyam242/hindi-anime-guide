@@ -24,6 +24,8 @@ async def lifespan(app: FastAPI):
     try:
         with Session(engine) as session:
             admin.ensure_admin_user(session)
+            from .routers.pages import ensure_canonical_trailers
+            ensure_canonical_trailers(session)
     except Exception:
         pass
 

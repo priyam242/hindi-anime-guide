@@ -8,6 +8,7 @@ Verifies:
 5. Trailers endpoint returns at least 12 items sorted newest-first with authentic published_at and supports season tabs.
 """
 from datetime import datetime, timezone, timedelta
+import re
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
@@ -347,4 +348,78 @@ def test_youtube_channel_feeds_fetch_and_parse():
             v2_title = entries[1].findtext("{http://www.w3.org/2005/Atom}title")
             assert v1_title and len(v1_title.strip()) > 0, f"Channel '{name}' video 1 title empty"
             assert v2_title and len(v2_title.strip()) > 0, f"Channel '{name}' video 2 title empty"
+
+
+def test_trailer_card_matches_detail_page(client):
+    """Verify that every trailer card on GET / (6 cards) and GET /trailers (top 12)
+    strictly matches its /updates/{id} detail page in both title and embedded YouTube ID.
+    """
+    invalidate_public_caches()
+
+    # 1. Test all 6 Homepage Trailer Cards
+    res_home = client.get("/")
+    assert res_home.status_code == 200
+    home_html = res_home.text
+
+    # Locate Section 2: नए ऑफिशियल ट्रेलर्स
+    m_trailers = re.search(r'नए ऑफिशियल ट्रेलर्स.*?(?=लोकप्रिय हिंदी डब)', home_html, re.S)
+    assert m_trailers is not None, "Could not find trailers section on Home page"
+    sec_html = m_trailers.group(0)
+
+    # Extract all trailer cards: href, img src, title
+    cards = re.findall(
+        r'<a href="(/updates/\d+)"[^>]*>.*?<img src="https://img\.youtube\.com/vi/([^/]+)/[^"]*"[^>]*>.*?<h3[^>]*>\s*([^<]+?)\s*</h3>',
+        sec_html,
+        re.S
+    )
+    assert len(cards) == 6, f"Expected exactly 6 trailer cards on Homepage, got {len(cards)}"
+
+    for href, card_yt_id, card_title in cards:
+        card_title_clean = card_title.strip()
+        resp_detail = client.get(href)
+        assert resp_detail.status_code == 200, f"Detail page {href} returned {resp_detail.status_code}"
+        detail_html = resp_detail.text
+
+        # Extract <h1> title
+        m_h1 = re.search(r'<h1 id="detail-headline"[^>]*>\s*([^<]+?)\s*</h1>', detail_html)
+        assert m_h1 is not None, f"Could not find detail headline on {href}"
+        h1_title = m_h1.group(1).strip()
+
+        # Extract iframe YouTube src
+        m_iframe = re.search(r'<iframe[^>]*src="https://www\.youtube-nocookie\.com/embed/([^?"]+)', detail_html)
+        assert m_iframe is not None, f"Could not find YouTube iframe on {href}"
+        iframe_yt_id = m_iframe.group(1).strip()
+
+        # Assert card title matches detail <h1> title
+        assert card_title_clean == h1_title, f"Title mismatch on {href}: card='{card_title_clean}' vs detail='{h1_title}'"
+
+        # Assert card YouTube ID matches detail iframe YouTube ID
+        assert card_yt_id == iframe_yt_id, f"YouTube ID mismatch on {href}: card='{card_yt_id}' vs iframe='{iframe_yt_id}'"
+
+    # 2. Test top 12 cards on /trailers
+    res_tr = client.get("/trailers")
+    assert res_tr.status_code == 200
+    tr_html = res_tr.text
+
+    tr_links = re.findall(r'<a href="(/updates/\d+)"', tr_html)
+    seen = set()
+    unique_tr_links = []
+    for l in tr_links:
+        if l not in seen:
+            seen.add(l)
+            unique_tr_links.append(l)
+
+    assert len(unique_tr_links) >= 6, f"Expected at least 6 trailer links on /trailers, got {len(unique_tr_links)}"
+    for href in unique_tr_links[:12]:
+        resp_detail = client.get(href)
+        assert resp_detail.status_code == 200, f"Detail page {href} returned {resp_detail.status_code}"
+        detail_html = resp_detail.text
+
+        m_h1 = re.search(r'<h1 id="detail-headline"[^>]*>\s*([^<]+?)\s*</h1>', detail_html)
+        assert m_h1 is not None, f"Could not find detail headline on {href}"
+        assert len(m_h1.group(1).strip()) > 0
+
+        m_iframe = re.search(r'<iframe[^>]*src="https://www\.youtube-nocookie\.com/embed/([^?"]+)', detail_html)
+        assert m_iframe is not None, f"Could not find YouTube iframe on {href}"
+        assert len(m_iframe.group(1).strip()) > 0
 

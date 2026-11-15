@@ -13,7 +13,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form, Response
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, FileResponse
 from sqlmodel import Session, select
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, not_
 from sqlalchemy.orm import selectinload
 
 from .. import db
@@ -227,6 +227,146 @@ def slugify_anime_title(title: str) -> str:
     return s or "anime"
 
 
+CANONICAL_HOMEPAGE_TRAILERS = [
+    {
+        "external_id": "trailer_csm_reze",
+        "youtube_id": "tAzAhDNdehs",
+        "title_hi": "चेनसॉ मैन: रेज़ आर्क",
+        "title_en": "Chainsaw Man: Reze Arc Movie",
+        "studio": "Sony Pictures Entertainment",
+        "summary_hi": "चेनसॉ मैन: द मूवी - रेज़ आर्क का आधिकारिक सिनेमाई ट्रेलर।",
+        "summary_en": "Chainsaw Man: The Movie - Reze Arc official teaser trailer.",
+    },
+    {
+        "external_id": "trailer_demon_slayer_ic",
+        "youtube_id": "wyiZWYMilgk",
+        "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल",
+        "title_en": "Demon Slayer: Infinity Castle Arc",
+        "studio": "Crunchyroll",
+        "summary_hi": "डेमन स्लेयर: इनफिनिटी कैसल फिल्म ट्रिलॉजी का आधिकारिक ट्रेलर।",
+        "summary_en": "Demon Slayer: Infinity Castle Arc official movie trilogy trailer.",
+    },
+    {
+        "external_id": "trailer_sakamoto_days",
+        "youtube_id": "9TbmxbckSjE",
+        "title_hi": "साकामोटो डेज़",
+        "title_en": "Sakamoto Days",
+        "studio": "Netflix",
+        "summary_hi": "साकामोटो डेज़ एनीमे का आधिकारिक मुख्य टीज़र ट्रेलर।",
+        "summary_en": "Sakamoto Days official anime teaser trailer.",
+    },
+    {
+        "external_id": "trailer_jjk_culling_game",
+        "youtube_id": "-gvtWDUHmiU",
+        "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)",
+        "title_en": "Jujutsu Kaisen: Culling Game Arc",
+        "studio": "TOHO animation",
+        "summary_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3) का आधिकारिक टीज़र प्रोमो।",
+        "summary_en": "Jujutsu Kaisen: Culling Game Arc (Season 3) official teaser promo.",
+    },
+    {
+        "external_id": "trailer_bleach_tybw_p3",
+        "youtube_id": "fmWc9lWcuGc",
+        "title_hi": "ब्लीच: थाउज़ेंड-यीयर ब्लड वॉर पार्ट 3",
+        "title_en": "Bleach: Thousand-Year Blood War Part 3",
+        "studio": "VIZ Media",
+        "summary_hi": "ब्लीच: थाउज़ेंड-यीयर ब्लड वॉर पार्ट 3 का आधिकारिक मुख्य ट्रेलर।",
+        "summary_en": "Bleach: Thousand-Year Blood War Part 3 official main trailer.",
+    },
+    {
+        "external_id": "trailer_opm_s3",
+        "youtube_id": "oh7bd-CDY6U",
+        "title_hi": "वन पंच मैन सीज़न 3",
+        "title_en": "One-Punch Man Season 3",
+        "studio": "VIZ Media",
+        "summary_hi": "वन पंच मैन सीज़न 3 का आधिकारिक मुख्य ट्रेलर।",
+        "summary_en": "One-Punch Man Season 3 official main trailer.",
+    },
+]
+
+NEWS_CATEGORY_HI_MAP = {
+    "Announcement": "घोषणा",
+    "Release Date": "रिलीज़ डेट",
+    "Trailer": "ट्रेलर",
+    "Movie": "फिल्म",
+    "Industry": "उद्योग",
+    "Interview": "साक्षात्कार",
+    "Event Recap": "इवेंट",
+    "Ranking": "रैंकिंग",
+    "Rankings": "रैंकिंग",
+    "Editorial": "संपादकीय",
+    "Special": "विशेष",
+}
+
+
+def ensure_canonical_trailers(session: Session) -> list[AnimeDraft]:
+    """Ensure the 6 canonical trailers exist in DB with 1:1 matching metadata.
+    Idempotent: updates existing rows or creates new ones.
+    """
+    now = datetime.now(timezone.utc)
+    results = []
+    for idx, item in enumerate(CANONICAL_HOMEPAGE_TRAILERS):
+        yt_id = item["youtube_id"]
+        canonical_source_url = f"https://www.youtube.com/watch?v={yt_id}"
+        draft = session.exec(
+            select(AnimeDraft).where(
+                or_(
+                    AnimeDraft.external_id == item["external_id"],
+                    AnimeDraft.source_url == canonical_source_url,
+                    AnimeDraft.source_url.like(f"%{yt_id}%"),
+                )
+            )
+        ).first()
+
+        clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', item["studio"]).strip()
+        pub_time = now - timedelta(hours=idx + 1)
+
+        if draft:
+            draft.title_hi = item["title_hi"]
+            draft.title_en = item["title_en"]
+            draft.content_type = "trailer"
+            draft.status = "published"
+            draft.is_stale = False
+            draft.news_category = "Trailer"
+            draft.source_name = clean_studio
+            draft.source_url = canonical_source_url
+            draft.image_url = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+            draft.summary_hi = item["summary_hi"]
+            draft.summary_en = item["summary_en"]
+            draft.season = "FALL"
+            draft.season_year = 2026
+            session.add(draft)
+            results.append(draft)
+        else:
+            max_id = session.exec(select(func.max(AnimeDraft.id))).one()
+            safe_id = max(500, max_id or 0) + idx + 1
+            draft = AnimeDraft(
+                id=safe_id,
+                external_id=item["external_id"],
+                title_hi=item["title_hi"],
+                title_en=item["title_en"],
+                content_type="trailer",
+                status="published",
+                is_stale=False,
+                news_category="Trailer",
+                source_name=clean_studio,
+                source_url=canonical_source_url,
+                image_url=f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                summary_hi=item["summary_hi"],
+                summary_en=item["summary_en"],
+                published_at=pub_time,
+                season="FALL",
+                season_year=2026,
+            )
+            session.add(draft)
+            results.append(draft)
+
+    session.commit()
+    for d in results:
+        session.refresh(d)
+    return results
+
+
 def compute_home_page_data(session: Session) -> dict:
     """Compute 3-Zone modern anime portal payload + backward compatible keys."""
     articles = list(session.exec(
@@ -256,17 +396,24 @@ def compute_home_page_data(session: Session) -> dict:
         side_articles = other_articles[:3]
         grid_articles = other_articles[3:]
 
-    # Strict 14-day cutoff for Home latest updates
+    # Strict 14-day cutoff for Home latest updates - strictly editorial anime news
     cutoff_14d = datetime.now(timezone.utc) - timedelta(days=14)
     latest_updates = list(session.exec(
         select(AnimeDraft)
         .where(
             AnimeDraft.status == "published",
             AnimeDraft.is_stale == False,
+            AnimeDraft.content_type == "news",
             AnimeDraft.published_at.is_not(None),
             AnimeDraft.source_url.is_not(None),
             AnimeDraft.source_url != "",
             AnimeDraft.published_at >= cutoff_14d,
+            not_(AnimeDraft.external_id.like("anilist_%")),
+            not_(AnimeDraft.source_name.like("%MangaDex%")),
+            not_(AnimeDraft.title_hi.like("%MangaDex%")),
+            not_(AnimeDraft.title_en.like("%MangaDex%")),
+            not_(AnimeDraft.title_hi.like("%प्रसारण शेड्यूल%")),
+            or_(AnimeDraft.news_category != "Trailer", AnimeDraft.news_category.is_(None)),
         )
         .order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
         .limit(6)
@@ -532,109 +679,36 @@ def compute_home_page_data(session: Session) -> dict:
             "image_url": "/media/covers/anime_soul-land-2.webp",
             "url": "/anime/soul-land-2",
         },
-        {
-            "id": 176496,
-            "title_hi": "सोलो लेवलिंग सीज़न 2",
-            "title_en": "Solo Leveling Season 2",
-            "episode": 7,
-            "episode_badge": "Ep 7",
-            "is_donghua": False,
-            "is_hindi_dub": True,
-            "is_today": True,
-            "ist_time_str": "रविवार • 8:00 PM IST",
-            "image_url": "/media/covers/anime_solo-leveling.webp",
-            "url": "/anime/solo-leveling-hindi-dub-guide",
-        },
-        {
-            "id": 176487,
-            "title_hi": "साकामोटो डेज़",
-            "title_en": "Sakamoto Days",
-            "episode": 8,
-            "episode_badge": "Ep 8",
-            "is_donghua": False,
-            "is_hindi_dub": True,
-            "is_today": True,
-            "ist_time_str": "शनिवार • 8:30 PM IST",
-            "image_url": "/media/covers/anime_sakamoto-days.webp",
-            "url": "/anime/sakamoto-days",
-        },
-        {
-            "id": 171018,
-            "title_hi": "डैनडाडैन",
-            "title_en": "DanDaDan",
-            "episode": 12,
-            "episode_badge": "Ep 12",
-            "is_donghua": False,
-            "is_hindi_dub": True,
-            "is_today": False,
-            "ist_time_str": "गुरुवार • 9:30 PM IST",
-            "image_url": "/media/covers/anime_dandadan.webp",
-            "url": "/anime/dandadan",
-        },
-        {
-            "id": 171010,
-            "title_hi": "डॉक्टर स्टोन साइंस फ्यूचर",
-            "title_en": "Dr. STONE SCIENCE FUTURE",
-            "episode": 10,
-            "episode_badge": "Ep 10",
-            "is_donghua": False,
-            "is_hindi_dub": True,
-            "is_today": False,
-            "ist_time_str": "गुरुवार • 7:00 PM IST",
-            "image_url": "/media/covers/anime_dr-stone-science-future.webp",
-            "url": "/anime/dr-stone-science-future",
-        },
-        {
-            "id": 21,
-            "title_hi": "वन पीस",
-            "title_en": "One Piece",
-            "episode": 1120,
-            "episode_badge": "Ep 1120",
-            "is_donghua": False,
-            "is_hindi_dub": True,
-            "is_today": True,
-            "ist_time_str": "रविवार • 6:30 AM IST",
-            "image_url": "/media/covers/anime_one-piece.webp",
-            "url": "/anime/one-piece-hindi-guide-watch-order",
-        },
-        {
-            "id": 159322,
-            "title_hi": "ब्लीच: थाउजेंड-ईयर ब्लड वॉर",
-            "title_en": "Bleach: Thousand-Year Blood War",
-            "episode": 9,
-            "episode_badge": "Ep 9",
-            "is_donghua": False,
-            "is_hindi_dub": False,
-            "is_today": True,
-            "ist_time_str": "शनिवार • 7:00 PM IST",
-            "image_url": "/media/covers/anime_bleach-thousand-year-blood-war.webp",
-            "url": "/anime/bleach-thousand-year-blood-war",
-        },
     ]
 
-    # ZONE 2A: Official Trailers (6 cards)
-    curated_trailers = [
-        {"youtube_id": "tAzAhDNdehs", "title_hi": "चेनसॉ मैन: रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie", "studio": "Sony Pictures Entertainment", "draft_id": 99},
-        {"youtube_id": "wyiZWYMilgk", "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल", "title_en": "Demon Slayer: Infinity Castle", "studio": "Crunchyroll", "draft_id": 86},
-        {"youtube_id": "9TbmxbckSjE", "title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "studio": "Netflix", "draft_id": 120},
-        {"youtube_id": "-gvtWDUHmiU", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3)", "title_en": "Jujutsu Kaisen: Culling Game", "studio": "TOHO animation", "draft_id": 98},
-        {"youtube_id": "fmWc9lWcuGc", "title_hi": "ब्लीच: थाउज़ेंड-यीयर ब्लड वॉर पार्ट 3", "title_en": "Bleach: Thousand-Year Blood War Part 3", "studio": "VIZ Media", "draft_id": 121},
-        {"youtube_id": "oh7bd-CDY6U", "title_hi": "वन पंच मैन सीज़न 3", "title_en": "One-Punch Man Season 3", "studio": "VIZ Media", "draft_id": 134},
-    ]
+    # ZONE 2A: Official Trailers (6 cards strictly synced 1:1 with DB AnimeDraft records)
+    ensure_canonical_trailers(session)
     official_trailers = []
-    for ct in curated_trailers:
-        d_id = ct.get("draft_id", 98)
-        clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', ct["studio"]).strip()
-        official_trailers.append({
-            "id": d_id,
-            "youtube_id": ct["youtube_id"],
-            "title_hi": ct["title_hi"],
-            "title_en": ct["title_en"],
-            "thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/hqdefault.jpg",
-            "fallback_thumbnail_url": f"https://img.youtube.com/vi/{ct['youtube_id']}/mqdefault.jpg",
-            "studio": clean_studio,
-            "url": f"/updates/{d_id}",
-        })
+    for ct in CANONICAL_HOMEPAGE_TRAILERS:
+        yt_id = ct["youtube_id"]
+        draft = session.exec(
+            select(AnimeDraft).where(
+                or_(
+                    AnimeDraft.external_id == ct["external_id"],
+                    AnimeDraft.source_url == f"https://www.youtube.com/watch?v={yt_id}",
+                    AnimeDraft.source_url.like(f"%{yt_id}%"),
+                ),
+                AnimeDraft.content_type == "trailer",
+                AnimeDraft.status == "published",
+            )
+        ).first()
+        if draft:
+            clean_studio = re.sub(r'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uffef\u4e00-\u9faf]', '', draft.source_name or ct["studio"]).strip()
+            official_trailers.append({
+                "id": draft.id,
+                "youtube_id": yt_id,
+                "title_hi": draft.title_hi,
+                "title_en": draft.title_en,
+                "thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+                "fallback_thumbnail_url": f"https://img.youtube.com/vi/{yt_id}/mqdefault.jpg",
+                "studio": clean_studio,
+                "url": f"/updates/{draft.id}",
+            })
 
     # ZONE 2A: Popular Hindi Dubs (12 crisp poster cards)
     popular_hindi_dubs = [
@@ -690,21 +764,23 @@ def compute_home_page_data(session: Session) -> dict:
 
     # ZONE 2B: Latest News Feed (populated from latest_updates with curated fallback)
     curated_latest_news = [
-        {"id": 86, "category_name_hi": "घोषणा", "source_name": "Official", "relative_time_hi": "2 घंटे पहले", "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल मूवी ट्रायलॉजी का नया अपडेट", "title_en": "Demon Slayer Infinity Castle Movie", "image_url": "/media/covers/anime_demon-slayer.webp", "url": "/updates/86"},
-        {"id": 87, "category_name_hi": "ट्रेलर", "source_name": "MAPPA", "relative_time_hi": "4 घंटे पहले", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3) का आधिकारिक टीज़र जारी", "title_en": "Jujutsu Kaisen Season 3 Teaser", "image_url": "/media/covers/anime_jujutsu-kaisen.webp", "url": "/updates/87"},
-        {"id": 106, "category_name_hi": "रैंकिंग", "source_name": "Anime Corner", "relative_time_hi": "6 घंटे पहले", "title_hi": "फ़ॉल 2026 एनीमे रैंकिंग्स: टॉप 10 ट्रेंडिंग शोज़ की नई सूची", "title_en": "Fall 2026 Anime Rankings", "image_url": "/media/covers/anime_solo-leveling.webp", "url": "/updates/106"},
-        {"id": 114, "category_name_hi": "साक्षात्कार", "source_name": "Weekly Shonen Jump", "relative_time_hi": "12 घंटे पहले", "title_hi": "साक्षात्कार: 'ब्लू बॉक्स' के रचनाकारों से खास बातचीत", "title_en": "Blue Box Creator Interview", "image_url": "/media/covers/anime_blue-box-season-2.webp", "url": "/updates/114"},
-        {"id": 116, "category_name_hi": "विशेष", "source_name": "Crunchyroll", "relative_time_hi": "1 दिन पहले", "title_hi": "तीन प्रभावशाली बैक-टू-स्कूल एनीमे जो आपको ज़रूर देखने चाहिए", "title_en": "Top 3 Back to School Anime", "image_url": "/media/covers/anime_frieren.webp", "url": "/updates/116"},
-        {"id": 147, "category_name_hi": "घोषणा", "source_name": "Kadokawa", "relative_time_hi": "2 दिन पहले", "title_hi": "'मल्टी-माइंड मेहेम' टीवी एनीमे रूपांतरण की आधिकारिक घोषणा", "title_en": "Multi-Mind Mayhem Anime Confirmed", "image_url": "/media/covers/anime_campfire-cooking-in-another-world-with-my-absurd-skill.webp", "url": "/updates/147"},
+        {"id": 86, "category_name_hi": "घोषणा", "category_name_en": "Announcement", "source_name": "Official", "relative_time_hi": "2 घंटे पहले", "title_hi": "डेमन स्लेयर: इनफिनिटी कैसल मूवी ट्रायलॉजी का नया अपडेट", "title_en": "Demon Slayer Infinity Castle Movie", "image_url": "/media/covers/anime_demon-slayer.webp", "url": "/updates/86"},
+        {"id": 87, "category_name_hi": "ट्रेलर", "category_name_en": "Trailer", "source_name": "MAPPA", "relative_time_hi": "4 घंटे पहले", "title_hi": "जुजुत्सु काइसेन: कलिंग गेम आर्क (सीज़न 3) का आधिकारिक टीज़र जारी", "title_en": "Jujutsu Kaisen Season 3 Teaser", "image_url": "/media/covers/anime_jujutsu-kaisen.webp", "url": "/updates/87"},
+        {"id": 106, "category_name_hi": "रैंकिंग", "category_name_en": "Rankings", "source_name": "Anime Corner", "relative_time_hi": "6 घंटे पहले", "title_hi": "फ़ॉल 2026 एनीमे रैंकिंग्स: टॉप 10 ट्रेंडिंग शोज़ की नई सूची", "title_en": "Fall 2026 Anime Rankings", "image_url": "/media/covers/anime_solo-leveling.webp", "url": "/updates/106"},
+        {"id": 114, "category_name_hi": "साक्षात्कार", "category_name_en": "Interview", "source_name": "Weekly Shonen Jump", "relative_time_hi": "12 घंटे पहले", "title_hi": "साक्षात्कार: 'ब्लू बॉक्स' के रचनाकारों से खास बातचीत", "title_en": "Blue Box Creator Interview", "image_url": "/media/covers/anime_blue-box-season-2.webp", "url": "/updates/114"},
+        {"id": 116, "category_name_hi": "विशेष", "category_name_en": "Special", "source_name": "Crunchyroll", "relative_time_hi": "1 दिन पहले", "title_hi": "तीन प्रभावशाली बैक-टू-स्कूल एनीमे जो आपको ज़रूर देखने चाहिए", "title_en": "Top 3 Back to School Anime", "image_url": "/media/covers/anime_frieren.webp", "url": "/updates/116"},
+        {"id": 147, "category_name_hi": "घोषणा", "category_name_en": "Announcement", "source_name": "Kadokawa", "relative_time_hi": "2 दिन पहले", "title_hi": "'मल्टी-माइंड मेहेम' टीवी एनीमे रूपांतरण की आधिकारिक घोषणा", "title_en": "Multi-Mind Mayhem Anime Confirmed", "image_url": "/media/covers/anime_campfire-cooking-in-another-world-with-my-absurd-skill.webp", "url": "/updates/147"},
     ]
     latest_news = []
     if latest_updates:
         for upd in latest_updates:
-            cat_name = upd.news_category or "समाचार"
+            raw_cat = upd.news_category or "News"
+            cat_hi = NEWS_CATEGORY_HI_MAP.get(raw_cat, raw_cat)
             rel_time = format_relative_time_hi(upd.published_at or upd.created_at)
             latest_news.append({
                 "id": upd.id,
-                "category_name_hi": cat_name,
+                "category_name_hi": cat_hi,
+                "category_name_en": raw_cat,
                 "source_name": upd.source_name or "Official",
                 "relative_time_hi": rel_time,
                 "title_hi": upd.title_hi or upd.title_en,
@@ -2416,6 +2492,7 @@ def prewarm_public_pages() -> dict[str, Any]:
     stats = {}
     try:
         with Session(engine) as s:
+            ensure_canonical_trailers(s)
             get_categories(s)
             get_platforms(s)
             h = get_home_page_data(s)

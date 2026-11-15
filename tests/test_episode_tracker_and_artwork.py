@@ -168,7 +168,7 @@ def test_zone3_equal_counts_and_zero_placeholder_text_images(client):
 
 
 def test_homepage_airing_episodes_and_card_density(client):
-    """Verify 18 airing cards, Alpine tabs, new Zone 2 Left sections, and >= 50 total anime cards."""
+    """Verify 12 airing cards (2 rows of 6), Alpine tabs, new Zone 2 Left sections, and >= 50 total anime cards."""
     from app.routers.pages import invalidate_public_caches
     invalidate_public_caches()
     res = client.get("/")
@@ -176,20 +176,20 @@ def test_homepage_airing_episodes_and_card_density(client):
     html_text = res.text
 
     # Verify Alpine filter tabs
-    assert "सभी (18)" in html_text
+    assert "सभी (12)" in html_text
     assert "आज के शोज़" in html_text
     assert "हिंदी डब" in html_text
     assert "डोंगहुआ" in html_text
 
-    # Verify Airing Schedule has 18 cards
+    # Verify Airing Schedule has strictly 12 cards (2 rows of 6)
     m_air = re.search(r"ताज़ा एपिसोड्स \(Latest Airing Schedule\).*?(?=नए ऑफिशियल ट्रेलर्स)", html_text, re.S)
     assert m_air is not None
     air_cards = re.findall(r'<a href="(/anime/[^"]+)"[^>]*x-show="tab', m_air.group(0))
-    assert len(air_cards) == 18, f"Expected 18 airing cards, got {len(air_cards)}"
+    assert len(air_cards) == 12, f"Expected 12 airing cards, got {len(air_cards)}"
 
     # Verify NO fake 'Ep 1' hardcoded across airing cards
     ep_badges = re.findall(r'<span class="absolute top-2 left-2[^"]*">([^<]+)</span>', m_air.group(0))
-    assert len(ep_badges) == 18
+    assert len(ep_badges) == 12
     assert ep_badges.count("Ep 1") == 0, f"Found fake 'Ep 1' in airing cards: {ep_badges}"
     assert "Ep 7" in ep_badges
     assert "Ep 1220" in ep_badges
@@ -224,8 +224,8 @@ def test_poster_urls_unique_per_franchise(client):
     # Extract all poster image URLs from Zone 2A airing cards
     m_air = re.search(r"ताज़ा एपिसोड्स \(Latest Airing Schedule\).*?(?=नए ऑफिशियल ट्रेलर्स)", html_text, re.S)
     air_imgs = re.findall(r'<img[^>]+src="([^"]+)"', m_air.group(0))
-    assert len(air_imgs) == 18
-    assert len(set(air_imgs)) == 18, f"Found duplicate covers in Zone 2A airing cards! {len(set(air_imgs))} unique vs 18"
+    assert len(air_imgs) == 12
+    assert len(set(air_imgs)) == 12, f"Found duplicate covers in Zone 2A airing cards! {len(set(air_imgs))} unique vs 12"
 
     # Extract all poster image URLs from Zone 3
     m_z3 = re.search(r"<!-- ZONE 3: Bottom 3-Category Equal Columns.*?(?=<footer|<script|id=\"footer\")", html_text, re.S)
