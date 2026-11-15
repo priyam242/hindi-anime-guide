@@ -50,15 +50,15 @@
     <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-1">सीज़न:</span>
     {% if season_info %}
     <a href="/schedule?season={{ season_info.previous.season }}&year={{ season_info.previous.year }}"
-       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.previous.season and season_info.selected.year == season_info.previous.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10{% endif %}">
+       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.previous.season and season_info.selected.year == season_info.previous.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700{% endif %}">
       <i class="fas fa-chevron-left text-[9px]"></i><span>{{ season_info.previous.label_hi }}</span>
     </a>
     <a href="/schedule?season={{ season_info.current.season }}&year={{ season_info.current.year }}"
-       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.current.season and season_info.selected.year == season_info.current.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10{% endif %}">
+       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.current.season and season_info.selected.year == season_info.current.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700{% endif %}">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>{{ season_info.current.label_hi }} (वर्तमान)</span>
     </a>
     <a href="/schedule?season={{ season_info.next.season }}&year={{ season_info.next.year }}"
-       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.next.season and season_info.selected.year == season_info.next.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10{% endif %}">
+       class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 {% if season_info.selected.season == season_info.next.season and season_info.selected.year == season_info.next.year %}bg-purple-600 text-white border-purple-500 shadow-md{% else %}text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700{% endif %}">
       <span>{{ season_info.next.label_hi }}</span><i class="fas fa-chevron-right text-[9px]"></i>
     </a>
     {% endif %}
@@ -68,16 +68,16 @@
   <div class="space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <!-- Days Tabs -->
-      <div class="flex flex-wrap items-center gap-1.5" role="tablist">
+      <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar gap-1.5 pb-1 max-w-full" role="tablist">
         <button type="button" @click="setDay('all')"
-                :class="activeDay === 'all' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
+                :class="activeDay === 'all' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                 class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
           पूरा हफ़्ता (This Week)
         </button>
 
         <template x-for="(day, idx) in days" :key="idx">
           <button type="button" @click="setDay(idx)"
-                  :class="activeDay === idx ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
+                  :class="activeDay === idx ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                   class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5">
             <span x-text="day.nameHi"></span>
             <span x-show="todayIdx === idx" class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="आज (Today)"></span>
@@ -85,7 +85,7 @@
         </template>
 
         <button type="button" @click="setDay('other')"
-                :class="activeDay === 'other' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
+                :class="activeDay === 'other' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                 class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
           अन्य (Other)
         </button>
@@ -95,7 +95,7 @@
       <div class="flex items-center gap-2 flex-wrap">
         <!-- Shorts / Kids Toggle (Default: Hidden like MAL) -->
         <button type="button" @click="includeShortsKids = !includeShortsKids; filterCards()"
-                :class="includeShortsKids ? 'bg-amber-600 text-white border-amber-500 shadow-sm' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
+                :class="includeShortsKids ? 'bg-amber-600 text-white border-amber-500 shadow-sm' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                 class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all inline-flex items-center gap-1.5"
                 title="10 मिनट से छोटे शॉर्ट्स एवं बच्चों के शोज़ को शामिल करें">
           <i class="fas fa-child text-[10px]"></i>
@@ -112,7 +112,7 @@
 
         <!-- Hindi Dub Filter -->
         <button type="button" @click="hindiOnly = !hindiOnly; filterCards()"
-                :class="hindiOnly ? 'bg-red-600 text-white border-red-500 shadow-sm' : 'bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'"
+                :class="hindiOnly ? 'bg-red-600 text-white border-red-500 shadow-sm' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                 class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all inline-flex items-center gap-1.5">
           <i class="fas fa-headphones text-[10px]"></i>
           <span>हिंदी डब</span>
@@ -122,7 +122,7 @@
   </div>
 
   <!-- Loading Skeletons -->
-  <div x-show="loading" style="display: none;" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+  <div x-show="loading" style="display: none;" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
     <template x-for="i in 8" :key="i">
       <div class="rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-3 space-y-3 animate-pulse shadow-sm">
         <div class="aspect-[3/4] bg-gray-200 dark:bg-neutral-800 rounded-lg"></div>
@@ -134,7 +134,7 @@
   </div>
 
   <!-- Dynamic Schedule Grid (1 col on 360px, 2 col on tablet, 4 col on desktop) -->
-  <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" id="schedule-grid">
+  <div x-show="!loading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4" id="schedule-grid">
     <template x-for="item in displayedCards" :key="item.id">
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 transition flex flex-col shadow-sm">
         <a :href="'/updates/' + item.id" class="block relative aspect-[3/4] overflow-hidden bg-neutral-950">
@@ -157,13 +157,13 @@
             </div>
           </template>
         </a>
-        <div class="p-3 flex-1 flex flex-col justify-between">
+        <div class="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
           <div>
-            <h3 class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-1">
+            <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-2 leading-snug">
               <a :href="'/updates/' + item.id" x-text="item.t"></a>
             </h3>
             <template x-if="item.th && item.th.trim().toLowerCase() !== item.t.trim().toLowerCase()">
-              <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5" x-text="item.th"></div>
+              <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5" x-text="item.th"></div>
             </template>
           </div>
           <div class="mt-2 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
@@ -190,15 +190,15 @@
         <span class="absolute top-2 right-2 bg-neutral-900/85 text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded shadow">★ {{ item.score_display }}</span>
         {% endif %}
       </a>
-      <div class="p-3 flex-1 flex flex-col justify-between">
+      <div class="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
         <div>
-          <h3 class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-1">
+          <h3 class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white group-hover:text-purple-500 transition line-clamp-2 leading-snug">
             <a href="/updates/{{ item.id }}">{{ item.clean_title_hi or item.title_hi or item.title_en }}</a>
           </h3>
           {% set main_t = (item.clean_title_hi or item.title_hi or item.title_en or '') | trim %}
           {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
           {% if sub_t and sub_t.lower() != main_t.lower() %}
-          <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5">{{ sub_t }}</div>
+          <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5">{{ sub_t }}</div>
           {% endif %}
         </div>
         <div class="mt-2 pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
@@ -212,7 +212,7 @@
 
   <!-- Fallback SSR Grid for non-JS / crawlers -->
   <noscript>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
       {% for item in items %}
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-3">
         <a href="/updates/{{ item.id }}">
@@ -221,7 +221,7 @@
           {% set main_t = (item.clean_title_hi or item.title_hi or item.title_en or '') | trim %}
           {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
           {% if sub_t and sub_t.lower() != main_t.lower() %}
-          <div class="text-[11px] text-purple-500 font-medium line-clamp-1 mt-0.5">{{ sub_t }}</div>
+          <div class="text-[11px] text-purple-500 font-medium truncate mt-0.5">{{ sub_t }}</div>
           {% endif %}
         </a>
       </div>

@@ -208,6 +208,10 @@ def sanitize_proper_nouns(text: str) -> str:
 
 # Reviewed canonical override dictionary for verified anime titles
 REVIEWED_TRANSLITERATION_MAP: dict[str, str] = {
+    "renegade immortal": "रेनेगेड इम्मॉर्टल",
+    "xian ni": "रेनेगेड इम्मॉर्टल",
+    "muse asia": "Muse Asia",
+    "ani-one asia": "Ani-One Asia",
     "one piece": "वन पीस",
     "one piece film: red": "वन पीस फिल्म: रेड",
     "oshi no ko": "ओशी नो को",

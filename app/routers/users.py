@@ -134,6 +134,7 @@ def get_oauth_client():
 
 # ---------- AUTH: LOGIN & LOGOUT ----------
 @router.get("/auth/login", response_class=HTMLResponse)
+@router.get("/login", response_class=HTMLResponse)
 async def user_login_page(
     request: Request,
     registered: str = "",
@@ -166,6 +167,7 @@ async def user_login_page(
 
 
 @router.post("/auth/login", response_class=HTMLResponse)
+@router.post("/login", response_class=HTMLResponse)
 async def user_login(
     request: Request,
     email: str = Form(...),
@@ -344,6 +346,7 @@ async def user_login(
 
 
 @router.get("/auth/register", response_class=HTMLResponse)
+@router.get("/register", response_class=HTMLResponse)
 async def user_register_page(request: Request):
     user = await get_current_user(request)
     if user and user.get("user_type") == "user":
@@ -531,6 +534,7 @@ async def auth_google_callback(request: Request):
 
 
 @router.post("/auth/register", response_class=HTMLResponse)
+@router.post("/register", response_class=HTMLResponse)
 async def user_register(
     request: Request,
     email: str = Form(...),

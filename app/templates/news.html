@@ -57,17 +57,17 @@
     </div>
 
     <!-- Category Filter Chips & Archive Toggle -->
-    <div class="flex flex-wrap items-center gap-2 pt-5">
-      <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category and not is_archive %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+    <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar gap-2 pb-1 pt-5 max-w-full">
+      <a href="/news" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 {% if not current_news_category and not is_archive %}bg-red-600 text-white shadow-sm{% else %}text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700{% endif %}">
         सभी (All)
       </a>
       {% for cat in news_categories %}
-      <a href="/news?category={{ cat.slug }}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if current_news_category == cat.slug %}bg-red-600 text-white shadow-sm{% else %}bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10{% endif %}">
+      <a href="/news?category={{ cat.slug }}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if current_news_category == cat.slug %}bg-red-600 text-white shadow-sm{% else %}text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700{% endif %}">
         <i class="fas {{ cat.icon }} text-[10px]"></i>
         <span>{{ cat.name_hi }} ({{ cat.name_en }})</span>
       </a>
       {% endfor %}
-      <a href="/news/archive" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if is_archive %}bg-amber-600 text-white shadow-sm{% else %}bg-white/5 text-amber-400 hover:bg-white/10 border border-amber-500/20{% endif %}" title="View 30+ days historical archive">
+      <a href="/news/archive" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 {% if is_archive %}bg-amber-600 text-white shadow-sm{% else %}text-amber-800 bg-amber-50 hover:bg-amber-100 border-amber-300 dark:text-amber-400 dark:bg-white/5 dark:hover:bg-white/10 dark:border-amber-500/20{% endif %}" title="View 30+ days historical archive">
         <i class="fas fa-box-archive text-[10px]"></i>
         <span>पुरालेख (Archive)</span>
       </a>
@@ -108,7 +108,7 @@
                   घोषणा
                 </span>
                 {% elif feat.news_category %}
-                <span class="bg-neutral-950/80 backdrop-blur-md text-red-400 text-xs font-bold px-2 py-0.5 rounded border border-red-500/30">
+                <span class="bg-neutral-950/80  text-red-400 text-xs font-bold px-2 py-0.5 rounded border border-red-500/30">
                   {{ feat.news_category }}
                 </span>
                 {% endif %}
@@ -244,7 +244,7 @@
     </div>
 
     <!-- NEWS CARDS GRID -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
       {% for item in items %}
       {% if page != 1 or not featured_item or item.id != featured_item.id %}
       <article class="group rounded-xl overflow-hidden bg-neutral-900/70 border border-white/10 hover:border-red-500/40 transition-all duration-300 flex flex-col shadow-sm hover:shadow-xl">
@@ -262,26 +262,30 @@
 
           <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
             {% if item.content_type == 'trailer' or item.news_category == 'Trailer' %}
-            <span class="bg-amber-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+            <span class="bg-amber-600/90  text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
               ट्रेलर
             </span>
             {% elif item.news_category == 'Announcement' %}
-            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+            <span class="bg-red-600/90  text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
               घोषणा
             </span>
+            {% elif item.news_category == 'Movie' or item.news_category == 'फ़िल्म' %}
+            <span class="bg-purple-600/95 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              फ़िल्म
+            </span>
             {% elif item.news_category %}
-            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
-              {{ item.news_category }}
+            <span class="bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+              {{ 'फ़िल्म' if item.news_category == 'Movie' else item.news_category }}
             </span>
             {% else %}
-            <span class="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
+            <span class="bg-red-600/90  text-white text-[10px] font-bold px-2 py-0.5 rounded shadow uppercase">
               समाचार
             </span>
             {% endif %}
           </div>
         </a>
 
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+        <div class="p-2.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3">
           <div>
             <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
               <span class="truncate max-w-[120px] font-semibold text-gray-300">{{ item.source_name }}</span>
@@ -291,7 +295,7 @@
               </span>
             </div>
 
-            <h3 class="text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
+            <h3 class="text-xs sm:text-base font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
               <a href="/updates/{{ item.id }}" class="news-card-title"
                  data-title-hi="{{ item.title_hi or item.title_en }}"
                  data-title-en="{{ item.title_en }}"
@@ -307,7 +311,7 @@
             {% endif %}
 
             {% if item.summary_hi or item.summary_en %}
-            <p class="news-card-summary text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed"
+            <p class="news-card-summary hidden sm:block sm:line-clamp-2 text-xs text-gray-400 mt-2 leading-relaxed"
                data-summary-hi="{{ (item.summary_hi or item.summary_en or '') | short_description(120) }}"
                data-summary-en="{{ (item.summary_en or item.summary_hi or '') | short_description(120) }}"
                data-has-hi="{{ '1' if (item.summary_hi and item.summary_hi != item.summary_en) else '0' }}">

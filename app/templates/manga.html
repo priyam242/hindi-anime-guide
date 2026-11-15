@@ -94,7 +94,7 @@
 
   <!-- Loading Skeletons (Requirement 6) -->
   <div x-show="loading" style="display: none;" class="space-y-6 pt-2">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
       {% for _ in range(6) %}
       <div class="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 space-y-3 animate-pulse">
         <div class="flex gap-3.5">
@@ -121,11 +121,11 @@
     <!-- Macro for structured short bullet list card (Requirements 3 & 5) -->
     {% macro render_manga_card(m) %}
     {% set ch_num = m.latest_chapter or m.chapters %}
-    <article class="p-4 rounded-xl bg-white dark:bg-neutral-900/80 border border-gray-200 dark:border-white/10 hover:border-emerald-500/40 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-3 min-w-0">
+    <article class="p-2.5 sm:p-4 rounded-xl bg-white dark:bg-neutral-900/80 border border-gray-200 dark:border-white/10 hover:border-emerald-500/40 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-2 sm:space-y-3 min-w-0">
       
       <!-- Top: Poster + Title Header -->
       <div class="flex items-start gap-3.5 min-w-0">
-        <a href="/manga/{{ m.id }}" class="w-16 sm:w-20 aspect-[2/3] rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-gray-200 dark:border-white/10 group shadow-sm">
+        <a href="/manga/{{ m.id }}" class="w-12 sm:w-20 aspect-[2/3] rounded-lg overflow-hidden bg-neutral-950 shrink-0 block border border-gray-200 dark:border-white/10 group shadow-sm">
           {% if m.image_url %}
           <img src="{{ m.image_url }}" alt="{{ m.title_en }}"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -284,7 +284,7 @@
           </div>
           <span class="text-xs text-gray-400 font-mono">{{ this_week_chapters|length }} सीरीज़</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {% for m in this_week_chapters %}
           {{ render_manga_card(m) }}
           {% endfor %}
@@ -303,7 +303,7 @@
           </div>
           <span class="text-xs text-gray-400 font-mono">{{ ongoing_series|length }} सीरीज़</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {% for m in (ongoing_series_deduped if ongoing_series_deduped is defined else ongoing_series)[:12] %}
           {{ render_manga_card(m) }}
           {% endfor %}
@@ -331,7 +331,7 @@
           </div>
           <span class="text-xs text-gray-400 font-mono">{{ completed_series|length }} सीरीज़</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {% for m in completed_series[:8] %}
           {{ render_manga_card(m) }}
           {% endfor %}
@@ -359,7 +359,7 @@
           </div>
           <span class="text-xs text-gray-400 font-mono">{{ new_volumes|length }} सीरीज़</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {% for m in new_volumes %}
           {{ render_manga_card(m) }}
           {% endfor %}
@@ -387,7 +387,7 @@
           <span class="text-xs text-gray-400 font-mono">कुल {{ total_count }}</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
           {% for m in items %}
           {{ render_manga_card(m) }}
           {% endfor %}

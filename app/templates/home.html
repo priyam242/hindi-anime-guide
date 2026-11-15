@@ -94,20 +94,20 @@
                 </div>
 
                 <!-- Verified High-Impact Metrics Counter -->
-                <div class="pt-6 border-t border-gray-200 dark:border-white/10 flex flex-wrap items-center gap-6 sm:gap-8">
+                <div class="pt-6 border-t border-gray-200 dark:border-white/10 grid grid-cols-3 gap-2 text-center sm:text-left sm:flex sm:items-center sm:gap-8">
                     <div>
-                        <strong class="text-gray-900 dark:text-white font-black text-lg sm:text-xl">24/7</strong>
-                        <span class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ml-1.5">Live Updates</span>
+                        <strong class="text-gray-900 dark:text-white font-black text-base sm:text-xl block sm:inline">24/7</strong>
+                        <span class="text-gray-500 dark:text-gray-400 text-[11px] sm:text-sm sm:ml-1.5 block sm:inline">Live Updates</span>
                     </div>
-                    <span class="text-gray-300 dark:text-white/20">|</span>
+                    <span class="hidden sm:inline text-gray-300 dark:text-white/20">|</span>
                     <div>
-                        <strong class="text-gray-900 dark:text-white font-black text-lg sm:text-xl">500+</strong>
-                        <span class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ml-1.5">Hindi Episodes</span>
+                        <strong class="text-gray-900 dark:text-white font-black text-base sm:text-xl block sm:inline">500+</strong>
+                        <span class="text-gray-500 dark:text-gray-400 text-[11px] sm:text-sm sm:ml-1.5 block sm:inline">Hindi Episodes</span>
                     </div>
-                    <span class="text-gray-300 dark:text-white/20">|</span>
+                    <span class="hidden sm:inline text-gray-300 dark:text-white/20">|</span>
                     <div>
-                        <strong class="text-emerald-600 dark:text-emerald-400 font-black text-lg sm:text-xl">50+</strong>
-                        <span class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ml-1.5">Anime Guides</span>
+                        <strong class="text-emerald-600 dark:text-emerald-400 font-black text-base sm:text-xl block sm:inline">50+</strong>
+                        <span class="text-gray-500 dark:text-gray-400 text-[11px] sm:text-sm sm:ml-1.5 block sm:inline">Anime Guides</span>
                     </div>
                 </div>
             </div>
@@ -121,16 +121,16 @@
                 <span>आधिकारिक स्ट्रीमिंग प्लेटफॉर्म्स:</span>
             </div>
             <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                <a href="/explore?platform=Crunchyroll" class="badge-neon-platform badge-neon-crunchyroll py-1.5 px-4 text-xs sm:text-sm" title="Watch on Crunchyroll">
+                <a href="/explore?platform=Crunchyroll" translate="no" class="badge-neon-platform notranslate badge-neon-crunchyroll py-1.5 px-4 text-xs sm:text-sm" title="Watch on Crunchyroll">
                     <i class="fas fa-play-circle"></i> Crunchyroll
                 </a>
-                <a href="/explore?platform=Netflix" class="badge-neon-platform badge-neon-netflix py-1.5 px-4 text-xs sm:text-sm" title="Watch on Netflix">
+                <a href="/explore?platform=Netflix" translate="no" class="badge-neon-platform notranslate badge-neon-netflix py-1.5 px-4 text-xs sm:text-sm" title="Watch on Netflix">
                     <i class="fas fa-film"></i> Netflix
                 </a>
-                <a href="/explore?platform=JioHotstar" class="badge-neon-platform badge-neon-jiohotstar py-1.5 px-4 text-xs sm:text-sm" title="Watch on JioHotstar">
+                <a href="/explore?platform=JioHotstar" translate="no" class="badge-neon-platform notranslate badge-neon-jiohotstar py-1.5 px-4 text-xs sm:text-sm" title="Watch on JioHotstar">
                     <i class="fas fa-tv"></i> JioHotstar
                 </a>
-                <a href="/explore?platform=Prime+Video" class="badge-neon-platform badge-neon-prime py-1.5 px-4 text-xs sm:text-sm" title="Watch on Prime Video">
+                <a href="/explore?platform=Prime+Video" translate="no" class="badge-neon-platform notranslate badge-neon-prime py-1.5 px-4 text-xs sm:text-sm" title="Watch on Prime Video">
                     <i class="fas fa-video"></i> Prime Video
                 </a>
             </div>
@@ -141,7 +141,7 @@
     <!-- Latest Published Anime News & Airing Schedule -->
     {% if latest_updates and latest_updates|length > 0 %}
     <section class="w-full">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
                 <h2 class="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
                     <i class="fas fa-bolt text-amber-500"></i>
@@ -174,7 +174,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {% for upd in latest_updates[:4] %}
             <a href="/updates/{{ upd.id }}" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
                 <div class="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -194,17 +194,17 @@
                     </div>
                     {% endif %}
                     {% if upd.content_type == 'news' %}
-                    <span class="absolute top-2 left-2 bg-red-600/95 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
+                    <span class="absolute top-2 left-2 bg-red-600/95 text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
                         <i class="fas fa-newspaper text-[9px]"></i>
                         <span>ताज़ा समाचार</span>
                     </span>
                     {% elif upd.content_type == 'schedule' %}
-                    <span class="absolute top-2 left-2 bg-purple-600/95 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
+                    <span class="absolute top-2 left-2 bg-purple-600/95 text-white text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wide uppercase flex items-center gap-1">
                         <i class="fas fa-calendar-alt text-[9px]"></i>
                         <span>सीज़न शेड्यूल</span>
                     </span>
                     {% else %}
-                    <span class="absolute top-2 left-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                    <span class="absolute top-2 left-2 bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                         {{ upd.content_type }}
                     </span>
                     {% endif %}
@@ -222,7 +222,7 @@
                             data-has-hi="{{ '1' if (upd.title_hi and upd.title_hi != upd.title_en) else '0' }}">
                             {{ upd.title_hi or upd.title_en }}
                         </h3>
-                        <p class="home-upd-summary text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed"
+                        <p class="home-upd-summary hidden sm:block sm:line-clamp-2 text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed"
                             data-summary-hi="{{ (upd.summary_hi or upd.summary_en or '') | short_description(110) }}"
                             data-summary-en="{{ (upd.summary_en or upd.summary_hi or '') | short_description(110) }}"
                             data-has-hi="{{ '1' if (upd.summary_hi and upd.summary_hi != upd.summary_en) else '0' }}">
@@ -279,7 +279,7 @@
                     <div class="card-content">
                         <div class="flex items-center justify-between gap-1 mb-2.5">
                             <span class="category-tag">{{ article.category_name_hi or 'गाइड' }}</span>
-                            <span class="text-xs text-gray-300 font-semibold px-2 py-0.5 rounded bg-black/40 backdrop-blur-sm">{{ article.reading_time_minutes or 4 }}m</span>
+                            <span class="text-xs text-gray-300 font-semibold px-2 py-0.5 rounded bg-black/60">{{ article.reading_time_minutes or 4 }}m</span>
                         </div>
                         <h3 class="card-title">{{ article.title }}</h3>
 
@@ -289,25 +289,25 @@
                             {% for p in article.platform_names[:3] %}
                                 {% set p_lower = p|lower %}
                                 {% if 'crunchy' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-crunchyroll py-1 px-2.5 text-[11px]"><i class="fas fa-play-circle text-[10px]"></i> Crunchyroll</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-crunchyroll py-1 px-2.5 text-[11px]"><i class="fas fa-play-circle text-[10px]"></i> Crunchyroll</span>
                                 {% elif 'netflix' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-netflix py-1 px-2.5 text-[11px]"><i class="fas fa-film text-[10px]"></i> Netflix</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-netflix py-1 px-2.5 text-[11px]"><i class="fas fa-film text-[10px]"></i> Netflix</span>
                                 {% elif 'jiohotstar' in p_lower or 'hotstar' in p_lower or 'jiocinema' in p_lower or 'jio cinema' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JioHotstar</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-jiohotstar py-1 px-2.5 text-[11px]"><i class="fas fa-tv text-[10px]"></i> JioHotstar</span>
                                 {% elif 'prime' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-prime py-1 px-2.5 text-[11px]"><i class="fas fa-video text-[10px]"></i> Prime Video</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-prime py-1 px-2.5 text-[11px]"><i class="fas fa-video text-[10px]"></i> Prime Video</span>
                                 {% elif 'muse' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Muse Asia</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Muse Asia</span>
                                 {% elif 'ani-one' in p_lower or 'anione' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Ani-One Asia</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> Ani-One Asia</span>
                                 {% elif 'youtube' in p_lower %}
-                                <span class="badge-neon-platform badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> YouTube</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-youtube py-1 px-2.5 text-[11px]"><i class="fab fa-youtube text-[10px]"></i> YouTube</span>
                                 {% else %}
-                                <span class="badge-neon-platform badge-neon-default py-1 px-2.5 text-[11px]">{{ p }}</span>
+                                <span translate="no" class="badge-neon-platform notranslate badge-neon-default py-1 px-2.5 text-[11px]">{{ p }}</span>
                                 {% endif %}
                             {% endfor %}
                             {% if article.platform_names|length > 3 %}
-                            <span class="badge-neon-platform badge-neon-default py-1 px-2.5 text-[11px]">+{{ article.platform_names|length - 3 }}</span>
+                            <span translate="no" class="badge-neon-platform notranslate badge-neon-default py-1 px-2.5 text-[11px]">+{{ article.platform_names|length - 3 }}</span>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -333,7 +333,7 @@
     </section>
 
     <!-- Updates CTA Banner (3D Glass Card) -->
-    <div class="w-full p-8 sm:p-12 lg:p-14 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/5 to-white dark:from-red-950/40 dark:via-gray-900 dark:to-gray-950 border border-red-500/20 text-center shadow-xl backdrop-blur-md relative overflow-hidden" data-tilt>
+    <div class="w-full p-8 sm:p-12 lg:p-14 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/5 to-white dark:from-red-950/40 dark:via-gray-900 dark:to-gray-950 border border-red-500/20 text-center shadow-xl relative overflow-hidden" data-tilt>
         <div class="absolute right-0 bottom-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-rose-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg shadow-red-600/35 transform -rotate-3 hover:rotate-0 transition-transform">
             <i class="fas fa-bell"></i>

@@ -1031,6 +1031,20 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 it["image_url"] = it["image_url"].replace("/medium/", "/large/")
             elif "/small/" in it["image_url"]:
                 it["image_url"] = it["image_url"].replace("/small/", "/large/")
+
+        # Strictly sanitize English/Romaji subtitle to clean English (0 Devanagari characters)
+        raw_en = (it.get("title_en") or "").strip()
+        raw_ro = (it.get("title_romaji") or "").strip()
+        if "renegade" in raw_en.lower() or "renegade" in raw_ro.lower() or "पाखण्डी" in raw_en or "पाखण्डी" in raw_ro or "पाखण्डी" in str(it.get("title_hi", "")):
+            it["title_en"] = "Renegade Immortal"
+            it["title_romaji"] = "Renegade Immortal"
+            it["title_hi"] = "रेनेगेड इम्मॉर्टल"
+        else:
+            if any('\u0900' <= c <= '\u097f' for c in raw_en):
+                it["title_en"] = raw_ro if (raw_ro and not any('\u0900' <= c <= '\u097f' for c in raw_ro)) else re.sub(r'[\u0900-\u097f]+', '', raw_en).strip()
+            if any('\u0900' <= c <= '\u097f' for c in raw_ro):
+                it["title_romaji"] = it["title_en"]
+
         raw_t = it.get("title_hi") or ""
         if not raw_t or re.search(r'[A-Za-z]{3,}', raw_t):
             from app.transliteration import transliterate_anime_title
@@ -1135,6 +1149,11 @@ def schedule_page(
         t_clean = strip_parenthetical_english(it.get("clean_title_hi") or it.get("title_hi") or it.get("title_en") or "").strip()
         t_main = t_clean or (it.get("title_hi") or it.get("title_en") or "").strip()
         t_sub = (it.get("title_en") or it.get("title_romaji") or "").strip()
+        if any('\u0900' <= c <= '\u097f' for c in t_sub) or t_sub.lower() in ["पाखण्डी अमर", "रेनेगेड इम्मॉर्टल"]:
+            cand = it.get("title_romaji") or ""
+            t_sub = cand if (cand and not any('\u0900' <= c <= '\u097f' for c in cand)) else re.sub(r'[\u0900-\u097f]+', '', t_sub).strip()
+            if not t_sub and "renegade" in str(it.get("id", "")).lower():
+                t_sub = "Renegade Immortal"
         if not t_main:
             t_main = t_sub
         if t_sub.strip().lower() == t_main.strip().lower():

@@ -40,7 +40,7 @@ def hindi_date(dt: Optional[Union[date, datetime, str]]) -> str:
 def short_description(text: str, limit: int = 155) -> str:
     """
     Cuts at a word boundary (never in the middle of a Devanagari word/conjunct)
-    and strips the '[नमूना]' prefix.
+    and strips the '[नमूना]' prefix, appending clean '...' when truncated.
     """
     if not text:
         return ""
@@ -57,7 +57,7 @@ def short_description(text: str, limit: int = 155) -> str:
     if last_space > 0:
         sliced = sliced[:last_space].rstrip(" ,.;:!?।-")
 
-    return sliced
+    return f"{sliced}..." if sliced else ""
 
 
 def first_words(text: str, count: int = 2) -> str:
