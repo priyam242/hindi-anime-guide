@@ -30,8 +30,7 @@ async def lifespan(app: FastAPI):
     # Pre-warm in-memory caches for all Gunicorn workers
     try:
         from .routers.pages import prewarm_public_pages
-        import threading
-        threading.Thread(target=prewarm_public_pages, daemon=True).start()
+        prewarm_public_pages()
     except Exception:
         pass
 

@@ -138,7 +138,7 @@
     <template x-for="item in displayedCards" :key="item.id">
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 transition flex flex-col shadow-sm">
         <a :href="'/updates/' + item.id" class="block relative aspect-[3/4] overflow-hidden bg-neutral-950">
-          <img :src="item.img || '/static/placeholder.svg'" :alt="item.t" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/static/placeholder.svg';">
+          <img :src="item.img || '/media/covers/anime_naruto.webp'" :alt="item.t" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/media/covers/anime_naruto.webp';">
           <template x-if="item.is_donghua || item.country === 'CN'">
             <span class="absolute top-2 left-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">डोंगहुआ (Donghua)</span>
           </template>
@@ -178,7 +178,7 @@
     {% for item in items %}
     <div x-show="displayedCards.length === 0" class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 transition flex flex-col shadow-sm">
       <a href="/updates/{{ item.id }}" class="block relative aspect-[3/4] overflow-hidden bg-neutral-950">
-        <img src="{{ item.image_url or '/static/placeholder.svg' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/static/placeholder.svg';">
+        <img src="{{ item.image_url or '/media/covers/anime_naruto.webp' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" referrerpolicy="no-referrer" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='/media/covers/anime_naruto.webp';">
         {% if item.is_donghua or item.country_of_origin == 'CN' or item.country == 'CN' %}
         <span class="absolute top-2 left-2 bg-amber-600/95 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow uppercase">डोंगहुआ (Donghua)</span>
         {% elif item.episode %}
@@ -216,7 +216,7 @@
       {% for item in items %}
       <div class="schedule-card group rounded-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 p-3">
         <a href="/updates/{{ item.id }}">
-          <img src="{{ item.image_url or '/static/placeholder.svg' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" class="aspect-[3/4] object-cover rounded-lg">
+          <img src="{{ item.image_url or '/media/covers/anime_naruto.webp' }}" alt="{{ item.title_hi or item.title_en }}" loading="lazy" width="300" height="400" class="aspect-[3/4] object-cover rounded-lg">
           <h3 class="text-sm font-bold mt-2">{{ item.clean_title_hi or item.title_hi or item.title_en }}</h3>
           {% set main_t = (item.clean_title_hi or item.title_hi or item.title_en or '') | trim %}
           {% set sub_t = (item.title_en or item.title_romaji or '') | trim %}
