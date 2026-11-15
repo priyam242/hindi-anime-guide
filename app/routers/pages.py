@@ -1032,9 +1032,9 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
             elif "/small/" in it["image_url"]:
                 it["image_url"] = it["image_url"].replace("/small/", "/large/")
         raw_t = it.get("title_hi") or ""
-        if not raw_t or all(ord(c) < 128 for c in raw_t if c.isalpha()):
+        if not raw_t or re.search(r'[A-Za-z]{3,}', raw_t):
             from app.transliteration import transliterate_anime_title
-            trans_t = transliterate_anime_title(it.get("title_en") or it.get("title_romaji") or "")
+            trans_t = transliterate_anime_title(it.get("title_en") or it.get("title_romaji") or raw_t)
             if trans_t:
                 it["title_hi"] = trans_t
                 raw_t = trans_t

@@ -239,10 +239,24 @@
             {% endif %}
           </li>
           {% endif %}
-          {% if item.status_display or item.publication_status or item.status %}
+          {% set raw_st = (item.status_display or item.publication_status or (item.status if item.status not in ['published', 'draft', 'stale'] else '') or '').strip() %}
+          {% if raw_st %}
           <li class="flex items-start gap-2 bg-white/5 p-3 rounded-lg border border-white/5">
             <span class="text-gray-400 font-medium shrink-0">Status (स्थिति):</span>
-            <span class="text-white font-semibold">{{ item.status_display or item.publication_status or item.status }}</span>
+            {% set st_upper = raw_st.upper() %}
+            {% if 'RELEAS' in st_upper or 'ONGOING' in st_upper or 'जारी' in raw_st %}
+              <span class="text-emerald-400 font-semibold">जारी है (Releasing)</span>
+            {% elif 'FINISH' in st_upper or 'COMPLET' in st_upper or 'समाप्त' in raw_st or 'पूरा' in raw_st %}
+              <span class="text-blue-400 font-semibold">पूरा हो चुका है (Finished)</span>
+            {% elif 'NOT_YET' in st_upper or 'UPCOMING' in st_upper or 'जल्द' in raw_st %}
+              <span class="text-amber-400 font-semibold">जल्द आ रहा है (Upcoming)</span>
+            {% elif 'CANCEL' in st_upper or 'रद्द' in raw_st %}
+              <span class="text-red-400 font-semibold">रद्द (Cancelled)</span>
+            {% elif 'HIATUS' in st_upper or 'विराम' in raw_st %}
+              <span class="text-yellow-400 font-semibold">विराम पर (On Hiatus)</span>
+            {% else %}
+              <span class="text-white font-semibold">{{ raw_st }}</span>
+            {% endif %}
           </li>
           {% endif %}
           {% if item.anilist_score or item.score %}
