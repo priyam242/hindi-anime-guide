@@ -932,15 +932,75 @@ def strip_parenthetical_english(title: str) -> str:
     return cleaned if cleaned else title
 
 
+def clean_base_series_title(title: str) -> str:
+    """Strip trailing English/Hindi episode strings (e.g., 'Episode 8', 'Ep. 8', 'एपिसोड 8')."""
+    if not title:
+        return ""
+    pattern = r"\s*(?:[-–—:]?\s*)?(?:Episode|Ep\.?|एपिसोड|Part|भाग)\s*\d+.*$"
+    cleaned = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
+    return cleaned if cleaned else title
+
+
+def get_canonical_series_keys(item_or_draft: dict[str, Any] | AnimeDraft) -> set[str]:
+    """Extract canonical series keys (anilist_id, normalized english title, normalized hindi title)
+    to guarantee 1 Anime Series = max 1 card across the weekly schedule.
+    """
+    keys = set()
+    anilist_id = None
+    if isinstance(item_or_draft, dict):
+        anilist_id = item_or_draft.get("media_id") or item_or_draft.get("anilist_id")
+        if not anilist_id:
+            raw_id = str(item_or_draft.get("id") or "")
+            m = re.search(r'(?:anilist|schedule)_(\d+)', raw_id)
+            if m:
+                anilist_id = int(m.group(1))
+        title_en = item_or_draft.get("title_en") or ""
+        title_hi = item_or_draft.get("title_hi") or ""
+    else:
+        anilist_id = getattr(item_or_draft, "anilist_id", None)
+        if not anilist_id:
+            ext_id = getattr(item_or_draft, "external_id", "") or ""
+            m = re.search(r'(?:anilist|schedule)_(\d+)', ext_id)
+            if m:
+                anilist_id = int(m.group(1))
+        title_en = getattr(item_or_draft, "title_en", "") or ""
+        title_hi = getattr(item_or_draft, "title_hi", "") or ""
+
+    if anilist_id:
+        keys.add(f"anilist_{anilist_id}")
+
+    clean_en = clean_base_series_title(title_en)
+    slug_en = re.sub(r'[^a-z0-9]', '', clean_en.lower())
+    if slug_en:
+        keys.add(f"en_{slug_en}")
+
+    clean_hi = clean_base_series_title(title_hi)
+    slug_hi = re.sub(r'[\s\-–—:]+', '', clean_hi.strip())
+    if slug_hi:
+        keys.add(f"hi_{slug_hi}")
+
+    return keys
+
+
 def compute_schedule_page_data(session: Session, season: Optional[str] = None, year: Optional[int] = None) -> dict[str, Any]:
-    """Fetch and aggregate live weekly airing schedule and season premieres."""
+    """Fetch and aggregate live weekly airing schedule and season premieres with strict deduplication."""
     schedule_data = fetch_live_weekly_schedule(season=season, year=year)
     season_info = schedule_data.get("season_info") or get_season_cycle()
-    weekly_items = list(schedule_data.get("weekly_items") or [])
+    raw_weekly_items = list(schedule_data.get("weekly_items") or [])
     premiering_items = schedule_data.get("premiering_items") or []
     today_idx = schedule_data.get("today_idx", 0)
 
-    # Query active non-stale database schedule drafts and merge
+    # 1. Deduplicate raw weekly items (e.g. multiple episodes of same show in one week)
+    weekly_items: list[dict[str, Any]] = []
+    seen_keys: set[str] = set()
+    for it in raw_weekly_items:
+        keys = get_canonical_series_keys(it)
+        if any(k in seen_keys for k in keys):
+            continue
+        seen_keys.update(keys)
+        weekly_items.append(it)
+
+    # 2. Query active non-stale database schedule drafts and merge
     base_query = select(AnimeDraft).where(
         AnimeDraft.status == "published",
         AnimeDraft.is_stale == False,
@@ -950,78 +1010,94 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
         base_query.order_by(AnimeDraft.published_at.desc(), AnimeDraft.id.desc())
     ).all())
 
-    seen_titles = {str(item.get("title_en", "")).lower() for item in weekly_items}
+    DAY_NAMES_HI = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+
     for db_item in db_items:
         # Strictly exclude completed/catalog anime with stale JST broadcast strings
         if db_item.airing_time and "JST" in db_item.airing_time:
             continue
-        title_en = db_item.title_en or ""
-        if title_en and title_en.lower() not in seen_titles:
-            airing_ts = int(db_item.published_at.timestamp()) if db_item.published_at else 0
-            if db_item.published_at:
-                dt_ist = db_item.published_at.astimezone(IST_TZ) if db_item.published_at.tzinfo else db_item.published_at.replace(tzinfo=timezone.utc).astimezone(IST_TZ)
-            else:
-                dt_ist = datetime.now(IST_TZ)
-            ep_num = extract_episode(db_item.external_id) or extract_episode(db_item.title_en)
-            has_hindi = bool(getattr(db_item, "hindi_dub", False))
-            dub_links = []
-            if getattr(db_item, "dub_platform", None):
-                p_name = db_item.dub_platform
-                p_cls = PLATFORM_CLASSES.get(p_name, {"name": p_name, "short": p_name[:2].upper(), "class": ""})
-                dub_links.append({
-                    "name": p_cls["name"],
-                    "short": p_cls["short"],
-                    "url": getattr(db_item, "dub_source_url", "") or "#",
-                    "class": p_cls["class"],
-                })
+        keys = get_canonical_series_keys(db_item)
+        if any(k in seen_keys for k in keys):
+            continue
+        seen_keys.update(keys)
 
-            clean_air_time = db_item.airing_time
-            if not clean_air_time or "JST" in clean_air_time:
-                clean_air_time = dt_ist.strftime("%I:%M %p IST").lstrip("0")
+        title_en = clean_base_series_title(db_item.title_en or "")
+        title_hi = clean_base_series_title(db_item.title_hi or title_en)
+        if db_item.published_at:
+            dt_ist = db_item.published_at.astimezone(IST_TZ) if db_item.published_at.tzinfo else db_item.published_at.replace(tzinfo=timezone.utc).astimezone(IST_TZ)
+        else:
+            dt_ist = datetime.now(IST_TZ)
+        airing_ts = int(dt_ist.timestamp())
+        w = dt_ist.weekday()
+        d = DAY_NAMES_HI[w]
+        ep_num = extract_episode(db_item.external_id) or extract_episode(db_item.title_en)
+        has_hindi = bool(getattr(db_item, "hindi_dub", False))
+        dub_links = []
+        if getattr(db_item, "dub_platform", None):
+            p_name = db_item.dub_platform
+            p_cls = PLATFORM_CLASSES.get(p_name, {"name": p_name, "short": p_name[:2].upper(), "class": ""})
+            dub_links.append({
+                "name": p_cls["name"],
+                "short": p_cls["short"],
+                "url": getattr(db_item, "dub_source_url", "") or "#",
+                "class": p_cls["class"],
+            })
 
-            item_dict = {
-                "id": db_item.id,
-                "media_id": db_item.anilist_id or db_item.id,
-                "mal_id": db_item.mal_id,
-                "episode": ep_num,
-                "airing_at": airing_ts,
-                "airing_at_iso": db_item.published_at.isoformat() if db_item.published_at else "",
-                "airing_ist_weekday": dt_ist.weekday(),
-                "airing_ist_time": clean_air_time,
-                "title_en": title_en,
-                "title_romaji": db_item.title_en,
-                "title_hi": db_item.title_hi or title_en,
-                "image_url": (db_item.image_url or "").replace("/medium/", "/large/").replace("/small/", "/large/"),
-                "studio": normalize_studio_name("Official Studio"),
-                "source": "MANGA",
-                "source_display_hi": "मंगा",
-                "score": 85,
-                "score_display": "8.5",
-                "score_source": "AniList",
-                "popularity": 100000,
-                "popularity_display": "100.0k",
-                "members": 100000,
-                "members_display": "100.0k",
-                "streaming_links": dub_links,
-                "has_verified_hindi_dub": has_hindi,
-                "summary_en": db_item.summary_en or "",
-                "summary_hi": db_item.summary_hi or db_item.summary_en or "",
-                "source_url": db_item.source_url or "",
-                "status": "RELEASING",
-                "format": "TV",
-                "is_kids_or_short": False,
-                "country_of_origin": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
-                "country": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
-                "is_donghua": (getattr(db_item, "country_of_origin", "JP") or "JP").upper() == "CN",
-            }
-            weekly_items.insert(0, item_dict)
-            seen_titles.add(title_en.lower())
+        clean_air_time = db_item.airing_time
+        if not clean_air_time or "JST" in clean_air_time:
+            clean_air_time = dt_ist.strftime("%I:%M %p IST").lstrip("0")
 
-    DAY_NAMES_HI = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+        item_dict = {
+            "id": db_item.id,
+            "media_id": db_item.anilist_id or db_item.id,
+            "mal_id": db_item.mal_id,
+            "episode": ep_num,
+            "airing_at": airing_ts,
+            "airing_at_iso": db_item.published_at.isoformat() if db_item.published_at else "",
+            "airing_ist_weekday": w,
+            "day_name_hi": d,
+            "airing_ist_time": clean_air_time,
+            "title_en": title_en,
+            "title_romaji": title_en,
+            "title_hi": title_hi,
+            "image_url": (db_item.image_url or "").replace("/medium/", "/large/").replace("/small/", "/large/"),
+            "studio": normalize_studio_name("Official Studio"),
+            "source": "MANGA",
+            "source_display_hi": "मंगा",
+            "score": 85,
+            "score_display": "8.5",
+            "score_source": "AniList",
+            "popularity": 100000,
+            "popularity_display": "100.0k",
+            "members": 100000,
+            "members_display": "100.0k",
+            "streaming_links": dub_links,
+            "has_verified_hindi_dub": has_hindi,
+            "summary_en": db_item.summary_en or "",
+            "summary_hi": db_item.summary_hi or db_item.summary_en or "",
+            "source_url": db_item.source_url or "",
+            "status": "RELEASING",
+            "format": "TV",
+            "is_kids_or_short": False,
+            "country_of_origin": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
+            "country": (getattr(db_item, "country_of_origin", "JP") or "JP").upper(),
+            "is_donghua": (getattr(db_item, "country_of_origin", "JP") or "JP").upper() == "CN",
+        }
+        weekly_items.append(item_dict)
+
+    # 3. Post-processing & strict mathematical weekday alignment for ALL weekly items
     for it in weekly_items:
-        w = it.get("airing_ist_weekday")
-        if w is not None and 0 <= w <= 6 and not it.get("day_name_hi"):
+        airing_ts = it.get("airing_at")
+        if airing_ts:
+            dt_from_ts = datetime.fromtimestamp(airing_ts, tz=timezone.utc).astimezone(IST_TZ)
+            w = dt_from_ts.weekday()
+            it["airing_ist_weekday"] = w
             it["day_name_hi"] = DAY_NAMES_HI[w]
+        else:
+            w = it.get("airing_ist_weekday")
+            if w is not None and 0 <= w <= 6:
+                it["day_name_hi"] = DAY_NAMES_HI[w]
+
         if "is_kids_or_short" not in it:
             it["is_kids_or_short"] = False
         if it.get("airing_ist_time") and "JST" in it["airing_ist_time"]:
@@ -1033,8 +1109,8 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
                 it["image_url"] = it["image_url"].replace("/small/", "/large/")
 
         # Strictly sanitize English/Romaji subtitle to clean English (0 Devanagari characters)
-        raw_en = (it.get("title_en") or "").strip()
-        raw_ro = (it.get("title_romaji") or "").strip()
+        raw_en = clean_base_series_title((it.get("title_en") or "").strip())
+        raw_ro = clean_base_series_title((it.get("title_romaji") or "").strip())
         if "renegade" in raw_en.lower() or "renegade" in raw_ro.lower() or "पाखण्डी" in raw_en or "पाखण्डी" in raw_ro or "पाखण्डी" in str(it.get("title_hi", "")):
             it["title_en"] = "Renegade Immortal"
             it["title_romaji"] = "Renegade Immortal"
@@ -1042,17 +1118,21 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
         else:
             if any('\u0900' <= c <= '\u097f' for c in raw_en):
                 it["title_en"] = raw_ro if (raw_ro and not any('\u0900' <= c <= '\u097f' for c in raw_ro)) else re.sub(r'[\u0900-\u097f]+', '', raw_en).strip()
+            else:
+                it["title_en"] = raw_en
             if any('\u0900' <= c <= '\u097f' for c in raw_ro):
                 it["title_romaji"] = it["title_en"]
+            else:
+                it["title_romaji"] = raw_ro or it["title_en"]
 
-        raw_t = it.get("title_hi") or ""
+        raw_t = clean_base_series_title(it.get("title_hi") or "")
         if not raw_t or re.search(r'[A-Za-z]{3,}', raw_t):
             from app.transliteration import transliterate_anime_title
             trans_t = transliterate_anime_title(it.get("title_en") or it.get("title_romaji") or raw_t)
             if trans_t:
-                it["title_hi"] = trans_t
-                raw_t = trans_t
-        it["clean_title_hi"] = strip_parenthetical_english(raw_t or it.get("title_en") or "")
+                raw_t = clean_base_series_title(trans_t)
+        it["title_hi"] = raw_t
+        it["clean_title_hi"] = clean_base_series_title(strip_parenthetical_english(raw_t or it.get("title_en") or ""))
 
     # Sort all weekly items by AniList popularity (descending)
     weekly_items.sort(key=lambda x: (-int(x.get("popularity") or 0), int(x.get("airing_at") or 0)))
@@ -1117,6 +1197,7 @@ def get_schedule_page_data(session: Session, season: Optional[str] = None, year:
 @router.get("/schedule", response_class=HTMLResponse)
 def schedule_page(
     request: Request,
+    day: Optional[int] = Query(None, ge=0, le=6),
     season: Optional[str] = Query(None),
     year: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
@@ -1132,23 +1213,24 @@ def schedule_page(
     season_info = data["season_info"]
     premiering_items = data["premiering_items"]
     today_idx = data["today_idx"]
+    active_day_idx = day if day is not None else today_idx
 
-    # Initial render: show top 24 cards for today (MAL defaults: hide shorts/kids initially)
+    # Initial render: show top 24 cards for active day (MAL defaults: hide shorts/kids initially)
     # This keeps the initial HTML payload ~200 KB (well under the 300 KB budget)
     initial_items = [
         it for it in weekly_items
-        if it.get("airing_ist_weekday") == today_idx
+        if it.get("airing_ist_weekday") == active_day_idx
         and not it.get("is_kids_or_short")
     ][:24]
     if not initial_items:
-        initial_items = [it for it in weekly_items if it.get("airing_ist_weekday") == today_idx][:24]
+        initial_items = [it for it in weekly_items if it.get("airing_ist_weekday") == active_day_idx][:24]
 
     # Compact dataset for instant client-side tab switching and 'Load More'
     all_cards_compact = []
     for it in weekly_items:
-        t_clean = strip_parenthetical_english(it.get("clean_title_hi") or it.get("title_hi") or it.get("title_en") or "").strip()
-        t_main = t_clean or (it.get("title_hi") or it.get("title_en") or "").strip()
-        t_sub = (it.get("title_en") or it.get("title_romaji") or "").strip()
+        t_clean = clean_base_series_title(strip_parenthetical_english(it.get("clean_title_hi") or it.get("title_hi") or it.get("title_en") or "")).strip()
+        t_main = t_clean or clean_base_series_title((it.get("title_hi") or it.get("title_en") or "")).strip()
+        t_sub = clean_base_series_title((it.get("title_en") or it.get("title_romaji") or "")).strip()
         if any('\u0900' <= c <= '\u097f' for c in t_sub) or t_sub.lower() in ["पाखण्डी अमर", "रेनेगेड इम्मॉर्टल"]:
             cand = it.get("title_romaji") or ""
             t_sub = cand if (cand and not any('\u0900' <= c <= '\u097f' for c in cand)) else re.sub(r'[\u0900-\u097f]+', '', t_sub).strip()
@@ -1192,6 +1274,7 @@ def schedule_page(
         season_info=season_info,
         premiering_items=premiering_items,
         today_idx=today_idx,
+        active_day_idx=active_day_idx,
         page=page,
         total_pages=total_pages,
         total_count=total_count,

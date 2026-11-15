@@ -326,7 +326,7 @@ def test_synopsis_proper_noun_validator_three_examples():
     """Verify synopsis validator with 3 real examples and rejection of hallucinations."""
     # Example 1: Kusuriya no Hitorigoto (The Apothecary Diaries S1)
     ex1_src = "Maomao lived a peaceful life with her apothecary father. Until one day, she’s sold as a lowly servant to the emperor’s palace. She decides to step in and find a cure! This catches the eye of Jinshi, a handsome palace official who promotes her."
-    ex1_hi = "माओमाओ अपने औषधीय पिता के साथ शांत जीवन व्यतीत कर रही थी, जब तक कि उसे सम्राट के महल में एक साधारण सेविका के रूप में बेच नहीं दिया गया। जब शाही वारिस बीमार पड़ते हैं, तो वह आगे आकर उनका इलाज ढूंढती है! यह बात एक सुंदर महल अधिकारी जिनशी का ध्यान आकर्षित करती है, जो उसे पदोन्नत करता है।"
+    ex1_hi = "माओमाओ अपने औषधीय पिता के साथ शांत जीवन व्यतीत कर रही थी, जब तक कि उसे सम्राट के महल में एक साधारण सेविका के रूप में बेच नहीं दिया गया। वह आगे आकर इलाज ढूंढने का फैसला करती है! यह बात एक सुंदर महल अधिकारी जिनशी का ध्यान आकर्षित करती है, जो उसे पदोन्नत करता है।"
     val1, reason1 = validate_proper_nouns_in_hindi(ex1_src, ex1_hi)
     assert val1 is True, f"Example 1 failed: {reason1}"
 

@@ -284,6 +284,34 @@ def save_draft(
         desired_status = status
 
     with Session(eng) as session:
+        # Permanent Sync Lock for schedule: Upsert in place by canonical anilist_id
+        if draft_data.get("content_type") == "schedule" and anilist_id:
+            existing_sched = session.exec(
+                select(AnimeDraft).where(
+                    AnimeDraft.content_type == "schedule",
+                    AnimeDraft.anilist_id == anilist_id,
+                )
+            ).first()
+            if existing_sched:
+                existing_sched.external_id = external_id
+                existing_sched.title_en = title_en
+                if draft_data.get("title_hi"):
+                    existing_sched.title_hi = draft_data.get("title_hi")
+                if draft_data.get("summary_en"):
+                    existing_sched.summary_en = draft_data.get("summary_en")
+                if draft_data.get("summary_hi"):
+                    existing_sched.summary_hi = draft_data.get("summary_hi")
+                if draft_data.get("image_url"):
+                    existing_sched.image_url = draft_data.get("image_url")
+                if draft_data.get("airing_time"):
+                    existing_sched.airing_time = draft_data.get("airing_time")
+                if published_at_dt:
+                    existing_sched.published_at = published_at_dt
+                session.add(existing_sched)
+                session.commit()
+                logger.info("Upserted existing schedule draft ID %s for anilist_id %s.", existing_sched.id, anilist_id)
+                return True, existing_sched.id
+
         # Prevent exact duplicates by external_id
         existing = session.exec(
             select(AnimeDraft).where(AnimeDraft.external_id == external_id)

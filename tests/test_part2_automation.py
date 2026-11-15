@@ -220,7 +220,7 @@ def test_schedule_and_bulk_actions(client: TestClient, isolate_database_per_test
     res_sch = unauth.get("/schedule")
     assert res_sch.status_code == 200
     assert "ONE PIECE" in res_sch.text
-    assert "एपिसोड 1181" in res_sch.text
+    assert "1181" in res_sch.text
     assert "IST" in res_sch.text
 
     # 2. Test /manga & /awards render

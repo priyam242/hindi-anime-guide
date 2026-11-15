@@ -553,6 +553,15 @@ def validate_faithfulness_with_gemini(source_en: str, hindi_text: str) -> tuple[
     return True, "Faithfulness verified"
 
 
+def clean_base_series_title(title: str) -> str:
+    """Strip trailing English/Hindi episode strings (e.g., 'Episode 8', 'Ep. 8', 'एपिसोड 8')."""
+    if not title:
+        return ""
+    pattern = r"\s*(?:[-–—:]?\s*)?(?:Episode|Ep\.?|एपिसोड|Part|भाग)\s*\d+.*$"
+    cleaned = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
+    return cleaned if cleaned else title
+
+
 def clean_description(raw_desc: str) -> str:
     """Strip HTML, spoilers, and markdown links from AniList descriptions.
     Discards empty strings and placeholder descriptions.
@@ -1117,6 +1126,9 @@ def fetch_live_weekly_schedule(
                 schedules = data.get("airingSchedules", [])
                 for s in schedules:
                     media = s.get("media") or {}
+                    media_id = media.get("id")
+                    if not media_id or media_id in seen_media_ids:
+                        continue
                     m_status = media.get("status")
                     # Hide FINISHED shows and shows from past seasons
                     if m_status == "FINISHED" or m_status == "CANCELLED":
@@ -1136,8 +1148,8 @@ def fetch_live_weekly_schedule(
                     dt_jst = datetime.fromtimestamp(airing_at, tz=timezone.utc).astimezone(JST_TZ)
 
                     titles = media.get("title") or {}
-                    title_en = (titles.get("english") or titles.get("romaji") or f"Anime #{media.get('id')}").strip()
-                    title_romaji = (titles.get("romaji") or title_en).strip()
+                    title_en = clean_base_series_title((titles.get("english") or titles.get("romaji") or f"Anime #{media_id}").strip())
+                    title_romaji = clean_base_series_title((titles.get("romaji") or title_en).strip())
 
                     # MAL Defaults: 2. Identify Kids genre & Shorts (<= 10 min)
                     comb_title = f"{title_en} {title_romaji}".lower()
@@ -1164,6 +1176,7 @@ def fetch_live_weekly_schedule(
                         card_season_year=media_year,
                         card_start_date=start_date,
                     )
+                    title_hi = clean_base_series_title(title_hi)
                     # If synopsis is hidden by validator, keep summary_en empty as well
                     summary_en = clean_description(raw_desc) if summary_hi else ""
 

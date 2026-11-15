@@ -280,7 +280,7 @@ function scheduleManager() {
     allCards: [],
     displayedCards: [],
     todayIdx: {{ today_idx if today_idx is defined else 0 }},
-    activeDay: {{ today_idx if today_idx is defined else 0 }},
+    activeDay: {{ active_day_idx if active_day_idx is defined else (today_idx if today_idx is defined else 0) }},
     includeShortsKids: false,
     formatFilter: 'all',
     hindiOnly: false,
@@ -298,6 +298,17 @@ function scheduleManager() {
       } catch (e) {
         console.error('Failed to parse schedule data', e);
       }
+
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dayParam = urlParams.get('day');
+        if (dayParam !== null && !isNaN(parseInt(dayParam))) {
+          const parsed = parseInt(dayParam);
+          if (parsed >= 0 && parsed <= 6) {
+            this.activeDay = parsed;
+          }
+        }
+      } catch (e) {}
 
       setInterval(() => {
         this.now = Math.floor(Date.now() / 1000);

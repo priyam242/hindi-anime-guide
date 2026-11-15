@@ -82,20 +82,23 @@ def _fetch_trailers_pipeline(limit: int = 10) -> list[dict[str, Any]]:
 def _fetch_schedule_pipeline(limit: int = 10) -> list[dict[str, Any]]:
     schedule_data = fetch_live_weekly_schedule(force_refresh=True)
     items: list[dict[str, Any]] = []
-    for day, cards in schedule_data.items():
-        if isinstance(cards, list):
-            for c in cards:
-                items.append({
-                    "external_id": f"schedule_{c.get('media_id')}_ep{c.get('episode')}",
-                    "content_type": "schedule",
-                    "source_name": "AniList Airing Schedule",
-                    "source_url": f"https://anilist.co/anime/{c.get('media_id')}",
-                    "title_en": c.get("title_en") or c.get("title_romaji", ""),
-                    "summary_en": c.get("synopsis_en", ""),
-                    "image_url": c.get("poster_url"),
-                    "airing_day": day,
-                    "airing_time": c.get("airing_time_ist"),
-                })
+    weekly_cards = schedule_data.get("weekly_items") or []
+    for c in weekly_cards:
+        items.append({
+            "external_id": f"schedule_{c.get('media_id')}_ep{c.get('episode')}",
+            "anilist_id": c.get("media_id"),
+            "content_type": "schedule",
+            "source_name": "AniList Airing Schedule",
+            "source_url": f"https://anilist.co/anime/{c.get('media_id')}",
+            "title_en": c.get("title_en") or c.get("title_romaji", ""),
+            "title_hi": c.get("title_hi"),
+            "summary_en": c.get("summary_en", ""),
+            "summary_hi": c.get("summary_hi", ""),
+            "image_url": c.get("image_url"),
+            "airing_day": c.get("day_name_hi"),
+            "airing_time": c.get("airing_ist_time"),
+            "published_at": c.get("airing_at_iso"),
+        })
     return items[:limit]
 
 
