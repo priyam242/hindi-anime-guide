@@ -68,6 +68,27 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
+  <!-- Cross-Document Speculation Rules: Instant Prerender & Prefetch on Hover/Pointerdown -->
+  <script type="speculationrules">
+  {
+    "prerender": [
+      {
+        "source": "list",
+        "urls": ["/", "/free", "/schedule", "/manga", "/trailers", "/news", "/awards", "/explore"]
+      },
+      {
+        "where": { "href_matches": "/*" },
+        "eagerness": "moderate"
+      }
+    ],
+    "prefetch": [
+      {
+        "where": { "href_matches": "/*" },
+        "eagerness": "conservative"
+      }
+    ]
+  }
+  </script>
 
   <!-- Tailwind CDN JIT (replaces static tailwind.css to avoid missing-class bugs) -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -99,6 +120,18 @@
   <script defer src="/static/js/alpine.min.js"></script>
 
   <style>
+    @view-transition {
+      navigation: auto;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 150ms;
+    }
+    .card-grid-item {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 340px;
+      transform: translateZ(0);
+    }
     :root {
       --theme-bg: #ffffff;
       --theme-surface: #f9fafb;
@@ -1413,6 +1446,7 @@
     sidebarOpen: true,
     userMenuOpen: false,
     notifOpen: false,
+    surpriseMeOpen: false,
     isMobile: window.innerWidth < 1024,
     isDark: (() => {
       try {
@@ -1518,6 +1552,9 @@
   <a href="#main-content"
     class="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-red-600 focus:text-white focus:z-50">Skip to main
     content</a>
+  <!-- Instant SPA Progress Loading Bar -->
+  <div id="global-progress-bar" class="fixed top-0 left-0 h-[3px] bg-red-600 transition-all duration-300 z-50 pointer-events-none" style="width: 0%; opacity: 0;"></div>
+
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
   <!-- Header / Topbar -->
@@ -2247,6 +2284,15 @@
   </div>
   {% endif %}
   {% endfor %}
+  <div class="surprise-me-container px-3 py-1.5 mt-2">
+    <button type="button" @click="surpriseMeOpen = true{% if is_mobile %}; closeMobile(){% endif %}" class="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-red-600/20 hover:from-purple-600/30 hover:to-red-600/30 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-xs transition shadow-sm cursor-pointer group">
+      <span class="flex items-center gap-2">
+        <span class="text-sm group-hover:rotate-12 transition-transform">🎲</span>
+        <span>आज क्या देखूँ? (Surprise Me)</span>
+      </span>
+      <span class="text-[10px] bg-purple-600/20 px-1.5 py-0.5 rounded text-purple-400">PICK</span>
+    </button>
+  </div>
   <div class="pwa-install-container px-3 py-2 mt-2" style="display: none;">
     <button type="button" class="pwa-install-btn w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600/20 to-red-600/10 hover:from-red-600/30 hover:to-red-600/20 border border-red-500/30 text-red-500 font-bold text-xs transition shadow-sm cursor-pointer">
       <span class="text-sm">📲</span>
@@ -2695,7 +2741,12 @@
         else { btn.classList.remove('text-red-600'); btn.classList.add('text-gray-500', 'dark:text-gray-400'); }
       });
 
-      window.translatePageDynamicNodes(lang);
+      // Only run dynamic DOM machine translation when language is explicitly English ('en').
+      // For Hindi ('hi'), server renders authentic Devanagari Hindi directly. Skipping dynamic
+      // translation for 'hi' completely eliminates secondary DOM refresh / re-layout cycles!
+      if (lang === 'en') {
+        window.translatePageDynamicNodes('en');
+      }
     };
 
     window.setLanguage = function (lang) {
@@ -2924,6 +2975,106 @@
       </a>
     </div>
   </nav>
+
+  <!-- Surprise Me Mood Modal (Alpine.js) -->
+  <div x-show="surpriseMeOpen"
+       x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4"
+       style="display: none;">
+    <div class="fixed inset-0 bg-black/75 transition-opacity" @click="surpriseMeOpen = false"></div>
+    <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-white/10 p-6 shadow-2xl space-y-5 z-10">
+      <div class="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🎲</span>
+          <div>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">आज क्या देखूँ? (Surprise Me)</h3>
+            <p class="text-xs text-gray-500 dark:text-zinc-400">अपने मूड के अनुसार बेहतरीन एनीमे चुनें:</p>
+          </div>
+        </div>
+        <button type="button" @click="surpriseMeOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg">
+          <i class="fas fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 text-xs font-bold">
+        <a href="/random-anime?mood=action" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-xl bg-gray-50 hover:bg-red-50 dark:bg-white/5 dark:hover:bg-red-950/40 border border-gray-200 dark:border-white/10 hover:border-red-500/50 text-gray-900 dark:text-white transition-all shadow-sm">
+          <span class="text-2xl">🔥</span>
+          <span>एक्शन व थ्रिलर</span>
+          <span class="text-[10px] text-gray-500 dark:text-zinc-400 font-normal">Action & Thriller</span>
+        </a>
+        <a href="/random-anime?mood=romance" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-xl bg-gray-50 hover:bg-pink-50 dark:bg-white/5 dark:hover:bg-pink-950/40 border border-gray-200 dark:border-white/10 hover:border-pink-500/50 text-gray-900 dark:text-white transition-all shadow-sm">
+          <span class="text-2xl">💖</span>
+          <span>रोमांस व फैंटेसी</span>
+          <span class="text-[10px] text-gray-500 dark:text-zinc-400 font-normal">Romance & Fantasy</span>
+        </a>
+        <a href="/random-anime?mood=free" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-xl bg-gray-50 hover:bg-emerald-50 dark:bg-white/5 dark:hover:bg-emerald-950/40 border border-gray-200 dark:border-white/10 hover:border-emerald-500/50 text-gray-900 dark:text-white transition-all shadow-sm">
+          <span class="text-2xl">🎁</span>
+          <span>मुफ़्त लीगल एनीमे</span>
+          <span class="text-[10px] text-gray-500 dark:text-zinc-400 font-normal">Free on YouTube</span>
+        </a>
+        <a href="/random-anime?mood=hindi_dub" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-xl bg-gray-50 hover:bg-purple-50 dark:bg-white/5 dark:hover:bg-purple-950/40 border border-gray-200 dark:border-white/10 hover:border-purple-500/50 text-gray-900 dark:text-white transition-all shadow-sm">
+          <span class="text-2xl">🎙️</span>
+          <span>हिंदी डब एनीमे</span>
+          <span class="text-[10px] text-gray-500 dark:text-zinc-400 font-normal">Hindi Dubbed</span>
+        </a>
+      </div>
+
+      <div class="pt-2">
+        <a href="/random-anime" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-md">
+          <span>🎲 सीधे कोई भी रैंडम एनीमे खोलें →</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Touch/Hover Link Prefetcher & Top SPA Progress Bar Script -->
+  <script>
+    (function () {
+      const prefetched = new Set();
+      function prefetchLink(url) {
+        if (!url || prefetched.has(url) || !url.startsWith('/') || url.startsWith('/api') || url.startsWith('/admin') || url.includes('#')) return;
+        prefetched.add(url);
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        document.head.appendChild(link);
+      }
+      document.addEventListener('mouseover', function (e) {
+        const a = e.target.closest('a');
+        if (a && a.href && a.origin === location.origin) {
+          prefetchLink(a.pathname + a.search);
+        }
+      }, { passive: true });
+      document.addEventListener('touchstart', function (e) {
+        const a = e.target.closest('a');
+        if (a && a.href && a.origin === location.origin) {
+          prefetchLink(a.pathname + a.search);
+        }
+      }, { passive: true });
+
+      // Native SPA top progress bar
+      document.addEventListener('click', function (e) {
+        const a = e.target.closest('a');
+        if (a && a.href && a.origin === location.origin && !a.hasAttribute('download') && a.target !== '_blank' && !a.href.includes('#')) {
+          const bar = document.getElementById('global-progress-bar');
+          if (bar) {
+            bar.style.width = '70%';
+            bar.style.opacity = '1';
+          }
+        }
+      });
+      window.addEventListener('pageshow', function () {
+        const bar = document.getElementById('global-progress-bar');
+        if (bar) {
+          bar.style.width = '100vw';
+          setTimeout(function () {
+            bar.style.opacity = '0';
+            bar.style.width = '0px';
+          }, 200);
+        }
+      });
+    })();
+  </script>
 
   {% block extra_scripts %}{% endblock %}
 </body>

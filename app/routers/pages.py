@@ -77,6 +77,10 @@ NEWS_CATEGORIES = [
 ]
 _UPDATES_HUB_CACHE: tuple[dict, float] | None = None
 HUB_CACHE_TTL: float = 300.0
+_FREE_CACHE: tuple[dict, float] | None = None
+FREE_CACHE_TTL: float = 120.0
+_DYNAMIC_ANIME_CACHE: dict[str, tuple[dict, float]] = {}
+DYNAMIC_ANIME_CACHE_TTL: float = 180.0
 
 
 def is_caching_enabled() -> bool:
@@ -104,7 +108,7 @@ def _revalidate_async(worker_fn, *args, **kwargs):
 
 def invalidate_public_caches() -> None:
     """Invalidate all public page and metadata in-memory caches."""
-    global _CATEGORIES_CACHE, _PLATFORMS_CACHE, _HOME_CACHE, _DEFAULT_EXPLORE_CACHE, _MANGA_CACHE, _AWARDS_YEARS_CACHE, _AWARDS_CACHE, _NEWS_CACHE, _SCHEDULE_CACHE, _TRAILERS_CACHE, _UPDATES_HUB_CACHE
+    global _CATEGORIES_CACHE, _PLATFORMS_CACHE, _HOME_CACHE, _DEFAULT_EXPLORE_CACHE, _MANGA_CACHE, _AWARDS_YEARS_CACHE, _AWARDS_CACHE, _NEWS_CACHE, _SCHEDULE_CACHE, _TRAILERS_CACHE, _UPDATES_HUB_CACHE, _FREE_CACHE, _DYNAMIC_ANIME_CACHE
     _CATEGORIES_CACHE = None
     _PLATFORMS_CACHE = None
     _HOME_CACHE = None
@@ -116,6 +120,8 @@ def invalidate_public_caches() -> None:
     _SCHEDULE_CACHE.clear()
     _TRAILERS_CACHE.clear()
     _UPDATES_HUB_CACHE = None
+    _FREE_CACHE = None
+    _DYNAMIC_ANIME_CACHE.clear()
 
 
 def get_categories(session: Session) -> List[Category]:
@@ -208,6 +214,17 @@ def clean_base_series_title(title: str) -> str:
     pattern = r"\s*(?:[-–—:]?\s*)?(?:Episode|Ep\.?|एपिसोड|Part|भाग)\s*\d+.*$"
     cleaned = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
     return cleaned if cleaned else title
+
+
+def slugify_anime_title(title: str) -> str:
+    """Convert an anime title to a clean, canonical URL slug."""
+    if not title:
+        return "anime"
+    # Remove apostrophes, parens, brackets, special punctuation
+    s = re.sub(r"[\(\)\[\]\{\}\:;,\.\!\?\'\"`\/\\]", " ", title)
+    s = re.sub(r"[^a-zA-Z0-9\s\-]", "", s)
+    s = re.sub(r"[\s_]+", "-", s).strip("-").lower()
+    return s or "anime"
 
 
 def compute_home_page_data(session: Session) -> dict:
@@ -402,15 +419,10 @@ def compute_home_page_data(session: Session) -> dict:
                         matched_art_slug = art.slug
                         break
 
-            anchor = day_anchor_map.get(d_name, "")
             if matched_art_slug:
                 card_url = f"/anime/{matched_art_slug}"
-            elif anchor:
-                card_url = f"/schedule#{anchor}"
-            elif t_en:
-                card_url = f"/schedule?q={urllib.parse.quote_plus(t_en)}"
             else:
-                card_url = "/schedule"
+                card_url = f"/anime/{slugify_anime_title(t_en or t_hi or 'anime')}"
 
             airing_episodes.append({
                 "id": it.get("id"),
@@ -452,7 +464,7 @@ def compute_home_page_data(session: Session) -> dict:
                 "is_donghua": False,
                 "ist_time_str": "स्ट्रीमिंग • 8:00 PM IST",
                 "image_url": d.image_url or "/media/covers/anime_naruto.webp",
-                "url": f"/schedule?q={urllib.parse.quote_plus(t_en)}" if t_en else "/schedule",
+                "url": f"/anime/{slugify_anime_title(t_en)}" if t_en else "/schedule",
             })
             if len(airing_episodes) == 12:
                 break
@@ -461,15 +473,15 @@ def compute_home_page_data(session: Session) -> dict:
         ("सोलो लेवलिंग", "Solo Leveling Season 2", "/media/covers/anime_solo-leveling.webp", 7, "रविवार • 8:00 PM IST", "/anime/solo-leveling-hindi-dub-guide"),
         ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", 24, "गुरुवार • 11:30 PM IST", "/anime/jujutsu-kaisen-hindi-streaming-guide"),
         ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", 11, "रविवार • 8:15 PM IST", "/anime/demon-slayer-hindi-dub-guide"),
-        ("ब्लू लॉक", "Blue Lock", "/media/covers/anime_blue-lock.webp", 14, "शनिवार • 10:00 PM IST", "/schedule#saturday"),
-        ("दांदादान", "Dandadan", "/media/covers/anime_dandadan.webp", 12, "गुरुवार • 9:30 PM IST", "/schedule#thursday"),
-        ("साकामोटो डेज़", "Sakamoto Days", "/media/covers/anime_sakamoto-days.webp", 8, "शनिवार • 8:30 PM IST", "/schedule#saturday"),
+        ("ब्लू लॉक", "Blue Lock", "/media/covers/anime_blue-lock.webp", 14, "शनिवार • 10:00 PM IST", "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
+        ("दांदादान", "Dandadan", "/media/covers/anime_dandadan.webp", 12, "गुरुवार • 9:30 PM IST", "/anime/dandadan"),
+        ("साकामोटो डेज़", "Sakamoto Days", "/media/covers/anime_sakamoto-days.webp", 8, "शनिवार • 8:30 PM IST", "/anime/sakamoto-days"),
         ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anime_attack-on-titan.webp", 28, "रविवार • 9:00 PM IST", "/anime/attack-on-titan-streaming-guide-india"),
         ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anime_spy-x-family.webp", 25, "शनिवार • 7:30 PM IST", "/anime/spy-x-family-hindi-dub-streaming-guide"),
         ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anime_haikyuu.webp", 12, "शुक्रवार • 6:30 PM IST", "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
         ("वन पीस", "One Piece", "/media/covers/anime_one-piece.webp", 1120, "रविवार • 6:30 AM IST", "/anime/one-piece-hindi-guide-watch-order"),
-        ("डॉक्टर स्टोन", "Dr. Stone", "/media/covers/anime_naruto.webp", 10, "गुरुवार • 7:00 PM IST", "/schedule#thursday"),
-        ("ब्लीच: थाउजेंड-ईयर ब्लड वॉर", "Bleach: Thousand-Year Blood War", "/media/covers/anime_naruto.webp", 9, "शनिवार • 7:00 PM IST", "/schedule#saturday"),
+        ("डॉक्टर स्टोन", "Dr. Stone", "/media/covers/anime_naruto.webp", 10, "गुरुवार • 7:00 PM IST", "/anime/dr-stone-science-future"),
+        ("ब्लीच: थाउजेंड-ईयर ब्लड वॉर", "Bleach: Thousand-Year Blood War", "/media/covers/anime_naruto.webp", 9, "शनिवार • 7:00 PM IST", "/anime/bleach-thousand-year-blood-war"),
     ]
     for d_hi, d_en, d_img, d_ep, d_time, d_url in default_airing_stubs:
         if len(airing_episodes) >= 12:
@@ -685,9 +697,8 @@ def compute_home_page_data(session: Session) -> dict:
             seen_zone2_titles.add(t_hi.lower())
             seen_zone2_titles.add(t_en.lower())
             
-            d_name = it.get("day_name_hi") or ""
-            anchor = day_anchor_map.get(d_name, "")
-            card_url = f"/schedule#{anchor}" if anchor else (f"/schedule?q={urllib.parse.quote_plus(t_en)}" if t_en else "/schedule")
+            clean_slug = slugify_anime_title(t_en or t_hi or "anime")
+            card_url = f"/anime/{clean_slug}"
             
             zone3_new_releases.append({
                 "title_hi": t_hi or t_en,
@@ -702,11 +713,11 @@ def compute_home_page_data(session: Session) -> dict:
                 break
 
     default_fresh_releases = [
-        ("ओवरगियर्ड", "Overgeared", "/media/covers/anime_solo-leveling.webp", 8, "Fall 2026", "/schedule#sunday"),
-        ("ब्लू बॉक्स सीज़न 2", "Blue Box Season 2", "/media/covers/anime_blue-lock.webp", 6, "Fall 2026", "/schedule#sunday"),
-        ("ड्रैगन बॉल सुपर: बीरस", "Dragon Ball Super: Beerus", "/media/covers/anime_dragon-ball-z.webp", 6, "Fall 2026", "/schedule#sunday"),
-        ("रीबॉर्न ऐज़ अ स्पेस मर्सनरी", "Reborn as a Space Mercenary", "/media/covers/anime_naruto.webp", 7, "Fall 2026", "/schedule#sunday"),
-        ("मिशन: योज़ाकुरा फैमिली सीज़न 2", "Mission: Yozakura Family Season 2", "/media/covers/anime_spy-x-family.webp", 6, "Fall 2026", "/schedule#sunday"),
+        ("ओवरगियर्ड", "Overgeared", "/media/covers/anime_solo-leveling.webp", 8, "Fall 2026", "/anime/overgeared"),
+        ("ब्लू बॉक्स सीज़न 2", "Blue Box Season 2", "/media/covers/anime_blue-lock.webp", 6, "Fall 2026", "/anime/blue-box-season-2"),
+        ("ड्रैगन बॉल सुपर: बीरस", "Dragon Ball Super: Beerus", "/media/covers/anime_dragon-ball-z.webp", 6, "Fall 2026", "/anime/dragon-ball-super-beerus"),
+        ("रीबॉर्न ऐज़ अ स्पेस मर्सनरी", "Reborn as a Space Mercenary", "/media/covers/anime_naruto.webp", 7, "Fall 2026", "/anime/reborn-as-a-space-mercenary"),
+        ("मिशन: योज़ाकुरा फैमिली सीज़न 2", "Mission: Yozakura Family Season 2", "/media/covers/anime_spy-x-family.webp", 6, "Fall 2026", "/anime/mission-yozakura-family-season-2"),
     ]
     for d_hi, d_en, d_img, d_ep, d_stag, d_url in default_fresh_releases:
         if len(zone3_new_releases) >= 5:
@@ -772,7 +783,7 @@ def compute_home_page_data(session: Session) -> dict:
         ("योर नेम (Your Name): मकोतो शिंकाई", "Your Name: Makoto Shinkai Romance Anime", "/media/covers/article_your-name-makoto-shinkai-romance-anime-hindi_4719b48b94.webp", ["Netflix"], "/anime/your-name-makoto-shinkai-romance-anime-hindi"),
         ("5 माइंड-बेंडिंग एनीमे", "5 Mind-Bending Anime Like Death Note", "/media/covers/article_5-mind-bending-anime-like-death-note-hindi_a727d2c943.webp", ["Netflix", "Crunchyroll"], "/anime/5-mind-bending-anime-like-death-note-hindi"),
         ("सर्वकालिक सर्वश्रेष्ठ एनीमे रैंकिंग", "Top 10 Best Anime of All Time Ranking", "/media/covers/article_top-10-best-anime-of-all-time-hindi-ranking_92b8d0ca17.webp", ["Crunchyroll", "Netflix"], "/anime/top-10-best-anime-of-all-time-hindi-ranking"),
-        ("फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "Frieren: Beyond Journey's End Hindi Guide", "/media/covers/anime_frieren.webp", ["Crunchyroll", "Muse Asia"], "/explore?q=Frieren"),
+        ("फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "Frieren: Beyond Journey's End Hindi Guide", "/media/covers/anime_frieren.webp", ["Crunchyroll", "Muse Asia"], "/anime/frieren-beyond-journeys-end"),
     ]
     seen_guide_urls = {g["url"] for g in zone3_hindi_guides}
     for g_hi, g_en, g_img, g_plats, g_url in curated_distinct_guides:
@@ -1637,6 +1648,17 @@ def clean_base_series_title(title: str) -> str:
     pattern = r"\s*(?:[-–—:]?\s*)?(?:Episode|Ep\.?|एपिसोड|Part|भाग)\s*\d+.*$"
     cleaned = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
     return cleaned if cleaned else title
+
+
+def slugify_anime_title(title: str) -> str:
+    """Convert an anime title to a clean, canonical URL slug."""
+    if not title:
+        return "anime"
+    # Remove apostrophes, parens, brackets, special punctuation
+    s = re.sub(r"[\(\)\[\]\{\}\:;,\.\!\?\'\"`\/\\]", " ", title)
+    s = re.sub(r"[^a-zA-Z0-9\s\-]", "", s)
+    s = re.sub(r"[\s_]+", "-", s).strip("-").lower()
+    return s or "anime"
 
 
 def get_canonical_series_keys(item_or_draft: dict[str, Any] | AnimeDraft) -> set[str]:
@@ -2604,7 +2626,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "28 एपिसोड्स",
         "synopsis_hi": "एल्फ जादूगरनी फ्रीरेन की आत्म-खोज और पुरानी यादों का भावुक सफर।",
-        "url": "/explore?q=Frieren",
+        "url": "/anime/frieren-beyond-journeys-end",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia"],
@@ -2652,7 +2674,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "12 एपिसोड्स",
         "synopsis_hi": "डेन्जी और पोचिता का डेविल हंटर रूपांतरण और खूंखार शैतानों से मुकाबला।",
-        "url": "/explore?q=Chainsaw+Man",
+        "url": "/anime/chainsaw-man",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "ani-one"],
@@ -2700,7 +2722,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "12 एपिसोड्स",
         "synopsis_hi": "एलियंस, भूत और सुपरनैचुरल शक्तियों का धमाकेदार आधुनिक एक्शन कॉमेडी एनीमे।",
-        "url": "/explore?q=DanDaDan",
+        "url": "/anime/dandadan",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia"],
@@ -2716,7 +2738,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "hindi-dub",
         "episodes": "सीज़न 1-3 • 50 एपिसोड्स",
         "synopsis_hi": "ताकेमिची की टाइम-ट्रैवल कहानी और तोक्यो मानजी गैंग की पुरानी यादें व लड़ाइयाँ।",
-        "url": "/explore?q=Tokyo+Revengers",
+        "url": "/anime/tokyo-revengers",
         "is_airing": False,
         "is_hindi_dub": True,
         "filter_tags": ["all", "muse-asia", "hindi-dub"],
@@ -2732,7 +2754,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "hindi-dub",
         "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
         "synopsis_hi": "साइतामा का एक घूंसे में किसी भी दुश्मन को हरा देने का बेजोड़ एक्शन-कॉमेडी सफर।",
-        "url": "/explore?q=One+Punch+Man",
+        "url": "/anime/one-punch-man",
         "is_airing": False,
         "is_hindi_dub": True,
         "filter_tags": ["all", "muse-asia", "hindi-dub"],
@@ -2748,7 +2770,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "hindi-dub",
         "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
         "synopsis_hi": "तस्वीरों के भीतर जाकर रहस्यों को सुलझाने वाले दो जासूस दोस्तों की थ्रिलर गाथा।",
-        "url": "/schedule#saturday",
+        "url": "/anime/link-click",
         "is_airing": False,
         "is_hindi_dub": True,
         "filter_tags": ["all", "hindi-dub"],
@@ -2764,7 +2786,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "चालू • Ep 7",
         "synopsis_hi": "इंपीरियल पैलेस की रहस्यमयी औषधि विशेषज्ञ माओमाओ के दरबारी केस।",
-        "url": "/schedule#friday",
+        "url": "/anime/the-apothecary-diaries-season-3",
         "is_airing": True,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia", "airing"],
@@ -2780,7 +2802,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "चालू • Ep 6",
         "synopsis_hi": "मीजी काल की एक बीमार कुलीन लड़की और उसके हत्यारे पति का रोमांचक ड्रामा।",
-        "url": "/schedule#friday",
+        "url": "/anime/firefly-wedding",
         "is_airing": True,
         "is_hindi_dub": False,
         "filter_tags": ["all", "ani-one", "airing"],
@@ -2796,7 +2818,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "चालू • Ep 7",
         "synopsis_hi": "जादुई तलवार और बिल्ली-लड़की फ्रैंकी की रोमांचक यात्रा।",
-        "url": "/schedule#wednesday",
+        "url": "/anime/reincarnated-as-a-sword-season-2",
         "is_airing": True,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia", "airing"],
@@ -2812,7 +2834,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "चालू • Ep 8",
         "synopsis_hi": "वर्चुअल Reality गेम में ग्रिड का दिग्गज लोहार बनने का सफर।",
-        "url": "/schedule#sunday",
+        "url": "/anime/overgeared",
         "is_airing": True,
         "is_hindi_dub": False,
         "filter_tags": ["all", "ani-one", "airing"],
@@ -2828,7 +2850,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "hindi-dub",
         "episodes": "चालू • Ep 1",
         "synopsis_hi": "भविष्य के पृथ्वी रक्षक योद्धा लुओ फेंग का शक्तिशाली अंतरिक्ष युद्ध।",
-        "url": "/schedule#saturday",
+        "url": "/anime/swallowed-star",
         "is_airing": True,
         "is_hindi_dub": True,
         "filter_tags": ["all", "hindi-dub", "airing"],
@@ -2844,7 +2866,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "hindi-dub",
         "episodes": "चालू • Ep 1",
         "synopsis_hi": "शियाओ यान का अपनी खोई हुई शक्ति को पुनः प्राप्त करने का कल्टीवेशन सफर।",
-        "url": "/schedule#saturday",
+        "url": "/anime/battle-through-the-heavens",
         "is_airing": True,
         "is_hindi_dub": True,
         "filter_tags": ["all", "hindi-dub", "airing"],
@@ -2860,7 +2882,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "सीज़न 1-3 • 37 एपिसोड्स",
         "synopsis_hi": "शिगेओ कागेयामा (मॉब) की अविश्वसनीय मानसिक शक्तियां और जीवन का सबक।",
-        "url": "/explore?q=Mob+Psycho",
+        "url": "/anime/mob-psycho-100",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia"],
@@ -2876,7 +2898,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "सीज़न 1-2 • 24 एपिसोड्स",
         "synopsis_hi": "जादू की दुनिया में बिना किसी जादू के केवल मांसपेशियों की ताकत से मुकाबला।",
-        "url": "/updates/8",
+        "url": "/anime/mashle-magic-and-muscles",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "ani-one"],
@@ -2892,7 +2914,7 @@ FREE_LEGAL_ANIME_DATA = [
         "audio_type": "sub",
         "episodes": "सीज़न 1-3 • 38 एपिसोड्स",
         "synopsis_hi": "टोक्यो कोडो इकुसेई हाई स्कूल में अयानकोजी का मनोवैज्ञानिक खेल।",
-        "url": "/explore?q=Classroom+of+the+Elite",
+        "url": "/anime/classroom-of-the-elite",
         "is_airing": False,
         "is_hindi_dub": False,
         "filter_tags": ["all", "muse-asia"],
@@ -2907,31 +2929,47 @@ def free_anime_hub(
     q: Optional[str] = Query(None),
     session: Session = Depends(get_session)
 ):
-    categories = session.exec(select(Category)).all()
-    user = request.state.user if hasattr(request.state, "user") else None
-    lang = request.cookies.get("preferred_language", "hi")
+    global _FREE_CACHE
+    categories = get_categories(session)
+    user = getattr(request.state, "user", None)
+    lang = request.cookies.get("site_lang", "hi")
+    caching = is_caching_enabled() and not platform and not q and not user
+
+    now = time.monotonic()
+    if caching and _FREE_CACHE and _FREE_CACHE[1] > now:
+        ctx = _FREE_CACHE[0].copy()
+        ctx["request"] = request
+        return render("free.html", **ctx)
 
     all_cards = list(FREE_LEGAL_ANIME_DATA)
+    if platform and platform != "all":
+        all_cards = [c for c in all_cards if platform in c.get("filter_tags", [])]
+    if q and q.strip():
+        q_l = q.strip().lower()
+        all_cards = [c for c in all_cards if q_l in c["title_en"].lower() or q_l in c["title_hi"].lower()]
+
     filter_counts = {
-        "all": len(all_cards),
-        "muse_asia": sum(1 for c in all_cards if "muse-asia" in c["filter_tags"]),
-        "ani_one": sum(1 for c in all_cards if "ani-one" in c["filter_tags"]),
-        "hindi_dub": sum(1 for c in all_cards if "hindi-dub" in c["filter_tags"]),
-        "airing": sum(1 for c in all_cards if "airing" in c["filter_tags"]),
+        "all": len(FREE_LEGAL_ANIME_DATA),
+        "muse_asia": sum(1 for c in FREE_LEGAL_ANIME_DATA if "muse-asia" in c["filter_tags"]),
+        "ani_one": sum(1 for c in FREE_LEGAL_ANIME_DATA if "ani-one" in c["filter_tags"]),
+        "hindi_dub": sum(1 for c in FREE_LEGAL_ANIME_DATA if "hindi-dub" in c["filter_tags"]),
+        "airing": sum(1 for c in FREE_LEGAL_ANIME_DATA if "airing" in c["filter_tags"]),
     }
 
-    return render(
-        "free.html",
-        categories=categories,
-        free_cards=all_cards,
-        filter_counts=filter_counts,
-        active_filter=platform or "all",
-        search_query=q or "",
-        lang=lang,
-        user=user,
-        active_nav="free",
-        request=request,
-    )
+    ctx = {
+        "categories": categories,
+        "free_cards": all_cards,
+        "filter_counts": filter_counts,
+        "active_filter": platform or "all",
+        "search_query": q or "",
+        "lang": lang,
+        "user": user,
+        "active_nav": "free",
+        "request": request,
+    }
+    if caching:
+        _FREE_CACHE = (ctx.copy(), now + FREE_CACHE_TTL)
+    return render("free.html", **ctx)
 
 
 # ---------- PWA: MANIFEST, SERVICE WORKER & ICONS ----------
@@ -2957,9 +2995,817 @@ def pwa_icon(filename: str):
     return Response(status_code=404)
 
 
+# ---------- DYNAMIC ANIME DETAIL PAGES & RESOLVER ----------
+DYNAMIC_ANIME_CATALOG: dict[str, dict[str, Any]] = {
+    "frieren-beyond-journeys-end": {
+        "slug": "frieren-beyond-journeys-end",
+        "title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड",
+        "title_en": "Frieren: Beyond Journey's End",
+        "cover_image": "/media/covers/anime_frieren.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2023-2024",
+        "episodes_display": "28 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Madhouse",
+        "source_type": "Manga",
+        "genres": ["Action", "Adventure", "Fantasy", "Drama"],
+        "genres_str": "एक्शन, एडवेंचर, फैंटेसी, ड्रामा",
+        "synopsis_hi": "दानव राजा को हराने के बाद, अमर एल्फ जादूगरनी फ्रीरेन अपने नश्वर साथियों की यादों और मानवीय भावनाओं के गहरे अर्थ को समझने के लिए एक नए भावुक सफर पर निकलती है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com/series/GG5H5XMQ5/frieren-beyond-journeys-end"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "chainsaw-man": {
+        "slug": "chainsaw-man",
+        "title_hi": "चेनसॉ मैन",
+        "title_en": "Chainsaw Man",
+        "cover_image": "/media/covers/anime_chainsaw-man.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2022",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "MAPPA",
+        "source_type": "Manga",
+        "genres": ["Action", "Supernatural", "Horror"],
+        "genres_str": "एक्शन, सुपरनैचुरल, डार्क फैंटेसी",
+        "synopsis_hi": "डेन्जी अपने पोचिता नामक चेनसॉ शैतान के साथ मिलकर एक डेविल हंटर बनता है और असाधारण शक्तियों के साथ पब्लिक सेफ्टी डेविल हंटर्स का हिस्सा बनता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com/series/GVDHXJ77G/chainsaw-man"},
+            {"name": "Ani-One Asia", "url": "https://www.youtube.com/@AniOneAsia"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "dandadan": {
+        "slug": "dandadan",
+        "title_hi": "डैनडाडैन",
+        "title_en": "DanDaDan",
+        "cover_image": "/media/covers/anime_dandadan.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2024",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Science SARU",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy", "Supernatural", "Sci-Fi"],
+        "genres_str": "एक्शन, कॉमेडी, सुपरनैचुरल, साइ-फाई",
+        "synopsis_hi": "मोमो और ओकारुन के बीच एलियंस और भूतों को लेकर एक शर्त लगती है, जिससे वे दोनों सुपरनैचुरल और अलौकिक शक्तियों की अराजक और रोमांचक दुनिया में खिंचे चले जाते हैं।",
+        "platforms_list": [
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"}
+        ],
+    },
+    "tokyo-revengers": {
+        "slug": "tokyo-revengers",
+        "title_hi": "टोक्यो रिवेंजर्स",
+        "title_en": "Tokyo Revengers",
+        "cover_image": "/media/covers/anime_one-piece.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2021-2023",
+        "episodes_display": "50 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "LIDENFILMS",
+        "source_type": "Manga",
+        "genres": ["Action", "Drama", "Supernatural"],
+        "genres_str": "एक्शन, टाइम-ट्रैवल, ड्रामा",
+        "synopsis_hi": "ताकेमिची हानागाकी को अपनी पूर्व प्रेमिका की जान बचाने के लिए 12 साल पीछे जाने का मौका मिलता है, जहाँ वह तोक्यो मानजी गैंग की शीर्ष रैंक में शामिल होने की कोशिश करता है।",
+        "platforms_list": [
+            {"name": "Disney+ Hotstar", "url": "https://www.hotstar.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "one-punch-man": {
+        "slug": "one-punch-man",
+        "title_hi": "वन-पंच मैन",
+        "title_en": "One-Punch Man",
+        "cover_image": "/media/covers/anime_solo-leveling.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2015-2019",
+        "episodes_display": "24 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Madhouse / J.C.Staff",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy", "Super Power"],
+        "genres_str": "एक्शन, सुपरहीरो, कॉमेडी, पैरोडी",
+        "synopsis_hi": "साइतामा एक ऐसा हीरो है जिसने इतनी कड़ी ट्रेनिंग की है कि वह किसी भी दुश्मन को सिर्फ एक घूंसे में हरा सकता है, लेकिन अब वह एक सच्चे प्रतिद्वंद्वी की तलाश में बोरियत महसूस कर रहा है।",
+        "platforms_list": [
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"}
+        ],
+    },
+    "the-apothecary-diaries-season-3": {
+        "slug": "the-apothecary-diaries-season-3",
+        "title_hi": "द अपोथेकेरी डायरीज़ सीज़न 3",
+        "title_en": "The Apothecary Diaries Season 3",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-5N9gq2U62DkR.jpg",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 7",
+        "airing_day_time_ist": "शुक्रवार • 7:30 PM IST",
+        "airing_at": int(time.time()) + 172800,
+        "studio": "TOHO animation STUDIO / OLM",
+        "source_type": "Light Novel",
+        "genres": ["Mystery", "Historical", "Drama"],
+        "genres_str": "मिस्ट्री, हिस्टोरिकल, ड्रामा",
+        "synopsis_hi": "शाही महल के भीतर दवाइयों, जहर और दरबार की साज़िशों के रहस्यों को माओमाओ अपनी तीक्ष्ण बुद्धि और औषधि विज्ञान से सुलझाती है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"}
+        ],
+    },
+    "sakamoto-days": {
+        "slug": "sakamoto-days",
+        "title_hi": "साकामोटो डेज़",
+        "title_en": "Sakamoto Days",
+        "cover_image": "/media/covers/anime_sakamoto-days.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 8",
+        "airing_day_time_ist": "शनिवार • 8:30 PM IST",
+        "airing_at": int(time.time()) + 259200,
+        "studio": "TMS Entertainment",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy"],
+        "genres_str": "एक्शन, कॉमेडी, हिटमैन",
+        "synopsis_hi": "पूर्व लीजेंडरी हिटमैन तारो साकामोटो अब एक साधारण किराना स्टोर चलाता है और अपने परिवार को पुरानी दुनिया के कातिलों से बचाता है।",
+        "platforms_list": [
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "dr-stone-science-future": {
+        "slug": "dr-stone-science-future",
+        "title_hi": "डॉक्टर स्टोन: साइंस फ्यूचर",
+        "title_en": "Dr. Stone: Science Future",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 10",
+        "airing_day_time_ist": "गुरुवार • 7:00 PM IST",
+        "airing_at": int(time.time()) + 345600,
+        "studio": "TMS Entertainment",
+        "source_type": "Manga",
+        "genres": ["Sci-Fi", "Adventure", "Comedy"],
+        "genres_str": "साइ-फाई, एडवेंचर, कॉमेडी",
+        "synopsis_hi": "सेनकु इशिगामी विज्ञान की शक्ति से पूरी मानव सभ्यता को पत्थर से दोबारा जीवित करने के अंतिम चरण में प्रवेश करता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "bleach-thousand-year-blood-war": {
+        "slug": "bleach-thousand-year-blood-war",
+        "title_hi": "ब्लीच: थाउजेंड-ईयर ब्लड वॉर",
+        "title_en": "Bleach: Thousand-Year Blood War",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 9",
+        "airing_day_time_ist": "शनिवार • 7:00 PM IST",
+        "airing_at": int(time.time()) + 259200,
+        "studio": "Pierrot",
+        "source_type": "Manga",
+        "genres": ["Action", "Supernatural", "Shounen"],
+        "genres_str": "एक्शन, सुपरनैचुरल, शोनेन",
+        "synopsis_hi": "सोल सोसाइटी और क्विन्सी सम्राट युहाबाख के बीच अंतिम महायुद्ध छिड़ता है। इचिगो कुरोसाकी अपनी वास्तविक शक्तियों को उजागर करता है।",
+        "platforms_list": [
+            {"name": "Disney+ Hotstar", "url": "https://www.hotstar.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "link-click": {
+        "slug": "link-click",
+        "title_hi": "लिंक क्लिक",
+        "title_en": "Link Click",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx126403-1TjhVqW84FqT.png",
+        "is_airing": False,
+        "is_donghua": True,
+        "is_hindi_dub": True,
+        "format": "ONA",
+        "season_year": "2021-2023",
+        "episodes_display": "सीज़न 1-2 • 24 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Studio LAN / Haoliners",
+        "source_type": "Original",
+        "genres": ["Donghua", "Time Travel", "Thriller", "Drama"],
+        "genres_str": "डोंगहुआ, टाइम ट्रैवल, थ्रिलर, ड्रामा",
+        "synopsis_hi": "तस्वीरों के भीतर जाकर रहस्यों को सुलझाने वाले दो जासूस दोस्तों चेंग शियाओशी और लू गुआंग की थ्रिलर गाथा।",
+        "platforms_list": [
+            {"name": "Bilibili", "url": "https://www.bilibili.tv"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "swallowed-star": {
+        "slug": "swallowed-star",
+        "title_hi": "स्वॉलोड स्टार",
+        "title_en": "Swallowed Star",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx125299-FkM2rK5s9uP0.jpg",
+        "is_airing": True,
+        "is_donghua": True,
+        "is_hindi_dub": True,
+        "format": "ONA",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 150+",
+        "airing_day_time_ist": "बुधवार • 7:30 PM IST",
+        "airing_at": int(time.time()) + 172800,
+        "studio": "Sparkly Key Animation",
+        "source_type": "Web Novel",
+        "genres": ["Donghua", "Sci-Fi", "Action", "Martial Arts"],
+        "genres_str": "डोंगहुआ, साइ-फाई, एक्शन, मार्शल आर्ट्स",
+        "synopsis_hi": "आरआर वायरस के प्रकोप के बाद पृथ्वी पर शक्तिशाली राक्षसों का राज हो गया है। लुओ फेंग मार्शल आर्ट्स और उन्नत तकनीक से मानवता की रक्षा करता है।",
+        "platforms_list": [
+            {"name": "WeTV", "url": "https://wetv.vip"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "battle-through-the-heavens": {
+        "slug": "battle-through-the-heavens",
+        "title_hi": "बैटल थ्रू द हेवन्स",
+        "title_en": "Battle Through the Heavens",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98782-z9Yg2T6p4k1Q.jpg",
+        "is_airing": True,
+        "is_donghua": True,
+        "is_hindi_dub": True,
+        "format": "ONA",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 120+",
+        "airing_day_time_ist": "रविवार • 8:00 AM IST",
+        "airing_at": int(time.time()) + 86400,
+        "studio": "Shanghai Foch Film Culture",
+        "source_type": "Web Novel",
+        "genres": ["Donghua", "Fantasy", "Cultivation", "Action"],
+        "genres_str": "डोंगहुआ, फैंटेसी, कल्टीवेशन, एक्शन",
+        "synopsis_hi": "अपनी ताकत खो चुके प्रतिभाशाली युवक शियाओ यान अपनी अंगूठी में मौजूद शिक्षक याओ लाओ के मार्गदर्शन में महान योद्धा बनने की साधना करता है।",
+        "platforms_list": [
+            {"name": "WeTV", "url": "https://wetv.vip"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "overgeared": {
+        "slug": "overgeared",
+        "title_hi": "ओवरगियर्ड",
+        "title_en": "Overgeared",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx181747-q92kL5m3P2a1.jpg",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 8",
+        "airing_day_time_ist": "रविवार • 8:00 PM IST",
+        "airing_at": int(time.time()) + 86400,
+        "studio": "Ani-One Asia",
+        "source_type": "Web Novel",
+        "genres": ["Action", "Game", "Fantasy"],
+        "genres_str": "एक्शन, वीआरएमएमओ, गेम, फैंटेसी",
+        "synopsis_hi": "शिन यंगवू वीआर गेम 'सैटिसफाई' में एक लीजेंडरी ब्लैकस्मिथ क्लास पाकर साधारण खिलाड़ी से अजेय योद्धा बन जाता है।",
+        "platforms_list": [
+            {"name": "Ani-One Asia", "url": "https://www.youtube.com/@AniOneAsia"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "mob-psycho-100": {
+        "slug": "mob-psycho-100",
+        "title_hi": "मॉब साइको 100",
+        "title_en": "Mob Psycho 100",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2016-2022",
+        "episodes_display": "सीज़न 1-3 • 37 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Bones",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy", "Supernatural"],
+        "genres_str": "एक्शन, कॉमेडी, सुपरनैचुरल",
+        "synopsis_hi": "शिगेओ 'मॉब' कागेयामा एक शक्तिशाली एस्पर है जो सामान्य जीवन जीना चाहता है, लेकिन उसकी भावनाएं चरम पर पहुंचते ही भारी अलौकिक शक्ति जाग उठती है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "classroom-of-the-elite": {
+        "slug": "classroom-of-the-elite",
+        "title_hi": "क्लासरूम ऑफ द एलीट",
+        "title_en": "Classroom of the Elite",
+        "cover_image": "/media/covers/anime_demon-slayer.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2017-2024",
+        "episodes_display": "सीज़न 1-3 • 38 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Lerche",
+        "source_type": "Light Novel",
+        "genres": ["Psychological", "Drama", "School"],
+        "genres_str": "साइकोलॉजिकल, ड्रामा, स्कूल",
+        "synopsis_hi": "किओताका अयानोकोजी कोडो इकुसेई हाई स्कूल में दाखिला लेता है, जहाँ केवल शीर्ष योग्यता और कड़ी प्रतिस्पर्धा से ही छात्रों का भविष्य तय होता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "blue-box-season-2": {
+        "slug": "blue-box-season-2",
+        "title_hi": "ब्लू बॉक्स सीज़न 2",
+        "title_en": "Blue Box Season 2",
+        "cover_image": "/media/covers/anime_blue-lock.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 6",
+        "airing_day_time_ist": "गुरुवार • 10:30 PM IST",
+        "airing_at": int(time.time()) + 345600,
+        "studio": "Telecom Animation Film",
+        "source_type": "Manga",
+        "genres": ["Romance", "Sports", "School"],
+        "genres_str": "रोमांस, स्पोर्ट्स, स्कूल",
+        "synopsis_hi": "बैडमिंटन खिलाड़ी ताइकी इनोमाता और बास्केटबॉल स्टार चिनात्सु कानो के बीच खेल और प्रेम का प्यारा सफर आगे बढ़ता है।",
+        "platforms_list": [
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ],
+    },
+    "dragon-ball-super-beerus": {
+        "slug": "dragon-ball-super-beerus",
+        "title_hi": "ड्रैगन बॉल सुपर: बीरस",
+        "title_en": "Dragon Ball Super: Beerus",
+        "cover_image": "/media/covers/anime_dragon-ball-z.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2015-2018",
+        "episodes_display": "131 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Toei Animation",
+        "source_type": "Manga",
+        "genres": ["Action", "Martial Arts", "Fantasy"],
+        "genres_str": "एक्शन, मार्शल आर्ट्स, फैंटेसी",
+        "synopsis_hi": "विनाश के देवता बीरस और सुपर सैयान गॉड गोकू के बीच ब्रह्मांड की रक्षा के लिए घमासान मुकाबला।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ],
+    },
+    "reborn-as-a-space-mercenary": {
+        "slug": "reborn-as-a-space-mercenary",
+        "title_hi": "रीबॉर्न ऐज़ अ स्पेस मर्सनरी",
+        "title_en": "Reborn as a Space Mercenary",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 7",
+        "airing_day_time_ist": "शुक्रवार • 9:30 PM IST",
+        "airing_at": int(time.time()) + 172800,
+        "studio": "TBA",
+        "source_type": "Light Novel",
+        "genres": ["Sci-Fi", "Space", "Action"],
+        "genres_str": "साइ-फाई, स्पेस, एक्शन",
+        "synopsis_hi": "एक अंतरिक्ष युद्धपोत के साथ दूसरी दुनिया में पुनर्जन्म लेकर स्वतंत्र मर्सनरी के रूप में अंतरिक्ष में नए रोमांच।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ],
+    },
+    "mission-yozakura-family-season-2": {
+        "slug": "mission-yozakura-family-season-2",
+        "title_hi": "मिशन: योज़ाकुरा फैमिली सीज़न 2",
+        "title_en": "Mission: Yozakura Family Season 2",
+        "cover_image": "/media/covers/anime_spy-x-family.webp",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 6",
+        "airing_day_time_ist": "रविवार • 5:00 PM IST",
+        "airing_at": int(time.time()) + 86400,
+        "studio": "SILVER LINK.",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy", "Spy"],
+        "genres_str": "एक्शन, कॉमेडी, स्पाई",
+        "synopsis_hi": "ताइयो असाकुरा और जासूस परिवार योज़ाकुरा नए खतरों और रहस्यों का सामना करने के लिए तैयार होते हैं।",
+        "platforms_list": [
+            {"name": "Disney+ Hotstar", "url": "https://www.hotstar.com"}
+        ],
+    },
+    "firefly-wedding": {
+        "slug": "firefly-wedding",
+        "title_hi": "फायरफ्लाई वेडिंग",
+        "title_en": "Firefly Wedding",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx183204-p4g6j2kL4k0P.jpg",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 6",
+        "airing_day_time_ist": "शुक्रवार • 8:30 PM IST",
+        "airing_at": int(time.time()) + 172800,
+        "studio": "TBA",
+        "source_type": "Manga",
+        "genres": ["Drama", "Romance", "Historical"],
+        "genres_str": "ड्रामा, रोमांस, हिस्टोरिकल",
+        "synopsis_hi": "मीजी काल की एक बीमार कुलीन लड़की और उसके हत्यारे पति का रोमांचक ड्रामा।",
+        "platforms_list": [
+            {"name": "Ani-One Asia", "url": "https://www.youtube.com/@AniOneAsia"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "reincarnated-as-a-sword-season-2": {
+        "slug": "reincarnated-as-a-sword-season-2",
+        "title_hi": "रीइन्कारनेटेड ऐज़ अ सोर्ड सीज़न 2",
+        "title_en": "Reincarnated as a Sword Season 2",
+        "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx158091-E66o2kY41g9P.jpg",
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "Fall 2026",
+        "episodes_display": "चालू • Ep 7",
+        "airing_day_time_ist": "बुधवार • 9:00 PM IST",
+        "airing_at": int(time.time()) + 172800,
+        "studio": "C2C",
+        "source_type": "Light Novel",
+        "genres": ["Action", "Fantasy", "Isekai"],
+        "genres_str": "एक्शन, फैंटेसी, इसेकाई",
+        "synopsis_hi": "जादुई तलवार और बिल्ली-लड़की फ्रैंकी की रोमांचक यात्रा।",
+        "platforms_list": [
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+    "mashle-magic-and-muscles": {
+        "slug": "mashle-magic-and-muscles",
+        "title_hi": "मैशले: मैजिक एंड मसल्स",
+        "title_en": "Mashle: Magic and Muscles",
+        "cover_image": "/media/covers/anime_death-note.webp",
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2023-2024",
+        "episodes_display": "सीज़न 1-2 • 24 एपिसोड्स",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "A-1 Pictures",
+        "source_type": "Manga",
+        "genres": ["Action", "Comedy", "Fantasy"],
+        "genres_str": "एक्शन, कॉमेडी, फैंटेसी",
+        "synopsis_hi": "जादू की दुनिया में बिना किसी जादू के केवल मांसपेशियों की ताकत से मुकाबला।",
+        "platforms_list": [
+            {"name": "Ani-One Asia", "url": "https://www.youtube.com/@AniOneAsia"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "YouTube", "url": "https://www.youtube.com"}
+        ],
+    },
+}
+
+DYNAMIC_ANIME_ALIASES: dict[str, str] = {
+    "frieren": "frieren-beyond-journeys-end",
+    "frieren-beyond-journey-s-end": "frieren-beyond-journeys-end",
+    "frieren-beyond-journeys-end-hindi-guide": "frieren-beyond-journeys-end",
+    "dan-da-dan": "dandadan",
+    "chainsawman": "chainsaw-man",
+    "mob-psycho": "mob-psycho-100",
+    "classroom-elite": "classroom-of-the-elite",
+    "apothecary-diaries-s3": "the-apothecary-diaries-season-3",
+    "the-apothecary-diaries": "the-apothecary-diaries-season-3",
+    "black-clover-s2": "black-clover-season-2",
+    "btth": "battle-through-the-heavens",
+    "battle-through-heavens": "battle-through-the-heavens",
+    "dr-stone": "dr-stone-science-future",
+    "bleach-tybw": "bleach-thousand-year-blood-war",
+    "reincarnated-sword-s2": "reincarnated-as-a-sword-season-2",
+    "mashle": "mashle-magic-and-muscles",
+}
+
+
+def resolve_dynamic_anime(slug_or_id: str, session: Session) -> Optional[dict[str, Any]]:
+    """Universal Anime Resolver: Resolves any slug or ID into rich anime metadata."""
+    if not slug_or_id:
+        return None
+    raw_slug = slugify_anime_title(slug_or_id)
+    canonical_slug = DYNAMIC_ANIME_ALIASES.get(raw_slug, raw_slug)
+
+    # 1. Check Pre-registered Catalog
+    if canonical_slug in DYNAMIC_ANIME_CATALOG:
+        return dict(DYNAMIC_ANIME_CATALOG[canonical_slug])
+
+    # 2. Check FREE_LEGAL_ANIME_DATA
+    for f in FREE_LEGAL_ANIME_DATA:
+        f_slug = slugify_anime_title(f.get("url", "").replace("/anime/", ""))
+        f_id_slug = slugify_anime_title(f.get("id", ""))
+        f_en_slug = slugify_anime_title(f.get("title_en", ""))
+        if canonical_slug in (f_slug, f_id_slug, f_en_slug):
+            plats = [{"name": p, "url": "https://www.youtube.com"} for p in f.get("platforms", ["YouTube"])]
+            return {
+                "slug": canonical_slug,
+                "title_hi": f["title_hi"],
+                "title_en": f["title_en"],
+                "cover_image": f["cover_image"],
+                "is_airing": f.get("is_airing", False),
+                "is_donghua": "donghua" in f.get("filter_tags", []),
+                "is_hindi_dub": f.get("is_hindi_dub", False),
+                "format": "TV",
+                "season_year": "2026",
+                "episodes_display": f.get("episodes", "विस्तृत एपिसोड्स"),
+                "airing_day_time_ist": "उपलब्ध" if not f.get("is_airing") else "चालू प्रसारण",
+                "airing_at": int(time.time()) + 86400 if f.get("is_airing") else 0,
+                "studio": f.get("primary_platform", "Official"),
+                "source_type": "Manga",
+                "genres": ["Action", "Adventure"],
+                "genres_str": "एक्शन, रोमांच",
+                "synopsis_hi": f.get("synopsis_hi", ""),
+                "platforms_list": plats,
+            }
+
+    # 3. Check Live Weekly Schedule Cache
+    try:
+        from automation.fetchers.anilist import fetch_live_weekly_schedule
+        sched = fetch_live_weekly_schedule()
+        for item in sched.get("weekly_items", []):
+            item_en_slug = slugify_anime_title(item.get("title_en", ""))
+            item_ro_slug = slugify_anime_title(item.get("title_romaji", ""))
+            item_id_str = str(item.get("id", ""))
+            if canonical_slug in (item_en_slug, item_ro_slug, item_id_str):
+                return {
+                    "slug": canonical_slug,
+                    "title_hi": item.get("title_hi") or item.get("clean_title_hi") or item.get("title_en"),
+                    "title_en": item.get("title_en") or item.get("title_romaji"),
+                    "cover_image": item.get("image_url") or "/media/covers/anime_naruto.webp",
+                    "is_airing": True,
+                    "is_donghua": item.get("is_donghua", False),
+                    "is_hindi_dub": item.get("has_hindi_dub", False),
+                    "format": item.get("format", "TV"),
+                    "season_year": f"{item.get('season', 'Fall')} {item.get('year', 2026)}",
+                    "episodes_display": f"Ep {item.get('episode', 1)}" if item.get("episode") else "चालू सीज़न",
+                    "airing_day_time_ist": item.get("airing_time_ist") or (f"{item.get('day_name_hi', 'साप्ताहिक')} • 8:00 PM IST"),
+                    "airing_at": item.get("airing_at") or (int(time.time()) + 86400),
+                    "studio": item.get("studio") or "TBA",
+                    "source_type": item.get("source_type") or "Manga",
+                    "genres": item.get("genres") or ["Action", "Animation"],
+                    "genres_str": ", ".join(item.get("genres") or ["एनीमे", "एक्शन"]),
+                    "synopsis_hi": item.get("summary_hi") or f"{item.get('title_hi', 'यह शो')} की आधिकारिक स्ट्रीमिंग और भारतीय दर्शकों के लिए साप्ताहिक एपिसोड गाइड।",
+                    "platforms_list": [
+                        {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+                        {"name": "Netflix", "url": "https://www.netflix.com"},
+                        {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+                        {"name": "Ani-One Asia", "url": "https://www.youtube.com/@AniOneAsia"}
+                    ],
+                }
+    except Exception:
+        pass
+
+    # 4. Check DB AnimeDraft
+    db_draft = session.exec(select(AnimeDraft).where(
+        or_(
+            AnimeDraft.external_id == slug_or_id,
+            AnimeDraft.external_id == canonical_slug
+        )
+    )).first()
+    if db_draft:
+        return {
+            "slug": canonical_slug,
+            "title_hi": db_draft.title_hi or db_draft.title_en,
+            "title_en": db_draft.title_en or db_draft.title_hi,
+            "cover_image": db_draft.image_url or "/media/covers/anime_naruto.webp",
+            "is_airing": (db_draft.content_type == "schedule"),
+            "is_donghua": bool(getattr(db_draft, "is_donghua", False)),
+            "is_hindi_dub": True,
+            "format": "TV",
+            "season_year": "2026",
+            "episodes_display": "उपलब्ध",
+            "airing_day_time_ist": "प्रसारण उपलब्ध",
+            "airing_at": int(time.time()) + 86400 if db_draft.content_type == "schedule" else 0,
+            "studio": db_draft.source_name or "Official",
+            "source_type": "Manga",
+            "genres": ["Action"],
+            "genres_str": "एक्शन, ड्रामा",
+            "synopsis_hi": db_draft.summary_hi or db_draft.summary_en or "",
+            "platforms_list": [
+                {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+                {"name": "Netflix", "url": "https://www.netflix.com"}
+            ],
+        }
+
+    # 5. Clean Title Fallback Generator
+    clean_words = [w.capitalize() for w in canonical_slug.split("-") if w]
+    if clean_words:
+        english_name = " ".join(clean_words)
+        return {
+            "slug": canonical_slug,
+            "title_hi": english_name,
+            "title_en": english_name,
+            "cover_image": "/media/covers/anime_naruto.webp",
+            "is_airing": True,
+            "is_donghua": False,
+            "is_hindi_dub": False,
+            "format": "TV",
+            "season_year": "2026",
+            "episodes_display": "चालू सीज़न",
+            "airing_day_time_ist": "साप्ताहिक • 8:00 PM IST",
+            "airing_at": int(time.time()) + 86400,
+            "studio": "TBA",
+            "source_type": "Animation",
+            "genres": ["Action", "Adventure"],
+            "genres_str": "एक्शन, एडवेंचर",
+            "synopsis_hi": f"{english_name} की आधिकारिक स्ट्रीमिंग, एपिसोड शेड्यूल और भारतीय दर्शकों के लिए विस्तृत गाइड।",
+            "platforms_list": [
+                {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+                {"name": "Netflix", "url": "https://www.netflix.com"},
+                {"name": "YouTube", "url": "https://www.youtube.com"}
+            ],
+        }
+
+    return None
+
+
+def get_related_dynamic_anime(current_slug: str, limit: int = 4) -> list[dict[str, Any]]:
+    """Return 4 distinct related anime for the footer recommendation grid."""
+    pool = [
+        {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "url": "/anime/frieren-beyond-journeys-end", "cover_image": "/media/covers/anime_frieren.webp", "is_hindi_dub": False, "badge": "फैंटेसी"},
+        {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "url": "/anime/chainsaw-man", "cover_image": "/media/covers/anime_chainsaw-man.webp", "is_hindi_dub": False, "badge": "डार्क एक्शन"},
+        {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "url": "/anime/dandadan", "cover_image": "/media/covers/anime_dandadan.webp", "is_hindi_dub": False, "badge": "सुपरनैचुरल"},
+        {"title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "url": "/anime/sakamoto-days", "cover_image": "/media/covers/anime_sakamoto-days.webp", "is_hindi_dub": False, "badge": "एक्शन कॉमेडी"},
+        {"title_hi": "द अपोथेकेरी डायरीज़ सीज़न 3", "title_en": "The Apothecary Diaries Season 3", "url": "/anime/the-apothecary-diaries-season-3", "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-5N9gq2U62DkR.jpg", "is_hindi_dub": False, "badge": "मिस्ट्री"},
+        {"title_hi": "स्वॉलोड स्टार", "title_en": "Swallowed Star", "url": "/anime/swallowed-star", "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx125299-FkM2rK5s9uP0.jpg", "is_hindi_dub": True, "badge": "डोंगहुआ"},
+        {"title_hi": "लिंक क्लिक", "title_en": "Link Click", "url": "/anime/link-click", "cover_image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx126403-1TjhVqW84FqT.png", "is_hindi_dub": True, "badge": "थ्रिलर"},
+        {"title_hi": "वन-पंच मैन", "title_en": "One-Punch Man", "url": "/anime/one-punch-man", "cover_image": "/media/covers/anime_solo-leveling.webp", "is_hindi_dub": True, "badge": "सुपरहीरो"},
+    ]
+    res = [item for item in pool if not item["url"].endswith(current_slug)]
+    return res[:limit]
+
+
+# ---------- RANDOM ANIME SMART PICKER (PHASE 2) ----------
+def pick_random_anime(mood: Optional[str] = None) -> dict[str, Any]:
+    """Smart Picker logic: returns a curated anime matching the user's mood."""
+    mood_map = {
+        "action": [
+            {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "url": "/anime/chainsaw-man"},
+            {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "url": "/anime/dandadan"},
+            {"title_hi": "वन-पंच मैन", "title_en": "One-Punch Man", "url": "/anime/one-punch-man"},
+            {"title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "url": "/anime/sakamoto-days"},
+            {"title_hi": "जुजुत्सु काइसेन", "title_en": "Jujutsu Kaisen", "url": "/anime/jujutsu-kaisen-hindi-streaming-guide"},
+        ],
+        "romance": [
+            {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "url": "/anime/frieren-beyond-journeys-end"},
+            {"title_hi": "योर नेम", "title_en": "Your Name", "url": "/anime/your-name-makoto-shinkai-romance-anime-hindi"},
+            {"title_hi": "द अपोथेकेरी डायरीज़", "title_en": "The Apothecary Diaries", "url": "/anime/the-apothecary-diaries-season-3"},
+            {"title_hi": "ब्लू बॉक्स सीज़न 2", "title_en": "Blue Box Season 2", "url": "/anime/blue-box-season-2"},
+        ],
+        "free": [
+            {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
+            {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "url": "/anime/frieren-beyond-journeys-end"},
+            {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "url": "/anime/chainsaw-man"},
+            {"title_hi": "टोक्यो रिवेंजर्स", "title_en": "Tokyo Revengers", "url": "/anime/tokyo-revengers"},
+            {"title_hi": "लिंक क्लिक", "title_en": "Link Click", "url": "/anime/link-click"},
+        ],
+        "hindi_dub": [
+            {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
+            {"title_hi": "टोक्यो रिवेंजर्स", "title_en": "Tokyo Revengers", "url": "/anime/tokyo-revengers"},
+            {"title_hi": "वन-पंच मैन", "title_en": "One-Punch Man", "url": "/anime/one-punch-man"},
+            {"title_hi": "लिंक क्लिक", "title_en": "Link Click", "url": "/anime/link-click"},
+            {"title_hi": "सोलो लेवलिंग", "title_en": "Solo Leveling", "url": "/anime/solo-leveling-hindi-dub-guide"},
+        ],
+    }
+    import random
+    selected_pool = mood_map.get((mood or "").lower().strip())
+    if not selected_pool:
+        # Combined pool of top hits
+        selected_pool = [
+            {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "url": "/anime/frieren-beyond-journeys-end"},
+            {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "url": "/anime/chainsaw-man"},
+            {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "url": "/anime/dandadan"},
+            {"title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days", "url": "/anime/sakamoto-days"},
+            {"title_hi": "द अपोथेकेरी डायरीज़ सीज़न 3", "title_en": "The Apothecary Diaries Season 3", "url": "/anime/the-apothecary-diaries-season-3"},
+            {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
+            {"title_hi": "टोक्यो रिवेंजर्स", "title_en": "Tokyo Revengers", "url": "/anime/tokyo-revengers"},
+        ]
+    return random.choice(selected_pool)
+
+
+@router.get("/random-anime")
+def random_anime_picker(
+    request: Request,
+    mood: Optional[str] = Query(None),
+):
+    """Phase 2: Surprise Me ('🎲 आज क्या देखूँ?') Smart Picker endpoint."""
+    picked = pick_random_anime(mood)
+    if "application/json" in request.headers.get("accept", ""):
+        return JSONResponse(picked)
+    return RedirectResponse(url=picked["url"], status_code=303)
+
+
+# ---------- UNIVERSAL DYNAMIC ANIME DETAIL ROUTE ----------
+@router.get("/anime/{item_id}", response_class=HTMLResponse)
+def anime_detail_page(
+    request: Request,
+    item_id: str,
+    session: Session = Depends(get_session),
+):
+    clean_id = slugify_anime_title(item_id)
+    caching = is_caching_enabled()
+    now = time.monotonic()
+
+    # 1. Check in-memory TTL cache first (sub-5ms response!)
+    if caching and clean_id in _DYNAMIC_ANIME_CACHE:
+        cached_data, exp = _DYNAMIC_ANIME_CACHE[clean_id]
+        if exp > now:
+            ctx = cached_data.copy()
+            ctx["request"] = request
+            ctx["categories"] = get_categories(session)
+            ctx["user"] = getattr(request.state, "user", None)
+            return render("anime_detail.html", **ctx)
+
+    # 2. Check if an Article editorial guide exists in DB with this slug
+    article = session.exec(select(Article).where(Article.slug == item_id)).first()
+    if article:
+        return article_page(request, item_id, session)
+
+    # Check if this slug is an alias or key in DYNAMIC_ANIME_CATALOG
+    resolved_catalog_slug = DYNAMIC_ANIME_ALIASES.get(clean_id, clean_id)
+    if resolved_catalog_slug not in DYNAMIC_ANIME_CATALOG:
+        try:
+            return article_page(request, item_id, session)
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+
+    # 3. Resolve Dynamic Anime Detail Page
+    anime_data = resolve_dynamic_anime(item_id, session)
+    if anime_data:
+        categories = get_categories(session)
+        user = getattr(request.state, "user", None)
+        lang = request.cookies.get("site_lang", "hi")
+        related_anime = get_related_dynamic_anime(anime_data["slug"], limit=4)
+        ctx = {
+            "anime": anime_data,
+            "related_anime": related_anime,
+            "categories": categories,
+            "lang": lang,
+            "user": user,
+            "request": request,
+        }
+        if caching:
+            _DYNAMIC_ANIME_CACHE[clean_id] = (ctx.copy(), now + DYNAMIC_ANIME_CACHE_TTL)
+        return render("anime_detail.html", **ctx)
+
+    # 4. Fallback: if numeric ID or external_id intended for news/update
+    return update_detail_page(request, item_id, session)
+
+
 @router.get("/updates/{item_id}", response_class=HTMLResponse)
 @router.get("/news/{item_id}", response_class=HTMLResponse)
-@router.get("/anime/{item_id}", response_class=HTMLResponse)
 def update_detail_page(
     request: Request,
     item_id: str,
@@ -2969,7 +3815,7 @@ def update_detail_page(
     user = getattr(request.state, "user", None)
     lang = request.cookies.get("site_lang", "hi")
 
-    # 0. Check if an Article exists with this slug (e.g. /anime/{slug})
+    # 0. Check if an Article exists with this slug
     article = session.exec(select(Article).where(Article.slug == item_id)).first()
     if article or not (item_id.isdigit() or item_id.startswith("anilist_")):
         try:
