@@ -67,26 +67,46 @@
   <!-- Day Tabs & Filters -->
   <div class="space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
-      <!-- Days Tabs -->
-      <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar gap-1.5 pb-1 max-w-full" role="tablist">
+      <!-- Days Tabs (Anikoto-Style 7-Day Date Selector Header) -->
+      <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar gap-1.5 pb-1 max-w-full select-none" role="tablist">
         <button type="button" @click="setDay('all')"
-                :class="activeDay === 'all' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
-                class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
+                :class="activeDay === 'all' ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-900/30' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
           पूरा हफ़्ता (This Week)
         </button>
 
+        {% if timeline_by_day %}
+        <button type="button" @click="setDay(typeof activeDay === 'number' ? (activeDay === 0 ? 6 : activeDay - 1) : 0)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 hover:border-red-500/50 text-zinc-400 hover:text-white flex items-center justify-center shrink-0 transition" title="पिछला दिन">
+          <i class="fas fa-chevron-left text-xs"></i>
+        </button>
+        {% for day in timeline_by_day %}
+        <button type="button" @click="setDay({{ day.day_idx }})"
+                :class="activeDay === {{ day.day_idx }} ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-900/30 font-bold' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+          <span data-hi="{{ day.day_name_hi }} {{ day.date_str_hi }} ({{ day.day_name_en }} {{ day.date_str_en }})" data-en="{{ day.day_name_en }} {{ day.date_str_en }} ({{ day.day_name_hi }} {{ day.date_str_hi }})">{{ day.full_label }}</span>
+          {% if day.is_today %}
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="आज (Today)"></span>
+          {% endif %}
+          <span class="text-[10px] opacity-75 font-normal">({{ day.count }})</span>
+        </button>
+        {% endfor %}
+        <button type="button" @click="setDay(typeof activeDay === 'number' ? (activeDay === 6 ? 0 : activeDay + 1) : 0)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 hover:border-red-500/50 text-zinc-400 hover:text-white flex items-center justify-center shrink-0 transition" title="अगला दिन">
+          <i class="fas fa-chevron-right text-xs"></i>
+        </button>
+        {% else %}
         <template x-for="(day, idx) in days" :key="idx">
           <button type="button" @click="setDay(idx)"
-                  :class="activeDay === idx ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
+                  :class="activeDay === idx ? 'bg-red-600 text-white border-red-500 shadow-md font-bold' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
                   class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5">
             <span x-text="day.nameHi"></span>
             <span x-show="todayIdx === idx" class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="आज (Today)"></span>
           </button>
         </template>
+        {% endif %}
 
         <button type="button" @click="setDay('other')"
-                :class="activeDay === 'other' ? 'bg-purple-600 text-white border-purple-500 shadow-md' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
-                class="px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
+                :class="activeDay === 'other' ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-900/30' : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300 dark:text-zinc-200 dark:bg-zinc-800/90 dark:hover:bg-zinc-700 dark:border-zinc-700'"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shrink-0">
           अन्य (Other)
         </button>
       </div>

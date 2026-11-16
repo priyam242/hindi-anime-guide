@@ -214,12 +214,107 @@
         <!-- Left Main Area (lg:col-span-8 xl:col-span-9 space-y-10) -->
         <div class="lg:col-span-8 xl:col-span-9 space-y-10">
 
+<!-- Anikoto-Style Master Airing Schedule (7-Day Date Selector Header) -->
+            <section class="w-full" x-data="{ activeDay: {{ today_idx }}, showMore: {} }">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-zinc-800/80 mb-3 gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white" data-hi="साप्ताहिक प्रसारण टाइमलाइन" data-en="Weekly Airing Timeline">साप्ताहिक प्रसारण टाइमलाइन</h2>
+                        <span class="text-xs text-zinc-400 font-medium hidden sm:inline">(IST कैलेंडर)</span>
+                    </div>
+
+                    <a href="/schedule" class="hidden sm:inline-block text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition">पूरा शेड्यूल देखें →</a>
+                </div>
+
+                <!-- Anikoto 7-Day Date Selector Header -->
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 mb-4 select-none">
+                    <button type="button" @click="activeDay = (activeDay === 0 ? 6 : activeDay - 1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center shrink-0 transition" title="पिछला दिन">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </button>
+                    {% for day in timeline_by_day %}
+                    <button type="button"
+                            @click="activeDay = {{ day.day_idx }}"
+                            :class="activeDay === {{ day.day_idx }} ? 'bg-red-600 text-white font-bold shadow-md shadow-red-900/30 border-red-500' : 'bg-zinc-900/90 text-zinc-300 hover:text-white hover:bg-zinc-800 border-zinc-800'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+                        <span data-hi="{{ day.day_name_hi }} {{ day.date_str_hi }} ({{ day.day_name_en }} {{ day.date_str_en }})" data-en="{{ day.day_name_en }} {{ day.date_str_en }} ({{ day.day_name_hi }} {{ day.date_str_hi }})">{{ day.full_label }}</span>
+                        {% if day.is_today %}
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="आज (Today)"></span>
+                        {% endif %}
+                        <span class="text-[10px] opacity-75 font-normal">({{ day.count }})</span>
+                    </button>
+                    {% endfor %}
+                    <button type="button" @click="activeDay = (activeDay === 6 ? 0 : activeDay + 1)" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center shrink-0 transition" title="अगला दिन">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- 7-Day Airing Panels (Instant Zero-Reload Alpine Tab Switching) -->
+                {% for day in timeline_by_day %}
+                <div x-show="activeDay === {{ day.day_idx }}" class="space-y-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                        {% for show in day.shows %}
+                        <a href="{{ show.url or ('/anime/' ~ (show.slug or show.anilist_id)) }}"
+                           x-show="showMore[{{ day.day_idx }}] || {{ loop.index0 }} < 10"
+                           class="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 hover:border-red-500/50 transition flex flex-col">
+                            <div class="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950">
+                                <img src="{{ show.image_url }}"
+                                     alt="{{ show.title_hi }}"
+                                     loading="lazy"
+                                     decoding="async"
+                                     referrerpolicy="no-referrer"
+                                     onerror="this.onerror=null; this.style.opacity='0.5';"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md"
+                                      data-hi="{{ show.episode_pill_hi }}" data-en="{{ show.episode_pill_en }}">{{ show.episode_pill_hi }}</span>
+                                {% if show.is_donghua %}
+                                <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Donghua</span>
+                                {% elif show.has_verified_hindi_dub %}
+                                <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-emerald-600 text-white font-extrabold text-[9px] tracking-wide shadow-md">HINDI DUB</span>
+                                {% endif %}
+                                <div class="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent text-[10px] font-medium text-zinc-300 text-center truncate">
+                                    <i class="far fa-clock text-red-400 mr-1"></i>{{ show.airing_ist_time }}
+                                </div>
+                            </div>
+                            <div class="p-2.5 flex flex-col flex-grow justify-between">
+                                <div>
+                                    <h3 class="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition line-clamp-1 leading-snug">
+                                        {{ show.title_hi }}
+                                    </h3>
+                                    <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+                                        {{ show.title_en }}
+                                    </p>
+                                </div>
+                                {% if show.badge_hi %}
+                                <div class="mt-2 flex items-center">
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-300 border border-zinc-700/40 truncate"
+                                          data-hi="{{ show.badge_hi }}" data-en="{{ show.badge_en }}">{{ show.badge_hi }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+
+                    {% if day.shows|length > 10 %}
+                    <div class="text-center pt-1">
+                        <button type="button"
+                                @click="showMore[{{ day.day_idx }}] = !showMore[{{ day.day_idx }}]"
+                                class="px-4 py-1.5 rounded-xl text-xs font-bold bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-red-400 hover:text-red-300 transition inline-flex items-center gap-1.5 shadow-sm">
+                            <span x-text="showMore[{{ day.day_idx }}] ? 'कम शोज़ दिखाएं (Show Less)' : 'सभी {{ day.count }} शोज़ देखें (Show all {{ day.count }})'"></span>
+                            <i class="fas text-[10px]" :class="showMore[{{ day.day_idx }}] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </section>
+
             <!-- Section 1 — ताज़ा एपिसोड्स (Latest Airing Schedule) with Alpine Filter Tabs -->
             <section class="w-full" x-data="{ tab: 'all' }">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-zinc-800/80 mb-4 gap-3">
                     <div class="flex items-center gap-2.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-                        <h2 class="text-xl sm:text-2xl font-black text-white" data-hi="ताज़ा एपिसोड्स" data-en="Latest Episodes">ताज़ा एपिसोड्स</h2>
+                        <h2 class="text-xl sm:text-2xl font-black text-white" data-hi="ताज़ा एपिसोड्स (Latest Airing Schedule)" data-en="Latest Episodes (Airing Schedule)">ताज़ा एपिसोड्स (Latest Airing Schedule)</h2>
                     </div>
 
                     <!-- Alpine Filter Tabs -->
@@ -246,13 +341,7 @@
                                  referrerpolicy="no-referrer"
                                  onerror="this.onerror=null; this.style.opacity='0.5';"
                                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            {% if card.episode_badge %}
                             <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">{{ card.episode_badge }}</span>
-                            {% elif card.episode %}
-                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Ep {{ card.episode }}</span>
-                            {% else %}
-                            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">नया एपिसोड</span>
-                            {% endif %}
                             {% if card.is_donghua %}
                             <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-blue-600 text-white font-extrabold text-[10px] tracking-wide shadow-md">Donghua</span>
                             {% elif card.is_hindi_dub %}

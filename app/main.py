@@ -44,6 +44,13 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
+    # Non-blocking schedule staleness check
+    try:
+        from .routers.pages import check_and_refresh_schedule_background
+        check_and_refresh_schedule_background()
+    except Exception as e:
+        logger.warning(f"Failed to trigger background schedule check: {e}")
+
     yield
 
 

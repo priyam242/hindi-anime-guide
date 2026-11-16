@@ -703,7 +703,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "शुक्रवार • 7:30 PM IST",
-            "image_url": "/media/covers/anime_the-apothecary-diaries-season-3.webp",
+            "image_url": "/media/covers/anilist_195516.webp",
             "url": "/anime/the-apothecary-diaries-season-3",
         },
         {
@@ -716,7 +716,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "शनिवार • 7:30 PM IST",
-            "image_url": "/media/covers/anime_black-clover-season-2.webp",
+            "image_url": "/media/covers/anilist_195604.webp",
             "url": "/anime/black-clover-season-2",
         },
         {
@@ -729,7 +729,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "शनिवार • 2:30 PM IST",
-            "image_url": "/media/covers/anime_detective-conan.webp",
+            "image_url": "/media/covers/anilist_235.webp",
             "url": "/anime/detective-conan",
         },
         {
@@ -742,7 +742,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "रविवार • 6:30 PM IST",
-            "image_url": "/media/covers/anime_overgeared.webp",
+            "image_url": "/media/covers/anilist_212888.webp",
             "url": "/anime/overgeared",
         },
         {
@@ -755,7 +755,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "बुधवार • 7:00 PM IST",
-            "image_url": "/media/covers/anime_reincarnated-as-a-sword-season-2.webp",
+            "image_url": "/media/covers/anilist_159042.webp",
             "url": "/anime/reincarnated-as-a-sword-season-2",
         },
         {
@@ -768,7 +768,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "मंगलवार • 8:30 PM IST",
-            "image_url": "/media/covers/anime_firefly-wedding.webp",
+            "image_url": "/media/covers/anilist_205909.webp",
             "url": "/anime/firefly-wedding",
         },
         {
@@ -781,7 +781,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "गुरुवार • 8:00 PM IST",
-            "image_url": "/media/covers/anime_blue-box-season-2.webp",
+            "image_url": "/media/covers/anilist_170942.webp",
             "url": "/anime/blue-box-season-2",
         },
         {
@@ -794,7 +794,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "शुक्रवार • 9:00 PM IST",
-            "image_url": "/media/covers/anime_steel-ball-run.webp",
+            "image_url": "/media/covers/anilist_210482.webp",
             "url": "/anime/steel-ball-run",
         },
         {
@@ -807,7 +807,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": True,
             "is_today": False,
             "ist_time_str": "शुक्रवार • 8:30 PM IST",
-            "image_url": "/media/covers/anime_link-click.webp",
+            "image_url": "/media/covers/anilist_126403.webp",
             "url": "/anime/link-click",
         },
         {
@@ -820,7 +820,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "बुधवार • 7:30 AM IST",
-            "image_url": "/media/covers/anime_swallowed-star.webp",
+            "image_url": "/media/covers/anilist_117012.webp",
             "url": "/anime/swallowed-star",
         },
         {
@@ -833,7 +833,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": True,
             "ist_time_str": "रविवार • 7:30 AM IST",
-            "image_url": "/media/covers/anime_battle-through-the-heavens.webp",
+            "image_url": "/media/covers/anilist_104922.webp",
             "url": "/anime/battle-through-the-heavens",
         },
         {
@@ -846,7 +846,7 @@ def compute_home_page_data(session: Session) -> dict:
             "is_hindi_dub": False,
             "is_today": False,
             "ist_time_str": "शनिवार • 7:30 AM IST",
-            "image_url": "/media/covers/anime_soul-land-2.webp",
+            "image_url": "/media/covers/anilist_137683.webp",
             "url": "/anime/soul-land-2",
         },
     ]
@@ -966,42 +966,42 @@ def compute_home_page_data(session: Session) -> dict:
 
     # ZONE 2A: Popular Hindi Dubs (12 crisp poster cards)
     popular_hindi_dubs = [
-        {"title_hi": "सोलो लेवलिंग", "title_en": "Solo Leveling", "image_url": "/media/covers/anime_solo-leveling.webp", "url": "/anime/solo-leveling-hindi-dub-guide"},
-        {"title_hi": "जुजुत्सु काइसेन", "title_en": "Jujutsu Kaisen", "image_url": "/media/covers/anime_jujutsu-kaisen.webp", "url": "/anime/jujutsu-kaisen-hindi-streaming-guide"},
-        {"title_hi": "डेमन स्लेयर", "title_en": "Demon Slayer", "image_url": "/media/covers/anime_demon-slayer.webp", "url": "/anime/demon-slayer-hindi-dub-guide"},
-        {"title_hi": "अटैक ऑन टाइटन", "title_en": "Attack on Titan", "image_url": "/media/covers/anime_attack-on-titan.webp", "url": "/anime/attack-on-titan-streaming-guide-india"},
-        {"title_hi": "नारुतो", "title_en": "Naruto", "image_url": "/media/covers/anime_naruto.webp", "url": "/anime/naruto-hindi-dub-guide"},
-        {"title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/anime_one-piece.webp", "url": "/anime/one-piece-hindi-guide-watch-order"},
+        {"title_hi": "सोलो लेवलिंग", "title_en": "Solo Leveling", "image_url": "/media/covers/anilist_151807.webp", "url": "/anime/solo-leveling-hindi-dub-guide"},
+        {"title_hi": "जुजुत्सु काइसेन", "title_en": "Jujutsu Kaisen", "image_url": "/media/covers/anilist_113415.webp", "url": "/anime/jujutsu-kaisen-hindi-streaming-guide"},
+        {"title_hi": "डेमन स्लेयर", "title_en": "Demon Slayer", "image_url": "/media/covers/anilist_101348.webp", "url": "/anime/demon-slayer-hindi-dub-guide"},
+        {"title_hi": "अटैक ऑन टाइटन", "title_en": "Attack on Titan", "image_url": "/media/covers/anilist_16498.webp", "url": "/anime/attack-on-titan-streaming-guide-india"},
+        {"title_hi": "नारुतो", "title_en": "Naruto", "image_url": "/media/covers/anilist_20.webp", "url": "/anime/naruto-hindi-dub-guide"},
+        {"title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/anilist_21.webp", "url": "/anime/one-piece-hindi-guide-watch-order"},
         {"title_hi": "डॉक्टर स्टोन", "title_en": "Dr. STONE", "image_url": "/media/covers/anime_dr-stone-science-future.webp", "url": "/anime/dr-stone-science-future"},
-        {"title_hi": "काइजू नंबर 8", "title_en": "Kaiju No. 8", "image_url": "/media/covers/anime_kaiju-no-8.webp", "url": "/anime/kaiju-no-8"},
-        {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "image_url": "/media/covers/anime_spy-x-family.webp", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
-        {"title_hi": "ड्रैगन बॉल ज़ेड", "title_en": "Dragon Ball Z", "image_url": "/media/covers/anime_dragon-ball-z.webp", "url": "/anime/dragon-ball-z-hindi-watch-guide"},
-        {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "image_url": "/media/covers/anime_chainsaw-man.webp", "url": "/anime/chainsaw-man"},
-        {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anime_dandadan.webp", "url": "/anime/dandadan"},
+        {"title_hi": "काइजू नंबर 8", "title_en": "Kaiju No. 8", "image_url": "/media/covers/anilist_153288.webp", "url": "/anime/kaiju-no-8"},
+        {"title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "image_url": "/media/covers/anilist_140960.webp", "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
+        {"title_hi": "ड्रैगन बॉल ज़ेड", "title_en": "Dragon Ball Z", "image_url": "/media/covers/anilist_223.webp", "url": "/anime/dragon-ball-z-hindi-watch-guide"},
+        {"title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man", "image_url": "/media/covers/anilist_127230.webp", "url": "/anime/chainsaw-man"},
+        {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anilist_171018.webp", "url": "/anime/dandadan"},
     ]
 
     # ZONE 2A: Free Legal Anime (6 crisp poster cards from /free)
     free_legal_anime = [
-        {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "image_url": "/media/covers/anime_frieren.webp", "platform": "Muse Asia", "url": "/anime/frieren-beyond-journeys-end"},
-        {"title_hi": "कैम्पफ़ायर कुकिंग इन अनदर वर्ल्ड", "title_en": "Campfire Cooking in Another World", "image_url": "/media/covers/anime_campfire-cooking-in-another-world-with-my-absurd-skill.webp", "platform": "Muse Asia", "url": "/anime/campfire-cooking-in-another-world-with-my-absurd-skill"},
-        {"title_hi": "द एमिनेंस इन शैडो", "title_en": "The Eminence in Shadow", "image_url": "/media/covers/anime_the-eminence-in-shadow.webp", "platform": "Ani-One Asia", "url": "/anime/the-eminence-in-shadow"},
-        {"title_hi": "विंड ब्रेकर", "title_en": "Wind Breaker", "image_url": "/media/covers/anime_wind-breaker.webp", "platform": "Muse Asia", "url": "/anime/wind-breaker"},
-        {"title_hi": "शांगरी-ला फ्रंटियर", "title_en": "Shangri-La Frontier", "image_url": "/media/covers/anime_shangri-la-frontier.webp", "platform": "Muse Asia", "url": "/anime/shangri-la-frontier"},
-        {"title_hi": "काइजू नंबर 8", "title_en": "Kaiju No. 8", "image_url": "/media/covers/anime_kaiju-no-8.webp", "platform": "Ani-One Asia", "url": "/anime/kaiju-no-8"},
+        {"title_hi": "फ्रीरेन: बियॉन्ड जर्नीज़ एंड", "title_en": "Frieren: Beyond Journey's End", "image_url": "/media/covers/anilist_154587.webp", "platform": "Muse Asia", "url": "/anime/frieren-beyond-journeys-end"},
+        {"title_hi": "कैम्पफ़ायर कुकिंग इन अनदर वर्ल्ड", "title_en": "Campfire Cooking in Another World", "image_url": "/media/covers/anilist_156067.webp", "platform": "Muse Asia", "url": "/anime/campfire-cooking-in-another-world-with-my-absurd-skill"},
+        {"title_hi": "द एमिनेंस इन शैडो", "title_en": "The Eminence in Shadow", "image_url": "/media/covers/anilist_130298.webp", "platform": "Ani-One Asia", "url": "/anime/the-eminence-in-shadow"},
+        {"title_hi": "विंड ब्रेकर", "title_en": "Wind Breaker", "image_url": "/media/covers/anilist_163270.webp", "platform": "Muse Asia", "url": "/anime/wind-breaker"},
+        {"title_hi": "शांगरी-ला फ्रंटियर", "title_en": "Shangri-La Frontier", "image_url": "/media/covers/anilist_151970.webp", "platform": "Muse Asia", "url": "/anime/shangri-la-frontier"},
+        {"title_hi": "काइजू नंबर 8", "title_en": "Kaiju No. 8", "image_url": "/media/covers/anilist_153288.webp", "platform": "Ani-One Asia", "url": "/anime/kaiju-no-8"},
     ]
 
     # ZONE 2B: Top 10 Anime Guides (10 distinct franchises in Right Sidebar)
     curated_top10 = [
-        ("सोलो लेवलिंग", "Solo Leveling", "/media/covers/anime_solo-leveling.webp", ["Crunchyroll"], "/anime/solo-leveling-hindi-dub-guide"),
-        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anime_jujutsu-kaisen.webp", ["Crunchyroll", "Netflix"], "/anime/jujutsu-kaisen-hindi-streaming-guide"),
-        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anime_demon-slayer.webp", ["Crunchyroll", "Netflix"], "/anime/demon-slayer-hindi-dub-guide"),
-        ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anime_attack-on-titan.webp", ["Prime Video"], "/anime/attack-on-titan-streaming-guide-india"),
-        ("नारुतो", "Naruto", "/media/covers/anime_naruto.webp", ["Crunchyroll", "Netflix"], "/anime/naruto-hindi-dub-guide"),
-        ("वन पीस", "One Piece", "/media/covers/anime_one-piece.webp", ["Crunchyroll"], "/anime/one-piece-hindi-guide-watch-order"),
-        ("ड्रैगन बॉल ज़ेड", "Dragon Ball Z", "/media/covers/anime_dragon-ball-z.webp", ["Crunchyroll"], "/anime/dragon-ball-z-hindi-watch-guide"),
-        ("डेथ नोट", "Death Note", "/media/covers/anime_death-note.webp", ["Netflix"], "/anime/death-note-hindi-watch-guide"),
-        ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anime_spy-x-family.webp", ["Crunchyroll", "Muse Asia"], "/anime/spy-x-family-hindi-dub-streaming-guide"),
-        ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anime_haikyuu.webp", ["Netflix"], "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
+        ("सोलो लेवलिंग", "Solo Leveling", "/media/covers/anilist_151807.webp", ["Crunchyroll"], "/anime/solo-leveling-hindi-dub-guide"),
+        ("जुजुत्सु काइसेन", "Jujutsu Kaisen", "/media/covers/anilist_113415.webp", ["Crunchyroll", "Netflix"], "/anime/jujutsu-kaisen-hindi-streaming-guide"),
+        ("डेमन स्लेयर", "Demon Slayer", "/media/covers/anilist_101348.webp", ["Crunchyroll", "Netflix"], "/anime/demon-slayer-hindi-dub-guide"),
+        ("अटैक ऑन टाइटन", "Attack on Titan", "/media/covers/anilist_16498.webp", ["Prime Video"], "/anime/attack-on-titan-streaming-guide-india"),
+        ("नारुतो", "Naruto", "/media/covers/anilist_20.webp", ["Crunchyroll", "Netflix"], "/anime/naruto-hindi-dub-guide"),
+        ("वन पीस", "One Piece", "/media/covers/anilist_21.webp", ["Crunchyroll"], "/anime/one-piece-hindi-guide-watch-order"),
+        ("ड्रैगन बॉल ज़ेड", "Dragon Ball Z", "/media/covers/anilist_223.webp", ["Crunchyroll"], "/anime/dragon-ball-z-hindi-watch-guide"),
+        ("डेथ नोट", "Death Note", "/media/covers/anilist_1535.webp", ["Netflix"], "/anime/death-note-hindi-watch-guide"),
+        ("स्पाई x फैमिली", "Spy x Family", "/media/covers/anilist_140960.webp", ["Crunchyroll", "Muse Asia"], "/anime/spy-x-family-hindi-dub-streaming-guide"),
+        ("हाइक्यू!!", "Haikyuu!!", "/media/covers/anilist_20464.webp", ["Netflix"], "/anime/haikyuu-blue-lock-sports-anime-hindi-guide"),
     ]
     top_10_anime = []
     for idx, (t_hi, t_en, t_img, t_plats, t_url) in enumerate(curated_top10):
@@ -1051,22 +1051,22 @@ def compute_home_page_data(session: Session) -> dict:
     # ZONE 3: 3 Columns Strictly Balanced (6 / 6 / 6)
     # Column 1: New Releases (Strictly 6 distinct items with real artwork and real episode numbers)
     zone3_new_releases = [
-        {"title_hi": "चेनसॉ मैन: रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie", "image_url": "/media/covers/anime_chainsaw-man.webp", "format": "Movie", "is_movie": True, "episode": 1, "season_tag": "Fall 2026", "url": "/anime/chainsaw-man"},
-        {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anime_dandadan.webp", "format": "TV", "episode": 12, "season_tag": "Fall 2026", "url": "/anime/dandadan"},
-        {"title_hi": "ब्लू बॉक्स सीज़न 2", "title_en": "Blue Box Season 2", "image_url": "/media/covers/anime_blue-box-season-2.webp", "format": "TV", "episode": 6, "season_tag": "Fall 2026", "url": "/anime/blue-box-season-2"},
-        {"title_hi": "फायरफ्लाई वेडिंग", "title_en": "Firefly Wedding", "image_url": "/media/covers/anime_firefly-wedding.webp", "format": "TV", "episode": 6, "season_tag": "Fall 2026", "url": "/anime/firefly-wedding"},
-        {"title_hi": "रीइनकार्नेटेड ऐज़ अ स्वॉर्ड सीज़न 2", "title_en": "Reincarnated as a Sword Season 2", "image_url": "/media/covers/anime_reincarnated-as-a-sword-season-2.webp", "format": "TV", "episode": 7, "season_tag": "Fall 2026", "url": "/anime/reincarnated-as-a-sword-season-2"},
-        {"title_hi": "स्टील बॉल रन: जोजो", "title_en": "Steel Ball Run: JoJo's Bizarre Adventure", "image_url": "/media/covers/anime_steel-ball-run.webp", "format": "TV", "episode": 8, "season_tag": "Fall 2026", "url": "/anime/steel-ball-run"},
+        {"title_hi": "चेनसॉ मैन: रेज़ आर्क", "title_en": "Chainsaw Man: Reze Arc Movie", "image_url": "/media/covers/anilist_171627.webp", "format": "Movie", "is_movie": True, "episode": 1, "season_tag": "Fall 2026", "url": "/anime/chainsaw-man"},
+        {"title_hi": "डैनडाडैन", "title_en": "DanDaDan", "image_url": "/media/covers/anilist_171018.webp", "format": "TV", "episode": 12, "season_tag": "Fall 2026", "url": "/anime/dandadan"},
+        {"title_hi": "ब्लू बॉक्स सीज़न 2", "title_en": "Blue Box Season 2", "image_url": "/media/covers/anilist_170942.webp", "format": "TV", "episode": 6, "season_tag": "Fall 2026", "url": "/anime/blue-box-season-2"},
+        {"title_hi": "फायरफ्लाई वेडिंग", "title_en": "Firefly Wedding", "image_url": "/media/covers/anilist_205909.webp", "format": "TV", "episode": 6, "season_tag": "Fall 2026", "url": "/anime/firefly-wedding"},
+        {"title_hi": "रीइनकार्नेटेड ऐज़ अ स्वॉर्ड सीज़न 2", "title_en": "Reincarnated as a Sword Season 2", "image_url": "/media/covers/anilist_159042.webp", "format": "TV", "episode": 7, "season_tag": "Fall 2026", "url": "/anime/reincarnated-as-a-sword-season-2"},
+        {"title_hi": "स्टील बॉल रन: जोजो", "title_en": "Steel Ball Run: JoJo's Bizarre Adventure", "image_url": "/media/covers/anilist_210482.webp", "format": "TV", "episode": 8, "season_tag": "Fall 2026", "url": "/anime/steel-ball-run"},
     ]
 
     # Column 2: Hindi Dub Guides (Strictly 6 individual franchise guides with real official key art, 0 listicles!)
     curated_hindi_guides = [
-        {"id": 1, "title_hi": "फ्रीरेन", "title_en": "Frieren: Beyond Journey's End", "image_url": "/media/covers/anime_frieren.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/frieren-beyond-journeys-end"},
-        {"id": 2, "title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "image_url": "/media/covers/anime_spy-x-family.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
-        {"id": 3, "title_hi": "ड्रैगन बॉल", "title_en": "Dragon Ball Z", "image_url": "/media/covers/anime_dragon-ball-z.webp", "platforms": ["Crunchyroll"], "url": "/anime/dragon-ball-complete-watch-order-hindi-guide"},
+        {"id": 1, "title_hi": "फ्रीरेन", "title_en": "Frieren: Beyond Journey's End", "image_url": "/media/covers/anilist_154587.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/frieren-beyond-journeys-end"},
+        {"id": 2, "title_hi": "स्पाई x फैमिली", "title_en": "Spy x Family", "image_url": "/media/covers/anilist_140960.webp", "platforms": ["Crunchyroll", "Muse Asia"], "url": "/anime/spy-x-family-hindi-dub-streaming-guide"},
+        {"id": 3, "title_hi": "ड्रैगन बॉल", "title_en": "Dragon Ball Z", "image_url": "/media/covers/anilist_223.webp", "platforms": ["Crunchyroll"], "url": "/anime/dragon-ball-complete-watch-order-hindi-guide"},
         {"id": 4, "title_hi": "वन पीस", "title_en": "One Piece", "image_url": "/media/covers/article_one-piece-hindi-guide-watch-order_b91531f4d6.webp", "platforms": ["Crunchyroll"], "url": "/anime/one-piece-hindi-guide-watch-order"},
-        {"id": 5, "title_hi": "डेथ नोट", "title_en": "Death Note", "image_url": "/media/covers/anime_death-note.webp", "platforms": ["Netflix"], "url": "/anime/death-note-hindi-watch-guide"},
-        {"id": 6, "title_hi": "अटैक ऑन टाइटन", "title_en": "Attack on Titan", "image_url": "/media/covers/anime_attack-on-titan.webp", "platforms": ["Prime Video"], "url": "/anime/attack-on-titan-streaming-guide-india"},
+        {"id": 5, "title_hi": "डेथ नोट", "title_en": "Death Note", "image_url": "/media/covers/anilist_1535.webp", "platforms": ["Netflix"], "url": "/anime/death-note-hindi-watch-guide"},
+        {"id": 6, "title_hi": "अटैक ऑन टाइटन", "title_en": "Attack on Titan", "image_url": "/media/covers/anilist_16498.webp", "platforms": ["Prime Video"], "url": "/anime/attack-on-titan-streaming-guide-india"},
     ]
     zone3_hindi_guides = []
     # If dynamic test articles are injected (e.g. in test suite)
@@ -1076,7 +1076,7 @@ def compute_home_page_data(session: Session) -> dict:
             "id": art.get("id", 1),
             "title_hi": art.get("title", ""),
             "title_en": art.get("title", ""),
-            "image_url": "/media/covers/anime_solo-leveling.webp",
+            "image_url": "/media/covers/anilist_151807.webp",
             "platforms": ["Crunchyroll"],
             "url": f"/anime/{art.get('slug')}",
         })
@@ -1089,7 +1089,7 @@ def compute_home_page_data(session: Session) -> dict:
 
     # Column 3: Popular Manga (Strictly 6 verified popular manga with 1:1 matching titles and official covers)
     zone3_popular_manga = [
-        {"id": 92, "title_hi": "वन पीस", "title_en": "One Piece · Chapter 1130", "image_url": "/media/covers/anime_one-piece.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga/92"},
+        {"id": 92, "title_hi": "वन पीस", "title_en": "One Piece · Chapter 1130", "image_url": "/media/covers/anilist_21.webp", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga/92"},
         {"id": 137, "title_hi": "चेनसॉ मैन", "title_en": "Chainsaw Man · Chapter 182", "image_url": "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx105778-euxXZEIfDY2u.png", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga/137"},
         {"id": 140, "title_hi": "ब्लू लॉक", "title_en": "Blue Lock · Chapter 282", "image_url": "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx106130-yPNeuSu75ey1.jpg", "status_hi": "जारी है", "publisher": "VIZ Media", "url": "/manga/140"},
         {"id": 139, "title_hi": "साकामोटो डेज़", "title_en": "Sakamoto Days · Chapter 190", "image_url": "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx125828-p78Z8SflkfmO.jpg", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga/139"},
@@ -1097,9 +1097,21 @@ def compute_home_page_data(session: Session) -> dict:
         {"id": 142, "title_hi": "स्पाई x फ़ैमिली", "title_en": "SPY x FAMILY · Chapter 106", "image_url": "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx108556-NHjkz0BNJhLx.jpg", "status_hi": "जारी है", "publisher": "MANGA Plus", "url": "/manga/142"},
     ]
 
+    timeline_by_day = []
+    today_idx = 0
+    try:
+        from automation.fetchers.anilist import fetch_live_weekly_schedule
+        sched_data = fetch_live_weekly_schedule()
+        timeline_by_day = sched_data.get("timeline_by_day") or []
+        today_idx = sched_data.get("today_idx", 0)
+    except Exception as e:
+        logger.warning(f"Failed to fetch timeline_by_day for homepage: {e}")
+
     return {
         "spotlight_slides": spotlight_slides,
         "airing_episodes": airing_episodes,
+        "timeline_by_day": timeline_by_day,
+        "today_idx": today_idx,
         "official_trailers": official_trailers,
         "popular_hindi_dubs": popular_hindi_dubs,
         "free_legal_anime": free_legal_anime,
@@ -1183,6 +1195,8 @@ def home_page(request: Request, session: Session = Depends(get_session)):
         "index.html",
         spotlight_slides=data.get("spotlight_slides", []),
         airing_episodes=data.get("airing_episodes", []),
+        timeline_by_day=data.get("timeline_by_day", []),
+        today_idx=data.get("today_idx", 0),
         official_trailers=data.get("official_trailers", []),
         popular_hindi_dubs=data.get("popular_hindi_dubs", []),
         free_legal_anime=data.get("free_legal_anime", []),
@@ -2302,8 +2316,11 @@ def compute_schedule_page_data(session: Session, season: Optional[str] = None, y
     # Sort all weekly items by AniList popularity (descending)
     weekly_items.sort(key=lambda x: (-int(x.get("popularity") or 0), int(x.get("airing_at") or 0)))
 
+    timeline_by_day = schedule_data.get("timeline_by_day") or []
+
     return {
         "weekly_items": weekly_items,
+        "timeline_by_day": timeline_by_day,
         "season_info": season_info,
         "premiering_items": premiering_items,
         "today_idx": today_idx,
@@ -2442,6 +2459,7 @@ def schedule_page(
         categories=categories,
         items=initial_items,
         schedule_json=schedule_json,
+        timeline_by_day=data.get("timeline_by_day", []),
         season_info=season_info,
         premiering_items=premiering_items,
         today_idx=today_idx,
@@ -4928,6 +4946,170 @@ DYNAMIC_ANIME_CATALOG: dict[str, dict[str, Any]] = {
             {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
             {"name": "Netflix", "url": "https://www.netflix.com"}
         ]
+    },
+    "nia-liston": {
+        "slug": "nia-liston",
+        "title_hi": "निया लिस्टन",
+        "title_en": "The Reincarnated Princess Spends Another Day Skipping Story Routes",
+        "cover_image": "/media/covers/anilist_206949.webp",
+        "rating": 8.0,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2026",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "साप्ताहिक",
+        "airing_at": 0,
+        "studio": "Official Studio",
+        "genres": ["Fantasy", "Action"],
+        "genres_str": "फैंटेसी, एक्शन",
+        "synopsis_hi": "पुनर्जन्म के बाद राजकुमारी निया लिस्टन की असाधारण जादुई और युद्ध कौशल से भरी यात्रा।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "chitose-is-in-the-ramune-bottle": {
+        "slug": "chitose-is-in-the-ramune-bottle",
+        "title_hi": "चितोसे इज़ इन द रामुने बॉटल",
+        "title_en": "Chitose Is in the Ramune Bottle",
+        "cover_image": "/media/covers/anilist_180082.webp",
+        "rating": 8.2,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2026",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "साप्ताहिक",
+        "airing_at": 0,
+        "studio": "Feel",
+        "genres": ["Romance", "Drama", "School"],
+        "genres_str": "रोमांस, ड्रामा, स्कूल",
+        "synopsis_hi": "साकू चितोसे और उसके दोस्तों की हाई स्कूल जिंदगी और जटिल मानवीय रिश्तों की कहानी।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "super-psychic-policeman-chojo": {
+        "slug": "super-psychic-policeman-chojo",
+        "title_hi": "सुपर साइकिक पुलिसमैन चोजो",
+        "title_en": "Super Psychic Policeman Chojo",
+        "cover_image": "/media/covers/anilist_200294.webp",
+        "rating": 7.9,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2026",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "साप्ताहिक",
+        "airing_at": 0,
+        "studio": "Official Studio",
+        "genres": ["Comedy", "Supernatural"],
+        "genres_str": "कॉमेडी, सुपरनैचुरल",
+        "synopsis_hi": "अति-मानवीय मानसिक शक्तियों से लैस पुलिस अधिकारी चोजो के हास्यास्पद और रोमांचक कारनामे।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "suikoden-the-anime": {
+        "slug": "suikoden-the-anime",
+        "title_hi": "सुइकोडेन: द एनीमे",
+        "title_en": "Suikoden: The Anime",
+        "cover_image": "/media/covers/anilist_187316.webp",
+        "rating": 8.1,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2026",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "साप्ताहिक",
+        "airing_at": 0,
+        "studio": "Konami Digital",
+        "genres": ["Fantasy", "Action", "Adventure"],
+        "genres_str": "फैंटेसी, एक्शन, एडवेंचर",
+        "synopsis_hi": "108 डेस्टिनी सितारों की महागाथा और साम्राज्य के खिलाफ स्वतंत्रता की लड़ाई।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "the-cold-sato-san-is-only-sweet-to-me": {
+        "slug": "the-cold-sato-san-is-only-sweet-to-me",
+        "title_hi": "द कोल्ड सातो-सान इज़ ओनली स्वीट टू मी",
+        "title_en": "The Cold Sato-san is Only Sweet to Me",
+        "cover_image": "/media/covers/anilist_209502.webp",
+        "rating": 7.8,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2026",
+        "episodes_display": "12 एपिसोड्स",
+        "airing_day_time_ist": "साप्ताहिक",
+        "airing_at": 0,
+        "studio": "Official Studio",
+        "genres": ["Romance", "Comedy", "School"],
+        "genres_str": "रोमांस, कॉमेडी, स्कूल",
+        "synopsis_hi": "सबके लिए ठंडी और सख्त सातो-सान का केवल एक खास व्यक्ति के प्रति मीठा और कोमल व्यवहार।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "chainsaw-man-reze-arc-movie": {
+        "slug": "chainsaw-man-reze-arc-movie",
+        "title_hi": "चेनसॉ मैन: रेज़ आर्क मूवी",
+        "title_en": "Chainsaw Man – The Movie: Reze Arc",
+        "cover_image": "/media/covers/anilist_171627.webp",
+        "rating": 8.7,
+        "total_episodes": 1,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "Movie",
+        "season_year": "2026",
+        "episodes_display": "फिल्म (Movie)",
+        "airing_day_time_ist": "सिनेमाघरों में",
+        "airing_at": 0,
+        "studio": "MAPPA",
+        "genres": ["Action", "Supernatural", "Romance"],
+        "genres_str": "एक्शन, सुपरनैचुरल, रोमांस",
+        "synopsis_hi": "डेन्जी और बॉम्ब डेविल रेज़ की विस्फोटक मुलाकात और दोनों के बीच का भावनात्मक व हिंसक संघर्ष।",
+        "platforms_list": [{"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}]
+    },
+    "campfire-cooking-in-another-world-with-my-absurd-skill": {
+        "slug": "campfire-cooking-in-another-world-with-my-absurd-skill",
+        "title_hi": "कैम्पफ़ायर कुकिंग इन अनदर वर्ल्ड",
+        "title_en": "Campfire Cooking in Another World with My Absurd Skill",
+        "cover_image": "/media/covers/anilist_156067.webp",
+        "rating": 8.1,
+        "total_episodes": 12,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2023",
+        "episodes_display": "12 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "MAPPA",
+        "genres": ["Adventure", "Comedy", "Fantasy"],
+        "genres_str": "एडवेंचर, कॉमेडी, फैंटेसी, कुकिंग",
+        "synopsis_hi": "मुकोदा को ऑनलाइन सुपरमार्केट कौशल के साथ दूसरी दुनिया में बुलाया जाता है, जहाँ उसका स्वादिष्ट भोजन महान फेन्रिर को उसका साथी बना देता है।",
+        "platforms_list": [
+            {"name": "Muse Asia", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ]
     }
 }
 
@@ -5058,6 +5240,28 @@ DYNAMIC_ANIME_ALIASES: dict[str, str] = {
     "bleach-tybw": "bleach-thousand-year-blood-war",
     "reincarnated-sword-s2": "reincarnated-as-a-sword-season-2",
     "mashle": "mashle-magic-and-muscles",
+    "nia-liston": "nia-liston",
+    "206949": "nia-liston",
+    "the-story-of-a-reincarnated-girl-who-loves-books": "nia-liston",
+    "chitose-is-in-the-ramune-bottle": "chitose-is-in-the-ramune-bottle",
+    "chitose": "chitose-is-in-the-ramune-bottle",
+    "180082": "chitose-is-in-the-ramune-bottle",
+    "super-psychic-policeman-chojo": "super-psychic-policeman-chojo",
+    "chojo": "super-psychic-policeman-chojo",
+    "200294": "super-psychic-policeman-chojo",
+    "suikoden": "suikoden-the-anime",
+    "suikoden-the-anime": "suikoden-the-anime",
+    "gensou-suikoden": "suikoden-the-anime",
+    "187316": "suikoden-the-anime",
+    "the-cold-sato-san-is-only-sweet-to-me": "the-cold-sato-san-is-only-sweet-to-me",
+    "cold-sato-san": "the-cold-sato-san-is-only-sweet-to-me",
+    "sato-san": "the-cold-sato-san-is-only-sweet-to-me",
+    "209502": "the-cold-sato-san-is-only-sweet-to-me",
+    "chainsaw-man-reze-arc": "chainsaw-man-reze-arc-movie",
+    "chainsaw-man-the-movie-reze-arc": "chainsaw-man-reze-arc-movie",
+    "171627": "chainsaw-man-reze-arc-movie",
+    "campfire-cooking": "campfire-cooking-in-another-world-with-my-absurd-skill",
+    "156067": "campfire-cooking-in-another-world-with-my-absurd-skill",
 }
 
 
@@ -5973,6 +6177,40 @@ def dynamic_placeholder_svg(
   <text x="200" y="465" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">आधिकारिक एनीमे एवं मंगा गाइड</text>
 </svg>"""
     return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+
+def check_and_refresh_schedule_background() -> None:
+    """Non-blocking background schedule staleness check; refreshes in daemon thread if older than 6 hours."""
+    import threading
+    from datetime import datetime, timezone, timedelta
+    from app.db import engine
+    from sqlmodel import Session, select
+    from app.models import AnimeDraft
+
+    def _worker():
+        try:
+            with Session(engine) as s:
+                latest = s.exec(
+                    select(AnimeDraft)
+                    .where(AnimeDraft.content_type == "schedule")
+                    .order_by(AnimeDraft.fetched_at.desc(), AnimeDraft.id.desc())
+                ).first()
+                refresh_needed = False
+                now_utc = datetime.now(timezone.utc)
+                if not latest:
+                    refresh_needed = True
+                elif latest.fetched_at:
+                    dt = latest.fetched_at if latest.fetched_at.tzinfo else latest.fetched_at.replace(tzinfo=timezone.utc)
+                    if (now_utc - dt) > timedelta(hours=6):
+                        refresh_needed = True
+                if refresh_needed:
+                    from automation.fetchers.anilist import sync_weekly_schedule_to_db
+                    sync_weekly_schedule_to_db(s)
+        except Exception as e:
+            logger.warning(f"Background schedule staleness check: {e}")
+
+    threading.Thread(target=_worker, daemon=True).start()
+
 
 
 

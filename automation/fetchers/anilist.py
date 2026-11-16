@@ -10,10 +10,13 @@ import logging
 import os
 import re
 import time
+import io
+import urllib.request
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
 import httpx
+from PIL import Image
 
 logger = logging.getLogger("automation.fetchers.anilist")
 
@@ -1088,6 +1091,31 @@ query ($season: MediaSeason, $seasonYear: Int) {
 """
 
 
+def ensure_anilist_poster(anilist_id: int, url: str | None = None) -> str:
+    """Download and cache official AniList poster as /media/covers/anilist_{id}.webp."""
+    from app.storage import COVERS_DIR
+    dest = COVERS_DIR / f"anilist_{anilist_id}.webp"
+    if dest.exists() and dest.stat().st_size > 1000:
+        return f"/media/covers/anilist_{anilist_id}.webp"
+    if not url:
+        return f"/media/covers/anilist_{anilist_id}.webp" if dest.exists() else "/media/covers/anime_solo-leveling.webp"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = resp.read()
+        img = Image.open(io.BytesIO(data))
+        buf = io.BytesIO()
+        img.convert("RGB").save(buf, format="WEBP", quality=85)
+        with open(dest, "wb") as f:
+            f.write(buf.getvalue())
+        return f"/media/covers/anilist_{anilist_id}.webp"
+    except Exception as e:
+        logger.warning(f"Could not download AniList poster for {anilist_id}: {e}")
+        if dest.exists() and dest.stat().st_size > 0:
+            return f"/media/covers/anilist_{anilist_id}.webp"
+        return "/media/covers/anime_solo-leveling.webp"
+
+
 def fetch_live_weekly_schedule(
     season: str | None = None,
     year: int | None = None,
@@ -1120,10 +1148,10 @@ def fetch_live_weekly_schedule(
     # Calculate current week Monday 00:00:00 IST to Sunday 23:59:59 IST
     now_utc = datetime.now(timezone.utc)
     now_ist = now_utc.astimezone(IST_TZ)
-    start_of_week_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now_ist.weekday())
-    end_of_week_ist = start_of_week_ist + timedelta(days=7)
-    start_unix = int(start_of_week_ist.astimezone(timezone.utc).timestamp())
-    end_unix = int(end_of_week_ist.astimezone(timezone.utc).timestamp())
+    start_of_week_ist = (now_ist - timedelta(days=now_ist.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_week_ist = (start_of_week_ist + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
+    start_unix = int(start_of_week_ist.timestamp())
+    end_unix = int(end_of_week_ist.timestamp())
 
     headers = {
         "User-Agent": USER_AGENT,
@@ -1132,13 +1160,13 @@ def fetch_live_weekly_schedule(
     }
 
     weekly_items: list[dict[str, Any]] = []
-    seen_media_ids: set[int] = set()
+    seen_slots: set[tuple[int, int]] = set()
 
     try:
         with httpx.Client(timeout=timeout_seconds, headers=headers) as client:
-            # 1. Fetch weekly airing schedules (up to 3 pages)
+            # 1. Fetch weekly airing schedules (full pagination across the 7-day IST week)
             page = 1
-            while page <= 3:
+            while True:
                 payload = {
                     "query": ANILIST_WEEKLY_AIRING_QUERY,
                     "variables": {"start": start_unix, "end": end_unix, "page": page},
@@ -1152,7 +1180,7 @@ def fetch_live_weekly_schedule(
                 for s in schedules:
                     media = s.get("media") or {}
                     media_id = media.get("id")
-                    if not media_id or media_id in seen_media_ids:
+                    if not media_id:
                         continue
                     m_status = media.get("status")
                     # Hide FINISHED shows and shows from past seasons
@@ -1172,6 +1200,12 @@ def fetch_live_weekly_schedule(
                     dt_ist = datetime.fromtimestamp(airing_at, tz=timezone.utc).astimezone(IST_TZ)
                     dt_jst = datetime.fromtimestamp(airing_at, tz=timezone.utc).astimezone(JST_TZ)
 
+                    # Deduplicate: 1 card per unique show per day
+                    slot_key = (media_id, dt_ist.weekday())
+                    if slot_key in seen_slots:
+                        continue
+                    seen_slots.add(slot_key)
+
                     titles = media.get("title") or {}
                     title_en = clean_base_series_title((titles.get("english") or titles.get("romaji") or f"Anime #{media_id}").strip())
                     title_romaji = clean_base_series_title((titles.get("romaji") or title_en).strip())
@@ -1187,7 +1221,9 @@ def fetch_live_weekly_schedule(
                     is_kids_or_short = is_kids or is_short
 
                     cov = media.get("coverImage") or {}
-                    image_url = extract_hd_cover_url(cov)
+                    raw_cov_url = cov.get("extraLarge") or cov.get("large") or ""
+                    # Exact official poster cryptographically tied to this media_id
+                    image_url = ensure_anilist_poster(media_id, raw_cov_url)
 
                     raw_desc = media.get("description") or ""
                     media_year = media.get("seasonYear") or (media.get("startDate") or {}).get("year")
@@ -1202,7 +1238,6 @@ def fetch_live_weekly_schedule(
                         card_start_date=start_date,
                     )
                     title_hi = clean_base_series_title(title_hi)
-                    # If synopsis is hidden by validator, keep summary_en empty as well
                     summary_en = clean_description(raw_desc) if summary_hi else ""
 
                     studios_nodes = media.get("studios", {}).get("nodes", [])
@@ -1243,11 +1278,17 @@ def fetch_live_weekly_schedule(
                         badge_hi = f"Ep {aired_ep} आ चुके • अगला Ep {nxt_val}"
                         badge_en = f"{aired_ep} Aired • Next Ep {nxt_val}"
 
+                    slot_num = slot_ep or aired_ep
+                    clean_slug = re.sub(r'[^a-z0-9]+', '-', title_en.lower()).strip('-')
+
                     item_dict = {
                         "id": f"anilist_{media.get('id')}_ep{s.get('episode')}",
                         "media_id": media.get("id"),
+                        "anilist_id": media.get("id"),
                         "mal_id": media.get("idMal"),
-                        "episode": slot_ep or aired_ep,
+                        "episode": slot_num,
+                        "episode_pill_hi": f"▶ एपिसोड {slot_num}",
+                        "episode_pill_en": f"▶ Episode {slot_num}",
                         "next_episode": next_ep_num or (aired_ep + 1),
                         "aired_episodes": aired_ep,
                         "total_episodes": total_eps,
@@ -1258,10 +1299,13 @@ def fetch_live_weekly_schedule(
                         "airing_at_iso": datetime.fromtimestamp(airing_at, tz=timezone.utc).isoformat(),
                         "airing_ist_weekday": dt_ist.weekday(),  # 0=Mon, ..., 6=Sun
                         "airing_ist_time": dt_ist.strftime("%I:%M %p IST").lstrip("0"),
+                        "airing_ist_time_24": dt_ist.strftime("%H:%M"),
                         "airing_jst_time": dt_jst.strftime("%I:%M %p JST").lstrip("0"),
                         "title_en": title_en,
                         "title_romaji": title_romaji,
                         "title_hi": title_hi,
+                        "slug": clean_slug,
+                        "url": f"/anime/{clean_slug}",
                         "image_url": image_url,
                         "studio": studio_name,
                         "source": raw_source,
@@ -1295,9 +1339,8 @@ def fetch_live_weekly_schedule(
                         "is_donghua": (media.get("countryOfOrigin") or "JP").upper() == "CN",
                     }
                     weekly_items.append(item_dict)
-                    seen_media_ids.add(media.get("id"))
 
-                if not data.get("pageInfo", {}).get("hasNextPage"):
+                if not data.get("pageInfo", {}).get("hasNextPage") or page >= 10:
                     break
                 page += 1
 
@@ -1412,9 +1455,46 @@ def fetch_live_weekly_schedule(
     }
     cycle["selected"] = selected_season_info
 
+    DAY_SHORT_HI = ["सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि", "रवि"]
+    DAY_SHORT_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    MONTH_SHORT_HI = {1: "जन॰", 2: "फ़र॰", 3: "मार्च", 4: "अप्रैल", 5: "मई", 6: "जून", 7: "जुलाई", 8: "अग॰", 9: "सित॰", 10: "अक्तू॰", 11: "नव॰", 12: "दिस॰"}
+
+    timeline_by_day = []
+    for day_idx in range(7):
+        day_date = start_of_week_ist + timedelta(days=day_idx)
+        d_num = day_date.day
+        m_num = day_date.month
+        m_hi = MONTH_SHORT_HI.get(m_num, "नव॰")
+        m_en = day_date.strftime("%b").upper()
+        d_short_hi = DAY_SHORT_HI[day_idx]
+        d_short_en = DAY_SHORT_EN[day_idx]
+
+        label_hi = f"{d_short_hi} {d_num} {m_hi}"
+        label_en = f"{d_short_en} {m_en} {d_num}"
+        full_label = f"{label_hi} ({label_en})"
+
+        day_shows = [
+            it for it in weekly_items
+            if it.get("airing_ist_weekday") == day_idx
+        ]
+        day_shows.sort(key=lambda x: int(x.get("airing_at") or 0))
+
+        timeline_by_day.append({
+            "day_idx": day_idx,
+            "day_name_hi": d_short_hi,
+            "day_name_en": d_short_en,
+            "date_str_hi": f"{d_num} {m_hi}",
+            "date_str_en": f"{m_en} {d_num}",
+            "full_label": full_label,
+            "is_today": (day_idx == now_ist.weekday()),
+            "count": len(day_shows),
+            "shows": day_shows,
+        })
+
     result = {
         "season_info": cycle,
         "weekly_items": weekly_items,
+        "timeline_by_day": timeline_by_day,
         "premiering_items": premiering_items,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "today_idx": now_ist.weekday(),
@@ -1424,6 +1504,74 @@ def fetch_live_weekly_schedule(
         _LIVE_SCHEDULE_CACHE[cache_key] = (result, now_mono + SCHEDULE_CACHE_TTL)
     logger.info("Successfully fetched %d weekly items & %d premiering anime for %s %d", len(weekly_items), len(premiering_items), req_season, req_year)
     return result
+
+
+def sync_weekly_schedule_to_db(session: Any, schedule_data: dict[str, Any] | None = None) -> int:
+    """Upsert anilist_id locked weekly schedule into AnimeDraft table with session.rollback() safety."""
+    from app.models import AnimeDraft
+    from sqlmodel import select, or_
+
+    if schedule_data is None:
+        schedule_data = fetch_live_weekly_schedule()
+
+    weekly_items = schedule_data.get("weekly_items") or []
+    synced_count = 0
+    try:
+        for it in weekly_items:
+            mid = it.get("anilist_id") or it.get("media_id")
+            if not mid:
+                continue
+            ext_id = f"anilist_{mid}"
+            existing = session.exec(
+                select(AnimeDraft).where(
+                    or_(
+                        AnimeDraft.external_id == ext_id,
+                        AnimeDraft.anilist_id == mid,
+                    ),
+                    AnimeDraft.content_type == "schedule",
+                )
+            ).first()
+
+            air_dt = None
+            if it.get("airing_at"):
+                air_dt = datetime.fromtimestamp(it["airing_at"], tz=timezone.utc)
+
+            if existing:
+                existing.title_en = it.get("title_en") or existing.title_en
+                existing.title_hi = it.get("title_hi") or existing.title_hi
+                existing.image_url = it.get("image_url") or existing.image_url
+                existing.airing_day = it.get("day_name_hi") or existing.airing_day
+                existing.airing_time = it.get("airing_ist_time") or existing.airing_time
+                existing.anilist_id = mid
+                existing.published_at = air_dt or existing.published_at
+                existing.score = it.get("score")
+                existing.status = "published"
+            else:
+                new_draft = AnimeDraft(
+                    external_id=ext_id,
+                    anilist_id=mid,
+                    mal_id=it.get("mal_id"),
+                    content_type="schedule",
+                    status="published",
+                    source_name="AniList Airing",
+                    source_url=it.get("source_url") or f"https://anilist.co/anime/{mid}",
+                    title_en=it.get("title_en"),
+                    title_hi=it.get("title_hi"),
+                    summary_en=it.get("summary_en"),
+                    summary_hi=it.get("summary_hi"),
+                    airing_day=it.get("day_name_hi"),
+                    airing_time=it.get("airing_ist_time"),
+                    image_url=it.get("image_url"),
+                    published_at=air_dt or datetime.now(timezone.utc),
+                    score=it.get("score"),
+                )
+                session.add(new_draft)
+            synced_count += 1
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.warning(f"Error syncing weekly schedule to DB: {e}")
+    return synced_count
 
 
 def clear_schedule_cache() -> None:
