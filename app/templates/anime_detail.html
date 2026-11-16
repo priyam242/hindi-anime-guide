@@ -17,7 +17,25 @@
 {% endblock %}
 
 {% block extra_head %}
-<!-- Google JSON-LD: TVSeries + BreadcrumbList -->
+<!-- Google JSON-LD: Article + TVSeries + BreadcrumbList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ (anime.title_hi ~ ' हिंदी डब स्ट्रीमिंग गाइड और विवरण') | tojson }},
+  "description": {{ (anime.synopsis_hi or anime.title_en) | tojson }},
+  "inLanguage": "hi",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.url }}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site.name }}",
+    "url": "{{ request.base_url }}"
+  }
+}
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -171,14 +189,63 @@
           {% endif %}
         </div>
 
-        <!-- Main Title & Subtitle -->
-        <div>
-          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
-            {{ anime.title_hi }}
-          </h1>
-          <p class="text-sm sm:text-base text-gray-500 dark:text-zinc-400 font-medium mt-1">
-            {{ anime.title_en }}
-          </p>
+        <!-- Main Title & Subtitle + Watchlist Button Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
+              {{ anime.title_hi }}
+            </h1>
+            <p class="text-sm sm:text-base text-gray-500 dark:text-zinc-400 font-medium mt-1">
+              {{ anime.title_en }}
+            </p>
+          </div>
+
+          <!-- Watchlist Instant Toggle Button -->
+          <div class="shrink-0"
+               x-data="{
+                 inWatchlist: {{ 'true' if is_in_watchlist else 'false' }},
+                 loading: false,
+                 async toggle() {
+                   {% if not user %}
+                   window.location.href = '/auth/login?next=/anime/{{ anime.slug }}';
+                   return;
+                   {% endif %}
+                   if (this.loading) return;
+                   this.loading = true;
+                   try {
+                     const res = await fetch('/api/watchlist/toggle', {
+                       method: 'POST',
+                       headers: {
+                         'Content-Type': 'application/json',
+                         'X-Requested-With': 'XMLHttpRequest'
+                       },
+                       body: JSON.stringify({ slug: '{{ anime.slug }}' })
+                     });
+                     if (res.status === 401) {
+                       window.location.href = '/auth/login?next=/anime/{{ anime.slug }}';
+                       return;
+                     }
+                     const data = await res.json();
+                     if (data && typeof data.in_watchlist !== 'undefined') {
+                       this.inWatchlist = data.in_watchlist;
+                     }
+                   } catch (e) {
+                     console.error('Watchlist toggle error:', e);
+                   } finally {
+                     this.loading = false;
+                   }
+                 }
+               }">
+            <button type="button"
+                    @click="toggle()"
+                    :disabled="loading"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md border cursor-pointer select-none"
+                    :class="inWatchlist ? 'bg-red-600 text-white border-red-500 hover:bg-red-700' : 'bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700/60'">
+              <i class="fas" :class="loading ? 'fa-spinner fa-spin' : (inWatchlist ? 'fa-check' : 'fa-bookmark')"></i>
+              <span x-show="!inWatchlist" data-hi="🔖 मेरी सूची में जोड़ें" data-en="🔖 Add to Watchlist">🔖 मेरी सूची में जोड़ें</span>
+              <span x-show="inWatchlist" data-hi="✓ मेरी सूची में शामिल" data-en="✓ In Watchlist">✓ मेरी सूची में शामिल</span>
+            </button>
+          </div>
         </div>
 
         <!-- Official Streaming Watch CTAs -->
@@ -341,6 +408,81 @@
           सभी एपिसोड्स देखें (Show All)
         </span>
       </button>
+    </div>
+    {% endif %}
+
+  </section>
+  {% endif %}
+
+  <!-- Filler Skip Guide Section (For Long-Running Franchises) -->
+  {% if anime.filler_guide %}
+  <section class="rounded-2xl bg-white dark:bg-zinc-900/90 border border-gray-200 dark:border-white/10 p-5 sm:p-7 shadow-xl space-y-4">
+    
+    <!-- Header with Filler Percentage Pill -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-white/10">
+      <div class="space-y-1">
+        <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fas fa-forward text-amber-500"></i>
+          <span data-hi="फ़िलर स्किप गाइड (Filler Skip Guide)" data-en="Filler Skip Guide">फ़िलर स्किप गाइड (Filler Skip Guide)</span>
+        </h2>
+        <p class="text-xs text-gray-500 dark:text-zinc-400">
+          <span data-hi="कैनन बनाम फ़िलर एपिसोड्स की सटीक सूची — बिना समय गंवाए मुख्य कहानी देखें" data-en="Canon vs Filler list — skip non-manga episodes and save time">कैनन बनाम फ़िलर एपिसोड्स की सटीक सूची — बिना समय गंवाए मुख्य कहानी देखें</span>
+        </p>
+      </div>
+
+      <!-- Pill: ⚡ केवल कैनन देखें • ~XX% फ़िलर स्किप करें -->
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm"
+              data-hi="⚡ केवल कैनन देखें • ~{{ anime.filler_guide.filler_percentage }} फ़िलर स्किप करें"
+              data-en="⚡ Watch Canon Only • Skip ~{{ anime.filler_guide.filler_percentage }} Fillers">
+          ⚡ केवल कैनन देखें • ~{{ anime.filler_guide.filler_percentage }} फ़िलर स्किप करें
+        </span>
+      </div>
+    </div>
+
+    <!-- Summary Statistics Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs pt-1">
+      <div class="p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
+        <span class="text-gray-500 dark:text-zinc-400 block mb-0.5" data-hi="कुल एपिसोड्स:" data-en="Total Episodes:">कुल एपिसोड्स:</span>
+        <span class="font-bold text-gray-900 dark:text-white">{{ anime.filler_guide.total_episodes }}</span>
+      </div>
+      <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/30">
+        <span class="text-emerald-400 block mb-0.5" data-hi="कैनन अनुपात:" data-en="Canon Ratio:">कैनन अनुपात:</span>
+        <span class="font-bold text-emerald-300">~{{ anime.filler_guide.canon_percentage }} मुख्य कहानी</span>
+      </div>
+      <div class="col-span-2 sm:col-span-1 p-3 rounded-xl bg-red-950/20 border border-red-800/30">
+        <span class="text-red-400 block mb-0.5" data-hi="स्किप करने योग्य फ़िलर:" data-en="Skippable Fillers:">स्किप करने योग्य फ़िलर:</span>
+        <span class="font-bold text-red-300">~{{ anime.filler_guide.filler_percentage }} फ़िलर</span>
+      </div>
+    </div>
+
+    <!-- Canon Ranges (Must Watch) -->
+    <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-700/30 space-y-2">
+      <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
+        <i class="fas fa-check-circle"></i>
+        <span data-hi="ज़रूरी मुख्य एपिसोड्स (Must-Watch Canon Ranges)" data-en="Must-Watch Canon Ranges">ज़रूरी मुख्य एपिसोड्स (Must-Watch Canon Ranges)</span>
+      </div>
+      <div class="text-xs sm:text-sm font-semibold text-emerald-200 leading-relaxed font-mono bg-emerald-950/40 p-3 rounded-lg border border-emerald-800/40 break-words">
+        {{ anime.filler_guide.canon_ranges }}
+      </div>
+    </div>
+
+    <!-- Filler Ranges (Skip) -->
+    <div class="p-4 rounded-xl bg-red-950/20 border border-red-700/30 space-y-2">
+      <div class="flex items-center gap-2 text-xs font-bold text-red-400">
+        <i class="fas fa-forward"></i>
+        <span data-hi="स्किप करने योग्य फ़िलर एपिसोड्स (Skip Filler Ranges)" data-en="Skip Filler Ranges">स्किप करने योग्य फ़िलर एपिसोड्स (Skip Filler Ranges)</span>
+      </div>
+      <div class="text-xs sm:text-sm font-semibold text-red-300/90 leading-relaxed font-mono bg-red-950/40 p-3 rounded-lg border border-red-800/40 break-words">
+        {{ anime.filler_guide.filler_ranges }}
+      </div>
+    </div>
+
+    {% if anime.filler_guide.notes %}
+    <!-- Recommendation Note -->
+    <div class="text-xs text-gray-600 dark:text-zinc-400 italic pt-1 flex items-start gap-2">
+      <i class="fas fa-info-circle text-amber-500 mt-0.5 shrink-0"></i>
+      <span>{{ anime.filler_guide.notes }}</span>
     </div>
     {% endif %}
 

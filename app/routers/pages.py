@@ -1321,6 +1321,146 @@ def explore_page(
     )
 
 
+# ---------- WATCHLIST / मेरी सूची ----------
+@router.get("/watchlist", response_class=HTMLResponse)
+@router.get("/saved", response_class=HTMLResponse)
+def watchlist_page(request: Request, session: Session = Depends(get_session)):
+    """User personal watchlist / saved anime page."""
+    user = getattr(request.state, "user", None)
+    if not user:
+        return RedirectResponse(url="/auth/login?next=/watchlist", status_code=303)
+
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+    categories = get_categories(session)
+    watchlist_items = []
+
+    if user_id:
+        try:
+            bms = list(session.exec(
+                select(Bookmark).where(Bookmark.user_id == user_id).order_by(Bookmark.created_at.desc())
+            ).all())
+            if bms:
+                art_ids = [b.article_id for b in bms]
+                articles = list(session.exec(select(Article).where(Article.id.in_(art_ids))).all())
+                art_map = {a.id: a for a in articles}
+                for b in bms:
+                    art = art_map.get(b.article_id)
+                    if art:
+                        t_hi = art.anime_title_hi or art.title
+                        t_en = art.anime_title_en or art.title
+                        cover = art.cover_image or "/media/covers/anime_solo-leveling.webp"
+                        watchlist_items.append({
+                            "id": art.id,
+                            "slug": art.slug,
+                            "title": t_hi,
+                            "title_hi": t_hi,
+                            "title_en": t_en,
+                            "cover_image": cover,
+                            "url": f"/anime/{art.slug}",
+                            "added_at": b.created_at.isoformat() if b.created_at else "",
+                        })
+        except Exception as e:
+            session.rollback()
+            logger.warning(f"Failed to query watchlist for user {user_id}: {e}")
+            watchlist_items = []
+
+    return render(
+        "saved.html",
+        watchlist_items=watchlist_items,
+        articles=watchlist_items,
+        categories=categories,
+        user=user,
+        active_nav="watchlist",
+        request=request,
+    )
+
+
+@router.post("/api/watchlist/toggle")
+async def toggle_watchlist(request: Request, session: Session = Depends(get_session)):
+    """Instant toggle watchlist item via fetch() with zero full-page reload."""
+    user = getattr(request.state, "user", None)
+    if not user:
+        return JSONResponse(status_code=401, content={"error": "unauthorized", "login_url": "/login?next=/watchlist"})
+
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+    if not user_id:
+        return JSONResponse(status_code=401, content={"error": "unauthorized", "login_url": "/login?next=/watchlist"})
+
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+
+    raw_slug = data.get("slug") or request.query_params.get("slug") or ""
+    clean_slug = slugify_anime_title(raw_slug)
+    if not clean_slug:
+        return JSONResponse(status_code=400, content={"error": "slug is required"})
+
+    try:
+        article = session.exec(select(Article).where(Article.slug == clean_slug)).first()
+        if not article:
+            meta = resolve_dynamic_anime(clean_slug, session) or {}
+            t_hi = meta.get("title_hi") or clean_slug
+            t_en = meta.get("title_en") or clean_slug
+            cover = meta.get("cover_image") or "/media/covers/anime_solo-leveling.webp"
+            syn = meta.get("synopsis_hi") or ""
+
+            article = Article(
+                slug=clean_slug,
+                title=t_hi,
+                anime_title_hi=t_hi,
+                anime_title_en=t_en,
+                meta_description=syn[:200] if syn else t_hi,
+                content_md=syn or t_hi,
+                cover_image=cover,
+                status="published",
+                published_at=datetime.now(timezone.utc),
+            )
+            session.add(article)
+            session.flush()
+
+        bm = session.exec(
+            select(Bookmark).where(Bookmark.user_id == user_id, Bookmark.article_id == article.id)
+        ).first()
+
+        action = data.get("action")
+        if bm:
+            if action == "add":
+                in_watchlist = True
+                msg_hi = "मेरी सूची में शामिल किया गया"
+                msg_en = "Added to Watchlist"
+            else:
+                session.delete(bm)
+                session.commit()
+                in_watchlist = False
+                msg_hi = "मेरी सूची से हटाया गया"
+                msg_en = "Removed from Watchlist"
+        else:
+            if action == "remove":
+                in_watchlist = False
+                msg_hi = "मेरी सूची से हटाया गया"
+                msg_en = "Removed from Watchlist"
+            else:
+                new_bm = Bookmark(user_id=user_id, article_id=article.id)
+                session.add(new_bm)
+                session.commit()
+                in_watchlist = True
+                msg_hi = "मेरी सूची में शामिल किया गया"
+                msg_en = "Added to Watchlist"
+
+        return JSONResponse({
+            "success": True,
+            "in_watchlist": in_watchlist,
+            "slug": clean_slug,
+            "message": msg_hi,
+            "message_en": msg_en,
+        })
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error toggling watchlist: {e}")
+        return JSONResponse(status_code=500, content={"error": "Database error", "detail": str(e)})
+
+
 def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
     if dt is None:
         return None
@@ -4572,10 +4712,336 @@ DYNAMIC_ANIME_CATALOG: dict[str, dict[str, Any]] = {
             {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
             {"name": "Netflix", "url": "https://www.netflix.com"}
         ]
+    },
+    "one-piece": {
+        "slug": "one-piece",
+        "title_hi": "वन पीस",
+        "title_en": "One Piece",
+        "cover_image": "/media/covers/anime_one-piece.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21.jpg",
+        "rating": 8.9,
+        "total_episodes": None,
+        "next_airing_ep": 1123,
+        "next_airing_at": 1795321800,
+        "is_airing": True,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "1999-Ongoing",
+        "episodes_display": "1120+ एपिसोड्स (प्रसारण जारी)",
+        "airing_day_time_ist": "रविवार • 6:30 AM IST",
+        "airing_at": 1795321800,
+        "studio": "Toei Animation",
+        "genres": ["Action", "Adventure", "Fantasy"],
+        "genres_str": "एक्शन, एडवेंचर, फैंटेसी",
+        "synopsis_hi": "मंकी डी. लफी अपने स्ट्रॉ हैट पाइरेट्स क्रू के साथ महान खजाने 'वन पीस' की तलाश में ग्रैंड लाइन पर निकलता है ताकि वह पाइरेट किंग बन सके।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ]
+    },
+    "naruto": {
+        "slug": "naruto",
+        "title_hi": "नारुतो",
+        "title_en": "Naruto",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/20.jpg",
+        "rating": 8.4,
+        "total_episodes": 220,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2002-2007",
+        "episodes_display": "220 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Pierrot",
+        "genres": ["Action", "Adventure", "Martial Arts"],
+        "genres_str": "एक्शन, एडवेंचर, मार्शल आर्ट्स",
+        "synopsis_hi": "हिडन लीफ विलेज का युवा निंजा नारुतो उज़ुमाकी गांव का मुखिया यानी 'होकागे' बनने का सपना देखता है और सभी का सम्मान पाने के लिए संघर्ष करता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "JioHotstar", "url": "https://www.hotstar.com"}
+        ]
+    },
+    "naruto-shippuden": {
+        "slug": "naruto-shippuden",
+        "title_hi": "नारुतो शिपूडेन",
+        "title_en": "Naruto Shippuden",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/1735.jpg",
+        "rating": 8.7,
+        "total_episodes": 500,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2007-2017",
+        "episodes_display": "500 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Pierrot",
+        "genres": ["Action", "Adventure", "Martial Arts"],
+        "genres_str": "एक्शन, एडवेंचर, मार्शल आर्ट्स",
+        "synopsis_hi": "दो साल के कठोर प्रशिक्षण के बाद नारुतो अपने दोस्त सासुके को वापस लाने और अकातसुकी के वैश्विक खतरे से निंजा दुनिया की रक्षा करने के लिए लौटता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "JioHotstar", "url": "https://www.hotstar.com"}
+        ]
+    },
+    "bleach": {
+        "slug": "bleach",
+        "title_hi": "ब्लीच",
+        "title_en": "Bleach",
+        "cover_image": "/media/covers/anime_bleach-thousand-year-blood-war.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/269.jpg",
+        "rating": 8.2,
+        "total_episodes": 366,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2004-2012",
+        "episodes_display": "366 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Pierrot",
+        "genres": ["Action", "Supernatural"],
+        "genres_str": "एक्शन, सुपरनेचुरल",
+        "synopsis_hi": "इचिगो कुरोसाकी को अप्रत्याशित रूप से सोल रीपर की शक्तियां मिल जाती हैं। अब वह आत्माओं की रक्षा करता है और खतरनाक होलो प्राणियों से मुकाबला करता है।",
+        "platforms_list": [
+            {"name": "JioHotstar", "url": "https://www.hotstar.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ]
+    },
+    "dragon-ball-z": {
+        "slug": "dragon-ball-z",
+        "title_hi": "ड्रैगन बॉल ज़ेड",
+        "title_en": "Dragon Ball Z",
+        "cover_image": "/media/covers/anime_dragon-ball-z.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/813.jpg",
+        "rating": 8.7,
+        "total_episodes": 291,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "1989-1996",
+        "episodes_display": "291 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Toei Animation",
+        "genres": ["Action", "Adventure", "Sci-Fi"],
+        "genres_str": "एक्शन, एडवेंचर, साइ-फाई",
+        "synopsis_hi": "गोकू और उसके साथी पृथ्वी को शक्तिशाली एलियन योद्धाओं, एंड्रॉयड्स और ब्रह्मांडीय खतरों जैसे फ्रीज़ा, सेल और माजिन बू से बचाते हैं।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ]
+    },
+    "dragon-ball-super": {
+        "slug": "dragon-ball-super",
+        "title_hi": "ड्रैगन बॉल सुपर",
+        "title_en": "Dragon Ball Super",
+        "cover_image": "/media/covers/anime_dragon-ball-super.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21175.jpg",
+        "rating": 7.8,
+        "total_episodes": 131,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2015-2018",
+        "episodes_display": "131 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Toei Animation",
+        "genres": ["Action", "Adventure", "Fantasy"],
+        "genres_str": "एक्शन, एडवेंचर, फैंटेसी",
+        "synopsis_hi": "माजिन बू की पराजय के बाद गोकू विनाश के देवता बीरस का सामना करता है और अन्य ब्रह्मांडों के साथ टूर्नामेंट ऑफ पावर में हिस्सा लेता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ]
+    },
+    "fairy-tail": {
+        "slug": "fairy-tail",
+        "title_hi": "फेयरी टेल",
+        "title_en": "Fairy Tail",
+        "cover_image": "/media/covers/anime_dragon-ball-z.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/6702.jpg",
+        "rating": 7.9,
+        "total_episodes": 328,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": False,
+        "format": "TV",
+        "season_year": "2009-2019",
+        "episodes_display": "328 एपिसोड्स (पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "A-1 Pictures",
+        "genres": ["Action", "Adventure", "Fantasy"],
+        "genres_str": "एक्शन, एडवेंचर, जादू, फैंटेसी",
+        "synopsis_hi": "नात्सु ड्रैगनील और लुसी हार्टफिलिया फियोर साम्राज्य के सबसे प्रसिद्ध और उपद्रवी विजार्ड गिल्ड 'फेयरी टेल' में असाधारण मिशन पूरे करते हैं।",
+        "platforms_list": [
+            {"name": "Muse Asia (YouTube)", "url": "https://www.youtube.com/@MuseAsia"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"}
+        ]
+    },
+    "boruto": {
+        "slug": "boruto",
+        "title_hi": "बोरूटो: नारुतो नेक्स्ट जेनरेशन्स",
+        "title_en": "Boruto: Naruto Next Generations",
+        "cover_image": "/media/covers/anime_naruto.webp",
+        "banner_image": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/97938.jpg",
+        "rating": 6.5,
+        "total_episodes": 293,
+        "next_airing_ep": None,
+        "next_airing_at": 0,
+        "is_airing": False,
+        "is_donghua": False,
+        "is_hindi_dub": True,
+        "format": "TV",
+        "season_year": "2017-2023",
+        "episodes_display": "293 एपिसोड्स (पार्ट 1 पूर्ण)",
+        "airing_day_time_ist": "पूरा हो चुका है",
+        "airing_at": 0,
+        "studio": "Pierrot",
+        "genres": ["Action", "Adventure", "Ninja"],
+        "genres_str": "एक्शन, एडवेंचर, निंजा",
+        "synopsis_hi": "सातवें होकागे नारुतो उज़ुमाकी का बेटा बोरूटो अपने पिता की छाया से बाहर निकलकर अपना खुद का निंजा मार्ग चुनता है।",
+        "platforms_list": [
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+            {"name": "Netflix", "url": "https://www.netflix.com"}
+        ]
     }
 }
 
+# ---------- FILLER SKIPPER GUIDES FOR MAJOR LONG-RUNNING ANIME ----------
+FILLER_GUIDES_DATA: dict[str, dict[str, Any]] = {
+    "naruto": {
+        "franchise": "Naruto (Classic)",
+        "total_episodes": 220,
+        "filler_percentage": "41%",
+        "canon_percentage": "59%",
+        "canon_ranges": "Ep 1–25, 27–96, 98, 100, 107–135, 220 (अंतिम भाग)",
+        "filler_ranges": "Ep 26, 97, 99, 101–106, 136–219",
+        "notes": "सलाह: एपिसोड 136 से 219 तक का लंबा फ़िलर आर्क मुख्य कहानी में कोई योगदान नहीं देता। इसे छोड़कर सीधे नारुतो शिपूडेन शुरू कर सकते हैं।",
+    },
+    "naruto-shippuden": {
+        "franchise": "Naruto Shippuden",
+        "total_episodes": 500,
+        "filler_percentage": "41%",
+        "canon_percentage": "59%",
+        "canon_ranges": "Ep 1–53, 72–88, 113–143, 152–169, 172–175, 197–222, 243–256, 261–278, 296–302, 321–346, 362–375, 378–387, 391–393, 414, 418, 420–421, 424–426, 459–479, 484–500",
+        "filler_ranges": "Ep 54–71, 89–112, 144–151, 170–171, 176–196, 223–242, 257–260, 279–295, 303–320, 347–361, 376–377, 388–390, 394–413, 416–417, 419, 422–423, 427–458, 480–483",
+        "notes": "सलाह: चौथे महान निंजा युद्ध के दौरान के फ़्लैशबैक फ़िलर आर्क्स (Ep 303–320 और 427–458) को स्किप करने से पेसिंग बेहतरीन रहती है।",
+    },
+    "one-piece": {
+        "franchise": "One Piece",
+        "total_episodes": "1120+",
+        "filler_percentage": "9%",
+        "canon_percentage": "91%",
+        "canon_ranges": "Ep 1–53, 61–98, 103–130, 144–195, 207–219, 229–325, 337–381, 385–405, 408–425, 430–456, 459–491, 500–541, 543–574, 579–625, 629–746, 751–774, 783–894, 897–906, 908–1028, 1031–1088, 1090+",
+        "filler_ranges": "Ep 54–60, 99, 101–102, 131–143, 220–226, 279–283, 326–336, 382–384, 426–429, 575–578, 626–628, 747–750, 780–782, 895–896, 1029–1030",
+        "notes": "सलाह: वन पीस में फ़िलर दर केवल ~9% है! G-8 आर्क (Ep 196–206) को देखना अनुशंसित है क्योंकि यह सबसे बेहतरीन गैर-कैनन फ़िलर माना जाता है।",
+    },
+    "bleach": {
+        "franchise": "Bleach",
+        "total_episodes": 366,
+        "filler_percentage": "45%",
+        "canon_percentage": "55%",
+        "canon_ranges": "Ep 1–63 (सोल सोसाइटी), 110–127, 138–167 (अर्रानकार/हुएको मुंडो), 190–203, 206–212 (टर्न बैक), 215–229, 266–286, 290–310 (आइज़ेन क्लाइमेक्स), 342–366 (फुलब्रिंगर)",
+        "filler_ranges": "Ep 64–109 (बाउन्ट), 128–137, 168–189 (अमागाई), 204–205, 213–214, 228, 230–265 (ज़ानपाकुतो), 287, 298–299, 303–305, 311–341 (रेइगाई), 355",
+        "notes": "सलाह: बाउन्ट आर्क (Ep 64–109) को स्किप करने से सोल सोसाइटी के बाद सीधे अर्रानकार आर्क का आनंद ले सकते हैं।",
+    },
+    "black-clover": {
+        "franchise": "Black Clover",
+        "total_episodes": 170,
+        "filler_percentage": "10%",
+        "canon_percentage": "90%",
+        "canon_ranges": "Ep 1–28, 30–65, 67–122, 126–129, 158–170 (स्पेड किंगडम आर्क)",
+        "filler_ranges": "Ep 29, 66, 123–125, 131, 134–135, 142–148",
+        "notes": "सलाह: ब्लैक क्लोवर में बहुत कम फ़िलर हैं। Ep 158 से 170 तक स्पेड किंगडम आर्क 100% हाई-ऑक्टेन कैनन है।",
+    },
+    "dragon-ball-z": {
+        "franchise": "Dragon Ball Z",
+        "total_episodes": 291,
+        "filler_percentage": "13%",
+        "canon_percentage": "87%",
+        "canon_ranges": "Ep 1–8, 18–38, 45–107, 118–124, 126–169, 172–194, 205–273, 275–287, 289–291",
+        "filler_ranges": "Ep 9–17, 39–44, 108–117 (गार्लिक जूनियर), 125 (गोकू ड्राइविंग लेसन), 170–171, 195–204, 274, 288",
+        "notes": "सलाह: गार्लिक जूनियर आर्क (108–117) को छोड़ सकते हैं, पर Ep 125 (गोकू का ड्राइविंग टेस्ट) बहुत मजेदार फ़िलर है!",
+    },
+    "dragon-ball-super": {
+        "franchise": "Dragon Ball Super",
+        "total_episodes": 131,
+        "filler_percentage": "11%",
+        "canon_percentage": "89%",
+        "canon_ranges": "Ep 1–14, 18–27, 28–41, 47–67, 77–131",
+        "filler_ranges": "Ep 15, 42–46, 68–76",
+        "notes": "सलाह: गोकू ब्लैक आर्क (47–67) और टूर्नामेंट ऑफ पावर (77–131) मुख्य मस्ट-वॉच कैनन हैं।",
+    },
+    "detective-conan": {
+        "franchise": "Detective Conan",
+        "total_episodes": "1120+",
+        "filler_percentage": "40%",
+        "canon_percentage": "60%",
+        "canon_ranges": "Ep 1–13, 18, 48–50, 128–131, 176–178, 188–193, 219, 230–231, 304, 345, 425, 491–504, 701–704, 779–783+",
+        "filler_ranges": "टीवी ऑरिजिनल एपिसोड्स (~40% केस जो मंगा या ब्लैक ऑर्गनाइज़ेशन से जुड़े नहीं हैं)",
+        "notes": "सलाह: ब्लैक ऑर्गनाइज़ेशन, एफबीआई और काइतो किड से संबंधित कैनन केस देखने से कहानी तीव्र गति से आगे बढ़ती है।",
+    },
+    "fairy-tail": {
+        "franchise": "Fairy Tail",
+        "total_episodes": 328,
+        "filler_percentage": "19%",
+        "canon_percentage": "81%",
+        "canon_ranges": "Ep 1–48, 51–68, 73–124, 151–201, 227–245, 247–267, 269–328",
+        "filler_ranges": "Ep 49–50, 69–72, 125–150 (की ऑफ स्टारी स्काई), 202–226 (एक्लिप्स सेलेस्टियल स्पिरिट्स), 246, 268",
+        "notes": "सलाह: की ऑफ स्टारी स्काई आर्क (Ep 125–150) को छोड़कर सीधे ग्रैंड मैजिक गेम्स आर्क देखा जा सकता है।",
+    },
+    "boruto": {
+        "franchise": "Boruto",
+        "total_episodes": 293,
+        "filler_percentage": "67%",
+        "canon_percentage": "33%",
+        "canon_ranges": "Ep 19–24, 53–66, 148–151, 181–189, 192–208, 212–220, 287–293",
+        "filler_ranges": "Ep 40–52, 67–140, 152–180, 221–286",
+        "notes": "सलाह: केवल मंगा कैनन एपिसोड्स (विशेष रूप से Ep 181 से 220 का कारा/इशिकी आर्क) देखने से कहानी का स्तर बहुत बढ़ जाता है।",
+    },
+}
+
 DYNAMIC_ANIME_ALIASES: dict[str, str] = {
+    "one-piece": "one-piece",
+    "onepiece": "one-piece",
+    "one-piece-hindi-guide-watch-order": "one-piece",
+    "naruto": "naruto",
+    "naruto-hindi-dub-guide": "naruto",
+    "naruto-shippuden": "naruto-shippuden",
+    "naruto-shippuuden": "naruto-shippuden",
+    "bleach": "bleach",
+    "black-clover": "black-clover-season-2",
+    "dragon-ball-z": "dragon-ball-z",
+    "dragon-ball": "dragon-ball-z",
+    "dragon-ball-complete-watch-order-hindi-guide": "dragon-ball-z",
+    "dragon-ball-super": "dragon-ball-super",
+    "fairy-tail": "fairy-tail",
+    "boruto": "boruto",
+    "boruto-naruto-next-generations": "boruto",
     "frieren": "frieren-beyond-journeys-end",
     "frieren-beyond-journey-s-end": "frieren-beyond-journeys-end",
     "frieren-beyond-journeys-end-hindi-guide": "frieren-beyond-journeys-end",
@@ -4778,6 +5244,32 @@ def resolve_dynamic_anime(slug_or_id: str, session: Session) -> Optional[dict[st
     if "?" in disp:
         result["episodes_display"] = "प्रसारण जारी" if result.get("is_airing") else "पूर्ण सीज़न"
 
+    # Attach Filler Guide if franchise matches
+    f_key = None
+    c_lower = canonical_slug.lower()
+    if "naruto-shippu" in c_lower:
+        f_key = "naruto-shippuden"
+    elif "naruto" in c_lower and "boruto" not in c_lower:
+        f_key = "naruto"
+    elif "one-piece" in c_lower or "onepiece" in c_lower:
+        f_key = "one-piece"
+    elif "bleach" in c_lower:
+        f_key = "bleach"
+    elif "black-clover" in c_lower:
+        f_key = "black-clover"
+    elif "dragon-ball-super" in c_lower:
+        f_key = "dragon-ball-super"
+    elif "dragon-ball" in c_lower:
+        f_key = "dragon-ball-z"
+    elif "conan" in c_lower:
+        f_key = "detective-conan"
+    elif "fairy-tail" in c_lower:
+        f_key = "fairy-tail"
+    elif "boruto" in c_lower:
+        f_key = "boruto"
+
+    result["filler_guide"] = FILLER_GUIDES_DATA.get(f_key) if f_key else None
+
     return result
 
 
@@ -4857,6 +5349,23 @@ def random_anime_picker(
     return RedirectResponse(url=picked["url"], status_code=303)
 
 
+def _is_anime_in_watchlist(session: Session, user: Any, slug: str) -> bool:
+    """Helper to check if an anime slug is in the user's watchlist."""
+    if not user:
+        return False
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+    if not user_id:
+        return False
+    try:
+        art = session.exec(select(Article).where(Article.slug == slug)).first()
+        if art:
+            bm = session.exec(select(Bookmark).where(Bookmark.user_id == user_id, Bookmark.article_id == art.id)).first()
+            return bm is not None
+    except Exception:
+        session.rollback()
+    return False
+
+
 # ---------- UNIVERSAL DYNAMIC ANIME DETAIL ROUTE ----------
 @router.get("/anime/{item_id}", response_class=HTMLResponse)
 def anime_detail_page(
@@ -4875,36 +5384,55 @@ def anime_detail_page(
             ctx = cached_data.copy()
             ctx["request"] = request
             ctx["categories"] = get_categories(session)
-            ctx["user"] = getattr(request.state, "user", None)
+            user = getattr(request.state, "user", None)
+            ctx["user"] = user
+            target_slug = (ctx.get("anime") or {}).get("slug", clean_id)
+            ctx["is_in_watchlist"] = _is_anime_in_watchlist(session, user, target_slug)
             return render("anime_detail.html", **ctx)
 
-    # 2. Check if an Article editorial guide exists in DB with this slug
+    # 2. Check dynamic anime catalog first
+    resolved_catalog_slug = DYNAMIC_ANIME_ALIASES.get(clean_id, clean_id)
+    if resolved_catalog_slug in DYNAMIC_ANIME_CATALOG or clean_id in DYNAMIC_ANIME_CATALOG:
+        anime_data = resolve_dynamic_anime(item_id, session)
+        if anime_data:
+            categories = get_categories(session)
+            user = getattr(request.state, "user", None)
+            lang = request.cookies.get("site_lang", "hi")
+            related_anime = get_related_dynamic_anime(anime_data["slug"], limit=4)
+            is_in_watchlist = _is_anime_in_watchlist(session, user, anime_data["slug"])
+            ctx = {
+                "anime": anime_data,
+                "related_anime": related_anime,
+                "categories": categories,
+                "lang": lang,
+                "user": user,
+                "is_in_watchlist": is_in_watchlist,
+                "request": request,
+            }
+            if caching:
+                _DYNAMIC_ANIME_CACHE[clean_id] = (ctx.copy(), now + DYNAMIC_ANIME_CACHE_TTL)
+            return render("anime_detail.html", **ctx)
+
+    # 3. Check if an Article editorial guide exists in DB with this slug
     article = session.exec(select(Article).where(Article.slug == item_id)).first()
     if article:
         return article_page(request, item_id, session)
 
-    # Check if this slug is an alias or key in DYNAMIC_ANIME_CATALOG
-    resolved_catalog_slug = DYNAMIC_ANIME_ALIASES.get(clean_id, clean_id)
-    if resolved_catalog_slug not in DYNAMIC_ANIME_CATALOG:
-        try:
-            return article_page(request, item_id, session)
-        except HTTPException as e:
-            if e.status_code != 404:
-                raise e
-
-    # 3. Resolve Dynamic Anime Detail Page
+    # 4. Resolve Dynamic Anime Detail Page fallback
     anime_data = resolve_dynamic_anime(item_id, session)
     if anime_data:
         categories = get_categories(session)
         user = getattr(request.state, "user", None)
         lang = request.cookies.get("site_lang", "hi")
         related_anime = get_related_dynamic_anime(anime_data["slug"], limit=4)
+        is_in_watchlist = _is_anime_in_watchlist(session, user, anime_data["slug"])
         ctx = {
             "anime": anime_data,
             "related_anime": related_anime,
             "categories": categories,
             "lang": lang,
             "user": user,
+            "is_in_watchlist": is_in_watchlist,
             "request": request,
         }
         if caching:
