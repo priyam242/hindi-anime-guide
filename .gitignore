@@ -67,4 +67,5 @@ alembic/versions/*.pyc
 .neon
 
 video-kit/
+bin/
 
