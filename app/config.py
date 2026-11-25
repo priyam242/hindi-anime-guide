@@ -1,4 +1,5 @@
 import secrets
+import urllib.parse
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
@@ -14,13 +15,32 @@ SECRET_KEY_PLACEHOLDER = "change-this-in-production-to-a-secure-random-string-at
 STATIC_DIR = BASE_DIR / "app" / "static"
 
 
+def _sanitize_pg_url(url: str) -> str:
+    """Normalize Postgres scheme to postgresql+psycopg:// and safely percent-encode password characters."""
+    if not url or not isinstance(url, str):
+        return url
+    trimmed = url.strip()
+    pg_prefixes = ("postgres://", "postgresql://", "postgresql+psycopg://")
+    if not trimmed.startswith(pg_prefixes):
+        return trimmed
+    _, rest = trimmed.split("://", 1)
+    if "@" not in rest:
+        return f"postgresql+psycopg://{rest}"
+    userinfo, hostpart = rest.rsplit("@", 1)
+    if ":" in userinfo:
+        user, raw_password = userinfo.split(":", 1)
+        unquoted_pw = urllib.parse.unquote(raw_password)
+        encoded_pw = urllib.parse.quote(unquoted_pw, safe="")
+        return f"postgresql+psycopg://{user}:{encoded_pw}@{hostpart}"
+    return f"postgresql+psycopg://{userinfo}@{hostpart}"
+
+
 class Settings(BaseSettings):
     env: str = "production"
     debug: bool = False
     secret_key: str = ""
     database_url: str = "sqlite:///./anime_hindi.db"
     database_url_unpooled: Optional[str] = None
-    neon_branch: Optional[str] = None
     host: str = "127.0.0.1"
     port: int = 8000
     app_name: str = SITE_NAME
@@ -107,9 +127,9 @@ class Settings(BaseSettings):
                     socket.gethostbyname("host.docker.internal")
                 except Exception:
                     raw_db = raw_db.replace("host.docker.internal", "127.0.0.1")
-            self.db_url = raw_db
+            self.db_url = _sanitize_pg_url(raw_db)
             if self.env.lower() not in ("test", "testing"):
-                self.database_url = raw_db
+                self.database_url = self.db_url
 
         if self.database_url and "host.docker.internal" in self.database_url and self.env.lower() not in ("test", "testing"):
             try:
@@ -127,18 +147,14 @@ class Settings(BaseSettings):
                     resolved = (BASE_DIR / p).resolve()
                     self.database_url = f"sqlite:///{resolved.as_posix()}"
 
-        # Normalize PostgreSQL driver dialect to psycopg (psycopg 3.x)
+        # Normalize PostgreSQL driver dialect to psycopg (psycopg 3.x) and safely encode password
         if self.database_url:
-            if self.database_url.startswith("postgresql://"):
-                self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
-            elif self.database_url.startswith("postgres://"):
-                self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+            self.database_url = _sanitize_pg_url(self.database_url)
 
         if self.database_url_unpooled:
-            if self.database_url_unpooled.startswith("postgresql://"):
-                self.database_url_unpooled = self.database_url_unpooled.replace("postgresql://", "postgresql+psycopg://", 1)
-            elif self.database_url_unpooled.startswith("postgres://"):
-                self.database_url_unpooled = self.database_url_unpooled.replace("postgres://", "postgresql+psycopg://", 1)
+            self.database_url_unpooled = _sanitize_pg_url(self.database_url_unpooled)
+        elif self.database_url_unpooled == "":
+            self.database_url_unpooled = None
 
         # Dev / test secret key fallback
         normalized_env = self.env.lower()

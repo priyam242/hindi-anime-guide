@@ -23,17 +23,23 @@ logger = logging.getLogger("automation.saver")
 
 def get_automation_engine():
     """Get SQLAlchemy/SQLModel engine using DATABASE_URL or app config fallback."""
+    from app.config import _sanitize_pg_url, get_settings
+
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
         try:
-            from app.config import get_settings
             db_url = get_settings().database_url
         except Exception:
             db_url = "sqlite:///./anime_hindi.db"
 
+    db_url = _sanitize_pg_url(db_url)
     connect_args: dict[str, Any] = {}
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
+    elif "postgresql" in db_url or "postgres" in db_url:
+        connect_args["connect_timeout"] = 10
+        connect_args["application_name"] = "hindi_anime_guide"
+        connect_args["prepare_threshold"] = None
 
     return create_engine(db_url, connect_args=connect_args)
 

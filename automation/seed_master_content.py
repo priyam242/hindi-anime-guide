@@ -416,7 +416,7 @@ NEW_ARTICLES = [
 
 
 def run_master_seeding() -> None:
-    logger.info("Starting master content seeding into Neon PostgreSQL...")
+    logger.info("Starting master content seeding into PostgreSQL...")
     with Session(engine) as session:
         # 1. Ingest Manga items
         logger.info("Ingesting %d Manga updates...", len(MANGA_ITEMS))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +16,8 @@ from .routers.pages import get_categories
 from .routers import totp_router
 from .templates_config import render
 from .auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -37,19 +40,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Database startup lifespan error: {e}")
 
-    # Pre-warm in-memory caches for all Gunicorn workers
-    try:
-        from .routers.pages import prewarm_public_pages
-        prewarm_public_pages()
-    except Exception:
-        pass
+    if get_settings().env.lower() not in ("test", "testing"):
+        # Pre-warm in-memory caches for all Gunicorn workers
+        try:
+            from .routers.pages import prewarm_public_pages
+            prewarm_public_pages()
+        except Exception:
+            pass
 
-    # Non-blocking schedule staleness check
-    try:
-        from .routers.pages import check_and_refresh_schedule_background
-        check_and_refresh_schedule_background()
-    except Exception as e:
-        logger.warning(f"Failed to trigger background schedule check: {e}")
+        # Non-blocking schedule staleness check
+        try:
+            from .routers.pages import check_and_refresh_schedule_background
+            check_and_refresh_schedule_background()
+        except Exception as e:
+            logger.warning(f"Failed to trigger background schedule check: {e}")
 
     yield
 

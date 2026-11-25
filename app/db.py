@@ -16,7 +16,7 @@ is_sqlite = settings.database_url.startswith("sqlite")
 connect_args = (
     {"check_same_thread": False}
     if is_sqlite
-    else {"connect_timeout": 10, "application_name": "hindi_anime_guide"}
+    else {"connect_timeout": 10, "application_name": "hindi_anime_guide", "prepare_threshold": None}
 )
 
 engine_kwargs = {
@@ -128,7 +128,7 @@ def run_alembic_migrations(db_url: str | None = None) -> None:
     alembic_cfg = AlembicConfig(ini_path)
     alembic_cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
     target_url = db_url or settings.database_url_unpooled or settings.database_url
-    alembic_cfg.set_main_option("sqlalchemy.url", target_url)
+    alembic_cfg.set_main_option("sqlalchemy.url", target_url.replace("%", "%%"))
     try:
         alembic_command.upgrade(alembic_cfg, "head")
     except Exception as e:
