@@ -1,1 +1,654 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+  /* ZONE 1: Linear Animation Principle Multi-Depth Parallax Stage */
+  #linear-hero {
+    position: relative;
+    min-height: min(86vh, 760px);
+    background: #06070c;
+    overflow: hidden;
+  }
+  .hero-depth-layer {
+    will-change: transform;
+  }
+  .katana-streak {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ff2e63, #ffffff);
+    transform: rotate(-16deg);
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  /* ZONE 2: Stripe Press 3D Interactive Manga Shelf */
+  .shelf-stage {
+    perspective: 1400px;
+  }
+  .shelf-ledge {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, #06070c 100%);
+    border-bottom: 2px solid #ff2e63;
+    box-shadow: 0 18px 36px -10px rgba(255, 46, 99, 0.25);
+  }
+  .book-card-btn {
+    perspective: 1400px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+  .book-3d {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    transform-style: preserve-3d;
+    transform: rotateY(-8deg);
+    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
+    will-change: transform;
+  }
+  .book-card-btn:hover .book-3d,
+  .book-card-btn:focus-visible .book-3d {
+    transform: rotateY(-22deg) translateZ(34px) translateY(-10px);
+  }
+  .book-face-front {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    transform: translateZ(14px);
+    background: #06070c;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+  }
+  .book-card-btn:hover .book-face-front {
+    border-color: #ff2e63;
+    box-shadow: -8px 22px 42px rgba(255, 46, 99, 0.28);
+  }
+  .book-spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 28px;
+    transform: rotateY(-90deg) translateZ(14px);
+    background: linear-gradient(180deg, #ff2e63 0%, #06070c 22%, #06070c 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .book-spine-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.78);
+    text-transform: uppercase;
+    max-height: 80%;
+    overflow: hidden;
+  }
+  .book-pages {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    right: 0;
+    width: 26px;
+    transform: rotateY(90deg) translateZ(calc(100% - 13px));
+    background: repeating-linear-gradient(
+      90deg,
+      #ffffff 0px,
+      #ffffff 2px,
+      #d4d4d8 3px,
+      #ffffff 4px
+    );
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set active_spot = spotlight[0] if spotlight else None %}
+
+<!-- ZONE 1: LINEAR ANIMATION PRINCIPLE MULTI-DEPTH HERO STAGE -->
+<section id="linear-hero" class="border-b border-white/10">
+  <!-- Depth 0.14x (Heavy Focal Key Art — Moves Slow) -->
+  <div id="hero-layer-bg" class="hero-depth-layer absolute -inset-8 pointer-events-none">
+    <img id="hero-bg-img"
+         src="{{ active_spot.banner_url if active_spot else '/static/media/emblem_icon.webp' }}"
+         alt=""
+         class="w-full h-full object-cover opacity-45 scale-105 transition-opacity duration-500" />
+    <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-[#06070c]/82 to-[#06070c]/35"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-[#06070c]/75"></div>
+    <div class="absolute inset-0" style="background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 56px 56px;"></div>
+  </div>
+
+  <!-- Depth 0.88x Light Streaks & Sparks Backdrop Layer (Moves Fast) -->
+  <div id="hero-layer-fg" class="hero-depth-layer absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="katana-streak w-56 top-20 right-[18%]"></div>
+    <div class="katana-streak w-36 bottom-28 left-[42%] opacity-40"></div>
+    <div class="absolute top-24 right-[12%] w-2.5 h-2.5 rotate-45 bg-[#ff2e63] shadow-[0_0_16px_#ff2e63]"></div>
+    <div class="absolute bottom-36 right-[32%] w-2 h-2 bg-white shadow-[0_0_12px_#ffffff]"></div>
+  </div>
+
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20 min-h-[min(86vh,760px)] flex flex-col justify-between gap-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center my-auto">
+      <!-- Depth 0.38x (Typography + CTAs — Moves Medium) -->
+      <div id="hero-layer-mid" class="hero-depth-layer lg:col-span-7 space-y-6">
+        <div class="inline-flex items-center gap-3">
+          <span id="hero-badge" class="px-3 py-1 bg-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-[0.2em] uppercase" style="transform: skewX(-8deg);">
+            {{ active_spot.badge if active_spot else 'HINDI DUB • FLAGSHIP' }}
+          </span>
+          <span class="font-tech text-xs font-bold tracking-widest text-white/75 uppercase">
+            <span id="hero-score">{{ active_spot.score if active_spot else 85 }}</span>% MATCH &bull; <span id="hero-year">{{ active_spot.year if active_spot else '2025' }}</span>
+          </span>
+        </div>
+
+        <div class="space-y-2">
+          <h1 id="hero-title-hi" class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.35rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+            {{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}
+          </h1>
+          <p id="hero-title-en" class="font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
+            {{ active_spot.title_en if active_spot else 'OFFICIAL STREAMING GUIDE' }}
+          </p>
+        </div>
+
+        <p id="hero-tagline" class="max-w-xl text-sm sm:text-base text-white/80 leading-relaxed">
+          {{ active_spot.tagline if active_spot else '' }}
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <a id="hero-watch-link"
+             href="{{ active_spot.platforms[0].url if active_spot and active_spot.platforms else 'https://www.crunchyroll.com' }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="katana-btn px-6 py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase shadow-[0_0_28px_rgba(255,46,99,0.5)]">
+            <span><i class="fa-solid fa-bolt"></i> आधिकारिक स्ट्रीम देखें</span>
+          </a>
+
+          <a id="hero-detail-link"
+             href="/anime/{{ active_spot.slug if active_spot else 'solo-leveling' }}"
+             class="katana-btn px-5 py-3 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+            <span><i class="fa-solid fa-layer-group text-[#ff2e63]"></i> विवरण</span>
+          </a>
+
+          <button id="hero-trailer-btn"
+                  type="button"
+                  data-yt="{{ active_spot.trailer_id if active_spot else '' }}"
+                  data-title="{{ active_spot.title_en if active_spot else 'Official Trailer' }}"
+                  onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
+                  class="katana-btn px-6 py-3 bg-white/5 hover:bg-white/15 border border-white/25 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+            <span><i class="fa-solid fa-play text-[#ff2e63]"></i> ट्रेलर चलाएं</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Depth 0.88x Floating Key Art + Platform Chips (Moves Fast) -->
+      <div id="hero-layer-card" class="hero-depth-layer lg:col-span-5 flex flex-col items-center lg:items-end gap-4">
+        <div class="relative w-60 sm:w-68 aspect-[2/3] border-2 border-white/20 bg-[#06070c] shadow-[0_24px_60px_rgba(255,46,99,0.28)] overflow-hidden" style="transform: skewX(-4deg);">
+          <img id="hero-cover-img"
+               src="{{ active_spot.cover_url if active_spot else '/static/media/emblem_icon.webp' }}"
+               alt=""
+               class="w-full h-full object-cover scale-105 transition-opacity duration-500"
+               style="transform: skewX(4deg) scale(1.06);" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+          <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <span class="px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold tracking-widest uppercase text-white">HINDI AUDIO</span>
+            <span class="font-tech text-xs font-bold text-[#ff2e63]">★ TOP PICK</span>
+          </div>
+        </div>
+
+        <div id="hero-platforms" class="flex flex-wrap items-center justify-center lg:justify-end gap-2">
+          {% for p in (active_spot.platforms if active_spot else platforms[:3]) %}
+          <a href="{{ p.url or p.official_url }}" target="_blank" rel="noopener noreferrer"
+             class="px-3 py-1.5 bg-[#06070c]/90 border border-white/15 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">
+            {{ p.name or p.display_name }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Spotlight Switcher (01 / 05) -->
+    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
+      <div class="flex items-center gap-2 font-tech text-xs font-bold tracking-[0.2em] uppercase text-white/60">
+        <span id="spot-counter" class="text-[#ff2e63] text-sm">01</span>
+        <span>/</span>
+        <span>0{{ spotlight|length }} SPOTLIGHT</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% for sp in spotlight %}
+        <button type="button"
+                onclick="selectSpotlight({{ loop.index0 }})"
+                data-spot-idx="{{ loop.index0 }}"
+                class="spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all {{ 'border-[#ff2e63] bg-[#ff2e63]/20 text-white' if loop.first else 'border-white/10 bg-white/5 text-white/60 hover:text-white hover:border-white/30' }}">
+          0{{ loop.index }} &bull; {{ sp.title_en.split(':')[0] }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ZONE 2: STRIPE PRESS 3D INTERACTIVE MANGA SHELF -->
+<section id="manga-3d-shelf" class="py-16 sm:py-20 border-b border-white/10 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div class="space-y-2">
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">STRIPE PRESS EDITION &bull; 3D BOOKSHELF</span>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">3D मंगा शेल्फ़ <span class="text-[#ff2e63]">COLLECTION</span></h2>
+      </div>
+      <a href="/manga" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
+        <span>सभी {{ counts.manga }} वॉल्यूम देखें</span>
+        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+      </a>
+    </div>
+
+    {% set shelf_books = manga[:12] %}
+    {% if shelf_books %}
+    <div class="shelf-stage space-y-12">
+      {% for row_books in [shelf_books[:6], shelf_books[6:12]] if row_books %}
+      <div class="shelf-ledge pb-6 pt-2 px-3 sm:px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 sm:gap-8 items-end">
+          {% for m in row_books %}
+          <button type="button"
+                  class="book-card-btn group focus:outline-none"
+                  onclick='openMangaModal({{ m|tojson }})'
+                  aria-label="Read {{ m.title_en }}">
+            <div class="book-3d">
+              <div class="book-spine">
+                <span class="book-spine-label">{{ m.volume_label }}</span>
+              </div>
+              <div class="book-pages"></div>
+              <div class="book-face-front">
+                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/20 to-transparent"></div>
+                <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#ff2e63] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
+                  {{ m.volume_label }}
+                </span>
+                <div class="absolute bottom-2.5 left-2.5 right-2.5">
+                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight">{{ m.title_hi }}</p>
+                  <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-1">{{ m.chapters }}</p>
+                </div>
+              </div>
+            </div>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-white/60">कोई मंगा परिणाम नहीं मिला।</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ZONE 3: VISUAL EDITORIAL NEWS BENTO GRID -->
+<section id="visual-news" class="py-16 sm:py-20 border-b border-white/10 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div class="space-y-2">
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">EDITORIAL WIRE &bull; IMAGE-FIRST</span>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">ताज़ा एनीमे <span class="text-[#ff2e63]">न्यूज़ &amp; गाइड्स</span></h2>
+      </div>
+      <a href="/news" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
+        <span>सभी {{ counts.news }} न्यूज़ पढ़ें</span>
+        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+      </a>
+    </div>
+
+    {% if news %}
+    {% set lead = news[0] %}
+    {% set side_cards = news[1:3] %}
+    {% set grid_cards = news[3:6] %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Featured Lead Visual Card -->
+      <a href="{{ lead.source_url }}" target="{{ '_blank' if lead.source_url.startswith('http') else '_self' }}"
+         rel="noopener noreferrer"
+         class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
+        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy"
+             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-3">
+          <div class="flex items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
+            <span class="px-2.5 py-0.5 bg-[#ff2e63] text-white">{{ lead.category }}</span>
+            <span class="text-white/70">{{ lead.date }} &bull; {{ lead.source_name }}</span>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
+            {{ lead.title_hi }}
+          </h3>
+          <p class="text-xs sm:text-sm text-white/75 line-clamp-2">{{ lead.summary }}</p>
+        </div>
+      </a>
+
+      <!-- Right Stacked Visual Cards -->
+      <div class="lg:col-span-5 grid grid-cols-1 gap-6">
+        {% for item in side_cards %}
+        <a href="{{ item.source_url }}" target="{{ '_blank' if item.source_url.startswith('http') else '_self' }}"
+           rel="noopener noreferrer"
+           class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
+               class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 right-0 p-5 space-y-1.5">
+            <div class="flex items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
+              <span class="text-[#ff2e63]">{{ item.category }}</span>
+              <span class="text-white/50">&bull; {{ item.date }}</span>
+            </div>
+            <h3 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">
+              {{ item.title_hi }}
+            </h3>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if grid_cards %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for item in grid_cards %}
+      <a href="{{ item.source_url }}" target="{{ '_blank' if item.source_url.startswith('http') else '_self' }}"
+         rel="noopener noreferrer"
+         class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
+        <div class="aspect-video overflow-hidden relative">
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <span class="absolute top-3 left-3 px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-widest text-white">
+            {{ item.category }}
+          </span>
+        </div>
+        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+          <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ item.title_hi }}</h3>
+          <span class="font-tech text-[10px] uppercase tracking-wider text-white/50">{{ item.date }} &bull; {{ item.source_name }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<!-- ZONE 4: LIVE IST BROADCAST SCHEDULE STRIP & OFFICIAL TRAILERS ROW -->
+<section id="ist-schedule" class="py-16 sm:py-20 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+    <!-- IST Broadcast Timeline -->
+    <div class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div class="space-y-2">
+          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">INDIAN STANDARD TIME &bull; LIVE TIMELINE</span>
+          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
+        </div>
+        <a href="/schedule" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
+          <span>पूरा {{ counts.schedule }} शेड्यूल देखें</span>
+          <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+        </a>
+      </div>
+
+      <!-- Day Tabs -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
+        {% for day_hi, day_en in schedule_days %}
+        <button type="button"
+                onclick="selectScheduleDay('{{ day_hi }}')"
+                data-day-tab="{{ day_hi }}"
+                class="sch-day-tab px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors {{ 'border-[#ff2e63] text-white bg-white/5' if loop.first else 'border-transparent text-white/55 hover:text-white' }}">
+          {{ day_hi }} <span class="text-[10px] opacity-60">({{ schedule_by_day.get(day_hi, [])|length }})</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <!-- Day Panels -->
+      {% for day_hi, day_en in schedule_days %}
+      <div data-day-panel="{{ day_hi }}" class="sch-day-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 {{ '' if loop.first else 'hidden' }}">
+        {% for show in schedule_by_day.get(day_hi, [])[:8] %}
+        <a href="{{ show.source_url }}" target="_blank" rel="noopener noreferrer"
+           class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
+          <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy"
+               class="w-14 h-20 object-cover shrink-0 border border-white/15" />
+          <div class="min-w-0 space-y-1">
+            <div class="flex items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-wider">
+              <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white">{{ show.airing_time }}</span>
+              {% if show.score %}<span class="text-white/75">★ {{ show.score }}</span>{% endif %}
+            </div>
+            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ show.title_hi }}</h3>
+            <p class="text-[10px] text-white/50 truncate">{{ show.title_en }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Official Trailers Row -->
+    <div id="trailers-row" class="space-y-6 pt-4 border-t border-white/10">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div class="space-y-2">
+          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">OFFICIAL PVs &bull; LIGHTBOX</span>
+          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">आधिकारिक <span class="text-[#ff2e63]">ट्रेलर्स</span></h2>
+        </div>
+        <a href="/trailers" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
+          <span>सभी {{ counts.trailers }} ट्रेलर्स देखें</span>
+          <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {% for tr in trailers[:4] %}
+        <button type="button"
+                onclick="openTrailerModal('{{ tr.youtube_id }}', {{ tr.title_en|tojson }})"
+                class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
+          <div class="relative aspect-video overflow-hidden">
+            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" loading="lazy"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
+              <span class="w-12 h-9 bg-[#ff2e63] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
+                <i class="fa-solid fa-play text-sm" style="transform: skewX(10deg);"></i>
+              </span>
+            </div>
+            <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-[#06070c]/90 font-tech text-[9px] font-bold uppercase tracking-widest text-white">
+              {{ tr.source_name }}
+            </span>
+          </div>
+          <div class="p-3.5 space-y-1">
+            <h3 class="text-xs font-bold text-white line-clamp-1 group-hover:text-[#ff2e63] transition-colors">{{ tr.title_hi }}</h3>
+            <p class="text-[11px] text-white/55 line-clamp-1">{{ tr.title_en }}</p>
+          </div>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MANGA QUICK-READER MODAL -->
+<div id="manga-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/90 backdrop-blur-md">
+  <div class="relative w-full max-w-2xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_50px_rgba(255,46,99,0.35)] p-6 sm:p-8">
+    <button type="button" onclick="closeMangaModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="flex flex-col sm:flex-row gap-6">
+      <img id="mm-cover" src="" alt="" class="w-36 h-52 object-cover border border-white/20 shrink-0 mx-auto sm:mx-0" />
+      <div class="space-y-3 min-w-0">
+        <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
+          <span id="mm-vol" class="px-2 py-0.5 bg-[#ff2e63] text-white"></span>
+          <span id="mm-status" class="px-2 py-0.5 border border-white/25 text-white"></span>
+          <span id="mm-chapters" class="text-white/70"></span>
+        </div>
+        <h3 id="mm-title-hi" class="text-xl font-extrabold text-white leading-snug"></h3>
+        <p id="mm-title-en" class="font-tech text-xs font-bold uppercase tracking-wider text-[#ff2e63]"></p>
+        <p id="mm-summary" class="text-xs sm:text-sm text-white/80 leading-relaxed max-h-40 overflow-y-auto"></p>
+        <div class="pt-2">
+          <a id="mm-link" href="#" target="_blank" rel="noopener noreferrer"
+             class="katana-btn inline-flex px-5 py-2.5 bg-[#ff2e63] text-white font-tech text-xs font-bold tracking-widest uppercase">
+            <span><i class="fa-solid fa-book-open"></i> आधिकारिक रीड सोर्स</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OFFICIAL TRAILER LIGHTBOX MODAL -->
+<div id="trailer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/95 backdrop-blur-md">
+  <div class="relative w-full max-w-4xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_50px_rgba(255,46,99,0.4)]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      <span id="tm-title" class="font-tech text-xs font-bold uppercase tracking-widest text-white">Official Trailer</span>
+      <button type="button" onclick="closeTrailerModal()" class="w-8 h-8 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="aspect-video bg-[#06070c]">
+      <iframe id="tm-iframe" src="" class="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  var SPOTLIGHT_ITEMS = {{ spotlight|tojson }};
+
+  function selectSpotlight(idx) {
+    var item = SPOTLIGHT_ITEMS[idx];
+    if (!item) return;
+    document.getElementById("hero-bg-img").src = item.banner_url;
+    document.getElementById("hero-cover-img").src = item.cover_url;
+    document.getElementById("hero-badge").textContent = item.badge;
+    document.getElementById("hero-score").textContent = item.score;
+    document.getElementById("hero-year").textContent = item.year;
+    document.getElementById("hero-title-hi").textContent = item.title_hi;
+    document.getElementById("hero-title-en").textContent = item.title_en;
+    document.getElementById("hero-tagline").textContent = item.tagline;
+    document.getElementById("spot-counter").textContent = "0" + (idx + 1);
+
+    var watchLink = document.getElementById("hero-watch-link");
+    if (watchLink && item.platforms && item.platforms.length) {
+      watchLink.href = item.platforms[0].url;
+    }
+    var detailLink = document.getElementById("hero-detail-link");
+    if (detailLink && item.slug) {
+      detailLink.href = "/anime/" + encodeURIComponent(item.slug);
+    }
+    var trBtn = document.getElementById("hero-trailer-btn");
+    if (trBtn) {
+      trBtn.dataset.yt = item.trailer_id || "";
+      trBtn.dataset.title = item.title_en;
+    }
+    var pBox = document.getElementById("hero-platforms");
+    if (pBox && item.platforms) {
+      pBox.innerHTML = item.platforms.map(function (p) {
+        return '<a href="' + p.url + '" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-[#06070c]/90 border border-white/15 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">' + p.name + '</a>';
+      }).join("");
+    }
+    document.querySelectorAll(".spot-tab").forEach(function (btn, i) {
+      if (i === idx) {
+        btn.className = "spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-[#ff2e63] bg-[#ff2e63]/20 text-white";
+      } else {
+        btn.className = "spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-white/10 bg-white/5 text-white/60 hover:text-white hover:border-white/30";
+      }
+    });
+  }
+
+  function selectScheduleDay(dayHi) {
+    document.querySelectorAll(".sch-day-tab").forEach(function (btn) {
+      var active = btn.dataset.dayTab === dayHi;
+      btn.className = "sch-day-tab px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors " +
+        (active ? "border-[#ff2e63] text-white bg-white/5" : "border-transparent text-white/55 hover:text-white");
+    });
+    document.querySelectorAll(".sch-day-panel").forEach(function (panel) {
+      if (panel.dataset.dayPanel === dayHi) panel.classList.remove("hidden");
+      else panel.classList.add("hidden");
+    });
+  }
+
+  function openMangaModal(m) {
+    document.getElementById("mm-cover").src = m.cover_url || "";
+    document.getElementById("mm-vol").textContent = m.volume_label || "VOL";
+    document.getElementById("mm-status").textContent = m.pub_status || "ONGOING";
+    document.getElementById("mm-chapters").textContent = m.chapters || "";
+    document.getElementById("mm-title-hi").textContent = m.title_hi || m.title_en || "";
+    document.getElementById("mm-title-en").textContent = m.title_en || "";
+    document.getElementById("mm-summary").textContent = m.summary_hi || m.summary_en || "";
+    document.getElementById("mm-link").href = m.source_url || "#";
+    var modal = document.getElementById("manga-modal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+
+  function closeMangaModal() {
+    var modal = document.getElementById("manga-modal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+
+  function openTrailerModal(ytId, title) {
+    if (!ytId) return;
+    document.getElementById("tm-title").textContent = title || "Official Trailer";
+    document.getElementById("tm-iframe").src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(ytId) + "?autoplay=1&rel=0";
+    var modal = document.getElementById("trailer-modal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+
+  function closeTrailerModal() {
+    document.getElementById("tm-iframe").src = "";
+    var modal = document.getElementById("trailer-modal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeMangaModal();
+      closeTrailerModal();
+    }
+  });
+
+  // Linear Animation Principle: GSAP quickTo multi-depth pointer + scroll parallax
+  (function initLinearParallax() {
+    var hero = document.getElementById("linear-hero");
+    if (!hero || typeof gsap === "undefined") return;
+
+    var bg = document.getElementById("hero-layer-bg");
+    var mid = document.getElementById("hero-layer-mid");
+    var fg = document.getElementById("hero-layer-fg");
+    var card = document.getElementById("hero-layer-card");
+
+    var qBgX = gsap.quickTo(bg, "x", { duration: 0.65, ease: "power3.out" });
+    var qBgY = gsap.quickTo(bg, "y", { duration: 0.65, ease: "power3.out" });
+    var qMidX = gsap.quickTo(mid, "x", { duration: 0.55, ease: "power3.out" });
+    var qMidY = gsap.quickTo(mid, "y", { duration: 0.55, ease: "power3.out" });
+    var qFgX = gsap.quickTo(fg, "x", { duration: 0.42, ease: "power3.out" });
+    var qFgY = gsap.quickTo(fg, "y", { duration: 0.42, ease: "power3.out" });
+    var qCardX = gsap.quickTo(card, "x", { duration: 0.42, ease: "power3.out" });
+    var qCardY = gsap.quickTo(card, "y", { duration: 0.42, ease: "power3.out" });
+
+    hero.addEventListener("mousemove", function (e) {
+      var rect = hero.getBoundingClientRect();
+      var nx = (e.clientX - rect.left) / rect.width - 0.5;
+      var ny = (e.clientY - rect.top) / rect.height - 0.5;
+      // Heavy background slow (0.14x), medium typography (0.38x), light foreground fast (0.88x)
+      qBgX(-nx * 40 * 0.14);
+      qBgY(-ny * 30 * 0.14);
+      qMidX(-nx * 40 * 0.38);
+      qMidY(-ny * 30 * 0.38);
+      qFgX(-nx * 40 * 0.88);
+      qFgY(-ny * 30 * 0.88);
+      qCardX(-nx * 40 * 0.88);
+      qCardY(-ny * 30 * 0.88);
+    });
+
+    window.addEventListener("scroll", function () {
+      var sy = Math.min(window.scrollY || 0, 500);
+      gsap.to(bg, { y: sy * 0.14, duration: 0.35, overwrite: "auto" });
+      gsap.to(mid, { y: sy * 0.38, duration: 0.35, overwrite: "auto" });
+    }, { passive: true });
+  })();
+</script>
+{% endblock %}

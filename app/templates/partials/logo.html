@@ -1,0 +1,169 @@
+{% macro brand_logo(id_prefix='nav', on_dark=True) %}
+<style>
+  @keyframes hagHexRimPulse {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(255, 46, 99, 0.45), inset 0 0 10px rgba(255, 46, 99, 0.35);
+    }
+    50% {
+      box-shadow: 0 0 22px rgba(255, 46, 99, 0.8), inset 0 0 14px rgba(255, 255, 255, 0.25);
+    }
+  }
+  .hag-shonen-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    user-select: none;
+    white-space: nowrap;
+    font-family: 'Chakra Petch', 'Outfit', 'Noto Sans Devanagari', sans-serif;
+  }
+  .hag-hex-emblem {
+    position: relative;
+    width: 56px;
+    height: 48px;
+    flex-shrink: 0;
+    transform: skewX(-8deg);
+    background: #06070c;
+    border: 2px solid #ff2e63;
+    outline: 1px solid rgba(255, 255, 255, 0.35);
+    outline-offset: 2px;
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+    overflow: hidden;
+    animation: hagHexRimPulse 2.8s ease-in-out infinite;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease;
+  }
+  .hag-shonen-logo:hover .hag-hex-emblem {
+    transform: skewX(-8deg) scale(1.07);
+    border-color: #ffffff;
+  }
+  .hag-hex-emblem::before,
+  .hag-hex-emblem::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 3px;
+    background: #ffffff;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .hag-hex-emblem::before {
+    top: 2px;
+    left: 4px;
+    box-shadow: 0 0 8px #ff2e63;
+  }
+  .hag-hex-emblem::after {
+    bottom: 2px;
+    right: 4px;
+    background: #ff2e63;
+    box-shadow: 0 0 8px #ffffff;
+  }
+  .hag-emblem-art {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: skewX(8deg) scale(1.18);
+    filter: contrast(1.22) saturate(1.25);
+    display: block;
+  }
+  .hag-emblem-rim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 46, 99, 0.38) 0%, rgba(6, 7, 12, 0.15) 48%, rgba(255, 255, 255, 0.18) 100%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .hag-emblem-slash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .hag-emblem-monogram {
+    font-family: 'Russo One', 'Noto Sans Devanagari', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: -2px 0 0 #ff2e63, 2px 2px 0 #06070c, 0 0 10px rgba(255, 46, 99, 0.9);
+    letter-spacing: -0.04em;
+    transform: skewX(4deg);
+  }
+  .hag-wordmark {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
+    transform: skewX(-6deg);
+  }
+  .hag-kicker-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+  .hag-kicker-line {
+    width: 16px;
+    height: 2px;
+    background: linear-gradient(90deg, #ff2e63, #ffffff);
+    display: inline-block;
+  }
+  .hag-kicker-text {
+    font-family: 'Chakra Petch', 'Noto Sans Devanagari', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #ff2e63;
+  }
+  .hag-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .hag-title-main {
+    font-family: 'Russo One', 'Chakra Petch', sans-serif;
+    font-size: 1.24rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: {{ '#ffffff' if on_dark else '#06070c' }};
+    text-shadow: 2px 2px 0px #ff2e63;
+  }
+  .hag-title-guide {
+    font-family: 'Black Ops One', 'Chakra Petch', sans-serif;
+    font-size: 1.06rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ff2e63;
+    border-left: 3px solid #ffffff;
+    padding: 2px 9px 2px 8px;
+    background: linear-gradient(90deg, rgba(255, 46, 99, 0.24), transparent);
+    text-shadow: 0 0 12px rgba(255, 46, 99, 0.5);
+  }
+</style>
+
+<div id="{{ id_prefix }}-shonen-logo" class="hag-shonen-logo">
+  <div class="hag-hex-emblem" aria-hidden="true">
+    <img src="/static/media/emblem_icon.webp" alt="" class="hag-emblem-art" />
+    <div class="hag-emblem-rim"></div>
+    <div class="hag-emblem-slash">
+      <span class="hag-emblem-monogram">ア&#x2F;</span>
+    </div>
+  </div>
+
+  <span class="hag-wordmark">
+    <span class="hag-kicker-row">
+      <span class="hag-kicker-line"></span>
+      <span class="hag-kicker-text">भारत का नंबर #1 &bull; OFFICIAL ANIME HUB</span>
+    </span>
+    <span class="hag-title-row">
+      <span class="hag-title-main">HINDI ANIME</span>
+      <span class="hag-title-guide">GUIDE</span>
+    </span>
+  </span>
+</div>
+{% endmacro %}

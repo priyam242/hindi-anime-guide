@@ -1,0 +1,298 @@
+{% from "partials/logo.html" import brand_logo %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
+
+<style>
+  #splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    user-select: none;
+    overflow: hidden;
+  }
+  #splash-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: #06070c;
+    opacity: 1;
+  }
+  #splash-center-container {
+    position: relative;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+  }
+  #cn-stage-anchor {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 165px;
+  }
+  #cn-logo-bumper {
+    position: relative;
+    width: min(440px, 88vw);
+    height: 165px;
+    transform: skewX(-8deg);
+    background: #06070c;
+    border: 2px solid #ff2e63;
+    outline: 1px solid rgba(255, 255, 255, 0.35);
+    outline-offset: 4px;
+    box-shadow: 0 0 42px rgba(255, 46, 99, 0.38), inset 0 0 28px rgba(6, 7, 12, 0.85);
+    overflow: hidden;
+  }
+  #cn-bumper-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: skewX(8deg) scale(1.1);
+    display: block;
+  }
+  #cn-bumper-tag {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    padding: 2px 8px;
+    background: rgba(6, 7, 12, 0.84);
+    border-left: 2px solid #ff2e63;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+  #cn-impact-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    background: radial-gradient(circle at center, #ffffff 0%, #ff2e63 45%, rgba(6, 7, 12, 0) 75%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  #cn-shockwave-ring {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 9999px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 30px #ff2e63, inset 0 0 24px #ff2e63;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #splash-logo-stage {
+    position: absolute;
+    display: inline-flex;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    opacity: 0;
+  }
+  #splash-logo-stage.splash-centered {
+    transform: scale(2.1);
+  }
+  #splash-skip-hint {
+    position: absolute;
+    bottom: 12vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Chakra Petch', 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="splash-screen" role="dialog" aria-label="Hindi Anime Guide Shonen Ident Bumper">
+  <div id="splash-backdrop"></div>
+  <div id="cn-impact-flash"></div>
+  <div id="splash-center-container">
+    <div id="cn-stage-anchor">
+      <div id="cn-shockwave-ring"></div>
+
+      <!-- Compact Centered Cartoon Network-Style Ident Video Box -->
+      <div id="cn-logo-bumper">
+        <video id="cn-bumper-video" src="/static/media/logo_bumper.mp4" autoplay muted playsinline preload="auto"></video>
+        <span id="cn-bumper-tag">HAG // IDENT</span>
+      </div>
+
+      <!-- Full Shonen Brand Logo Revealed on Fist Collision -->
+      <div id="splash-logo-stage" class="splash-centered">
+        {{ brand_logo('splash', True) }}
+      </div>
+    </div>
+    <div id="splash-skip-hint">Click anywhere or press Esc to skip</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function initShonenBumperIdent() {
+    var screen = document.getElementById("splash-screen");
+    var backdrop = document.getElementById("splash-backdrop");
+    var bumperBox = document.getElementById("cn-logo-bumper");
+    var bumperVideo = document.getElementById("cn-bumper-video");
+    var impactFlash = document.getElementById("cn-impact-flash");
+    var shockRing = document.getElementById("cn-shockwave-ring");
+    var logoStage = document.getElementById("splash-logo-stage");
+    var skipHint = document.getElementById("splash-skip-hint");
+    var navTarget = document.getElementById("navbar-logo-target");
+
+    if (!screen || !logoStage || !navTarget) {
+      if (screen) screen.remove();
+      return;
+    }
+
+    var docked = false;
+    var tl = null;
+
+    function dockLogo(immediate) {
+      if (docked) return;
+      docked = true;
+      window.removeEventListener("keydown", onEsc);
+      screen.removeEventListener("click", onClick);
+      if (tl) tl.kill();
+      if (bumperVideo && typeof bumperVideo.pause === "function") {
+        try { bumperVideo.pause(); } catch (e) {}
+      }
+
+      if (immediate || typeof gsap === "undefined" || typeof Flip === "undefined") {
+        if (bumperBox) bumperBox.style.display = "none";
+        navTarget.innerHTML = "";
+        logoStage.classList.remove("splash-centered");
+        logoStage.style.position = "static";
+        logoStage.style.opacity = "1";
+        logoStage.style.transform = "none";
+        navTarget.appendChild(logoStage);
+        screen.remove();
+        return;
+      }
+
+      gsap.registerPlugin(Flip);
+      gsap.killTweensOf([logoStage, backdrop, bumperBox, impactFlash, shockRing, skipHint]);
+
+      if (bumperBox) gsap.set(bumperBox, { opacity: 0, display: "none" });
+      if (impactFlash) gsap.set(impactFlash, { opacity: 0 });
+      if (shockRing) gsap.set(shockRing, { opacity: 0 });
+
+      // Ensure logo is visibly staged before capturing Flip state
+      gsap.set(logoStage, { opacity: 1, scale: window.innerWidth < 768 ? 1.25 : 2.1 });
+
+      var state = Flip.getState(logoStage);
+      navTarget.innerHTML = "";
+      logoStage.classList.remove("splash-centered");
+      logoStage.style.position = "static";
+      gsap.set(logoStage, { clearProps: "transform,x,y,scale" });
+      navTarget.appendChild(logoStage);
+      navTarget.style.zIndex = "10001";
+      screen.style.pointerEvents = "none";
+
+      if (skipHint) {
+        gsap.to(skipHint, { opacity: 0, duration: 0.2, ease: "power2.out" });
+      }
+
+      Flip.from(state, {
+        duration: 0.85,
+        ease: "power4.inOut",
+        absolute: true,
+        scale: true,
+        onComplete: function () {
+          navTarget.style.zIndex = "";
+          if (screen.parentNode) screen.remove();
+          gsap.set(logoStage, { clearProps: "transform,x,y,scale" });
+        }
+      });
+
+      // Keep solid #06070c backdrop until the final 35% of navbar flight
+      gsap.to(backdrop, {
+        opacity: 0,
+        duration: 0.85 * 0.35,
+        delay: 0.85 * 0.65,
+        ease: "power2.out"
+      });
+    }
+
+    function onClick() {
+      dockLogo(false);
+    }
+
+    function onEsc(e) {
+      if (e.key === "Escape") dockLogo(false);
+    }
+
+    if (navigator && navigator.webdriver) {
+      dockLogo(true);
+      return;
+    }
+
+    screen.addEventListener("click", onClick);
+    window.addEventListener("keydown", onEsc);
+
+    if (bumperVideo) {
+      try {
+        bumperVideo.currentTime = 0;
+        var p = bumperVideo.play();
+        if (p && typeof p.catch === "function") p.catch(function () {});
+      } catch (e) {}
+    }
+
+    if (typeof gsap !== "undefined") {
+      var targetScale = window.innerWidth < 768 ? 1.25 : 2.1;
+      gsap.set(logoStage, { opacity: 0, scale: targetScale * 1.12 });
+      if (bumperBox) gsap.set(bumperBox, { opacity: 1, scale: 1 });
+
+      tl = gsap.timeline();
+
+      // 0.0s -> 2.1s: Compact CN Bumper Video plays Saitama & Garou Fist Charge
+      if (bumperBox) {
+        tl.to(bumperBox, { scale: 1.03, duration: 2.05, ease: "power1.in" }, 0);
+      }
+
+      // 2.1s: EXACT FIST COLLISION -> 120ms Impact Flash Shatter + Radial Shockwave Ring + Logo Morph
+      if (impactFlash) {
+        tl.to(impactFlash, { opacity: 0.92, duration: 0.05, ease: "none" }, 2.1);
+        tl.to(impactFlash, { opacity: 0, duration: 0.14, ease: "power2.out" }, 2.15);
+      }
+      if (shockRing) {
+        tl.fromTo(shockRing, { opacity: 1, scale: 0.45 }, { opacity: 0, scale: 3.4, duration: 0.48, ease: "power3.out" }, 2.1);
+      }
+      if (bumperBox) {
+        tl.to(bumperBox, { scale: 1.12, opacity: 0, duration: 0.12, ease: "power3.in" }, 2.1);
+        tl.set(bumperBox, { display: "none" }, 2.22);
+      }
+
+      // Reveal Full Redesigned HINDI ANIME GUIDE Shonen Logo at 2.1x scale & hold until 3.0s
+      tl.fromTo(
+        logoStage,
+        { opacity: 0, scale: targetScale * 1.12 },
+        { opacity: 1, scale: targetScale, duration: 0.22, ease: "power3.out" },
+        2.12
+      );
+
+      // 3.0s -> 3.85s: GSAP Flip Flight to Top-Left Navbar Target
+      tl.call(function () {
+        dockLogo(false);
+      }, null, 3.0);
+    } else {
+      setTimeout(function () {
+        dockLogo(true);
+      }, 3000);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initShonenBumperIdent);
+  } else {
+    initShonenBumperIdent();
+  }
+})();
+</script>

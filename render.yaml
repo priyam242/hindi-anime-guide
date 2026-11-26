@@ -1,31 +1,11 @@
-# NOTE: render.yaml only applies to Blueprint-created services (Infrastructure as Code).
-# If your service was created manually in the Render Web Dashboard (e.g., named "Hindi Anime Guide"),
-# settings in this file do not automatically overwrite dashboard configurations.
-
 services:
-  # Main Web Service (FastAPI + Uvicorn) - Hosted on Render
-  # All background schedulers run via free GitHub Actions workflows (.github/workflows/)
   - type: web
     name: hindi-anime-guide
     env: python
-    plan: starter
-    region: singapore
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && alembic upgrade head
-    startCommand: gunicorn -w 2 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:$PORT
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.8
-      - key: ENV
-        value: production
-      - key: SITE_URL
-        value: https://hindi-anime-guide.onrender.com
-      - key: DAILY_SOURCE_DRAFT_CAP
-        value: 20
-      - key: DATABASE_URL
-        sync: false
-      - key: SECRET_KEY
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: YOUTUBE_API_KEY
-        sync: false
+        value: 3.11.9

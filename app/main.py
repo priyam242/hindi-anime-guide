@@ -1,265 +1,172 @@
-from __future__ import annotations
-import asyncio
-import logging
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, FileResponse, Response, JSONResponse
+from pathlib import Path
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.gzip import GZipMiddleware
-from starlette.middleware.sessions import SessionMiddleware
-from sqlmodel import Session
-from .config import settings, STATIC_DIR, get_settings, validate_secret_key
-from .db import engine, init_db
-from .routers import pages, admin, users, uploads
-from .routers.pages import get_categories
-from .routers import totp_router
-from .templates_config import render
-from .auth import get_current_user
+from fastapi.templating import Jinja2Templates
 
-logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    validate_secret_key(get_settings())
-    init_db()
-    try:
-        with Session(engine) as session:
-            try:
-                admin.ensure_admin_user(session)
-            except Exception as e:
-                session.rollback()
-                logger.warning(f"Failed to ensure admin user: {e}")
-            try:
-                from .routers.pages import ensure_canonical_trailers
-                ensure_canonical_trailers(session)
-            except Exception as e:
-                session.rollback()
-                logger.warning(f"Failed to ensure canonical trailers: {e}")
-    except Exception as e:
-        logger.warning(f"Database startup lifespan error: {e}")
-
-    if get_settings().env.lower() not in ("test", "testing"):
-        # Pre-warm in-memory caches for all Gunicorn workers
-        try:
-            from .routers.pages import prewarm_public_pages
-            prewarm_public_pages()
-        except Exception:
-            pass
-
-        # Non-blocking schedule staleness check
-        try:
-            from .routers.pages import check_and_refresh_schedule_background
-            check_and_refresh_schedule_background()
-        except Exception as e:
-            logger.warning(f"Failed to trigger background schedule check: {e}")
-
-    yield
-
-
-app = FastAPI(
-    title=settings.app_name,
-    description=settings.app_description,
-    lifespan=lifespan,
-    docs_url=None,
-    openapi_url=None,
-    redoc_url=None,
+from app.db import ping_database
+from app.services.content import (
+    filter_payload,
+    get_anime_detail,
+    get_cached_content,
+    get_counts,
+    get_news_detail,
 )
 
-# ---------------------------------------------------------
-# Performance & Security Middleware
-# ---------------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR.parent / ".env")
 
+app = FastAPI(title="Hindi Anime Guide", version="v2-clean")
 app.add_middleware(GZipMiddleware, minimum_size=500)
-
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.secret_key or "session-secret-key-fallback-32chars",
-    same_site="lax",
-    https_only=(settings.env.lower() == "production"),
-)
 
 
 @app.middleware("http")
-async def performance_and_security_headers(request: Request, call_next):
-    """
-    Phase 9 & 10: Performance & AdSense Verification Headers
-    """
-    try:
-        response = await call_next(request)
-    except (asyncio.CancelledError, KeyboardInterrupt):
-        return Response(status_code=499)
-
-    path = request.url.path.lower()
-
-    if path.startswith("/static/") or path.startswith("/media/"):
-        if any(path.endswith(ext) for ext in (
-            ".css", ".js", ".woff2", ".woff", ".ttf", ".otf",
-            ".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"
-        )):
-            response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
-        else:
-            response.headers["Cache-Control"] = "public, max-age=86400"
-    elif path in ("/favicon.ico", "/health", "/healthz", "/ads.txt"):
-        response.headers["Cache-Control"] = "public, max-age=86400"
-    else:
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
-    if "Content-Security-Policy" not in response.headers:
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-    if settings.env.lower() == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-
+async def bandwidth_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if response.status_code < 400:
+        if path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path != "/healthz" and request.method == "GET":
+            response.headers.setdefault("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600")
     return response
 
 
-@app.middleware("http")
-async def inject_user_context(request: Request, call_next):
-    """Make current user info available to all templates."""
-    path = request.url.path.lower()
-    # Fast path: Skip DB user lookup for static assets, media, favicon, and health checks
-    if path.startswith(("/static/", "/media/", "/favicon.ico", "/health", "/healthz", "/ads.txt", "/robots.txt")):
-        request.state.user = None
-        try:
-            return await call_next(request)
-        except (asyncio.CancelledError, KeyboardInterrupt):
-            return Response(status_code=499)
-
-    try:
-        user = await get_current_user(request)
-        request.state.user = user
-        response = await call_next(request)
-        return response
-    except (asyncio.CancelledError, KeyboardInterrupt):
-        return Response(status_code=499)
+static_dir = BASE_DIR / "static"
+if static_dir.is_dir():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-@app.get("/docs", include_in_schema=False)
-def get_docs():
-    cur = get_settings()
-    if not cur.debug or cur.env.lower() == "production":
-        raise HTTPException(status_code=404, detail="Not Found")
-    from fastapi.openapi.docs import get_swagger_ui_html
-    return get_swagger_ui_html(openapi_url="/openapi.json", title=f"{cur.app_name} - Swagger UI")
+@app.get("/healthz", response_class=JSONResponse)
+async def healthz():
+    db_ok = ping_database()
+    counts = get_counts() if db_ok else {}
+    return {"status": "ok" if db_ok else "degraded", "version": "v2-clean", "db": db_ok, "counts": counts}
 
 
-@app.get("/openapi.json", include_in_schema=False)
-def get_openapi_endpoint():
-    cur = get_settings()
-    if not cur.debug or cur.env.lower() == "production":
-        raise HTTPException(status_code=404, detail="Not Found")
-    from fastapi.openapi.utils import get_openapi
-    return get_openapi(title=cur.app_name, version="1.0.0", routes=app.routes)
-
-
-async def _custom_http_exception_handler(request: Request, exc):
-    status_code = getattr(exc, "status_code", 500)
-    detail = getattr(exc, "detail", "सर्वर पर कुछ अप्रत्याशित समस्या आई है। कृपया कुछ समय बाद पुनः प्रयास करें।")
-    user = getattr(request.state, "user", None)
-    try:
-        with Session(engine) as session:
-            categories = get_categories(session)
-    except Exception:
-        categories = []
-    if status_code == 404:
-        return HTMLResponse(status_code=404, content=render("not_found.html", categories=categories, user=user, request=request))
-    return HTMLResponse(
-        status_code=status_code,
-        content=render(
-            "error.html",
-            status_code=status_code,
-            error_title="कुछ गड़बड़ हो गई (Server Error)",
-            error_message=str(detail),
-            categories=categories,
-            user=user,
-            request=request
-        )
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request, q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        {
+            "request": request,
+            "active_nav": "home",
+            "q": q,
+            "counts": get_counts(),
+            **data,
+        },
     )
 
 
-async def _validation_exception_handler(request: Request, exc: RequestValidationError):
-    accept = request.headers.get("accept", "")
-    is_api = "application/json" in accept or request.url.path.startswith("/api/")
-    if not is_api:
-        user = getattr(request.state, "user", None)
-        try:
-            with Session(engine) as session:
-                categories = get_categories(session)
-        except Exception:
-            categories = []
-        return HTMLResponse(status_code=404, content=render("not_found.html", categories=categories, user=user, request=request))
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+@app.get("/schedule", response_class=HTMLResponse)
+async def schedule_page(request: Request, q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    return templates.TemplateResponse(
+        request,
+        "section.html",
+        {
+            "request": request,
+            "active_nav": "schedule",
+            "section": "schedule",
+            "section_title": "साप्ताहिक IST एनीमे शेड्यूल",
+            "q": q,
+            **data,
+        },
+    )
 
 
-app.add_exception_handler(404, _custom_http_exception_handler)
-app.add_exception_handler(500, _custom_http_exception_handler)
-app.add_exception_handler(HTTPException, _custom_http_exception_handler)
-app.add_exception_handler(RequestValidationError, _validation_exception_handler)
-app.add_exception_handler(Exception, _custom_http_exception_handler)
-
-# Static & Media mounts
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-from .storage import MEDIA_DIR
-app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
-
-
-@app.get("/favicon.ico", include_in_schema=False)
-def favicon():
-    return FileResponse(str(STATIC_DIR / "favicon.svg"), media_type="image/svg+xml")
-
-
-@app.get("/ads.txt", include_in_schema=False)
-def ads_txt():
-    """Serves ads.txt for Google AdSense Crawler Verification."""
-    ads_file = STATIC_DIR / "ads.txt"
-    if ads_file.exists():
-        return FileResponse(str(ads_file), media_type="text/plain")
-    return Response(content="google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0\n", media_type="text/plain")
+@app.get("/manga", response_class=HTMLResponse)
+async def manga_page(request: Request, q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    return templates.TemplateResponse(
+        request,
+        "section.html",
+        {
+            "request": request,
+            "active_nav": "manga",
+            "section": "manga",
+            "section_title": "3D मंगा शेल्फ़ और हिंदी कलेक्शन",
+            "q": q,
+            **data,
+        },
+    )
 
 
-@app.get("/health", tags=["System"])
-def health_check():
-    """Health check endpoint for UptimeRobot keep-alive."""
-    return {"status": "healthy", "app": settings.app_name, "version": "1.0.0"}
+@app.get("/news", response_class=HTMLResponse)
+async def news_page(request: Request, q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    return templates.TemplateResponse(
+        request,
+        "section.html",
+        {
+            "request": request,
+            "active_nav": "news",
+            "section": "news",
+            "section_title": "ताज़ा एनीमे न्यूज़ और हिंदी गाइड्स",
+            "q": q,
+            **data,
+        },
+    )
 
 
-@app.get("/healthz", tags=["System"])
-def healthz_check():
-    """Kubernetes / CI / Production health probe verifying database connectivity."""
-    from datetime import datetime, timezone
-    from sqlalchemy import text
-    try:
-        with Session(engine) as session:
-            session.exec(text("SELECT 1"))
-        return {
-            "status": "ok",
-            "app": settings.app_name,
-            "database": "connected",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-    except Exception as e:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "error",
-                "database": "disconnected",
-                "detail": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        )
+@app.get("/news/{slug}", response_class=HTMLResponse)
+async def news_detail_page(request: Request, slug: str):
+    item = get_news_detail(slug)
+    if not item:
+        raise HTTPException(status_code=404, detail="News item not found")
+    return templates.TemplateResponse(
+        request,
+        "detail.html",
+        {
+            "request": request,
+            "active_nav": "news",
+            "item": item,
+            "badge_text": item.get("category", "ANIME NEWS"),
+            "back_url": "/news",
+            "back_label": "सभी एनीमे न्यूज़ पर वापस जाएं",
+            "q": "",
+        },
+    )
 
 
-# Routers
-app.include_router(pages.router)
-app.include_router(admin.router)
-app.include_router(users.router)
-app.include_router(uploads.router)
-app.include_router(totp_router.router)
+@app.get("/anime/{slug}", response_class=HTMLResponse)
+async def anime_detail_page(request: Request, slug: str):
+    item = get_anime_detail(slug)
+    if not item:
+        raise HTTPException(status_code=404, detail="Anime not found")
+    return templates.TemplateResponse(
+        request,
+        "detail.html",
+        {
+            "request": request,
+            "active_nav": "home",
+            "item": item,
+            "badge_text": item.get("badge") or "ANIME SPOTLIGHT",
+            "back_url": "/",
+            "back_label": "होमपेज पर वापस जाएं",
+            "q": "",
+        },
+    )
+
+
+@app.get("/trailers", response_class=HTMLResponse)
+async def trailers_page(request: Request, q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    return templates.TemplateResponse(
+        request,
+        "section.html",
+        {
+            "request": request,
+            "active_nav": "trailers",
+            "section": "trailers",
+            "section_title": "आधिकारिक एनीमे ट्रेलर्स और PVs",
+            "q": q,
+            **data,
+        },
+    )
