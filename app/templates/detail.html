@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
 {% block title %}{{ item.title_hi or item.title_en }} — Hindi Anime Guide{% endblock %}
+{% block og_title %}{{ item.title_hi or item.title_en }} — Hindi Anime Guide{% endblock %}
+{% block og_description %}{{ item.tagline_en or item.tagline or item.summary_en or item.summary or 'Official Hindi Dub Streaming Guide &amp; Schedule.' }}{% endblock %}
+{% block og_image %}{{ item.cover_url or item.banner_url or item.image_url or (resolve_base_url(request) ~ '/static/media/emblem_icon.webp') }}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -32,9 +35,9 @@
   </div>
 
   <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-    <a href="{{ back_url }}" class="inline-flex items-center gap-2 font-tech text-xs font-bold uppercase tracking-widest text-white/70 hover:text-[#ff2e63] transition-colors">
+    <a href="{{ back_url }}" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold uppercase tracking-widest text-white/80 hover:text-[#ff2e63] transition-colors">
       <i class="fa-solid fa-arrow-left text-[#ff2e63]"></i>
-      <span>{{ back_label }}</span>
+      <span data-hi="{{ back_label }}" data-en="{{ 'Back to Anime News' if back_url == '/news' else 'Back to Home' }}">{{ back_label }}</span>
     </a>
 
     <!-- Hero Detail Header -->
@@ -43,9 +46,11 @@
         <div class="poster-3d-card border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden relative">
           <img src="{{ item.cover_url or item.image_url or '/static/media/emblem_icon.webp' }}"
                alt="{{ item.title_en or item.title_hi }}"
+               decoding="async"
+               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-full aspect-[2/3] object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
-          <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#ff2e63] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+          <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
             {{ badge_text }}
           </span>
           {% if item.score %}
@@ -58,14 +63,16 @@
 
       <div class="md:col-span-8 space-y-6">
         <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
-          <span class="px-3 py-1 bg-[#ff2e63] text-white" style="transform: skewX(-8deg);">{{ badge_text }}</span>
-          {% if item.airing_day %}<span class="px-2.5 py-1 border border-white/20 text-white">{{ item.airing_day }} &bull; {{ item.airing_time }}</span>{% endif %}
+          <span class="px-3 py-1 bg-[#cf0f46] text-white" style="transform: skewX(-8deg);">{{ badge_text }}</span>
+          {% if item.airing_day %}<span class="px-2.5 py-1 border border-white/20 text-white" data-hi="{{ item.airing_day }} • {{ item.airing_time }}" data-en="{{ item.airing_day_en or item.airing_day }} • {{ item.airing_time }}">{{ item.airing_day }} &bull; {{ item.airing_time }}</span>{% endif %}
           {% if item.date %}<span class="text-white/75">{{ item.date }} &bull; {{ item.source_name }}</span>{% endif %}
           {% if item.year %}<span class="text-white/75">RELEASE {{ item.year }}</span>{% endif %}
         </div>
 
         <div class="space-y-2">
-          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight">
+          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
+              data-hi="{{ item.title_hi or item.title_en }}"
+              data-en="{{ item.title_en or item.title_hi }}">
             {{ item.title_hi or item.title_en }}
           </h1>
           {% if item.title_en and item.title_en != item.title_hi %}
@@ -80,7 +87,9 @@
           {% endfor %}
         </div>
         {% else %}
-        <p class="text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5">
+        <p class="text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5"
+           data-hi="{{ item.tagline or item.summary or item.summary_hi or item.summary_en or 'आधिकारिक हिंदी स्ट्रीमिंग विवरण और लाइव शेड्यूल गाइड।' }}"
+           data-en="{{ item.tagline_en or item.summary_en or item.tagline or item.summary or 'Official licensed streaming details and live IST broadcast guide.' }}">
           {{ item.tagline or item.summary or item.summary_hi or item.summary_en or 'आधिकारिक हिंदी स्ट्रीमिंग विवरण और लाइव शेड्यूल गाइड।' }}
         </p>
         {% endif %}
@@ -143,20 +152,27 @@
       </div>
     </div>
 
-    <!-- Embedded Cinema Trailer Player -->
+    <!-- Embedded Cinema Trailer Player (Click-to-Play Facade for 0ms LCP Impact) -->
     {% if item.trailer_id %}
     <div class="space-y-4 border-t border-white/10 pt-10">
       <div class="flex items-center justify-between">
-        <h2 class="font-display-shonen text-xl sm:text-2xl text-white">आधिकारिक <span class="text-[#ff2e63]">सिनेमा ट्रेलर</span></h2>
+        <h2 class="font-display-shonen text-xl sm:text-2xl text-white" data-hi="आधिकारिक सिनेमा ट्रेलर" data-en="OFFICIAL CINEMA TRAILER">आधिकारिक <span class="text-[#ff2e63]">सिनेमा ट्रेलर</span></h2>
         <span class="font-tech text-[11px] font-bold uppercase tracking-widest text-[#ff2e63]">HD TRAILER</span>
       </div>
-      <div class="aspect-video border-2 border-white/15 hover:border-[#ff2e63] transition-colors bg-[#06070c] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
-        <iframe src="https://www.youtube-nocookie.com/embed/{{ item.trailer_id }}?rel=0"
-                title="{{ item.title_en }} Official Trailer"
-                class="w-full h-full"
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen></iframe>
+      <div id="detail-trailer-stage" class="relative aspect-video border-2 border-white/15 hover:border-[#ff2e63] transition-colors bg-[#06070c] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
+        <button type="button"
+                onclick="hagMountDetailTrailer('{{ item.trailer_id }}', {{ (item.title_en or item.title_hi)|tojson }})"
+                aria-label="Play Official Trailer"
+                class="group relative w-full h-full flex items-center justify-center">
+          <img src="https://img.youtube.com/vi/{{ item.trailer_id }}/hqdefault.jpg"
+               alt="{{ item.title_en }} Official Trailer Thumbnail"
+               loading="lazy" decoding="async"
+               class="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-[#06070c]/45 group-hover:bg-[#06070c]/20 transition-colors"></div>
+          <span class="relative z-10 w-20 h-14 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_32px_rgba(255,46,99,0.85)]" style="transform: skewX(-10deg);">
+            <i class="fa-solid fa-play text-xl" style="transform: skewX(10deg);"></i>
+          </span>
+        </button>
       </div>
     </div>
     {% endif %}
@@ -164,18 +180,21 @@
     <!-- Related Titles Rail -->
     {% if related %}
     <div class="space-y-5 border-t border-white/10 pt-10">
-      <h2 class="font-display-shonen text-xl sm:text-2xl text-white">और देखें <span class="text-[#ff2e63]">(Related Titles)</span></h2>
+      <h2 class="font-display-shonen text-xl sm:text-2xl text-white" data-hi="और देखें (Related Titles)" data-en="MORE RELATED TITLES">और देखें <span class="text-[#ff2e63]">(Related Titles)</span></h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
         {% for rel in related %}
         <a href="{{ rel.url }}" class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
           <div class="aspect-[3/4] overflow-hidden relative">
-            <img src="{{ rel.cover }}" alt="{{ rel.title_en }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <img src="{{ rel.cover }}" alt="{{ rel.title_en }}" loading="lazy" decoding="async"
+                 onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
-            <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#ff2e63] text-white font-tech text-[9px] font-bold uppercase">{{ rel.tag }}</span>
+            <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{ rel.tag }}</span>
           </div>
           <div class="p-3 space-y-1">
-            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]">{{ rel.title_hi }}</h3>
-            <p class="text-[10px] text-white/50 truncate">{{ rel.title_en }}</p>
+            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
+                data-hi="{{ rel.title_hi }}"
+                data-en="{{ rel.title_en }}">{{ rel.title_hi }}</h3>
+            <p class="text-[10px] text-white/60 truncate">{{ rel.title_en }}</p>
           </div>
         </a>
         {% endfor %}
@@ -188,6 +207,11 @@
 
 {% block extra_scripts %}
 <script>
+  function hagMountDetailTrailer(ytId, title) {
+    var stage = document.getElementById("detail-trailer-stage");
+    if (!stage || !ytId) return;
+    stage.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) + '?autoplay=1&rel=0" title="' + String(title || "Trailer").replace(/"/g, "") + '" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  }
   function hagShareDetail() {
     var lbl = document.getElementById("share-btn-label");
     if (navigator.share) {

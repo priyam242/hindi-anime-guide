@@ -6,10 +6,11 @@ from xml.sax.saxutils import escape
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, Response as FastAPIResponse
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.auth import (
     SESSION_COOKIE_NAME,
@@ -24,8 +25,10 @@ from app.db import ping_database
 from app.services.content import (
     DEFAULT_POLL_KEY,
     cast_poll_vote,
+    explore_catalog,
     filter_payload,
     get_anime_detail,
+    get_awards_data,
     get_cached_content,
     get_counts,
     get_news_detail,
@@ -104,6 +107,58 @@ static_dir = BASE_DIR / "static"
 if static_dir.is_dir():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+DEFAULT_CANONICAL_URL = "https://hindi-anime-guide.vercel.app"
+
+
+def _resolve_base_url(request: Request) -> str:
+    """Resolve canonical public origin, never exposing testserver in production URLs."""
+    env_url = os.getenv("PUBLIC_SITE_URL", "").strip().rstrip("/")
+    if env_url:
+        return env_url
+    host = (request.headers.get("x-forwarded-host") or request.url.netloc or "").lower()
+    if not host or "testserver" in host or os.getenv("VERCEL"):
+        return DEFAULT_CANONICAL_URL
+    proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
+    return f"{proto}://{host}".rstrip("/")
+
+
+def _amazon_affiliate_tag() -> str:
+    return os.getenv("AMAZON_AFFILIATE_TAG", "").strip()
+
+
+def _adsense_client_id() -> str:
+    return os.getenv("ADSENSE_CLIENT_ID", "").strip()
+
+
+templates.env.globals["get_amazon_tag"] = _amazon_affiliate_tag
+templates.env.globals["get_adsense_client_id"] = _adsense_client_id
+templates.env.globals["resolve_base_url"] = _resolve_base_url
+
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if request.url.path.startswith("/api/"):
+        return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    status = exc.status_code if exc.status_code in (404, 500) else 404
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {"request": request, "status_code": status, "active_nav": "home", "q": ""},
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(Exception)
+async def custom_server_exception_handler(request: Request, exc: Exception):
+    if request.url.path.startswith("/api/"):
+        return JSONResponse({"detail": "Internal server error"}, status_code=500)
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {"request": request, "status_code": 500, "active_nav": "home", "q": ""},
+        status_code=500,
+    )
 
 
 def _set_session_cookie(response: FastAPIResponse, user: dict[str, Any]) -> None:
@@ -216,18 +271,54 @@ async def contact_submit(payload: ContactRequest):
     }
 
 
+@app.get("/favicon.svg")
+async def favicon_svg():
+    svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#06070c"/>
+  <path d="M10 10 L56 10 L50 54 L4 54 Z" fill="#cf0f46" stroke="#ffffff" stroke-width="2.5"/>
+  <text x="16" y="40" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="900">ह</text>
+  <line x1="35" y1="16" x2="29" y2="48" stroke="#ffffff" stroke-width="3"/>
+  <text x="36" y="42" fill="#ffffff" font-family="sans-serif" font-size="23" font-weight="900">E</text>
+</svg>"""
+    return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/favicon.ico")
+async def favicon_ico():
+    return RedirectResponse(url="/favicon.svg", status_code=307)
+
+
+@app.get("/manifest.json", response_class=JSONResponse)
+async def pwa_manifest():
+    return {
+        "name": "Hindi Anime Guide",
+        "short_name": "AnimeGuide",
+        "description": "India's Legal Hindi & English Anime Hub, Live IST Schedule & 3D Manga Shelf",
+        "start_url": "/",
+        "display": "standalone",
+        "theme_color": "#06070c",
+        "background_color": "#06070c",
+        "icons": [
+            {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"},
+            {"src": "/static/media/emblem_icon.webp", "sizes": "512x512", "type": "image/webp"},
+        ],
+    }
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = _resolve_base_url(request)
     return f"User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
 
 
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request):
-    base = str(request.base_url).rstrip("/")
+    base = _resolve_base_url(request)
     anime_slugs, news_slugs = get_sitemap_urls()
     urls = [
         f"{base}/",
+        f"{base}/explore",
+        f"{base}/awards",
         f"{base}/schedule",
         f"{base}/manga",
         f"{base}/news",
@@ -311,6 +402,16 @@ async def home(request: Request, q: str = Query(default="")):
     )
 
 
+@app.get("/api/catalog/schedule", response_class=JSONResponse)
+async def api_catalog_schedule(day: str = Query(default="ALL"), q: str = Query(default="")):
+    data = filter_payload(get_cached_content(), q)
+    if day and day != "ALL":
+        items = data["schedule_by_day"].get(day, [])
+    else:
+        items = data["schedule"]
+    return {"items": items, "total": len(items), "day": day}
+
+
 @app.get("/schedule", response_class=HTMLResponse)
 async def schedule_page(request: Request, q: str = Query(default="")):
     data = filter_payload(get_cached_content(), q)
@@ -318,29 +419,98 @@ async def schedule_page(request: Request, q: str = Query(default="")):
         request,
         "section.html",
         {
+            **data,
             "request": request,
             "active_nav": "schedule",
             "section": "schedule",
             "section_title": "साप्ताहिक IST एनीमे शेड्यूल",
+            "section_title_en": "Weekly IST Anime Schedule",
             "q": q,
-            **data,
         },
     )
+
+
+@app.get("/explore", response_class=HTMLResponse)
+async def explore_page(
+    request: Request,
+    q: str = Query(default=""),
+    type: str = Query(default="all"),
+    hindi: int = Query(default=0),
+):
+    catalog = explore_catalog(q, type, bool(hindi))
+    return templates.TemplateResponse(
+        request,
+        "explore.html",
+        {
+            "request": request,
+            "active_nav": "explore",
+            "q": q,
+            **catalog,
+        },
+    )
+
+
+@app.get("/awards", response_class=HTMLResponse)
+async def awards_page(request: Request):
+    awards = get_awards_data()
+    return templates.TemplateResponse(
+        request,
+        "awards.html",
+        {
+            "request": request,
+            "active_nav": "awards",
+            "q": "",
+            **awards,
+        },
+    )
+
+
+@app.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+    user = get_current_user(request)
+    return templates.TemplateResponse(
+        request,
+        "profile.html",
+        {
+            "request": request,
+            "active_nav": "profile",
+            "user": user,
+            "q": "",
+        },
+    )
+
+
+@app.get("/api/catalog/manga", response_class=JSONResponse)
+async def api_catalog_manga(
+    q: str = Query(default=""),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=24, ge=1, le=200),
+):
+    data = filter_payload(get_cached_content(), q)
+    all_manga = data["manga"]
+    chunk = all_manga[offset : offset + limit]
+    return {"items": chunk, "total": len(all_manga), "offset": offset, "has_more": offset + limit < len(all_manga)}
 
 
 @app.get("/manga", response_class=HTMLResponse)
 async def manga_page(request: Request, q: str = Query(default="")):
     data = filter_payload(get_cached_content(), q)
+    total_manga = len(data["manga"])
+    initial_manga = data["manga"][:24]
     return templates.TemplateResponse(
         request,
         "section.html",
         {
+            **data,
+            "manga": initial_manga,
+            "total_manga_count": total_manga,
+            "has_more_manga": total_manga > len(initial_manga),
             "request": request,
             "active_nav": "manga",
             "section": "manga",
             "section_title": "3D मंगा शेल्फ़ और हिंदी कलेक्शन",
+            "section_title_en": "3D Manga Shelf & Collection",
             "q": q,
-            **data,
         },
     )
 
@@ -352,12 +522,13 @@ async def news_page(request: Request, q: str = Query(default="")):
         request,
         "section.html",
         {
+            **data,
             "request": request,
             "active_nav": "news",
             "section": "news",
             "section_title": "ताज़ा एनीमे न्यूज़ और हिंदी गाइड्स",
+            "section_title_en": "Fresh Anime News & Hindi Guides",
             "q": q,
-            **data,
         },
     )
 
@@ -430,11 +601,12 @@ async def trailers_page(request: Request, q: str = Query(default="")):
         request,
         "section.html",
         {
+            **data,
             "request": request,
             "active_nav": "trailers",
             "section": "trailers",
             "section_title": "लाइसेंस्ड एनीमे ट्रेलर्स और PVs",
+            "section_title_en": "Licensed Anime Trailers & PVs",
             "q": q,
-            **data,
         },
     )

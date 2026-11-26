@@ -121,6 +121,9 @@
     <img id="hero-bg-img"
          src="{{ active_spot.banner_url if active_spot else '/static/media/emblem_icon.webp' }}"
          alt=""
+         fetchpriority="high"
+         decoding="async"
+         onerror="this.src='/static/media/emblem_icon.webp'"
          class="w-full h-full object-cover opacity-45 scale-105 transition-opacity duration-500" />
     <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-[#06070c]/82 to-[#06070c]/35"></div>
     <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-[#06070c]/75"></div>
@@ -149,7 +152,10 @@
         </div>
 
         <div class="space-y-2">
-          <h1 id="hero-title-hi" class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.35rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+          <h1 id="hero-title-hi"
+              data-hi="{{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}"
+              data-en="{{ active_spot.title_en if active_spot else 'Hindi Anime Guide' }}"
+              class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.35rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
             {{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}
           </h1>
           <p id="hero-title-en" class="font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
@@ -157,7 +163,10 @@
           </p>
         </div>
 
-        <p id="hero-tagline" class="max-w-xl text-sm sm:text-base text-white/80 leading-relaxed">
+        <p id="hero-tagline"
+           data-hi="{{ active_spot.tagline if active_spot else '' }}"
+           data-en="{{ active_spot.tagline_en or active_spot.tagline if active_spot else '' }}"
+           class="max-w-xl text-sm sm:text-base text-white/85 leading-relaxed">
           {{ active_spot.tagline if active_spot else '' }}
         </p>
 
@@ -248,9 +257,11 @@
         <div>
           <span class="inline-flex items-center gap-2 font-tech text-[11px] font-bold tracking-[0.2em] uppercase text-[#ff2e63]">
             <span class="w-2 h-2 rounded-full bg-[#ff2e63] animate-pulse"></span>
-            आज का महामुकाबला &bull; LIVE FAN VOTE
+            <span data-hi="आज का महामुकाबला • LIVE FAN VOTE" data-en="TODAY'S CLASH • LIVE FAN VOTE">आज का महामुकाबला &bull; LIVE FAN VOTE</span>
           </span>
-          <h2 class="font-display-shonen text-xl sm:text-2xl text-white mt-1">{{ daily_poll.question }}</h2>
+          <h2 class="font-display-shonen text-xl sm:text-2xl text-white mt-1"
+              data-hi="{{ daily_poll.question }}"
+              data-en="{{ daily_poll.question_en or 'Which anime has the best action & Hindi Dub in India?' }}">{{ daily_poll.question }}</h2>
         </div>
         <span id="clash-total-votes" class="font-tech text-xs font-bold uppercase tracking-widest text-white/70">
           {{ daily_poll.total_votes }} FANS VOTED
@@ -274,10 +285,12 @@
         <button type="button"
                 id="clash-btn-a"
                 onclick="castClashVote('a')"
-                class="p-4 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white text-left transition-all flex items-center justify-between gap-3">
+                class="p-4 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white text-left transition-all flex items-center justify-between gap-3">
           <div>
-            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-80">TEAM CRIMSON &bull; VOTE A</p>
-            <p class="text-sm sm:text-base font-extrabold mt-0.5">{{ daily_poll.option_a.label }}</p>
+            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-85">TEAM CRIMSON &bull; VOTE A</p>
+            <p class="text-sm sm:text-base font-extrabold mt-0.5"
+               data-hi="{{ daily_poll.option_a.label }}"
+               data-en="{{ daily_poll.option_a.label_en or daily_poll.option_a.short }}">{{ daily_poll.option_a.label }}</p>
           </div>
           <span id="clash-votes-a" class="font-tech text-sm font-bold">{{ daily_poll.option_a_votes }}</span>
         </button>
@@ -287,13 +300,17 @@
                 onclick="castClashVote('b')"
                 class="p-4 border border-white/30 bg-white/5 hover:bg-white hover:text-[#06070c] text-white text-left transition-all flex items-center justify-between gap-3">
           <div>
-            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-75">TEAM WHITE &bull; VOTE B</p>
-            <p class="text-sm sm:text-base font-extrabold mt-0.5">{{ daily_poll.option_b.label }}</p>
+            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-80">TEAM WHITE &bull; VOTE B</p>
+            <p class="text-sm sm:text-base font-extrabold mt-0.5"
+               data-hi="{{ daily_poll.option_b.label }}"
+               data-en="{{ daily_poll.option_b.label_en or daily_poll.option_b.short }}">{{ daily_poll.option_b.label }}</p>
           </div>
           <span id="clash-votes-b" class="font-tech text-sm font-bold">{{ daily_poll.option_b_votes }}</span>
         </button>
       </div>
-      <p id="clash-status-note" class="font-tech text-[10px] uppercase tracking-widest text-white/55">एक वोट दें और लाइव कम्युनिटी परिणाम +25 XP पाएं</p>
+      <p id="clash-status-note" class="font-tech text-[10px] uppercase tracking-widest text-white/65"
+         data-hi="एक वोट दें और लाइव कम्युनिटी परिणाम +25 XP पाएं"
+         data-en="Cast a vote to reveal live community results + earn 25 XP">एक वोट दें और लाइव कम्युनिटी परिणाम +25 XP पाएं</p>
     </div>
   </div>
 </section>
@@ -306,8 +323,8 @@
         <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">STRIPE PRESS EDITION &bull; 3D BOOKSHELF</span>
         <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight"><span data-hi="3D मंगा शेल्फ़" data-en="3D MANGA SHELF">3D मंगा शेल्फ़</span> <span class="text-[#ff2e63]">COLLECTION</span></h2>
       </div>
-      <a href="/manga" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
-        <span>सभी {{ counts.manga }} वॉल्यूम देखें</span>
+      <a href="/manga" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+        <span data-hi="सभी {{ counts.manga }} वॉल्यूम देखें" data-en="View All {{ counts.manga }} Volumes">सभी {{ counts.manga }} वॉल्यूम देखें</span>
         <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
       </a>
     </div>
@@ -322,20 +339,23 @@
           <button type="button"
                   class="book-card-btn group focus:outline-none"
                   onclick='openMangaModal({{ m|tojson }})'
-                  aria-label="Read {{ m.title_en }}">
+                  title="Inspect {{ m.title_en }}">
             <div class="book-3d">
               <div class="book-spine">
                 <span class="book-spine-label">{{ m.volume_label }}</span>
               </div>
               <div class="book-pages"></div>
               <div class="book-face-front">
-                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" class="w-full h-full object-cover" />
+                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" decoding="async"
+                     onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/20 to-transparent"></div>
-                <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#ff2e63] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
+                <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
                   {{ m.volume_label }}
                 </span>
                 <div class="absolute bottom-2.5 left-2.5 right-2.5">
-                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight">{{ m.title_hi }}</p>
+                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight"
+                     data-hi="{{ m.title_hi }}"
+                     data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
                   <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull; {{ m.chapters }}</p>
                 </div>
               </div>
@@ -347,7 +367,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm text-white/60">कोई मंगा परिणाम नहीं मिला।</p>
+    <p class="text-sm text-white/60" data-hi="कोई मंगा परिणाम नहीं मिला।" data-en="No manga results found.">कोई मंगा परिणाम नहीं मिला।</p>
     {% endif %}
   </div>
 </section>
@@ -359,12 +379,12 @@
       <div class="space-y-2">
         <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#ff2e63]/15 border border-[#ff2e63]/50 font-tech text-[10px] font-bold tracking-[0.18em] uppercase text-[#ff2e63]">
           <span class="w-2 h-2 rounded-full bg-[#ff2e63] animate-pulse"></span>
-          <span>LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं</span>
+          <span data-hi="LIVE 48-HOUR NEWSWIRE • पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं" data-en="LIVE 48-HOUR NEWSWIRE • AUTO-EXPIRES IN 48H">LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं</span>
         </div>
         <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="ताज़ा एनीमे न्यूज़ और गाइड्स" data-en="FRESH ANIME NEWS &amp; GUIDES">ताज़ा एनीमे <span class="text-[#ff2e63]">न्यूज़ &amp; गाइड्स</span></h2>
       </div>
-      <a href="/news" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
-        <span>सभी {{ counts.news }} न्यूज़ पढ़ें</span>
+      <a href="/news" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+        <span data-hi="सभी {{ counts.news }} न्यूज़ पढ़ें" data-en="Read All {{ counts.news }} News">सभी {{ counts.news }} न्यूज़ पढ़ें</span>
         <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
       </a>
     </div>
@@ -378,25 +398,36 @@
       <!-- Featured Lead Visual Card -->
       <a href="/news/{{ lead.slug }}"
          class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
-        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy"
+        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy" decoding="async"
+             onerror="this.src='/static/media/emblem_icon.webp'"
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
         <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-3">
           <div class="flex flex-wrap items-center gap-2 font-tech text-[11px] font-bold uppercase tracking-widest">
-            <span class="px-2.5 py-0.5 bg-[#ff2e63] text-white">{{ lead.category }}</span>
+            <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ lead.category }}</span>
             {% if lead.is_expiring_soon %}
-            <span class="px-2 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी</span>
+            <span class="px-2 py-0.5 bg-[#cf0f46] text-white animate-pulse"
+                  data-hi="⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी"
+                  data-en="⏳ ARCHIVES IN {{ lead.hours_left }}H">⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी</span>
             {% elif lead.is_brand_new %}
-            <span class="px-2 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+            <span class="px-2 py-0.5 bg-white text-[#06070c]"
+                  data-hi="⚡ अभी आया • FRESH"
+                  data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
             {% else %}
-            <span class="px-2 py-0.5 bg-white/10 text-white">{{ lead.relative_age }}</span>
+            <span class="px-2 py-0.5 bg-white/10 text-white"
+                  data-hi="{{ lead.relative_age }}"
+                  data-en="{{ lead.relative_age_en }}">{{ lead.relative_age }}</span>
             {% endif %}
-            <span class="text-white/70">{{ lead.source_name }}</span>
+            <span class="text-white/75">{{ lead.source_name }}</span>
           </div>
-          <h3 class="text-xl sm:text-2xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
+          <h3 class="text-xl sm:text-2xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors"
+              data-hi="{{ lead.title_hi }}"
+              data-en="{{ lead.title_en }}">
             {{ lead.title_hi }}
           </h3>
-          <p class="text-xs sm:text-sm text-white/75 line-clamp-2">{{ lead.summary }}</p>
+          <p class="text-xs sm:text-sm text-white/80 line-clamp-2"
+             data-hi="{{ lead.summary }}"
+             data-en="{{ lead.summary_en or lead.summary }}">{{ lead.summary }}</p>
         </div>
       </a>
 
@@ -405,21 +436,28 @@
         {% for item in side_cards %}
         <a href="/news/{{ item.slug }}"
            class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
           <div class="absolute bottom-0 left-0 right-0 p-5 space-y-1.5">
             <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
               <span class="text-[#ff2e63]">{{ item.category }}</span>
               {% if item.is_expiring_soon %}
-              <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ item.hours_left }}h में आर्काइव हो जाएगी</span>
+              <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white animate-pulse"
+                    data-hi="⏳ {{ item.hours_left }}h में आर्काइव"
+                    data-en="⏳ {{ item.hours_left }}H LEFT">⏳ {{ item.hours_left }}h में आर्काइव</span>
               {% elif item.is_brand_new %}
-              <span class="px-1.5 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+              <span class="px-1.5 py-0.5 bg-white text-[#06070c]"
+                    data-hi="⚡ अभी आया • FRESH"
+                    data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
               {% else %}
-              <span class="text-white/75">&bull; {{ item.relative_age }}</span>
+              <span class="text-white/80" data-hi="• {{ item.relative_age }}" data-en="• {{ item.relative_age_en }}">&bull; {{ item.relative_age }}</span>
               {% endif %}
             </div>
-            <h3 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">
+            <h3 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
+                data-hi="{{ item.title_hi }}"
+                data-en="{{ item.title_en }}">
               {{ item.title_hi }}
             </h3>
           </div>
@@ -434,20 +472,27 @@
       <a href="/news/{{ item.slug }}"
          class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <div class="aspect-video overflow-hidden relative">
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <span class="absolute top-3 left-3 px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-widest text-white">
             {{ item.category }}
           </span>
         </div>
         <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
-          <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ item.title_hi }}</h3>
+          <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
+              data-hi="{{ item.title_hi }}"
+              data-en="{{ item.title_en }}">{{ item.title_hi }}</h3>
           <div class="flex flex-wrap items-center justify-between gap-2 font-tech text-[10px] uppercase tracking-wider">
-            <span class="text-white/60">{{ item.relative_age }}</span>
+            <span class="text-white/70" data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span>
             {% if item.is_expiring_soon %}
-            <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white font-bold animate-pulse">⏳ {{ item.hours_left }}h में आर्काइव</span>
+            <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white font-bold animate-pulse"
+                  data-hi="⏳ {{ item.hours_left }}h में आर्काइव"
+                  data-en="⏳ {{ item.hours_left }}H LEFT">⏳ {{ item.hours_left }}h में आर्काइव</span>
             {% elif item.is_brand_new %}
-            <span class="px-1.5 py-0.5 bg-white text-[#06070c] font-bold">⚡ अभी आया</span>
+            <span class="px-1.5 py-0.5 bg-white text-[#06070c] font-bold"
+                  data-hi="⚡ अभी आया"
+                  data-en="⚡ JUST IN">⚡ अभी आया</span>
             {% endif %}
           </div>
         </div>
@@ -469,8 +514,8 @@
           <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">INDIAN STANDARD TIME &bull; LIVE TIMELINE</span>
           <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="साप्ताहिक IST शेड्यूल" data-en="WEEKLY IST SCHEDULE">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
         </div>
-        <a href="/schedule" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
-          <span>पूरा {{ counts.schedule }} शेड्यूल देखें</span>
+        <a href="/schedule" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+          <span data-hi="पूरा {{ counts.schedule }} शेड्यूल देखें" data-en="View Full {{ counts.schedule }} Schedule">पूरा {{ counts.schedule }} शेड्यूल देखें</span>
           <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
         </a>
       </div>
@@ -481,8 +526,8 @@
         <button type="button"
                 onclick="selectScheduleDay('{{ day_hi }}')"
                 data-day-tab="{{ day_hi }}"
-                class="sch-day-tab px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors {{ 'border-[#ff2e63] text-white bg-white/5' if loop.first else 'border-transparent text-white/55 hover:text-white' }}">
-          {{ day_hi }} <span class="text-[10px] opacity-60">({{ schedule_by_day.get(day_hi, [])|length }})</span>
+                class="sch-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors {{ 'border-[#ff2e63] text-white bg-white/5' if loop.first else 'border-transparent text-white/70 hover:text-white' }}">
+          <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
         </button>
         {% endfor %}
       </div>
@@ -493,15 +538,18 @@
         {% for show in schedule_by_day.get(day_hi, [])[:8] %}
         <a href="{{ show.detail_url or show.source_url }}"
            class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
-          <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy"
+          <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy" decoding="async"
+               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-14 h-20 object-cover shrink-0 border border-white/15" />
           <div class="min-w-0 space-y-1 flex-1">
             <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase tracking-wider">
-              <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white">{{ show.airing_time }}</span>
+              <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
               {% if show.airing_at %}<span class="text-[#ff2e63]" data-countdown-ts="{{ show.airing_at }}">--:--:--</span>{% endif %}
             </div>
-            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ show.title_hi }}</h3>
-            <p class="text-[10px] text-white/50 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
+            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
+                data-hi="{{ show.title_hi }}"
+                data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
+            <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
           </div>
         </a>
         {% endfor %}
@@ -516,8 +564,8 @@
           <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">LICENSED PVs &bull; LIGHTBOX</span>
           <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="लाइसेंस्ड ट्रेलर्स" data-en="LICENSED TRAILERS">लाइसेंस्ड <span class="text-[#ff2e63]">ट्रेलर्स</span></h2>
         </div>
-        <a href="/trailers" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
-          <span>सभी {{ counts.trailers }} ट्रेलर्स देखें</span>
+        <a href="/trailers" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+          <span data-hi="सभी {{ counts.trailers }} ट्रेलर्स देखें" data-en="Watch All {{ counts.trailers }} Trailers">सभी {{ counts.trailers }} ट्रेलर्स देखें</span>
           <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
         </a>
       </div>
@@ -528,10 +576,11 @@
                 onclick="openTrailerModal('{{ tr.youtube_id }}', {{ tr.title_en|tojson }})"
                 class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
           <div class="relative aspect-video overflow-hidden">
-            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" loading="lazy"
+            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" loading="lazy" decoding="async"
+                 onerror="this.src='/static/media/emblem_icon.webp'"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
-              <span class="w-12 h-9 bg-[#ff2e63] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
+              <span class="w-12 h-9 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
                 <i class="fa-solid fa-play text-sm" style="transform: skewX(10deg);"></i>
               </span>
             </div>
@@ -540,8 +589,10 @@
             </span>
           </div>
           <div class="p-3.5 space-y-1">
-            <h3 class="text-xs font-bold text-white line-clamp-1 group-hover:text-[#ff2e63] transition-colors">{{ tr.title_hi }}</h3>
-            <p class="text-[11px] text-white/55 line-clamp-1">{{ tr.title_en }}</p>
+            <h3 class="text-xs font-bold text-white line-clamp-1 group-hover:text-[#ff2e63] transition-colors"
+                data-hi="{{ tr.title_hi }}"
+                data-en="{{ tr.title_en }}">{{ tr.title_hi }}</h3>
+            <p class="text-[11px] text-white/65 line-clamp-1">{{ tr.title_en }}</p>
           </div>
         </button>
         {% endfor %}
@@ -557,7 +608,7 @@
   <div class="relative w-full max-w-4xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_50px_rgba(255,46,99,0.4)]">
     <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
       <span id="tm-title" class="font-tech text-xs font-bold uppercase tracking-widest text-white">Official Trailer</span>
-      <button type="button" onclick="closeTrailerModal()" class="w-8 h-8 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <button type="button" aria-label="Close Trailer Modal" onclick="closeTrailerModal()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
@@ -575,14 +626,21 @@
   function selectSpotlight(idx) {
     var item = SPOTLIGHT_ITEMS[idx];
     if (!item) return;
+    var isEn = typeof hagGetLang === "function" && hagGetLang() === "en";
     document.getElementById("hero-bg-img").src = item.banner_url;
     document.getElementById("hero-cover-img").src = item.cover_url;
     document.getElementById("hero-badge").textContent = item.badge;
     document.getElementById("hero-score").textContent = item.score;
     document.getElementById("hero-year").textContent = item.year;
-    document.getElementById("hero-title-hi").textContent = item.title_hi;
+    var tEl = document.getElementById("hero-title-hi");
+    tEl.dataset.hi = item.title_hi;
+    tEl.dataset.en = item.title_en;
+    tEl.textContent = isEn ? item.title_en : item.title_hi;
     document.getElementById("hero-title-en").textContent = item.title_en;
-    document.getElementById("hero-tagline").textContent = item.tagline;
+    var tgEl = document.getElementById("hero-tagline");
+    tgEl.dataset.hi = item.tagline;
+    tgEl.dataset.en = item.tagline_en || item.tagline;
+    tgEl.textContent = isEn ? (item.tagline_en || item.tagline) : item.tagline;
     document.getElementById("spot-counter").textContent = "0" + (idx + 1);
 
     var watchLink = document.getElementById("hero-watch-link");

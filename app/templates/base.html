@@ -5,7 +5,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Hindi Anime Guide — India's Anime &amp; Manga Guide{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}India's legal Hindi &amp; English Anime Guide — live IST airing schedule, 3D manga shelf, 48-hour newswire, official trailers, and Hindi Dub streaming links.{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Hindi Anime Guide">
+  <meta property="og:title" content="{% block og_title %}Hindi Anime Guide — India's Legal Hindi &amp; English Anime Hub{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Live IST Anime Schedule, Official Hindi Dub Streaming Links, 3D Manga Dossiers &amp; Fresh 48-Hour Anime News.{% endblock %}">
+  <meta property="og:image" content="{% block og_image %}{{ resolve_base_url(request) }}/static/media/emblem_icon.webp{% endblock %}">
+  <meta property="og:url" content="{{ resolve_base_url(request) }}{{ request.url.path }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hindi Anime Guide — India's Anime &amp; Manga Hub">
+  <meta name="theme-color" content="#06070c">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  {% set adsense_cid = get_adsense_client_id() %}
+  {% if adsense_cid %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_cid }}" crossorigin="anonymous"></script>
+  {% endif %}
   <script>
+    window.HAG_AMAZON_TAG = {{ get_amazon_tag()|tojson }};
     (function () {
       try {
         if (localStorage.getItem("hag_theme") === "light") {
@@ -27,12 +44,26 @@
       --accent-crimson: #ff2e63;
       --fg-white: #ffffff;
     }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; max-width: 100%; overflow-x: hidden; }
     body {
       font-family: 'Outfit', 'Noto Sans Devanagari', sans-serif;
       background: #06070c;
       color: #ffffff;
       overflow-x: hidden;
+      max-width: 100%;
+    }
+    @media (max-width: 639px) {
+      #navbar-logo-target {
+        transform: scale(0.54);
+        transform-origin: left center;
+        width: 175px;
+        max-width: 175px;
+        overflow: visible;
+      }
+    }
+    /* Accessible WCAG AA Crimson fill (#cf0f46 >= 5.4:1 with white text) */
+    .bg-\[\#ff2e63\] {
+      background-color: #cf0f46 !important;
     }
     .font-display-shonen {
       font-family: 'Russo One', 'Chakra Petch', 'Noto Sans Devanagari', sans-serif;
@@ -102,8 +133,13 @@
     html.light-theme .text-white\/45 {
       color: #090b10 !important;
     }
+    html.light-theme .text-\[\#ff2e63\] {
+      color: #be123c !important;
+    }
     html.light-theme .bg-\[\#ff2e63\],
     html.light-theme .bg-\[\#ff2e63\] *,
+    html.light-theme .bg-\[\#cf0f46\],
+    html.light-theme .bg-\[\#cf0f46\] *,
     html.light-theme .bg-\[\#e11d48\],
     html.light-theme .bg-\[\#e11d48\] *,
     html.light-theme #splash-screen,
@@ -112,6 +148,9 @@
     html.light-theme #visual-news a.group .text-white,
     html.light-theme #visual-news a.group p {
       color: #ffffff !important;
+    }
+    html.light-theme .hag-kicker-text {
+      color: #be123c !important;
     }
     html.light-theme #linear-hero .hero-depth-layer .text-white,
     html.light-theme #linear-hero .hero-depth-layer .text-white\/80,
@@ -149,16 +188,16 @@
 <body class="min-h-screen flex flex-col bg-[#06070c] text-white antialiased selection:bg-[#ff2e63] selection:text-white">
   {% include "partials/splash.html" %}
 
-  <!-- ULTRA-CLEAN SINGLE-LINE TOP NAVBAR (ZERO 2-LINE WRAPPING) -->
+  <!-- ULTRA-CLEAN SINGLE-LINE TOP NAVBAR (ZERO 2-LINE WRAPPING & ZERO 375PX OVERFLOW) -->
   <header class="sticky top-0 z-40 h-16 backdrop-blur-xl bg-[#06070c]/90 border-b border-white/10">
-    <div class="h-full px-4 sm:px-6 flex items-center justify-between gap-4">
+    <div class="h-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 max-w-full">
       <!-- 1. Left: Sidebar Toggle + Navbar Logo Target -->
-      <div class="flex items-center gap-3 shrink-0 whitespace-nowrap">
+      <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink-0 whitespace-nowrap">
         <button type="button"
                 id="sidebar-toggle-btn"
                 onclick="hagToggleSidebar()"
                 aria-label="Toggle Navigation Sidebar"
-                class="w-10 h-10 border border-white/15 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white flex items-center justify-center shrink-0 whitespace-nowrap transition-colors">
+                class="w-9 h-9 sm:w-10 sm:h-10 border border-white/15 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white flex items-center justify-center shrink-0 whitespace-nowrap transition-colors">
           <i class="fa-solid fa-bars text-sm"></i>
         </button>
 
@@ -167,8 +206,8 @@
         </a>
       </div>
 
-      <!-- 2. Center: Wide Global Search Input -->
-      <form action="{{ '/' if active_nav == 'home' else ('/' + active_nav if active_nav in ('schedule','manga','news','trailers') else '/') }}"
+      <!-- 2. Center: Wide Global Search Input -> /explore -->
+      <form action="/explore"
             method="get"
             class="hidden md:flex flex-1 justify-center px-4">
         <div class="relative max-w-xl w-full">
@@ -180,18 +219,18 @@
             data-hi-placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
             data-en-placeholder="Search anime, manga, news or trailers... (Press /)"
             placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
-            class="w-full pl-10 pr-4 py-2 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
+            class="w-full min-h-[38px] pl-10 pr-4 py-2 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
           />
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#ff2e63]"></i>
         </div>
       </form>
 
       <!-- 3. Right: Single-Line Lang Toggle + Theme Toggle + Watchlist + Login -->
-      <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
-        <!-- Instant Hindi <-> English Converter -->
-        <div id="lang-toggle-group" class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
-          <button type="button" id="lang-btn-hi" onclick="hagSetLang('hi')" class="px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors">ह</button>
-          <button type="button" id="lang-btn-en" onclick="hagSetLang('en')" class="px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors">EN</button>
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap">
+        <!-- Instant Hindi <-> English Converter (hidden on small phones, available inside sidebar) -->
+        <div id="lang-toggle-group" class="hidden sm:inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
+          <button type="button" id="lang-btn-hi" onclick="hagSetLang('hi')" class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 bg-[#cf0f46] text-white whitespace-nowrap transition-colors">ह</button>
+          <button type="button" id="lang-btn-en" onclick="hagSetLang('en')" class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 text-white/80 hover:text-white whitespace-nowrap transition-colors">EN</button>
         </div>
 
         <!-- Dark <-> Light Theme Toggle -->
@@ -199,24 +238,24 @@
                 id="theme-toggle-btn"
                 onclick="hagToggleTheme()"
                 aria-label="Toggle Dark or Light Theme"
-                class="w-9 h-9 inline-flex items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
+                class="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
           <span id="theme-toggle-icon" class="text-sm leading-none">☀️</span>
         </button>
 
         <button type="button"
                 id="watchlist-nav-btn"
                 onclick="hagOpenWatchlistDrawer()"
-                class="inline-flex items-center gap-2 px-3 py-2 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
-          <span class="text-[#ff2e63]">❤️</span>
-          <span class="hidden sm:inline whitespace-nowrap" data-hi="मेरी लिस्ट" data-en="My List">मेरी लिस्ट</span>
-          <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#ff2e63] text-white text-[10px] leading-none">0</span>
+                class="inline-flex items-center gap-1.5 sm:gap-2 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
+          <span class="text-[#ff2e63]" aria-hidden="true">❤️</span>
+          <span class="sr-only sm:not-sr-only whitespace-nowrap" data-hi="मेरी लिस्ट" data-en="My List">मेरी लिस्ट</span>
+          <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#cf0f46] text-white text-[10px] leading-none">0</span>
         </button>
 
         <div id="auth-nav-zone" class="relative shrink-0 whitespace-nowrap">
           <button type="button"
                   id="auth-login-btn"
                   onclick="hagOpenAuthModal('login')"
-                  class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
+                  class="inline-flex items-center gap-1.5 sm:gap-2 min-h-[36px] px-2.5 sm:px-3.5 py-1.5 rounded bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
             <i class="fa-solid fa-user text-[11px]"></i>
             <span class="whitespace-nowrap" data-hi="लॉगिन" data-en="Login">लॉगिन</span>
           </button>
@@ -232,18 +271,18 @@
             </button>
 
             <div id="auth-user-dropdown" class="hidden absolute right-0 mt-2 w-52 border-2 border-[#ff2e63] bg-[#06070c] shadow-[0_18px_48px_rgba(0,0,0,0.9)] py-1.5 z-50">
-              <button type="button" onclick="hagOpenHunterModal(); hagToggleUserDropdown(true);"
-                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
-                <i class="fa-solid fa-shield-halved text-[#ff2e63]"></i> हंटर रैंक / प्रोफ़ाइल
-              </button>
+              <a href="/profile"
+                 class="w-full min-h-[38px] px-4 py-2 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-shield-halved text-[#ff2e63]"></i> <span data-hi="हंटर रैंक / प्रोफ़ाइल" data-en="Hunter Rank / Profile">हंटर रैंक / प्रोफ़ाइल</span>
+              </a>
               <button type="button" onclick="hagCloudSyncNow(true); hagToggleUserDropdown(true);"
-                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
-                <i class="fa-solid fa-cloud-arrow-up text-[#ff2e63]"></i> क्लाउड सिंक
+                      class="w-full min-h-[38px] px-4 py-2 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-cloud-arrow-up text-[#ff2e63]"></i> <span data-hi="क्लाउड सिंक" data-en="Cloud Sync">क्लाउड सिंक</span>
               </button>
               <div class="my-1 border-t border-white/10"></div>
               <button type="button" onclick="hagLogout()"
-                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-[#ff2e63] hover:bg-[#ff2e63] hover:text-white flex items-center gap-2.5 whitespace-nowrap">
-                <i class="fa-solid fa-right-from-bracket"></i> लॉगआउट (Logout)
+                      class="w-full min-h-[38px] px-4 py-2 text-left font-tech text-xs font-bold uppercase text-[#ff2e63] hover:bg-[#cf0f46] hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-right-from-bracket"></i> <span data-hi="लॉगआउट" data-en="Logout">लॉगआउट</span>
               </button>
             </div>
           </div>
@@ -259,9 +298,12 @@
          class="fixed top-16 left-0 bottom-0 w-64 bg-[#06070c]/95 backdrop-blur-2xl border-r border-white/10 z-40 transform -translate-x-full xl:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-y-auto">
     <div class="p-4 space-y-6">
       <!-- Compact Mobile Search inside Sidebar -->
-      <form action="{{ '/' if active_nav == 'home' else '/' }}" method="get" class="md:hidden relative">
-        <input type="search" name="q" value="{{ q or '' }}" placeholder="खोजें..."
-               class="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63]" />
+      <form action="/explore" method="get" class="md:hidden relative">
+        <input type="search" name="q" value="{{ q or '' }}"
+               data-hi-placeholder="एनीमे, मंगा, न्यूज़ खोजें..."
+               data-en-placeholder="Search anime, manga, news..."
+               placeholder="एनीमे, मंगा, न्यूज़ खोजें..."
+               class="w-full min-h-[38px] pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63]" />
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
       </form>
 
@@ -272,9 +314,13 @@
             <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">HUNTER COMMAND</span>
             <span id="sb-streak-guest" class="font-tech text-[10px] font-bold text-white/80">🔥 1d</span>
           </div>
-          <p class="text-[11px] font-bold text-white leading-snug">गेस्ट हंटर • क्लाउड सिंक के लिए लॉगिन करें</p>
+          <p class="text-[11px] font-bold text-white leading-snug"
+             data-hi="गेस्ट हंटर • क्लाउड सिंक के लिए लॉगिन करें"
+             data-en="Guest Hunter • Sign in for Cloud Sync">गेस्ट हंटर &bull; क्लाउड सिंक के लिए लॉगिन करें</p>
           <button type="button" onclick="hagOpenAuthModal('login')"
-                  class="w-full py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors">
+                  class="w-full min-h-[36px] py-2 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors"
+                  data-hi="लॉगिन / साइन अप"
+                  data-en="Login / Sign Up">
             लॉगिन / साइन अप
           </button>
         </div>
@@ -284,38 +330,41 @@
             <span id="sb-auth-name" class="text-xs font-extrabold text-white truncate">Hunter</span>
             <span id="sb-streak-authed" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
           </div>
-          <p id="sb-auth-email" class="text-[10px] text-white/55 truncate"></p>
+          <p id="sb-auth-email" class="text-[10px] text-white/65 truncate"></p>
           <span class="inline-block font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">☁ CLOUD SYNC ACTIVE</span>
         </div>
 
         <!-- Live E-Rank -> S-Rank XP Bar -->
-        <button type="button" onclick="hagOpenHunterModal()" class="w-full text-left pt-2 border-t border-white/10 space-y-1.5 group">
+        <button type="button" onclick="hagOpenHunterModal()" class="w-full min-h-[38px] text-left pt-2 border-t border-white/10 space-y-1.5 group">
           <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase">
             <span id="hunter-pill-rank" class="text-[#ff2e63] group-hover:underline">E-RANK</span>
             <span id="hunter-pill-xp" class="text-white/75">20 XP</span>
           </div>
           <div class="w-full h-1.5 bg-white/10 overflow-hidden">
-            <div id="hunter-pill-bar" class="h-full bg-[#ff2e63] transition-all duration-500" style="width: 20%;"></div>
+            <div id="hunter-pill-bar" class="h-full bg-[#cf0f46] transition-all duration-500" style="width: 20%;"></div>
           </div>
         </button>
       </div>
 
       <!-- 2. Main Menu (Browse) -->
       <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="मेनू • BROWSE" data-en="MENU • BROWSE">मेनू &bull; BROWSE</p>
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="मेनू • BROWSE" data-en="MENU • BROWSE">मेनू &bull; BROWSE</p>
         {% set cur = active_nav|default('home') %}
         {% set browse_links = [
           ('home', '/', 'fa-house', 'होम', 'Home'),
+          ('explore', '/explore', 'fa-compass', 'एक्सप्लोर व सर्च', 'Explore & Search'),
           ('schedule', '/schedule', 'fa-calendar-days', 'IST लाइव शेड्यूल', 'Live IST Schedule'),
           ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़', '3D Manga Shelf'),
           ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़', '48h Anime News'),
-          ('trailers', '/trailers', 'fa-film', 'लाइसेंस्ड ट्रेलर्स', 'Licensed Trailers')
+          ('trailers', '/trailers', 'fa-film', 'लाइसेंस्ड ट्रेलर्स', 'Licensed Trailers'),
+          ('awards', '/awards', 'fa-trophy', 'एनीमे अवार्ड्स', 'Anime Awards'),
+          ('profile', '/profile', 'fa-id-badge', 'हंटर प्रोफ़ाइल', 'Hunter Profile')
         ] %}
-        <nav class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
+        <nav aria-label="Sidebar Browse Navigation" class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
           {% for key, href, icon, label_hi, label_en in browse_links %}
           <a href="{{ href }}"
-             class="flex items-center gap-3 px-3 py-2.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/70 hover:text-white hover:bg-white/5' }}">
-            <i class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/50' }}"></i>
+             class="flex items-center gap-3 min-h-[38px] px-3 py-2 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
+            <i class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/60' }}"></i>
             <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_hi }}</span>
           </a>
           {% endfor %}
@@ -324,15 +373,15 @@
 
       <!-- 3. Special Features (Interactive) -->
       <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="स्पेशल फीचर्स" data-en="INTERACTIVE FEATURES">स्पेशल फीचर्स</p>
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="स्पेशल फीचर्स" data-en="INTERACTIVE FEATURES">स्पेशल फीचर्स</p>
         <div class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
           <button type="button" onclick="hagOpenRoulette()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+                  class="w-full min-h-[38px] flex items-center gap-3 px-3 py-2 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center">🎲</span>
             <span class="whitespace-nowrap" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Surprise Anime Spin">सरप्राइज़ एनीमे स्पिन</span>
           </button>
           <button type="button" onclick="hagOpenWatchlistDrawer()"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+                  class="w-full min-h-[38px] flex items-center gap-3 px-3 py-2 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center text-[#ff2e63]">❤️</span>
             <span class="whitespace-nowrap" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
           </button>
@@ -341,12 +390,12 @@
 
       <!-- Sidebar Language & Theme Controls -->
       <div class="px-2 pt-2 flex items-center justify-between gap-2">
-        <div class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[10px] font-bold">
-          <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')" class="px-2.5 py-1 bg-[#ff2e63] text-white">ह</button>
-          <button type="button" id="sb-lang-btn-en" onclick="hagSetLang('en')" class="px-2.5 py-1 text-white/75">EN</button>
+        <div class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[11px] font-bold">
+          <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')" class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 bg-[#cf0f46] text-white">ह</button>
+          <button type="button" id="sb-lang-btn-en" onclick="hagSetLang('en')" class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 text-white/80">EN</button>
         </div>
         <button type="button" id="sb-theme-toggle-btn" onclick="hagToggleTheme()"
-                class="px-3 py-1 border border-white/20 bg-white/5 text-white font-tech text-[10px] font-bold uppercase whitespace-nowrap">
+                class="min-h-[36px] px-3 py-1.5 border border-white/20 bg-white/5 text-white font-tech text-[11px] font-bold uppercase whitespace-nowrap">
           <span id="sb-theme-label">☀️ Light</span>
         </button>
       </div>
@@ -354,15 +403,15 @@
 
     <!-- 4. Bottom Legal & Business Links -->
     <div class="p-4 border-t border-white/10 space-y-1.5">
-      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="लीगल और बिज़नेस" data-en="LEGAL &amp; BUSINESS">लीगल और बिज़नेस</p>
+      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="लीगल और बिज़नेस" data-en="LEGAL &amp; BUSINESS">लीगल और बिज़नेस</p>
       <div class="space-y-1 font-tech text-[11px] font-bold uppercase tracking-wider">
-        <a href="/about" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'about' else 'text-white/60 hover:text-white' }}">
+        <a href="/about" class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'about' else 'text-white/75 hover:text-white' }}">
           <i class="fa-solid fa-circle-info w-3.5 text-center"></i> <span data-hi="हमारे बारे में" data-en="About Us">हमारे बारे में</span>
         </a>
-        <a href="/contact" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'contact' else 'text-white/60 hover:text-white' }}">
+        <a href="/contact" class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'contact' else 'text-white/75 hover:text-white' }}">
           <i class="fa-solid fa-envelope w-3.5 text-center"></i> <span data-hi="स्पॉन्सरशिप संपर्क" data-en="Sponsorship Contact">स्पॉन्सरशिप संपर्क</span>
         </a>
-        <a href="/privacy-policy" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur in ('privacy','dmca','terms','disclaimer') else 'text-white/60 hover:text-white' }}">
+        <a href="/privacy-policy" class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur in ('privacy','dmca','terms','disclaimer') else 'text-white/75 hover:text-white' }}">
           <i class="fa-solid fa-scale-balanced w-3.5 text-center"></i> <span data-hi="प्राइवेसी व DMCA" data-en="Privacy &amp; DMCA">प्राइवेसी व DMCA</span>
         </a>
       </div>
@@ -373,54 +422,67 @@
   <div id="app-shell-content" class="flex-1 flex flex-col xl:pl-64 transition-[padding] duration-300">
     <main class="flex-1">
       {% block content %}{% endblock %}
+      {% if adsense_cid %}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="border border-white/10 bg-white/[0.02] p-2 text-center">
+          <ins class="adsbygoogle block"
+               data-ad-client="{{ adsense_cid }}"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+      </div>
+      {% endif %}
     </main>
 
-    <footer class="border-t border-white/15 bg-[#06070c] py-12 text-xs text-white/65">
+    <footer class="border-t border-white/15 bg-[#06070c] py-12 text-xs text-white/75">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div class="space-y-3">
             <span class="font-display-shonen text-base tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
-            <p class="text-white/75 leading-relaxed">
+            <p class="text-white/80 leading-relaxed">
               100% Legal Streaming Guide — We never host or link pirated content. Only licensed streaming platforms.
             </p>
-            <p class="text-[11px] text-white/50">
-              <span data-hi="भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड" data-en="India's Hindi &amp; English Anime and Manga Guide">भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड</span> &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
+            <p class="text-[11px] text-white/70">
+              <span data-hi="भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड" data-en="India's Hindi &amp; English Anime and Manga Guide">भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड</span> &bull; <span class="text-white/85">contact@hindianimeguide.in</span>
             </p>
           </div>
 
           <div class="space-y-3">
-            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]" data-hi="एक्सप्लोर करें" data-en="EXPLORE">एक्सप्लोर करें</h3>
+            <h2 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]" data-hi="एक्सप्लोर करें" data-en="EXPLORE">एक्सप्लोर करें</h2>
             <ul class="space-y-2 font-tech text-xs">
-              <li><a href="/" class="hover:text-white transition-colors" data-hi="होम (Spotlight)" data-en="Home (Spotlight)">होम (Spotlight)</a></li>
-              <li><a href="/schedule" class="hover:text-white transition-colors" data-hi="लाइव IST शेड्यूल" data-en="Live IST Schedule">लाइव IST शेड्यूल</a></li>
-              <li><a href="/manga" class="hover:text-white transition-colors" data-hi="3D मंगा शेल्फ़" data-en="3D Manga Shelf">3D मंगा शेल्फ़</a></li>
-              <li><a href="/news" class="hover:text-white transition-colors" data-hi="48h लाइव न्यूज़" data-en="48h Live News">48h लाइव न्यूज़</a></li>
-              <li><a href="/trailers" class="hover:text-white transition-colors" data-hi="लाइसेंस्ड ट्रेलर्स" data-en="Licensed Trailers">लाइसेंस्ड ट्रेलर्स</a></li>
+              <li><a href="/" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="होम (Spotlight)" data-en="Home (Spotlight)">होम (Spotlight)</a></li>
+              <li><a href="/explore" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="ग्लोबल एक्सप्लोर" data-en="Global Explore">ग्लोबल एक्सप्लोर</a></li>
+              <li><a href="/awards" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="एनीमे अवार्ड्स" data-en="Anime Awards">एनीमे अवार्ड्स</a></li>
+              <li><a href="/schedule" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="लाइव IST शेड्यूल" data-en="Live IST Schedule">लाइव IST शेड्यूल</a></li>
+              <li><a href="/manga" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="3D मंगा शेल्फ़" data-en="3D Manga Shelf">3D मंगा शेल्फ़</a></li>
+              <li><a href="/news" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="48h लाइव न्यूज़" data-en="48h Live News">48h लाइव न्यूज़</a></li>
+              <li><a href="/trailers" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="लाइसेंस्ड ट्रेलर्स" data-en="Licensed Trailers">लाइसेंस्ड ट्रेलर्स</a></li>
             </ul>
           </div>
 
           <div class="space-y-3">
-            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">कंपनी और विश्वास</h3>
+            <h2 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]" data-hi="कंपनी और विश्वास" data-en="COMPANY &amp; TRUST">कंपनी और विश्वास</h2>
             <ul class="space-y-2 font-tech text-xs">
-              <li><a href="/about" class="hover:text-white transition-colors">हमारे बारे में (About Us)</a></li>
-              <li><a href="/contact" class="hover:text-white transition-colors">संपर्क और स्पॉन्सरशिप (Contact)</a></li>
-              <li><a href="/sitemap.xml" class="hover:text-white transition-colors">XML साइटमैप (Sitemap)</a></li>
-              <li><a href="/ads.txt" class="hover:text-white transition-colors">AdSense ads.txt</a></li>
+              <li><a href="/about" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="हमारे बारे में (About Us)" data-en="About Us">हमारे बारे में (About Us)</a></li>
+              <li><a href="/contact" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="संपर्क और स्पॉन्सरशिप (Contact)" data-en="Contact &amp; Sponsorships">संपर्क और स्पॉन्सरशिप (Contact)</a></li>
+              <li><a href="/sitemap.xml" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors" data-hi="XML साइटमैप (Sitemap)" data-en="XML Sitemap">XML साइटमैप (Sitemap)</a></li>
+              <li><a href="/ads.txt" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors">AdSense ads.txt</a></li>
             </ul>
           </div>
 
           <div class="space-y-3">
-            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">लीगल और पॉलिसी</h3>
+            <h2 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]" data-hi="लीगल और पॉलिसी" data-en="LEGAL &amp; POLICY">लीगल और पॉलिसी</h2>
             <ul class="space-y-2 font-tech text-xs">
-              <li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy (DPDP &amp; AdSense)</a></li>
-              <li><a href="/terms" class="hover:text-white transition-colors">Terms of Use</a></li>
-              <li><a href="/dmca" class="hover:text-white transition-colors">DMCA Copyright Compliance</a></li>
-              <li><a href="/disclaimer" class="hover:text-white transition-colors">Affiliate Disclaimer (ASCI / FTC)</a></li>
+              <li><a href="/privacy-policy" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors">Privacy Policy (DPDP &amp; AdSense)</a></li>
+              <li><a href="/terms" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors">Terms of Use</a></li>
+              <li><a href="/dmca" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors">DMCA Copyright Compliance</a></li>
+              <li><a href="/disclaimer" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors">Affiliate Disclaimer (ASCI / FTC)</a></li>
             </ul>
           </div>
         </div>
 
-        <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-tech uppercase tracking-wider text-white/45">
+        <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-tech uppercase tracking-wider text-white/75">
           <span>&copy; 2026 Hindi Anime Guide (hindianimeguide.in) &bull; All Rights Reserved</span>
           <div class="flex flex-wrap items-center gap-4">
             <a href="https://www.crunchyroll.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Crunchyroll</a>
@@ -436,39 +498,39 @@
   <!-- IN-PAGE SHONEN AUTH MODAL (LOGIN & SIGN-UP) -->
   <div id="hag-auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/92 backdrop-blur-xl">
     <div class="relative w-full max-w-md bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_75px_rgba(255,46,99,0.45)] p-6 sm:p-8 space-y-5">
-      <button type="button" onclick="hagCloseAuthModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <button type="button" aria-label="Close Login Modal" onclick="hagCloseAuthModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
       <div class="space-y-1">
         <p class="font-tech text-[10px] font-bold tracking-[0.24em] uppercase text-[#ff2e63]">CLOUD WATCHLIST &amp; HUNTER XP</p>
-        <h2 class="font-display-shonen text-2xl text-white">हंटर <span class="text-[#ff2e63]">लॉगिन / साइन अप</span></h2>
+        <h2 class="font-display-shonen text-2xl text-white" data-hi="हंटर लॉगिन / साइन अप" data-en="HUNTER LOGIN / SIGN UP">हंटर <span class="text-[#ff2e63]">लॉगिन / साइन अप</span></h2>
       </div>
 
       <div class="grid grid-cols-2 border border-white/15 font-tech text-xs font-bold uppercase">
-        <button type="button" id="modal-tab-login" onclick="hagSwitchAuthTab('login')" class="py-2 bg-[#ff2e63] text-white">लॉगिन</button>
-        <button type="button" id="modal-tab-register" onclick="hagSwitchAuthTab('register')" class="py-2 bg-transparent text-white/70 hover:text-white">नया अकाउंट</button>
+        <button type="button" id="modal-tab-login" onclick="hagSwitchAuthTab('login')" class="py-2 bg-[#cf0f46] text-white" data-hi="लॉगिन" data-en="Login">लॉगिन</button>
+        <button type="button" id="modal-tab-register" onclick="hagSwitchAuthTab('register')" class="py-2 bg-transparent text-white/75 hover:text-white" data-hi="नया अकाउंट" data-en="Sign Up">नया अकाउंट</button>
       </div>
 
       <form id="hag-modal-auth-form" onsubmit="hagSubmitModalAuth(event)" class="space-y-4">
         <div id="modal-username-wrap" class="space-y-1 hidden">
-          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">हंटर नाम / Username</label>
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80" data-hi="हंटर नाम" data-en="Hunter Username">हंटर नाम</label>
           <input id="modal-auth-username" type="text" maxlength="60" placeholder="e.g. SungJinWoo"
                  class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
         </div>
         <div class="space-y-1">
-          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">ईमेल / Email</label>
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80" data-hi="ईमेल पता" data-en="Email Address">ईमेल पता</label>
           <input id="modal-auth-email" type="email" required maxlength="160" placeholder="hunter@example.com"
                  class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
         </div>
         <div class="space-y-1">
-          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">पासवर्ड / Password</label>
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80" data-hi="पासवर्ड" data-en="Password">पासवर्ड</label>
           <input id="modal-auth-password" type="password" required minlength="6" maxlength="128" placeholder="••••••••"
                  class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
         </div>
         <p id="modal-auth-error" class="hidden text-xs font-bold text-[#ff2e63]"></p>
-        <button type="submit" id="modal-auth-submit" class="katana-btn w-full py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest flex items-center justify-center">
-          <span id="modal-auth-submit-lbl">लॉगिन करें और क्लाउड सिंक करें</span>
+        <button type="submit" id="modal-auth-submit" class="katana-btn w-full py-3 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest flex items-center justify-center">
+          <span id="modal-auth-submit-lbl" data-hi="लॉगिन करें और क्लाउड सिंक करें" data-en="Sign In &amp; Sync Cloud">लॉगिन करें और क्लाउड सिंक करें</span>
         </button>
       </form>
     </div>
@@ -480,14 +542,17 @@
        aria-label="Cookie and Privacy Consent"
        class="fixed bottom-4 left-4 right-4 z-40 max-w-4xl mx-auto hidden border border-[#ff2e63] bg-[#06070c]/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_14px_40px_rgba(0,0,0,0.85)]">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <p class="text-xs text-white/80 leading-relaxed">
-        हम बेहतर अनुभव व Google AdSense विज्ञापनों (DoubleClick DART कुकी) के लिए कुकीज़ का उपयोग करते हैं।
-        <a href="/privacy-policy" class="text-[#ff2e63] underline font-semibold">Privacy Policy पढ़ें</a>
+      <p class="text-xs text-white/85 leading-relaxed">
+        <span data-hi="हम बेहतर अनुभव व Google AdSense विज्ञापनों (DoubleClick DART कुकी) के लिए कुकीज़ का उपयोग करते हैं।"
+              data-en="We use essential storage and Google AdSense cookies (DoubleClick DART) to improve your experience.">हम बेहतर अनुभव व Google AdSense विज्ञापनों (DoubleClick DART कुकी) के लिए कुकीज़ का उपयोग करते हैं।</span>
+        <a href="/privacy-policy" class="text-[#ff2e63] underline font-semibold" data-hi="Privacy Policy पढ़ें" data-en="Read Privacy Policy">Privacy Policy पढ़ें</a>
       </p>
       <button type="button"
               onclick="hagAcceptCookies()"
-              class="px-4 py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors">
-        स्वीकार करें / Accept
+              class="min-h-[36px] px-4 py-1.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors"
+              data-hi="स्वीकार करें"
+              data-en="Accept">
+        स्वीकार करें
       </button>
     </div>
   </div>
@@ -495,19 +560,19 @@
   <!-- Mystery Anime Roulette Modal -->
   <div id="mystery-roulette-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/92 backdrop-blur-xl">
     <div class="relative w-full max-w-lg bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_75px_rgba(255,46,99,0.45)] p-6 sm:p-8 text-center space-y-5">
-      <button type="button" onclick="hagCloseRoulette()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <button type="button" aria-label="Close Roulette Modal" onclick="hagCloseRoulette()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
       <div class="space-y-1">
         <p class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">🎲 MYSTERY ROULETTE &bull; VARIABLE REWARD</p>
-        <h2 class="font-display-shonen text-2xl text-white">किस्मत आज़माएं <span class="text-[#ff2e63]">SURPRISE ME</span></h2>
+        <h2 class="font-display-shonen text-2xl text-white" data-hi="किस्मत आज़माएं SURPRISE ME" data-en="ROLL THE WHEEL • SURPRISE ME">किस्मत आज़माएं <span class="text-[#ff2e63]">SURPRISE ME</span></h2>
       </div>
 
       <div id="roulette-stage-card" class="relative mx-auto w-48 sm:w-52 aspect-[2/3] border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden shadow-[0_0_40px_rgba(255,46,99,0.35)]">
         <img id="rl-cover" src="/static/media/emblem_icon.webp" alt="" class="w-full h-full object-cover transition-transform duration-150" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
-        <span id="rl-match-badge" class="hidden absolute top-2.5 left-2.5 right-2.5 px-2 py-1 bg-[#ff2e63] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+        <span id="rl-match-badge" class="hidden absolute top-2.5 left-2.5 right-2.5 px-2 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
           🎯 98% MATCH FOR TONIGHT
         </span>
       </div>
@@ -520,12 +585,12 @@
 
       <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
         <a id="rl-open-link" href="/anime/solo-leveling"
-           class="katana-btn inline-flex px-5 py-2.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
-          <span><i class="fa-solid fa-bolt"></i> अभी गाइड खोलें</span>
+           class="katana-btn inline-flex px-5 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span><i class="fa-solid fa-bolt"></i> <span data-hi="अभी गाइड खोलें" data-en="Open Watch Guide">अभी गाइड खोलें</span></span>
         </a>
         <button type="button" onclick="hagSpinRoulette()"
                 class="katana-btn inline-flex px-5 py-2.5 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold uppercase tracking-wider">
-          <span>🎲 दोबारा स्पिन करें (Spin Again)</span>
+          <span data-hi="🎲 दोबारा स्पिन करें" data-en="🎲 Spin Again">🎲 दोबारा स्पिन करें</span>
         </button>
       </div>
     </div>
@@ -534,7 +599,7 @@
   <!-- Solo Leveling System Window: Hunter Rank & Continue Exploring -->
   <div id="hunter-system-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/90 backdrop-blur-xl">
     <div class="relative w-full max-w-lg bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_70px_rgba(255,46,99,0.38)] p-6 sm:p-8 space-y-6">
-      <button type="button" onclick="hagCloseHunterModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <button type="button" aria-label="Close Hunter Rank Modal" onclick="hagCloseHunterModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
@@ -549,16 +614,20 @@
       <div class="space-y-2.5">
         <div class="flex items-center justify-between font-tech text-xs font-bold uppercase">
           <span id="hs-xp-label" class="text-white">0 XP</span>
-          <span id="hs-next-goal" class="text-[#ff2e63]">अगले रैंक के लिए 100 XP बाकी!</span>
+          <span id="hs-next-goal" class="text-[#ff2e63]">100 XP TO NEXT RANK</span>
         </div>
         <div class="w-full h-2.5 bg-white/10 overflow-hidden border border-white/15">
-          <div id="hs-xp-bar" class="h-full bg-gradient-to-r from-[#ff2e63] to-white transition-all duration-500" style="width: 15%;"></div>
+          <div id="hs-xp-bar" class="h-full bg-gradient-to-r from-[#cf0f46] to-white transition-all duration-500" style="width: 15%;"></div>
         </div>
-        <p class="text-[11px] text-white/55">दैनिक विज़िट (+20 XP), मंगा डॉसियर (+15 XP), महामुकाबला वोट (+25 XP), और सरप्राइज़ स्पिन (+25 XP) से रैंक बढ़ाएं।</p>
+        <p class="text-[11px] text-white/65"
+           data-hi="दैनिक विज़िट (+20 XP), मंगा डॉसियर (+15 XP), महामुकाबला वोट (+25 XP), और सरप्राइज़ स्पिन (+25 XP) से रैंक बढ़ाएं।"
+           data-en="Earn XP via daily visit (+20), Manga Dossier (+15), Community Clash vote (+25), and Roulette Spin (+25).">दैनिक विज़िट (+20 XP), मंगा डॉसियर (+15 XP), महामुकाबला वोट (+25 XP), और सरप्राइज़ स्पिन (+25 XP) से रैंक बढ़ाएं।</p>
       </div>
 
       <div class="space-y-3 border-t border-white/10 pt-4">
-        <p class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-white">▶ वहीं से जारी रखें (Continue Exploring)</p>
+        <p class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-white"
+           data-hi="▶ वहीं से जारी रखें (Continue Exploring)"
+           data-en="▶ Continue Exploring">▶ वहीं से जारी रखें (Continue Exploring)</p>
         <div id="hs-history-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
       </div>
     </div>
@@ -567,21 +636,21 @@
   <!-- Slide-Over Glassmorphic Watchlist Drawer -->
   <div id="watchlist-backdrop" onclick="hagCloseWatchlistDrawer()" class="fixed inset-0 z-50 hidden bg-[#06070c]/80 backdrop-blur-sm"></div>
   <aside id="watchlist-drawer"
-         aria-label="मेरी वॉचलिस्ट"
+         aria-label="My Watchlist"
          class="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[#06070c]/95 backdrop-blur-2xl border-l-2 border-[#ff2e63] shadow-[-20px_0_60px_rgba(255,46,99,0.28)] transform translate-x-full transition-transform duration-300 flex flex-col">
     <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
       <div>
         <p class="font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]" id="wl-storage-subtitle">SAVED COLLECTION</p>
-        <h2 class="font-display-shonen text-lg text-white tracking-wide">मेरी <span class="text-[#ff2e63]">लिस्ट</span></h2>
+        <h2 class="font-display-shonen text-lg text-white tracking-wide" data-hi="मेरी वॉचलिस्ट" data-en="MY WATCHLIST">मेरी <span class="text-[#ff2e63]">वॉचलिस्ट</span></h2>
       </div>
-      <button type="button" onclick="hagCloseWatchlistDrawer()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+      <button type="button" aria-label="Close Watchlist Drawer" onclick="hagCloseWatchlistDrawer()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
     <div id="watchlist-items-container" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
-    <div class="px-6 py-4 border-t border-white/10 flex items-center justify-between text-[11px] font-tech text-white/60 uppercase tracking-wider">
-      <span>Syncs automatically when logged in</span>
-      <button type="button" onclick="hagClearWatchlist()" class="text-[#ff2e63] hover:underline">Clear All</button>
+    <div class="px-6 py-4 border-t border-white/10 flex items-center justify-between text-[11px] font-tech text-white/70 uppercase tracking-wider">
+      <span data-hi="लॉगिन करने पर ऑटो-सिंक" data-en="Syncs automatically when logged in">Syncs automatically when logged in</span>
+      <button type="button" onclick="hagClearWatchlist()" class="min-h-[34px] px-2 text-[#ff2e63] hover:underline" data-hi="सभी हटाएं" data-en="Clear All">Clear All</button>
     </div>
   </aside>
 
@@ -715,13 +784,16 @@
 
       window.hagSyncWatchlistUI = function () {
         var list = window.hagGetWatchlist();
+        var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
         var badge = document.getElementById("watchlist-count-badge");
         if (badge) badge.textContent = String(list.length);
 
         var container = document.getElementById("watchlist-items-container");
         if (container) {
           if (!list.length) {
-            container.innerHTML = '<div class="text-center py-14 space-y-3 border border-dashed border-white/15 px-6"><i class="fa-regular fa-bookmark text-3xl text-[#ff2e63]"></i><p class="text-sm font-bold text-white">आपकी लिस्ट अभी खाली है</p><p class="text-xs text-white/55">किसी भी एनीमे या मंगा पर "मेरी लिस्ट में जोड़ें" दबाएं।</p></div>';
+            var emptyTitle = isEn ? "Your list is currently empty" : "आपकी लिस्ट अभी खाली है";
+            var emptyDesc = isEn ? 'Tap "Add to My List" on any anime or manga.' : 'किसी भी एनीमे या मंगा पर "मेरी लिस्ट में जोड़ें" दबाएं।';
+            container.innerHTML = '<div class="text-center py-14 space-y-3 border border-dashed border-white/15 px-6"><i class="fa-regular fa-bookmark text-3xl text-[#ff2e63]"></i><p class="text-sm font-bold text-white">' + emptyTitle + '</p><p class="text-xs text-white/65">' + emptyDesc + '</p></div>';
           } else {
             container.innerHTML = list.map(function (it) {
               return (
@@ -730,9 +802,9 @@
                   '<div class="min-w-0 flex-1">' +
                     '<span class="font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">' + (it.type || "SAVED") + '</span>' +
                     '<a href="' + (it.url || "#") + '" class="block text-xs font-bold text-white hover:text-[#ff2e63] truncate">' + (it.title || "") + '</a>' +
-                    '<p class="text-[10px] text-white/50 truncate">' + (it.subtitle || "") + '</p>' +
+                    '<p class="text-[10px] text-white/60 truncate">' + (it.subtitle || "") + '</p>' +
                   '</div>' +
-                  '<button type="button" onclick="hagRemoveWatchlist(\'' + String(it.slug).replace(/'/g, "\\'") + '\')" class="w-8 h-8 border border-white/15 hover:border-[#ff2e63] text-white/70 hover:text-[#ff2e63] shrink-0 flex items-center justify-center" aria-label="Remove"><i class="fa-solid fa-trash text-xs"></i></button>' +
+                  '<button type="button" onclick="hagRemoveWatchlist(\'' + String(it.slug).replace(/'/g, "\\'") + '\')" class="w-9 h-9 border border-white/15 hover:border-[#ff2e63] text-white/80 hover:text-[#ff2e63] shrink-0 flex items-center justify-center" aria-label="Remove"><i class="fa-solid fa-trash text-xs"></i></button>' +
                 '</div>'
               );
             }).join("");
@@ -746,11 +818,11 @@
           if (saved) {
             btn.classList.add("bg-white", "text-[#06070c]");
             btn.classList.remove("bg-white/5", "text-white");
-            if (label) label.textContent = "मेरी लिस्ट में सेव है ✓";
+            if (label) label.textContent = isEn ? "Saved in My List ✓" : "मेरी लिस्ट में सेव है ✓";
           } else {
             btn.classList.remove("bg-white", "text-[#06070c]");
             btn.classList.add("bg-white/5", "text-white");
-            if (label) label.textContent = "मेरी लिस्ट में जोड़ें";
+            if (label) label.textContent = isEn ? "Add to My List" : "मेरी लिस्ट में जोड़ें";
           }
         });
       };
@@ -954,10 +1026,11 @@
         var hsXp = document.getElementById("hs-xp-label");
         var hsGoal = document.getElementById("hs-next-goal");
         var hsBar = document.getElementById("hs-xp-bar");
+        var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
         if (hsRank) hsRank.innerHTML = info.rank.name + ' <span class="text-[#ff2e63]">HUNTER</span>';
         if (hsStreak) hsStreak.textContent = "🔥 " + (h.streak || 1) + "d Streak";
         if (hsXp) hsXp.textContent = h.xp + " XP";
-        if (hsGoal) hsGoal.textContent = info.remaining > 0 ? ("अगले " + info.rank.nextName + " के लिए सिर्फ " + info.remaining + " XP बाकी!") : "MAX SHADOW MONARCH RANK!";
+        if (hsGoal) hsGoal.textContent = info.remaining > 0 ? (isEn ? (info.remaining + " XP left for " + info.rank.nextName) : ("अगले " + info.rank.nextName + " के लिए सिर्फ " + info.remaining + " XP बाकी!")) : "MAX SHADOW MONARCH RANK!";
         if (hsBar) hsBar.style.width = info.pct + "%";
 
         var hList = document.getElementById("hs-history-list");
@@ -965,7 +1038,7 @@
           var hist = [];
           try { hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") || []; } catch (e) {}
           if (!hist.length) {
-            hList.innerHTML = '<p class="text-xs text-white/50">कोई हालिया विज़िट नहीं — किसी एनीमे या मंगा डॉसियर को खोलें।</p>';
+            hList.innerHTML = '<p class="text-xs text-white/65">' + (isEn ? 'No recent visits yet — open any anime or manga dossier.' : 'कोई हालिया विज़िट नहीं — किसी एनीमे या मंगा डॉसियर को खोलें।') + '</p>';
           } else {
             hList.innerHTML = hist.slice(0, 5).map(function (item) {
               return '<a href="' + (item.url || "#") + '" class="flex items-center gap-3 p-2.5 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors"><img src="' + (item.cover || "/static/media/emblem_icon.webp") + '" class="w-10 h-14 object-cover border border-white/15 shrink-0" /><div class="min-w-0 flex-1"><p class="text-xs font-bold text-white truncate">' + (item.title || "") + '</p><p class="font-tech text-[10px] uppercase text-[#ff2e63]">' + (item.kind || "EXPLORE") + '</p></div><i class="fa-solid fa-chevron-right text-xs text-white/50"></i></a>';
@@ -1096,16 +1169,21 @@
         ["", "sb-"].forEach(function (prefix) {
           var bHi = document.getElementById(prefix + "lang-btn-hi");
           var bEn = document.getElementById(prefix + "lang-btn-en");
+          var clsBase = prefix ? "min-w-[36px] min-h-[36px] px-2.5 py-1.5 whitespace-nowrap transition-colors " : "min-w-[34px] min-h-[36px] px-2.5 py-1.5 whitespace-nowrap transition-colors ";
           if (bHi && bEn) {
             if (cur === "en") {
-              bEn.className = "px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors";
-              bHi.className = "px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors";
+              bEn.className = clsBase + "bg-[#cf0f46] text-white";
+              bHi.className = clsBase + "text-white/80 hover:text-white";
             } else {
-              bHi.className = "px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors";
-              bEn.className = "px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors";
+              bHi.className = clsBase + "bg-[#cf0f46] text-white";
+              bEn.className = clsBase + "text-white/80 hover:text-white";
             }
           }
         });
+        if (typeof window.hagSyncWatchlistUI === "function") window.hagSyncWatchlistUI();
+        try { syncHunterUI(loadHunter()); } catch (e) {}
+        if (typeof window.hagOnLangChange === "function") window.hagOnLangChange(cur);
+        if (typeof window.renderProfileDashboard === "function") window.renderProfileDashboard();
       };
 
       window.hagSetLang = function (lang) {

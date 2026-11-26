@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ('Search: ' ~ q ~ ' — ') if q else '' }}Explore All Anime, Manga &amp; News — Hindi Anime Guide{% endblock %}
+{% block og_title %}{{ ('Search: ' ~ q ~ ' — ') if q else '' }}Explore All Anime, Manga &amp; News — Hindi Anime Guide{% endblock %}
+{% block og_description %}Global multi-filter discovery across Hindi dubbed anime, live IST broadcast schedule, 3D manga shelf, news, and official trailers.{% endblock %}
+
+{% block content %}
+<section class="py-10 sm:py-14 bg-[#06070c] min-h-[75vh]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <!-- Explore Header & Multi-Filter Search Bar -->
+    <div class="border-b border-white/10 pb-6 space-y-5">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="space-y-2">
+          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]"
+                data-hi="ग्लोबल डिस्कवरी • MULTI-FILTER SEARCH"
+                data-en="GLOBAL DISCOVERY • MULTI-FILTER SEARCH">ग्लोबल डिस्कवरी &bull; MULTI-FILTER SEARCH</span>
+          <h1 class="font-display-shonen text-2xl sm:text-4xl text-white"
+              data-hi="सभी एनीमे, मंगा और न्यूज़ एक्सप्लोर करें"
+              data-en="EXPLORE ALL ANIME, MANGA &amp; NEWS">सभी एनीमे, मंगा और न्यूज़ एक्सप्लोर करें</h1>
+        </div>
+        <span id="explore-match-counter" class="font-tech text-xs font-bold uppercase tracking-widest text-white/75">
+          {{ total_matched }} <span data-hi="परिणाम मिले" data-en="RESULTS FOUND">परिणाम मिले</span>
+        </span>
+      </div>
+
+      <form action="/explore" method="get" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+        <div class="sm:col-span-7 relative">
+          <input id="explore-query-input"
+                 type="search"
+                 name="q"
+                 value="{{ q or '' }}"
+                 oninput="hagFilterExploreClient()"
+                 data-hi-placeholder="किसी भी एनीमे, मंगा, स्टूडियो या कीवर्ड से खोजें... (e.g. Solo Leveling)"
+                 data-en-placeholder="Search any anime, manga, studio or keyword... (e.g. Solo Leveling)"
+                 placeholder="किसी भी एनीमे, मंगा, स्टूडियो या कीवर्ड से खोजें... (e.g. Solo Leveling)"
+                 class="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-white/5 border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/50 focus:outline-none" />
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#ff2e63]"></i>
+        </div>
+        <input type="hidden" name="type" id="explore-type-hidden" value="{{ active_type }}" />
+        <label class="sm:col-span-3 min-h-[44px] px-3.5 py-2 border border-white/20 bg-white/5 flex items-center gap-2.5 cursor-pointer font-tech text-xs font-bold uppercase text-white">
+          <input id="explore-hindi-checkbox" type="checkbox" name="hindi" value="1" {% if hindi_only %}checked{% endif %}
+                 onchange="this.form.submit()" class="accent-[#cf0f46] w-4 h-4" />
+          <span data-hi="केवल हिंदी डब" data-en="Hindi Dub Only">केवल हिंदी डब</span>
+        </label>
+        <button type="submit"
+                class="sm:col-span-2 katana-btn min-h-[44px] px-5 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider flex items-center justify-center">
+          <span data-hi="खोजें" data-en="Search">खोजें</span>
+        </button>
+      </form>
+
+      <!-- Category Filter Tabs -->
+      <div class="flex flex-wrap items-center gap-2 pt-1">
+        {% set tabs = [
+          ('all', 'सभी', 'ALL'),
+          ('anime', 'एनीमे गाइड्स', 'ANIME'),
+          ('manga', '3D मंगा', 'MANGA'),
+          ('schedule', 'IST शेड्यूल', 'SCHEDULE'),
+          ('news', 'न्यूज़', 'NEWS'),
+          ('trailers', 'ट्रेलर्स', 'TRAILERS')
+        ] %}
+        {% for tkey, thi, ten in tabs %}
+        {% set is_act = active_type == tkey %}
+        <a href="/explore?q={{ (q or '')|urlencode }}&amp;type={{ tkey }}{% if hindi_only %}&amp;hindi=1{% endif %}"
+           class="min-h-[38px] px-3.5 py-2 inline-flex items-center gap-2 border font-tech text-xs font-bold uppercase tracking-wider transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if is_act else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
+          <span data-hi="{{ thi }}" data-en="{{ ten }}">{{ thi }}</span>
+          <span class="text-[10px]">({{ counts_by_type.get(tkey, 0) }})</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if items %}
+    <div id="explore-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {% for item in items[:60] %}
+      <a href="{{ item.url }}"
+         data-explore-card
+         data-search="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.summary_en ~ ' ' ~ item.badge)|lower }}"
+         class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
+        <div class="relative aspect-[16/10] overflow-hidden bg-[#06070c]">
+          <img src="{{ item.cover_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+               onerror="this.src='/static/media/emblem_icon.webp'"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+          <span class="absolute top-2.5 left-2.5 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-wider">
+            {{ item.kind|upper }}
+          </span>
+          {% if item.hindi_dub %}
+          <span class="absolute top-2.5 right-2.5 px-2 py-0.5 bg-white text-[#06070c] font-tech text-[10px] font-bold uppercase">
+            HINDI DUB
+          </span>
+          {% endif %}
+        </div>
+        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+          <div class="space-y-1">
+            <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
+                data-hi="{{ item.title_hi }}"
+                data-en="{{ item.title_en }}">{{ item.title_hi }}</h2>
+            <p class="text-[11px] font-tech uppercase tracking-wider text-white/65 line-clamp-1">{{ item.title_en }}</p>
+            <p class="text-xs text-white/70 line-clamp-2"
+               data-hi="{{ item.summary_hi }}"
+               data-en="{{ item.summary_en }}">{{ item.summary_hi }}</p>
+          </div>
+          <div class="pt-2 border-t border-white/10 flex items-center justify-between gap-2 font-tech text-[10px] font-bold uppercase text-white/70">
+            <span class="truncate">{{ item.meta_left }}</span>
+            <span class="text-[#ff2e63] shrink-0">{{ item.meta_right }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="border-2 border-dashed border-white/20 p-10 sm:p-14 text-center space-y-5">
+      <p class="font-tech text-xs font-bold uppercase tracking-[0.22em] text-[#ff2e63]"
+         data-hi="कोई परिणाम नहीं मिला"
+         data-en="NO RESULTS MATCHED">कोई परिणाम नहीं मिला</p>
+      <h2 class="font-display-shonen text-xl sm:text-2xl text-white"
+          data-hi="लोकप्रिय खोज सुझाव आज़माएं"
+          data-en="TRY POPULAR DISCOVERY TAGS">लोकप्रिय खोज सुझाव आज़माएं</h2>
+      <div class="flex flex-wrap items-center justify-center gap-2.5">
+        {% for sug in ['Solo Leveling', 'Demon Slayer', 'Jujutsu Kaisen', 'One Piece', 'Naruto', 'Dandadan'] %}
+        <a href="/explore?q={{ sug|urlencode }}"
+           class="min-h-[38px] px-4 py-2 inline-flex items-center border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold uppercase tracking-wider transition-colors">
+          {{ sug }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function hagFilterExploreClient() {
+    var inp = document.getElementById("explore-query-input");
+    if (!inp) return;
+    var q = inp.value.trim().toLowerCase();
+    var cards = document.querySelectorAll("[data-explore-card]");
+    var visible = 0;
+    cards.forEach(function (c) {
+      var show = !q || (c.dataset.search || "").indexOf(q) !== -1;
+      c.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    var cnt = document.getElementById("explore-match-counter");
+    if (cnt && cards.length) {
+      var isEn = typeof hagGetLang === "function" && hagGetLang() === "en";
+      cnt.textContent = visible + (isEn ? " RESULTS SHOWN" : " परिणाम दिख रहे हैं");
+    }
+  }
+</script>
+{% endblock %}

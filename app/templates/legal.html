@@ -13,8 +13,8 @@
             <span class="w-2 h-2 rounded-full bg-[#ff2e63]"></span>
             TRUST &amp; COMPLIANCE SUITE
           </span>
-          <h2 class="font-display-shonen text-xl text-white">लीगल और <span class="text-[#ff2e63]">विश्वास केंद्र</span></h2>
-          <p class="font-tech text-[10px] uppercase tracking-wider text-white/55">Last Updated: November 2026</p>
+          <h2 class="font-display-shonen text-xl text-white" data-hi="लीगल और विश्वास केंद्र" data-en="LEGAL &amp; TRUST HUB">लीगल और <span class="text-[#ff2e63]">विश्वास केंद्र</span></h2>
+          <p class="font-tech text-[10px] uppercase tracking-wider text-white/70">Last Updated: November 2026</p>
         </div>
 
         <nav aria-label="Legal Navigation" class="flex flex-col gap-1.5 font-tech text-xs font-bold uppercase tracking-wider">
@@ -28,9 +28,9 @@
           ] %}
           {% for key, href, en_lbl, hi_lbl in nav_items %}
           <a href="{{ href }}"
-             class="px-3.5 py-2.5 border transition-colors flex items-center justify-between gap-2 {{ 'border-[#ff2e63] bg-[#ff2e63] text-white shadow-[0_0_20px_rgba(255,46,99,0.3)]' if legal_page == key else 'border-white/10 bg-white/[0.02] text-white/75 hover:border-[#ff2e63] hover:text-white' }}">
+             class="min-h-[38px] px-3.5 py-2 border transition-colors flex items-center justify-between gap-2 {{ 'border-[#cf0f46] bg-[#cf0f46] text-white shadow-[0_0_20px_rgba(255,46,99,0.3)]' if legal_page == key else 'border-white/10 bg-white/[0.02] text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
             <span class="truncate">{{ en_lbl }}</span>
-            <span class="text-[10px] opacity-80 shrink-0">{{ hi_lbl }}</span>
+            <span class="text-[10px] opacity-90 shrink-0" data-hi="{{ hi_lbl }}" data-en="READ">{{ hi_lbl }}</span>
           </a>
           {% endfor %}
         </nav>
@@ -46,18 +46,19 @@
       <div class="lg:col-span-8 border border-white/15 bg-white/[0.02] p-6 sm:p-10 space-y-8">
         <div class="border-b border-white/10 pb-6 space-y-3">
           <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
-            <span class="px-3 py-1 bg-[#ff2e63] text-white" style="transform: skewX(-8deg);">{{ badge_label }}</span>
+            <span class="px-3 py-1 bg-[#cf0f46] text-white" style="transform: skewX(-8deg);">{{ badge_label }}</span>
             <span class="px-3 py-1 border border-white/20 text-white/80">LAST UPDATED: NOVEMBER 2026</span>
           </div>
           <h1 class="font-display-shonen text-2xl sm:text-4xl text-white leading-tight">{{ page_title }}</h1>
-          <p class="text-sm text-[#ff2e63] font-semibold">{{ hindi_summary }}</p>
+          <p class="text-sm text-[#ff2e63] font-semibold" data-hi="{{ hindi_summary }}" data-en="{{ badge_label }} • Hindi Anime Guide Official Policy &amp; Transparency">{{ hindi_summary }}</p>
         </div>
 
         {% if legal_page == 'about' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)</h2>
-            <p><strong>Hindi Anime Guide (hindianimeguide.in)</strong> भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब है। हमारा उद्देश्य भारतीय एनीमे प्रशंसकों को केवल <strong>100% वैध (Legal &amp; Licensed)</strong> स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST ब्रॉडकास्ट टाइमिंग, और आधिकारिक मंगा प्रकाशन विवरण उपलब्ध कराना है।</p>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]" data-hi="संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)" data-en="EDITORIAL MISSION SUMMARY">संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)</h2>
+            <p data-hi="Hindi Anime Guide (hindianimeguide.in) भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब है — केवल 100% वैध स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST टाइमिंग और आधिकारिक मंगा विवरण।"
+               data-en="Hindi Anime Guide (hindianimeguide.in) is India's dedicated Hindi &amp; English Anime and Manga directory hub providing 100% legal streaming platforms, live IST airing schedules, and official manga metadata."><strong>Hindi Anime Guide (hindianimeguide.in)</strong> भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब है। हमारा उद्देश्य भारतीय एनीमे प्रशंसकों को केवल <strong>100% वैध (Legal &amp; Licensed)</strong> स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST ब्रॉडकास्ट टाइमिंग, और आधिकारिक मंगा प्रकाशन विवरण उपलब्ध कराना है।</p>
           </div>
 
           <div class="space-y-3">
@@ -192,27 +193,28 @@
         <div class="space-y-6">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-1.5 text-sm text-white/85">
             <p class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">DIRECT SUPABASE INBOX &bull; SPONSORSHIPS &amp; SUPPORT</p>
-            <p>ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या <strong>contact@hindianimeguide.in</strong> पर ईमेल करें।</p>
+            <p data-hi="ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या contact@hindianimeguide.in पर ईमेल करें।"
+               data-en="Submit the form below or email contact@hindianimeguide.in for brand sponsorships, DMCA inquiries, or editorial feedback.">ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या <strong>contact@hindianimeguide.in</strong> पर ईमेल करें।</p>
           </div>
 
           <form id="hag-contact-form" onsubmit="submitContactForm(event)" class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div class="space-y-1.5">
-                <label for="cf-name" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">आपका नाम / Full Name</label>
+                <label for="cf-name" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="आपका नाम / Full Name" data-en="Full Name">आपका नाम / Full Name</label>
                 <input id="cf-name" name="name" type="text" required maxlength="120"
                        placeholder="e.g. Aarav Sharma"
-                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/35 focus:outline-none" />
+                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
               </div>
               <div class="space-y-1.5">
-                <label for="cf-email" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">ईमेल / Email Address</label>
+                <label for="cf-email" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="ईमेल / Email Address" data-en="Email Address">ईमेल / Email Address</label>
                 <input id="cf-email" name="email" type="email" required maxlength="200"
                        placeholder="name@example.com"
-                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/35 focus:outline-none" />
+                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
               </div>
             </div>
 
             <div class="space-y-1.5">
-              <label for="cf-subject" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">विषय / Subject</label>
+              <label for="cf-subject" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="विषय / Subject" data-en="Subject">विषय / Subject</label>
               <select id="cf-subject" name="subject"
                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none">
                 <option value="Sponsorship">Sponsorship &amp; Brand Partnership</option>
@@ -222,16 +224,18 @@
             </div>
 
             <div class="space-y-1.5">
-              <label for="cf-message" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">संदेश / Message</label>
+              <label for="cf-message" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="संदेश / Message" data-en="Message">संदेश / Message</label>
               <textarea id="cf-message" name="message" rows="5" required maxlength="4000"
+                        data-hi-placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
+                        data-en-placeholder="Write your message, sponsorship proposal, or inquiry details..."
                         placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
-                        class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/35 focus:outline-none"></textarea>
+                        class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none"></textarea>
             </div>
 
             <div class="flex flex-wrap items-center gap-4">
               <button type="submit" id="cf-submit-btn"
-                      class="katana-btn px-7 py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
-                <span><i class="fa-solid fa-paper-plane"></i> संदेश भेजें (Send Message)</span>
+                      class="katana-btn px-7 py-3 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
+                <span><i class="fa-solid fa-paper-plane"></i> <span data-hi="संदेश भेजें" data-en="Send Message">संदेश भेजें</span></span>
               </button>
               <span id="cf-error" class="text-xs font-bold text-[#ff2e63] hidden"></span>
             </div>

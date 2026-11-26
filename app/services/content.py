@@ -32,6 +32,7 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "title_hi": "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो",
         "title_en": "Solo Leveling Season 2",
         "tagline": "सबसे कमज़ोर ई-रैंक हंटर से शैडो मोनार्क बनने तक का सफ़र — हिंदी डब में ब्लॉकबस्टर एक्शन।",
+        "tagline_en": "From the weakest E-Rank hunter to the Shadow Monarch — blockbuster action now in Hindi Dub.",
         "score": 84,
         "year": "2025",
         "badge": "HINDI DUB • FLAGSHIP",
@@ -48,6 +49,7 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "title_hi": "डीमन स्लेयर: इन्फिनिटी कैसल",
         "title_en": "Demon Slayer: Infinity Castle",
         "tagline": "हाशिरा और तंजिरो का मुज़ान के अनंत किले में अंतिम निर्णायक महायुद्ध।",
+        "tagline_en": "The Hashira and Tanjiro enter Muzan's Infinity Castle for the final decisive battle.",
         "score": 86,
         "year": "2025",
         "badge": "THEATRICAL • HINDI DUB",
@@ -63,7 +65,8 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "slug": "jujutsu-kaisen",
         "title_hi": "जुजुत्सु काइसेन",
         "title_en": "Jujutsu Kaisen",
-        "tagline": "शापित ऊर्जा, डोमेन एक्सपेंशन और गोजो सatoru बनाम सुकुना का सबसे खतरनाक संघर्ष।",
+        "tagline": "शापित ऊर्जा, डोमेन एक्सपेंशन और गोजो सतोरू बनाम सुकुना का सबसे खतरनाक संघर्ष।",
+        "tagline_en": "Cursed energy, Domain Expansions, and the explosive clash between Gojo Satoru and Sukuna.",
         "score": 84,
         "year": "2024",
         "badge": "TOP RATED • HINDI DUB",
@@ -80,6 +83,7 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "title_hi": "वन पंच मैन",
         "title_en": "One-Punch Man",
         "tagline": "एक मुक्के में हर दुश्मन को ख़त्म करने वाले सायतामा की जबरदस्त एक्शन-कॉमेडी गाथा।",
+        "tagline_en": "Saitama defeats any threat with a single punch in this high-octane action comedy icon.",
         "score": 82,
         "year": "2025",
         "badge": "SHONEN ICON • HINDI DUB",
@@ -96,6 +100,7 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "title_hi": "डंडाडन (DAN DA DAN)",
         "title_en": "DAN DA DAN",
         "tagline": "भूत और एलियंस की तेज़-तर्रार साइंस-फिक्शन कॉमेडी — अब आधिकारिक हिंदी डब में।",
+        "tagline_en": "Ghosts, aliens, and chaotic supernatural action — streaming with official Hindi Dub.",
         "score": 83,
         "year": "2025",
         "badge": "SIMULDUB • HINDI DUB",
@@ -193,10 +198,10 @@ def _parse_json_safe(raw: str | None) -> dict[str, Any]:
         return {}
 
 
-def _ist_news_timing(dt: datetime | None) -> tuple[str, bool, int, bool, bool]:
-    """Return (Hindi relative IST age, is_fresh_48h, hours_left, is_brand_new, is_expiring_soon)."""
+def _ist_news_timing(dt: datetime | None) -> tuple[str, str, bool, int, bool, bool]:
+    """Return (Hindi rel age, English rel age, is_fresh_48h, hours_left, is_brand_new, is_expiring_soon)."""
     if not isinstance(dt, datetime):
-        return "अभी आया", True, 47, True, False
+        return "अभी आया", "Just now", True, 47, True, False
     now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
     delta_sec = max(0.0, (now_utc - dt).total_seconds())
     age_hours = delta_sec / 3600.0
@@ -206,14 +211,17 @@ def _ist_news_timing(dt: datetime | None) -> tuple[str, bool, int, bool, bool]:
     is_expiring_soon = is_fresh and hours_left <= 12
 
     if delta_sec < 300:
-        rel = "अभी आया"
+        rel_hi, rel_en = "अभी आया", "Just now"
     elif delta_sec < 3600:
-        rel = f"{int(delta_sec // 60)} मिनट पहले"
+        mins = int(delta_sec // 60)
+        rel_hi, rel_en = f"{mins} मिनट पहले", f"{mins}m ago"
     elif delta_sec < 86400:
-        rel = f"{int(delta_sec // 3600)} घंटे पहले"
+        hrs = int(delta_sec // 3600)
+        rel_hi, rel_en = f"{hrs} घंटे पहले", f"{hrs}h ago"
     else:
-        rel = f"{int(delta_sec // 86400)} दिन पहले"
-    return rel, is_fresh, hours_left, is_brand_new, is_expiring_soon
+        days = int(delta_sec // 86400)
+        rel_hi, rel_en = f"{days} दिन पहले", f"{days}d ago"
+    return rel_hi, rel_en, is_fresh, hours_left, is_brand_new, is_expiring_soon
 
 
 def _next_ist_weekday_ts(day_hi: str | None, time_str: str | None) -> int:
@@ -281,6 +289,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
         top_ids = [int(r["anilist_id"]) for r in sch_rows[:36] if r.get("anilist_id")]
         _hydrate_anilist_covers(top_ids)
 
+        day_hi_to_en = {hi: en for hi, en in DAY_ORDER}
         now_ts = int(time.time())
         for r in sch_rows:
             aid = int(r["anilist_id"]) if r.get("anilist_id") else None
@@ -291,6 +300,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 airing_at = int(raw_airing_at)
             else:
                 airing_at = _next_ist_weekday_ts(r["airing_day"], r["airing_time"])
+            day_hi = r["airing_day"] or "रविवार"
             schedule_items.append(
                 {
                     "id": r["id"],
@@ -298,8 +308,10 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "title_en": r["title_en"] or "",
                     "title_hi": r["title_hi"] or r["title_en"] or "",
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 260),
+                    "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 260),
                     "image_url": _resolve_safe_image(r["image_url"], aid),
-                    "airing_day": r["airing_day"] or "रविवार",
+                    "airing_day": day_hi,
+                    "airing_day_en": day_hi_to_en.get(day_hi, "Sunday"),
                     "airing_time": r["airing_time"] or "TBD IST",
                     "airing_at": airing_at,
                     "episode_label": r.get("latest_chapter") or (f"Ep. {meta['episode']}" if meta.get("episode") else "New Ep."),
@@ -343,6 +355,10 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 f"पूर्ण हो चुका (Completed {end_y})" if (is_finished and end_y)
                 else ("पूर्ण (Completed)" if is_finished else "जारी है (Releasing)")
             )
+            serialization_en = (
+                f"Completed ({end_y})" if (is_finished and end_y)
+                else ("Completed" if is_finished else "Releasing")
+            )
             badge_vol = f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else "ONGOING")
 
             manga_items.append(
@@ -354,7 +370,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "author": meta.get("author") or "Original Manga Creator",
                     "genres": meta.get("genres") or ["Action", "Shonen"],
                     "summary_hi": _clean_text(r["summary_hi"], 320),
-                    "summary_en": _clean_text(r["summary_en"], 320),
+                    "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 320),
                     "cover_url": _resolve_safe_image(r["image_url"]),
                     "volumes": vol_num,
                     "volume_label": badge_vol,
@@ -364,7 +380,9 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "pub_status": "COMPLETED" if is_finished else "ONGOING",
                     "status_short": "COMPLETED" if is_finished else "ONGOING",
                     "status_badge_hi": "पूर्ण • COMPLETED" if is_finished else "जारी है • ONGOING",
+                    "status_badge_en": "COMPLETED" if is_finished else "RELEASING • ONGOING",
                     "serialization_label": serialization_label,
+                    "serialization_en": serialization_en,
                     "start_year_label": str(start_y) if start_y else "Featured",
                     "source_name": r["source_name"] or "MangaPlus",
                     "source_url": r["source_url"] or "#",
@@ -413,7 +431,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at") or r.get("created_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Recent"
-            rel_age, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
+            rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             n_slug = f"draft-{r['id']}"
             ext_url = r.get("source_url") or ""
             news_items.append(
@@ -421,8 +439,9 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "id": n_slug,
                     "slug": n_slug,
                     "title_hi": r["title_hi"] or r["title_en"] or "",
-                    "title_en": r["title_en"] or "",
+                    "title_en": r["title_en"] or r["title_hi"] or "",
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 160),
+                    "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 160),
                     "body_paragraphs": [p.strip() for p in (r["summary_hi"] or r["summary_en"] or "").split("\n") if p.strip()],
                     "image_url": img,
                     "category": (r.get("news_category") or "Anime News").upper(),
@@ -431,6 +450,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "external_url": ext_url,
                     "date": date_str,
                     "relative_age": rel_age,
+                    "relative_age_en": rel_age_en,
                     "hours_left": hours_left,
                     "is_brand_new": is_brand_new,
                     "is_expiring_soon": is_expiring_soon,
@@ -449,15 +469,17 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Guide"
-            rel_age, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
+            rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             paras = [re.sub(r"^[#>*`\-\s]+", "", p).strip() for p in (r.get("content_md") or "").split("\n\n") if p.strip()]
+            en_title_guess = (r.get("slug") or "").replace("-", " ").title()
             news_items.append(
                 {
                     "id": f"art-{r['id']}",
                     "slug": r["slug"],
                     "title_hi": r["title"] or "",
-                    "title_en": r["meta_description"] or r["title"] or "",
+                    "title_en": en_title_guess or r["title"] or "",
                     "summary": _clean_text(r["meta_description"] or r["content_md"], 160),
+                    "summary_en": _clean_text(r["meta_description"] or en_title_guess or r["title"], 160),
                     "body_paragraphs": paras[:8],
                     "image_url": img,
                     "category": (r.get("category") or "Hindi Guide").upper(),
@@ -466,6 +488,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "external_url": "",
                     "date": date_str,
                     "relative_age": rel_age,
+                    "relative_age_en": rel_age_en,
                     "hours_left": hours_left,
                     "is_brand_new": is_brand_new,
                     "is_expiring_soon": is_expiring_soon,
@@ -494,11 +517,14 @@ def _fetch_from_supabase() -> dict[str, Any]:
             thumb = _resolve_safe_image(
                 r.get("image_url") or (f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg" if yt_id else None)
             )
+            t_en = (r["title_en"] or r["title_hi"] or "").strip()
+            t_hi = (r["title_hi"] or t_en).strip()
             trailer_items.append(
                 {
                     "id": r["id"],
-                    "title_en": r["title_en"] or "",
-                    "title_hi": r["title_hi"] or r["title_en"] or "",
+                    "title_en": f"{t_en} — Official Trailer" if "trailer" not in t_en.lower() else t_en,
+                    "title_base_en": t_en,
+                    "title_hi": t_hi,
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 130),
                     "thumb_url": thumb,
                     "youtube_id": yt_id,
@@ -744,8 +770,21 @@ def _format_poll_row(poll_key: str, a_votes: int, b_votes: int) -> dict[str, Any
     return {
         "poll_key": poll_key,
         "question": "भारत में किसका एक्शन और हिंदी डब सबसे खतरनाक है?",
-        "option_a": {"label": "सोलो लेवलिंग (Solo Leveling)", "short": "SOLO LEVELING", "votes": a_votes, "pct": pct_a},
-        "option_b": {"label": "डीमन स्लेयर: इन्फिनिटी कैसल", "short": "DEMON SLAYER", "votes": b_votes, "pct": pct_b},
+        "question_en": "Which anime has the most explosive action & Hindi Dub in India?",
+        "option_a": {
+            "label": "सोलो लेवलिंग (Solo Leveling)",
+            "label_en": "Solo Leveling Season 2",
+            "short": "SOLO LEVELING",
+            "votes": a_votes,
+            "pct": pct_a,
+        },
+        "option_b": {
+            "label": "डीमन स्लेयर: इन्फिनिटी कैसल",
+            "label_en": "Demon Slayer: Infinity Castle",
+            "short": "DEMON SLAYER",
+            "votes": b_votes,
+            "pct": pct_b,
+        },
         "option_a_votes": a_votes,
         "option_b_votes": b_votes,
         "total_votes": a_votes + b_votes,
@@ -879,3 +918,282 @@ def save_contact_message(name: str, email: str, subject: str, message: str) -> i
             {"name": name[:120], "email": email[:200], "subject": subject[:80], "message": message[:4000]},
         ).scalar()
     return int(row_id or 1)
+
+
+CURATED_AWARDS_FALLBACK: list[dict[str, Any]] = [
+    {
+        "id": 1,
+        "name": "Crunchyroll Anime Awards (10th Edition)",
+        "name_hi": "क्रंचीरोल एनीमे अवार्ड्स (10वां संस्करण)",
+        "edition_year": 2026,
+        "location": "Tokyo, Japan",
+        "source_url": "https://www.crunchyroll.com",
+        "status": "verified",
+        "entries": [
+            {
+                "category": "Anime of the Year",
+                "category_hi": "वर्ष का सर्वश्रेष्ठ एनीमे",
+                "winner_title": "Solo Leveling Season 2",
+                "winner_title_hi": "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो",
+                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
+                "detail_url": "/anime/solo-leveling",
+                "nominees": [],
+            },
+            {
+                "category": "Best Film",
+                "category_hi": "सर्वश्रेष्ठ एनीमे फिल्म",
+                "winner_title": "Demon Slayer: Infinity Castle",
+                "winner_title_hi": "डीमन स्लेयर: इन्फिनिटी कैसल",
+                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178788-zm3gtpB9TpRt.jpg",
+                "detail_url": "/anime/demon-slayer-infinity-castle",
+                "nominees": [],
+            },
+        ],
+    }
+]
+
+
+def get_awards_data() -> dict[str, Any]:
+    """Load anime award ceremonies and winner/nominee entries from Postgres with curated fallback."""
+    try:
+        content = get_cached_content()
+        known_slugs = {sp["slug"]: sp["slug"] for sp in content["spotlight"]}
+        for sch in content["schedule"]:
+            known_slugs[sch["slug"]] = sch["slug"]
+
+        def _resolve_award_url(title_en: str | None) -> str:
+            s = _slugify(title_en)
+            if s in known_slugs:
+                return f"/anime/{s}"
+            return f"/explore?q={(title_en or '').strip()}"
+
+        with engine.connect() as conn:
+            c_rows = conn.execute(
+                text(
+                    """
+                    SELECT id, name, name_hi, edition_year, date, location, source_url, status
+                    FROM award_ceremony
+                    ORDER BY edition_year DESC, id ASC
+                    """
+                )
+            ).mappings().all()
+            e_rows = conn.execute(
+                text(
+                    """
+                    SELECT id, ceremony_id, category, category_hi, winner_title, winner_title_hi,
+                           winner_poster, nominee_media_ids, source_url, status
+                    FROM award_entry
+                    ORDER BY ceremony_id ASC, id ASC
+                    """
+                )
+            ).mappings().all()
+
+        entries_by_ceremony: dict[int, list[dict[str, Any]]] = {}
+        total_entries = 0
+        for r in e_rows:
+            total_entries += 1
+            raw_nom = r.get("nominee_media_ids")
+            nominees: list[dict[str, Any]] = []
+            if isinstance(raw_nom, str) and raw_nom.strip().startswith("["):
+                try:
+                    parsed = json.loads(raw_nom)
+                    if isinstance(parsed, list):
+                        nominees = [n for n in parsed if isinstance(n, dict)]
+                except Exception:
+                    nominees = []
+            elif isinstance(raw_nom, list):
+                nominees = raw_nom
+            cid = int(r["ceremony_id"])
+            entries_by_ceremony.setdefault(cid, []).append(
+                {
+                    "id": r["id"],
+                    "category": r.get("category") or "Award Winner",
+                    "category_hi": r.get("category_hi") or r.get("category") or "विजेता",
+                    "winner_title": r.get("winner_title") or "",
+                    "winner_title_hi": r.get("winner_title_hi") or r.get("winner_title") or "",
+                    "winner_poster": _resolve_safe_image(r.get("winner_poster")),
+                    "detail_url": _resolve_award_url(r.get("winner_title")),
+                    "nominees": nominees[:6],
+                    "status": r.get("status") or "verified",
+                }
+            )
+
+        ceremonies: list[dict[str, Any]] = []
+        for c in c_rows:
+            cid = int(c["id"])
+            c_entries = entries_by_ceremony.get(cid, [])
+            if not c_entries:
+                continue
+            ceremonies.append(
+                {
+                    "id": cid,
+                    "name": c.get("name") or "Anime Awards",
+                    "name_hi": c.get("name_hi") or c.get("name") or "एनीमे अवार्ड्स",
+                    "edition_year": c.get("edition_year") or 2026,
+                    "date_label": c["date"].strftime("%d %b %Y") if hasattr(c.get("date"), "strftime") else str(c.get("edition_year") or ""),
+                    "location": c.get("location") or "Tokyo, Japan",
+                    "source_url": c.get("source_url") or "",
+                    "status": c.get("status") or "verified",
+                    "entries": c_entries,
+                }
+            )
+        if ceremonies:
+            return {"ceremonies": ceremonies, "total_ceremonies": len(ceremonies), "total_entries": total_entries}
+    except Exception:
+        pass
+    return {
+        "ceremonies": CURATED_AWARDS_FALLBACK,
+        "total_ceremonies": len(CURATED_AWARDS_FALLBACK),
+        "total_entries": sum(len(c["entries"]) for c in CURATED_AWARDS_FALLBACK),
+    }
+
+
+def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False) -> dict[str, Any]:
+    """Aggregate normalized items across Anime, Manga, Schedule, News, and Trailers for /explore."""
+    data = get_cached_content()
+    q = (query or "").strip().lower()
+    active_type = (kind or "all").strip().lower()
+    if active_type not in ("all", "anime", "manga", "schedule", "news", "trailers"):
+        active_type = "all"
+
+    items: list[dict[str, Any]] = []
+    seen_anime_slugs: set[str] = set()
+
+    for sp in data["spotlight"]:
+        seen_anime_slugs.add(sp["slug"])
+        items.append(
+            {
+                "kind": "anime",
+                "slug": sp["slug"],
+                "title_hi": sp["title_hi"],
+                "title_en": sp["title_en"],
+                "summary_hi": sp["tagline"],
+                "summary_en": sp.get("tagline_en") or sp["tagline"],
+                "cover_url": sp["cover_url"],
+                "url": f"/anime/{sp['slug']}",
+                "badge": sp["badge"],
+                "meta_left": f"★ {sp['score']}%",
+                "meta_right": sp["year"],
+                "hindi_dub": True,
+            }
+        )
+
+    for sch in data["schedule"]:
+        if sch["slug"] not in seen_anime_slugs:
+            seen_anime_slugs.add(sch["slug"])
+            items.append(
+                {
+                    "kind": "anime",
+                    "slug": sch["slug"],
+                    "title_hi": sch["title_hi"],
+                    "title_en": sch["title_en"],
+                    "summary_hi": sch["summary"],
+                    "summary_en": sch.get("summary_en") or sch["summary"],
+                    "cover_url": sch["image_url"],
+                    "url": sch["detail_url"],
+                    "badge": "HINDI DUB" if sch.get("hindi_dub") else "SIMULCAST",
+                    "meta_left": sch["airing_day_en"].upper(),
+                    "meta_right": sch["airing_time"],
+                    "hindi_dub": bool(sch.get("hindi_dub")),
+                }
+            )
+        items.append(
+            {
+                "kind": "schedule",
+                "slug": f"sch-{sch['slug']}",
+                "title_hi": sch["title_hi"],
+                "title_en": sch["title_en"],
+                "summary_hi": sch["summary"],
+                "summary_en": sch.get("summary_en") or sch["summary"],
+                "cover_url": sch["image_url"],
+                "url": sch["detail_url"],
+                "badge": f"{sch['airing_time']}",
+                "meta_left": sch["airing_day"],
+                "meta_left_en": sch["airing_day_en"],
+                "meta_right": sch["episode_label"],
+                "hindi_dub": bool(sch.get("hindi_dub")),
+            }
+        )
+
+    for m in data["manga"]:
+        items.append(
+            {
+                "kind": "manga",
+                "slug": f"manga-{m['id']}",
+                "title_hi": m["title_hi"],
+                "title_en": m["title_en"],
+                "summary_hi": m["summary_hi"] or m["summary_en"],
+                "summary_en": m["summary_en"] or m["summary_hi"],
+                "cover_url": m["cover_url"],
+                "url": f"/manga?q={m['title_en']}",
+                "badge": m["volume_label"],
+                "meta_left": m["author"],
+                "meta_right": m["chapters_label"],
+                "hindi_dub": False,
+            }
+        )
+
+    for n in data["news"]:
+        items.append(
+            {
+                "kind": "news",
+                "slug": n["slug"],
+                "title_hi": n["title_hi"],
+                "title_en": n["title_en"],
+                "summary_hi": n["summary"],
+                "summary_en": n.get("summary_en") or n["summary"],
+                "cover_url": n["image_url"],
+                "url": n["source_url"],
+                "badge": n["category"],
+                "meta_left": n["source_name"],
+                "meta_right": n["date"],
+                "hindi_dub": "hindi" in f"{n['title_hi']} {n['title_en']}".lower(),
+            }
+        )
+
+    for tr in data["trailers"]:
+        items.append(
+            {
+                "kind": "trailers",
+                "slug": f"tr-{tr['id']}",
+                "title_hi": tr["title_hi"],
+                "title_en": tr["title_en"],
+                "summary_hi": tr["summary"] or tr["source_name"],
+                "summary_en": tr["summary"] or tr["source_name"],
+                "cover_url": tr["thumb_url"],
+                "url": "/trailers",
+                "badge": "TRAILER PV",
+                "meta_left": tr["source_name"],
+                "meta_right": tr["season"] or "HD PV",
+                "hindi_dub": "hindi" in f"{tr['title_hi']} {tr['title_en']}".lower(),
+            }
+        )
+
+    counts_by_type = {
+        "all": len(items),
+        "anime": sum(1 for x in items if x["kind"] == "anime"),
+        "schedule": sum(1 for x in items if x["kind"] == "schedule"),
+        "manga": sum(1 for x in items if x["kind"] == "manga"),
+        "news": sum(1 for x in items if x["kind"] == "news"),
+        "trailers": sum(1 for x in items if x["kind"] == "trailers"),
+    }
+
+    filtered: list[dict[str, Any]] = []
+    for x in items:
+        if active_type != "all" and x["kind"] != active_type:
+            continue
+        if hindi_only and not x.get("hindi_dub"):
+            continue
+        if q:
+            hay = f"{x['title_hi']} {x['title_en']} {x['summary_hi']} {x['summary_en']} {x['badge']} {x['meta_left']}".lower()
+            if q not in hay:
+                continue
+        filtered.append(x)
+
+    return {
+        "items": filtered,
+        "total_matched": len(filtered),
+        "counts_by_type": counts_by_type,
+        "active_type": active_type,
+        "hindi_only": hindi_only,
+    }

@@ -155,17 +155,28 @@
       var buyLink = document.getElementById("mi-buy-link");
       if (buyLink) {
         var qTitle = (m.title_en || m.title_hi || "anime").trim();
-        buyLink.href = "https://www.amazon.in/s?k=" + encodeURIComponent(qTitle + " manga");
+        var amzUrl = "https://www.amazon.in/s?k=" + encodeURIComponent(qTitle + " manga");
+        if (window.HAG_AMAZON_TAG) {
+          amzUrl += "&tag=" + encodeURIComponent(window.HAG_AMAZON_TAG);
+        }
+        buyLink.href = amzUrl;
       }
+
+      var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
+      document.getElementById("mi-status-ribbon").textContent = isEn ? (m.status_badge_en || "ONGOING") : (m.status_badge_hi || "जारी है • ONGOING");
+      document.getElementById("mi-title-hi").textContent = isEn ? (m.title_en || m.title_hi || "") : (m.title_hi || m.title_en || "");
+      document.getElementById("mi-serialization").textContent = isEn ? (m.serialization_en || m.pub_status || "Releasing") : (m.serialization_label || m.pub_status || "Releasing");
+      document.getElementById("mi-summary").textContent = isEn ? (m.summary_en || m.summary_hi || "") : (m.summary_hi || m.summary_en || "");
 
       var wlSlug = "manga-" + m.id;
       var wlBtn = document.getElementById("mi-wl-btn");
       var wlLbl = document.getElementById("mi-wl-label");
       function syncInspectorWl() {
+        var curEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
         if (typeof hagIsInWatchlist === "function" && hagIsInWatchlist(wlSlug)) {
-          wlLbl.textContent = "मेरी लिस्ट में सेव है ✓";
+          wlLbl.textContent = curEn ? "Saved in My List ✓" : "मेरी लिस्ट में सेव है ✓";
         } else {
-          wlLbl.textContent = "मेरी लिस्ट में जोड़ें";
+          wlLbl.textContent = curEn ? "Add to My List" : "मेरी लिस्ट में जोड़ें";
         }
       }
       syncInspectorWl();

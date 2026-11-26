@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Hunter Profile &amp; Watchlist Hub — Hindi Anime Guide{% endblock %}
+{% block og_title %}Hunter Profile &amp; Watchlist Hub — Hindi Anime Guide{% endblock %}
+
+{% block content %}
+<section class="py-10 sm:py-16 bg-[#06070c] min-h-[75vh]">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <!-- Top Hunter Identity Banner -->
+    <div class="border-2 border-[#ff2e63] bg-gradient-to-br from-[#ff2e63]/15 via-[#06070c] to-[#06070c] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="space-y-2">
+        <span class="inline-block px-3 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-[0.2em]"
+              data-hi="हंटर कमांड डैशबोर्ड"
+              data-en="HUNTER COMMAND DASHBOARD">हंटर कमांड डैशबोर्ड</span>
+        <h1 class="font-display-shonen text-2xl sm:text-4xl text-white">
+          {% if user %}
+            {{ user.username }} <span class="text-[#ff2e63]">HUNTER</span>
+          {% else %}
+            <span data-hi="गेस्ट हंटर प्रोफ़ाइल" data-en="GUEST HUNTER PROFILE">गेस्ट हंटर प्रोफ़ाइल</span>
+          {% endif %}
+        </h1>
+        <p class="text-xs sm:text-sm text-white/75">
+          {% if user %}
+            {{ user.email }} &bull; <span data-hi="क्लाउड सिंक सक्रिय ✓" data-en="Cloud Sync Active ✓">क्लाउड सिंक सक्रिय ✓</span>
+          {% else %}
+            <span data-hi="क्लाउड सिंक के लिए अभी लॉगिन करें — आपकी वॉचलिस्ट और रैंक हर डिवाइस पर सेव रहेंगे।"
+                  data-en="Sign in to sync your watchlist and Hunter XP across every device.">क्लाउड सिंक के लिए अभी लॉगिन करें — आपकी वॉचलिस्ट और रैंक हर डिवाइस पर सेव रहेंगे।</span>
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        {% if user %}
+        <button type="button" onclick="hagCloudSyncNow()"
+                class="katana-btn min-h-[40px] px-4 py-2 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span><i class="fa-solid fa-cloud-arrow-up text-[#ff2e63]"></i> <span data-hi="अभी सिंक करें" data-en="Sync Now">अभी सिंक करें</span></span>
+        </button>
+        <button type="button" onclick="hagLogout()"
+                class="katana-btn min-h-[40px] px-4 py-2 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span data-hi="लॉगआउट" data-en="Logout">लॉगआउट</span>
+        </button>
+        {% else %}
+        <a href="/login"
+           class="katana-btn min-h-[40px] px-5 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span data-hi="लॉगिन / साइन अप" data-en="Login / Sign Up">लॉगिन / साइन अप</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Rank & XP Progress Card -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="md:col-span-2 border border-white/15 bg-white/[0.02] p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 id="prof-rank-name" class="font-display-shonen text-xl sm:text-2xl text-white">E-RANK HUNTER</h2>
+          <span id="prof-xp-val" class="font-tech text-sm font-bold text-[#ff2e63]">20 XP</span>
+        </div>
+        <div class="w-full h-3 bg-white/10 border border-white/15 overflow-hidden">
+          <div id="prof-xp-bar" class="h-full bg-[#cf0f46] transition-all duration-500" style="width: 20%;"></div>
+        </div>
+        <p id="prof-next-goal" class="font-tech text-xs text-white/75 uppercase tracking-wider">
+          अगले रैंक के लिए XP इकट्ठा करें!
+        </p>
+      </div>
+
+      <div class="border border-white/15 bg-white/[0.02] p-6 flex flex-col justify-between space-y-3">
+        <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]"
+              data-hi="क्विक एक्शन"
+              data-en="QUICK ACTIONS">क्विक एक्शन</span>
+        <div class="space-y-2">
+          <a href="/explore" class="min-h-[38px] px-3 py-2 border border-white/15 hover:border-[#ff2e63] flex items-center justify-between text-xs font-tech font-bold uppercase text-white">
+            <span data-hi="एनीमे एक्सप्लोर करें" data-en="Explore Catalog">एनीमे एक्सप्लोर करें</span>
+            <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+          </a>
+          <button type="button" onclick="hagOpenRoulette()" class="w-full min-h-[38px] px-3 py-2 border border-white/15 hover:border-[#ff2e63] flex items-center justify-between text-xs font-tech font-bold uppercase text-white">
+            <span data-hi="सरप्राइज़ स्पिन (+25 XP)" data-en="Surprise Spin (+25 XP)">सरप्राइज़ स्पिन (+25 XP)</span>
+            <span>🎲</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved Watchlist Grid -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h2 class="font-display-shonen text-xl sm:text-2xl text-white"
+            data-hi="मेरी सेव की गई वॉचलिस्ट"
+            data-en="MY SAVED WATCHLIST">मेरी सेव की गई वॉचलिस्ट</h2>
+        <button type="button" onclick="hagClearWatchlist(); renderProfileDashboard();"
+                class="min-h-[36px] px-3 py-1 font-tech text-xs font-bold uppercase text-[#ff2e63] hover:underline"
+                data-hi="सभी हटाएं"
+                data-en="Clear All">सभी हटाएं</button>
+      </div>
+      <div id="profile-watchlist-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- Continue Exploring History -->
+    <div class="space-y-4">
+      <h2 class="font-display-shonen text-xl sm:text-2xl text-white border-b border-white/10 pb-3"
+          data-hi="हालिया एक्सप्लोर हिस्ट्री"
+          data-en="CONTINUE EXPLORING HISTORY">हालिया एक्सप्लोर हिस्ट्री</h2>
+      <div id="profile-history-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function renderProfileDashboard() {
+    var isEn = typeof hagGetLang === "function" && hagGetLang() === "en";
+    try {
+      var h = JSON.parse(localStorage.getItem("hag_hunter_v2") || '{"xp":20,"streak":1}') || { xp: 20, streak: 1 };
+      var xp = h.xp || 20;
+      var ranks = [
+        { name: "E-RANK", min: 0, next: 100, nextName: "C-RANK" },
+        { name: "C-RANK", min: 100, next: 300, nextName: "A-RANK" },
+        { name: "A-RANK", min: 300, next: 700, nextName: "S-RANK MONARCH" },
+        { name: "S-RANK MONARCH", min: 700, next: 700, nextName: "MAX MONARCH" }
+      ];
+      var cur = ranks[0];
+      for (var i = 0; i < ranks.length; i++) if (xp >= ranks[i].min) cur = ranks[i];
+      var pct = cur.next > cur.min ? Math.min(100, Math.max(8, Math.round(((xp - cur.min) * 100) / (cur.next - cur.min)))) : 100;
+      var rem = Math.max(0, cur.next - xp);
+      document.getElementById("prof-rank-name").textContent = cur.name + " HUNTER";
+      document.getElementById("prof-xp-val").textContent = xp + " XP • 🔥 " + (h.streak || 1) + "d";
+      document.getElementById("prof-xp-bar").style.width = pct + "%";
+      document.getElementById("prof-next-goal").textContent = rem > 0
+        ? (isEn ? rem + " XP left until " + cur.nextName + "!" : "अगले " + cur.nextName + " के लिए " + rem + " XP बाकी!")
+        : "MAX SHADOW MONARCH ACHIEVED!";
+    } catch (e) {}
+
+    var wlGrid = document.getElementById("profile-watchlist-grid");
+    var wl = typeof hagGetWatchlist === "function" ? hagGetWatchlist() : [];
+    if (wlGrid) {
+      if (!wl.length) {
+        wlGrid.innerHTML = '<div class="sm:col-span-2 lg:col-span-3 border border-dashed border-white/20 p-8 text-center text-sm text-white/70">' +
+          (isEn ? 'Your watchlist is empty. Click "Add to My List" on any anime or manga!' : 'आपकी वॉचलिस्ट अभी खाली है — किसी भी एनीमे या मंगा पर "मेरी लिस्ट में जोड़ें" दबाएं!') + '</div>';
+      } else {
+        wlGrid.innerHTML = wl.map(function (it) {
+          return '<div class="flex items-center gap-3 p-3.5 border border-white/15 bg-white/[0.02]">' +
+            '<img src="' + (it.cover || "/static/media/emblem_icon.webp") + '" alt="" class="w-14 h-20 object-cover border border-white/15 shrink-0" />' +
+            '<div class="min-w-0 flex-1 space-y-1">' +
+              '<span class="font-tech text-[10px] font-bold uppercase text-[#ff2e63]">' + (it.type || "SAVED") + '</span>' +
+              '<a href="' + (it.url || "#") + '" class="block text-sm font-bold text-white hover:text-[#ff2e63] truncate">' + (it.title || "") + '</a>' +
+              '<p class="text-[11px] text-white/60 truncate">' + (it.subtitle || "") + '</p>' +
+            '</div>' +
+            '<button type="button" aria-label="Remove item" onclick="hagRemoveWatchlist(\'' + String(it.slug).replace(/'/g, "\\'") + '\'); renderProfileDashboard();" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white/80 hover:text-[#ff2e63] flex items-center justify-center shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>' +
+          '</div>';
+        }).join("");
+      }
+    }
+
+    var hGrid = document.getElementById("profile-history-grid");
+    if (hGrid) {
+      var hist = [];
+      try { hist = JSON.parse(localStorage.getItem("hag_history_v2") || "[]") || []; } catch (e) {}
+      if (!hist.length) {
+        hGrid.innerHTML = '<div class="sm:col-span-2 lg:col-span-4 border border-dashed border-white/20 p-6 text-center text-xs text-white/65">' +
+          (isEn ? 'No recent browsing history yet.' : 'अभी कोई हालिया विज़िट नहीं है।') + '</div>';
+      } else {
+        hGrid.innerHTML = hist.map(function (item) {
+          return '<a href="' + (item.url || "#") + '" class="flex items-center gap-3 p-3 border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">' +
+            '<img src="' + (item.cover || "/static/media/emblem_icon.webp") + '" alt="" class="w-12 h-16 object-cover shrink-0 border border-white/15" />' +
+            '<div class="min-w-0"><p class="text-xs font-bold text-white truncate">' + (item.title || "") + '</p><p class="font-tech text-[10px] uppercase text-[#ff2e63]">' + (item.kind || "GUIDE") + '</p></div></a>';
+        }).join("");
+      }
+    }
+  }
+  document.addEventListener("DOMContentLoaded", renderProfileDashboard);
+</script>
+{% endblock %}
