@@ -193,23 +193,27 @@ def _parse_json_safe(raw: str | None) -> dict[str, Any]:
         return {}
 
 
-def _ist_relative_age(dt: datetime | None) -> tuple[str, bool]:
-    """Return (Hindi relative IST age string, is_fresh_48h)."""
+def _ist_news_timing(dt: datetime | None) -> tuple[str, bool, int, bool, bool]:
+    """Return (Hindi relative IST age, is_fresh_48h, hours_left, is_brand_new, is_expiring_soon)."""
     if not isinstance(dt, datetime):
-        return "ताज़ा अपडेट", True
+        return "अभी आया", True, 47, True, False
     now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
     delta_sec = max(0.0, (now_utc - dt).total_seconds())
-    is_fresh = delta_sec <= 48 * 3600
+    age_hours = delta_sec / 3600.0
+    is_fresh = age_hours <= 48.0
+    hours_left = max(1, min(48, int(round(48.0 - age_hours))))
+    is_brand_new = age_hours <= 4.0
+    is_expiring_soon = is_fresh and hours_left <= 12
+
     if delta_sec < 300:
-        return "अभी आया", is_fresh
-    mins = int(delta_sec // 60)
-    if mins < 60:
-        return f"{mins} मिनट पहले", is_fresh
-    hours = int(delta_sec // 3600)
-    if hours < 24:
-        return f"{hours} घंटे पहले", is_fresh
-    days = int(delta_sec // 86400)
-    return f"{days} दिन पहले", is_fresh
+        rel = "अभी आया"
+    elif delta_sec < 3600:
+        rel = f"{int(delta_sec // 60)} मिनट पहले"
+    elif delta_sec < 86400:
+        rel = f"{int(delta_sec // 3600)} घंटे पहले"
+    else:
+        rel = f"{int(delta_sec // 86400)} दिन पहले"
+    return rel, is_fresh, hours_left, is_brand_new, is_expiring_soon
 
 
 def _next_ist_weekday_ts(day_hi: str | None, time_str: str | None) -> int:
@@ -409,7 +413,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at") or r.get("created_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Recent"
-            rel_age, is_fresh = _ist_relative_age(pub_dt)
+            rel_age, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             n_slug = f"draft-{r['id']}"
             ext_url = r.get("source_url") or ""
             news_items.append(
@@ -427,6 +431,9 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "external_url": ext_url,
                     "date": date_str,
                     "relative_age": rel_age,
+                    "hours_left": hours_left,
+                    "is_brand_new": is_brand_new,
+                    "is_expiring_soon": is_expiring_soon,
                     "is_fresh": is_fresh,
                     "is_featured": bool(r.get("is_featured")),
                     "kind": "NEWS",
@@ -442,7 +449,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Guide"
-            rel_age, is_fresh = _ist_relative_age(pub_dt)
+            rel_age, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             paras = [re.sub(r"^[#>*`\-\s]+", "", p).strip() for p in (r.get("content_md") or "").split("\n\n") if p.strip()]
             news_items.append(
                 {
@@ -459,6 +466,9 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "external_url": "",
                     "date": date_str,
                     "relative_age": rel_age,
+                    "hours_left": hours_left,
+                    "is_brand_new": is_brand_new,
+                    "is_expiring_soon": is_expiring_soon,
                     "is_fresh": is_fresh,
                     "is_featured": bool(r.get("is_featured")),
                     "kind": "EDITORIAL",
@@ -686,3 +696,146 @@ def get_sitemap_urls() -> tuple[list[str], list[str]]:
     anime_slugs = list(dict.fromkeys([sp["slug"] for sp in data["spotlight"]] + [s["slug"] for s in data["schedule"] if s.get("slug")]))
     news_slugs = list(dict.fromkeys([n["slug"] for n in data["news"] if n.get("slug")]))
     return anime_slugs, news_slugs
+
+
+_poll_lock = threading.Lock()
+_polls_ready = False
+DEFAULT_POLL_KEY = "daily_clash_solo_vs_ds"
+
+
+def ensure_community_polls() -> None:
+    """Create community_polls table if needed and seed baseline daily clash row."""
+    global _polls_ready
+    if _polls_ready:
+        return
+    with _poll_lock:
+        if _polls_ready:
+            return
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS community_polls (
+                        poll_key VARCHAR(100) PRIMARY KEY,
+                        option_a_votes INTEGER NOT NULL DEFAULT 0,
+                        option_b_votes INTEGER NOT NULL DEFAULT 0,
+                        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO community_polls (poll_key, option_a_votes, option_b_votes, updated_at)
+                    VALUES (:k, 148, 132, NOW())
+                    ON CONFLICT (poll_key) DO NOTHING
+                    """
+                ),
+                {"k": DEFAULT_POLL_KEY},
+            )
+        _polls_ready = True
+
+
+def _format_poll_row(poll_key: str, a_votes: int, b_votes: int) -> dict[str, Any]:
+    total = max(1, a_votes + b_votes)
+    pct_a = round((a_votes * 100) / total)
+    pct_b = 100 - pct_a
+    return {
+        "poll_key": poll_key,
+        "question": "भारत में किसका एक्शन और हिंदी डब सबसे खतरनाक है?",
+        "option_a": {"label": "सोलो लेवलिंग (Solo Leveling)", "short": "SOLO LEVELING", "votes": a_votes, "pct": pct_a},
+        "option_b": {"label": "डीमन स्लेयर: इन्फिनिटी कैसल", "short": "DEMON SLAYER", "votes": b_votes, "pct": pct_b},
+        "option_a_votes": a_votes,
+        "option_b_votes": b_votes,
+        "total_votes": a_votes + b_votes,
+        "pct_a": pct_a,
+        "pct_b": pct_b,
+    }
+
+
+def get_poll_state(poll_key: str = DEFAULT_POLL_KEY) -> dict[str, Any]:
+    """Read live fan vote counts from Supabase community_polls."""
+    ensure_community_polls()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT option_a_votes, option_b_votes FROM community_polls WHERE poll_key = :k"),
+            {"k": poll_key},
+        ).fetchone()
+    if not row:
+        return _format_poll_row(poll_key, 148, 132)
+    return _format_poll_row(poll_key, int(row[0]), int(row[1]))
+
+
+def cast_poll_vote(poll_key: str, choice: str) -> dict[str, Any]:
+    """Increment vote count for option 'a' or 'b' in Supabase and return live split."""
+    ensure_community_polls()
+    col = "option_a_votes" if choice == "a" else "option_b_votes"
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO community_polls (poll_key, option_a_votes, option_b_votes, updated_at)
+                VALUES (:k, 148, 132, NOW())
+                ON CONFLICT (poll_key) DO NOTHING
+                """
+            ),
+            {"k": poll_key},
+        )
+        row = conn.execute(
+            text(
+                f"UPDATE community_polls SET {col} = {col} + 1, updated_at = NOW() "
+                "WHERE poll_key = :k RETURNING option_a_votes, option_b_votes"
+            ),
+            {"k": poll_key},
+        ).fetchone()
+    a_votes, b_votes = (int(row[0]), int(row[1])) if row else (149, 132)
+    res = _format_poll_row(poll_key, a_votes, b_votes)
+    res["choice"] = choice
+    return res
+
+
+def get_roulette_pool() -> list[dict[str, Any]]:
+    """Build curated mystery anime & manga pool for variable-reward Roulette modal."""
+    data = get_cached_content()
+    pool: list[dict[str, Any]] = []
+    for sp in data["spotlight"]:
+        pool.append(
+            {
+                "title_hi": sp["title_hi"],
+                "title_en": sp["title_en"],
+                "cover": sp["cover_url"],
+                "badge": sp["badge"],
+                "platform": sp["platforms"][0]["name"] if sp.get("platforms") else "Crunchyroll",
+                "url": f"/anime/{sp['slug']}",
+                "score": sp.get("score") or 98,
+                "kind": "HINDI DUB ANIME",
+            }
+        )
+    for sch in data["schedule"][:8]:
+        pool.append(
+            {
+                "title_hi": sch["title_hi"],
+                "title_en": sch["title_en"],
+                "cover": sch["image_url"],
+                "badge": "HINDI DUB" if sch.get("hindi_dub") else f"{sch['airing_day']} • {sch['airing_time']}",
+                "platform": sch.get("dub_platform") or "Crunchyroll / AniList",
+                "url": f"/anime/{sch['slug']}",
+                "score": sch.get("score") or 94,
+                "kind": "WEEKLY ANIME",
+            }
+        )
+    for m in data["manga"][:6]:
+        pool.append(
+            {
+                "title_hi": m["title_hi"],
+                "title_en": f"{m['author']} • {m['chapters_label']}",
+                "cover": m["cover_url"],
+                "badge": m["status_badge_hi"],
+                "platform": m["read_platform"],
+                "url": f"/manga?q={m['title_en']}",
+                "score": m.get("score") or 96,
+                "kind": "MANGA DOSSIER",
+            }
+        )
+    return pool

@@ -81,6 +81,29 @@
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
         </form>
 
+        <!-- Mystery Roulette Trigger -->
+        <button type="button"
+                id="roulette-nav-btn"
+                onclick="hagOpenRoulette()"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(255,46,99,0.25)]">
+          <span>🎲</span>
+          <span class="hidden md:inline">सरप्राइज़ स्पिन</span>
+        </button>
+
+        <!-- Zeigarnik Hunter Rank Pill -->
+        <button type="button"
+                id="hunter-rank-pill"
+                onclick="hagOpenHunterModal()"
+                class="hidden sm:inline-flex flex-col items-start px-3 py-1 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white transition-colors min-w-[116px]">
+          <span class="w-full flex items-center justify-between gap-2 font-tech text-[10px] font-bold tracking-wider uppercase">
+            <span id="hunter-pill-rank" class="text-[#ff2e63]">E-RANK</span>
+            <span id="hunter-pill-streak" class="text-white/80">🔥 1d</span>
+          </span>
+          <span class="w-full h-1 bg-white/10 mt-1 overflow-hidden">
+            <span id="hunter-pill-bar" class="block h-full bg-[#ff2e63] transition-all duration-500" style="width: 20%;"></span>
+          </span>
+        </button>
+
         <!-- Watchlist Trigger -->
         <button type="button"
                 id="watchlist-nav-btn"
@@ -90,11 +113,6 @@
           <span class="hidden sm:inline">मेरी लिस्ट</span>
           <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#ff2e63] text-white text-[10px] leading-none">0</span>
         </button>
-
-        <span class="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#ff2e63]/40 bg-[#ff2e63]/10 text-[#ff2e63] font-tech text-[10px] font-bold tracking-widest uppercase">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#ff2e63] animate-pulse"></span>
-          LIVE IST
-        </span>
       </div>
     </div>
 
@@ -129,6 +147,78 @@
       </div>
     </div>
   </footer>
+
+  <!-- Mystery Anime Roulette Modal -->
+  <div id="mystery-roulette-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/92 backdrop-blur-xl">
+    <div class="relative w-full max-w-lg bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_75px_rgba(255,46,99,0.45)] p-6 sm:p-8 text-center space-y-5">
+      <button type="button" onclick="hagCloseRoulette()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="space-y-1">
+        <p class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">🎲 MYSTERY ROULETTE &bull; VARIABLE REWARD</p>
+        <h2 class="font-display-shonen text-2xl text-white">किस्मत आज़माएं <span class="text-[#ff2e63]">SURPRISE ME</span></h2>
+      </div>
+
+      <div id="roulette-stage-card" class="relative mx-auto w-48 sm:w-52 aspect-[2/3] border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden shadow-[0_0_40px_rgba(255,46,99,0.35)]">
+        <img id="rl-cover" src="/static/media/emblem_icon.webp" alt="" class="w-full h-full object-cover transition-transform duration-150" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+        <span id="rl-match-badge" class="hidden absolute top-2.5 left-2.5 right-2.5 px-2 py-1 bg-[#ff2e63] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+          🎯 98% MATCH FOR TONIGHT
+        </span>
+      </div>
+
+      <div class="space-y-2">
+        <div id="rl-meta-pills" class="flex flex-wrap items-center justify-center gap-2 font-tech text-[10px] font-bold uppercase"></div>
+        <h3 id="rl-title-hi" class="text-xl font-extrabold text-white leading-snug">स्पिन हो रहा है...</h3>
+        <p id="rl-title-en" class="font-tech text-xs font-bold uppercase tracking-wider text-[#ff2e63]"></p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+        <a id="rl-open-link" href="/anime/solo-leveling"
+           class="katana-btn inline-flex px-5 py-2.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span><i class="fa-solid fa-bolt"></i> अभी गाइड खोलें</span>
+        </a>
+        <button type="button" onclick="hagSpinRoulette()"
+                class="katana-btn inline-flex px-5 py-2.5 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold uppercase tracking-wider">
+          <span>🎲 दोबारा स्पिन करें (Spin Again)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solo Leveling System Window: Hunter Rank & Continue Exploring -->
+  <div id="hunter-system-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/90 backdrop-blur-xl">
+    <div class="relative w-full max-w-lg bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_70px_rgba(255,46,99,0.38)] p-6 sm:p-8 space-y-6">
+      <button type="button" onclick="hagCloseHunterModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="border-b border-white/15 pb-4 space-y-1">
+        <p class="font-tech text-[10px] font-bold tracking-[0.26em] uppercase text-[#ff2e63]">[ SYSTEM STATUS &bull; HUNTER PROFILE ]</p>
+        <div class="flex items-center justify-between gap-4">
+          <h2 id="hs-rank-title" class="font-display-shonen text-2xl sm:text-3xl text-white">E-RANK <span class="text-[#ff2e63]">HUNTER</span></h2>
+          <span id="hs-streak-badge" class="px-3 py-1 bg-[#ff2e63]/20 border border-[#ff2e63] font-tech text-xs font-bold text-white">🔥 1d Streak</span>
+        </div>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between font-tech text-xs font-bold uppercase">
+          <span id="hs-xp-label" class="text-white">0 XP</span>
+          <span id="hs-next-goal" class="text-[#ff2e63]">अगले रैंक के लिए 100 XP बाकी!</span>
+        </div>
+        <div class="w-full h-2.5 bg-white/10 overflow-hidden border border-white/15">
+          <div id="hs-xp-bar" class="h-full bg-gradient-to-r from-[#ff2e63] to-white transition-all duration-500" style="width: 15%;"></div>
+        </div>
+        <p class="text-[11px] text-white/55">दैनिक विज़िट (+20 XP), मंगा डॉसियर (+15 XP), महामुकाबला वोट (+25 XP), और सरप्राइज़ स्पिन (+25 XP) से रैंक बढ़ाएं।</p>
+      </div>
+
+      <div class="space-y-3 border-t border-white/10 pt-4">
+        <p class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-white">▶ वहीं से जारी रखें (Continue Exploring)</p>
+        <div id="hs-history-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Slide-Over Glassmorphic Watchlist Drawer -->
   <div id="watchlist-backdrop" onclick="hagCloseWatchlistDrawer()" class="fixed inset-0 z-50 hidden bg-[#06070c]/80 backdrop-blur-sm"></div>
@@ -191,6 +281,7 @@
             url: item.url || ("/anime/" + item.slug),
             type: item.type || "ANIME"
           });
+          if (typeof window.hagAwardXP === "function") window.hagAwardXP(20);
         }
         saveWatchlist(list);
         return !exists;
@@ -262,14 +353,195 @@
         if (dr) dr.classList.add("translate-x-full");
       };
 
-      document.addEventListener("DOMContentLoaded", window.hagSyncWatchlistUI);
+      document.addEventListener("DOMContentLoaded", function () {
+        window.hagSyncWatchlistUI();
+        initHunterRankAndStreak();
+      });
       document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") window.hagCloseWatchlistDrawer();
+        if (e.key === "Escape") {
+          window.hagCloseWatchlistDrawer();
+          window.hagCloseRoulette();
+          window.hagCloseHunterModal();
+        }
         if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement && document.activeElement.tagName) || "")) {
           var el = document.getElementById("global-search-input");
           if (el) { e.preventDefault(); el.focus(); }
         }
       });
+
+      /* === ZEIGARNIK HUNTER RANK XP + STREAK + CONTINUE EXPLORING === */
+      var HUNTER_KEY = "hag_hunter_v2";
+      var HISTORY_KEY = "hag_history_v2";
+      var RANKS = [
+        { name: "E-RANK", min: 0, next: 100, nextName: "C-RANK" },
+        { name: "C-RANK", min: 100, next: 300, nextName: "A-RANK" },
+        { name: "A-RANK", min: 300, next: 700, nextName: "S-RANK MONARCH" },
+        { name: "S-RANK MONARCH", min: 700, next: 700, nextName: "MAX MONARCH" }
+      ];
+
+      function getIstDateStr() {
+        try {
+          return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+        } catch (e) {
+          return new Date().toISOString().slice(0, 10);
+        }
+      }
+
+      function loadHunter() {
+        try {
+          var obj = JSON.parse(localStorage.getItem(HUNTER_KEY) || "null");
+          if (obj && typeof obj.xp === "number") return obj;
+        } catch (e) {}
+        return { xp: 20, streak: 1, lastDay: getIstDateStr() };
+      }
+
+      function saveHunter(h) {
+        try { localStorage.setItem(HUNTER_KEY, JSON.stringify(h)); } catch (e) {}
+        syncHunterUI(h);
+      }
+
+      function computeRank(xp) {
+        var cur = RANKS[0];
+        for (var i = 0; i < RANKS.length; i++) {
+          if (xp >= RANKS[i].min) cur = RANKS[i];
+        }
+        var pct = cur.next > cur.min ? Math.min(100, Math.max(8, Math.round(((xp - cur.min) * 100) / (cur.next - cur.min)))) : 100;
+        var remaining = Math.max(0, cur.next - xp);
+        return { rank: cur, pct: pct, remaining: remaining };
+      }
+
+      function syncHunterUI(h) {
+        var info = computeRank(h.xp);
+        var pRank = document.getElementById("hunter-pill-rank");
+        var pStreak = document.getElementById("hunter-pill-streak");
+        var pBar = document.getElementById("hunter-pill-bar");
+        if (pRank) pRank.textContent = info.rank.name;
+        if (pStreak) pStreak.textContent = "🔥 " + (h.streak || 1) + "d";
+        if (pBar) pBar.style.width = info.pct + "%";
+
+        var hsRank = document.getElementById("hs-rank-title");
+        var hsStreak = document.getElementById("hs-streak-badge");
+        var hsXp = document.getElementById("hs-xp-label");
+        var hsGoal = document.getElementById("hs-next-goal");
+        var hsBar = document.getElementById("hs-xp-bar");
+        if (hsRank) hsRank.innerHTML = info.rank.name + ' <span class="text-[#ff2e63]">HUNTER</span>';
+        if (hsStreak) hsStreak.textContent = "🔥 " + (h.streak || 1) + "d Streak";
+        if (hsXp) hsXp.textContent = h.xp + " XP";
+        if (hsGoal) hsGoal.textContent = info.remaining > 0 ? ("अगले " + info.rank.nextName + " के लिए सिर्फ " + info.remaining + " XP बाकी!") : "MAX SHADOW MONARCH RANK!";
+        if (hsBar) hsBar.style.width = info.pct + "%";
+
+        var hList = document.getElementById("hs-history-list");
+        if (hList) {
+          var hist = [];
+          try { hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") || []; } catch (e) {}
+          if (!hist.length) {
+            hList.innerHTML = '<p class="text-xs text-white/50">कोई हालिया विज़िट नहीं — किसी एनीमे या मंगा डॉसियर को खोलें।</p>';
+          } else {
+            hList.innerHTML = hist.slice(0, 5).map(function (item) {
+              return '<a href="' + (item.url || "#") + '" class="flex items-center gap-3 p-2.5 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors"><img src="' + (item.cover || "/static/media/emblem_icon.webp") + '" class="w-10 h-14 object-cover border border-white/15 shrink-0" /><div class="min-w-0 flex-1"><p class="text-xs font-bold text-white truncate">' + (item.title || "") + '</p><p class="font-tech text-[10px] uppercase text-[#ff2e63]">' + (item.kind || "EXPLORE") + '</p></div><i class="fa-solid fa-chevron-right text-xs text-white/50"></i></a>';
+            }).join("");
+          }
+        }
+      }
+
+      function initHunterRankAndStreak() {
+        var h = loadHunter();
+        var today = getIstDateStr();
+        if (h.lastDay !== today) {
+          h.streak = (h.streak || 1) + 1;
+          h.xp = (h.xp || 0) + 20;
+          h.lastDay = today;
+        }
+        saveHunter(h);
+      }
+
+      window.hagAwardXP = function (points) {
+        var h = loadHunter();
+        h.xp = (h.xp || 0) + (points || 10);
+        saveHunter(h);
+      };
+
+      window.hagRecordVisit = function (item) {
+        if (!item || !item.title) return;
+        try {
+          var hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]") || [];
+          hist = hist.filter(function (x) { return x.url !== item.url; });
+          hist.unshift(item);
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(hist.slice(0, 8)));
+        } catch (e) {}
+        syncHunterUI(loadHunter());
+      };
+
+      window.hagOpenHunterModal = function () {
+        syncHunterUI(loadHunter());
+        var m = document.getElementById("hunter-system-modal");
+        if (m) { m.classList.remove("hidden"); m.classList.add("flex"); }
+      };
+      window.hagCloseHunterModal = function () {
+        var m = document.getElementById("hunter-system-modal");
+        if (m) { m.classList.add("hidden"); m.classList.remove("flex"); }
+      };
+
+      /* === VARIABLE REWARD MYSTERY ANIME ROULETTE === */
+      var roulettePool = [
+        { title_hi: "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो", title_en: "Solo Leveling Season 2", cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png", badge: "HINDI DUB • FLAGSHIP", platform: "Crunchyroll", url: "/anime/solo-leveling", kind: "HINDI DUB ANIME" },
+        { title_hi: "डीमन स्लेयर: इन्फिनिटी कैसल", title_en: "Demon Slayer: Infinity Castle", cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178788-zm3gtpB9TpRt.jpg", badge: "THEATRICAL • HINDI DUB", platform: "Crunchyroll", url: "/anime/demon-slayer-infinity-castle", kind: "HINDI DUB ANIME" },
+        { title_hi: "जुजुत्सु काइसेन", title_en: "Jujutsu Kaisen", cover: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg", badge: "TOP RATED • HINDI DUB", platform: "Netflix", url: "/anime/jujutsu-kaisen", kind: "HINDI DUB ANIME" }
+      ];
+      var spinTimer = null;
+
+      window.hagOpenRoulette = function () {
+        var m = document.getElementById("mystery-roulette-modal");
+        if (m) { m.classList.remove("hidden"); m.classList.add("flex"); }
+        fetch("/api/psychology/state")
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) { if (d && Array.isArray(d.roulette_pool) && d.roulette_pool.length) roulettePool = d.roulette_pool; })
+          .catch(function () {})
+          .finally(function () { window.hagSpinRoulette(); });
+      };
+
+      window.hagCloseRoulette = function () {
+        if (spinTimer) { clearInterval(spinTimer); spinTimer = null; }
+        var m = document.getElementById("mystery-roulette-modal");
+        if (m) { m.classList.add("hidden"); m.classList.remove("flex"); }
+      };
+
+      window.hagSpinRoulette = function () {
+        if (spinTimer) clearInterval(spinTimer);
+        var cov = document.getElementById("rl-cover");
+        var tHi = document.getElementById("rl-title-hi");
+        var tEn = document.getElementById("rl-title-en");
+        var pills = document.getElementById("rl-meta-pills");
+        var match = document.getElementById("rl-match-badge");
+        var link = document.getElementById("rl-open-link");
+        if (match) match.classList.add("hidden");
+
+        var ticks = 0;
+        var maxTicks = 14;
+        spinTimer = setInterval(function () {
+          var pick = roulettePool[Math.floor(Math.random() * roulettePool.length)];
+          if (cov) cov.src = pick.cover;
+          if (tHi) tHi.textContent = pick.title_hi;
+          if (tEn) tEn.textContent = pick.title_en;
+          ticks++;
+          if (ticks >= maxTicks) {
+            clearInterval(spinTimer);
+            spinTimer = null;
+            var pct = 96 + Math.floor(Math.random() * 4);
+            if (match) {
+              match.textContent = "🎯 " + pct + "% MATCH FOR TONIGHT";
+              match.classList.remove("hidden");
+            }
+            if (pills) {
+              pills.innerHTML =
+                '<span class="px-2 py-0.5 bg-[#ff2e63] text-white">' + (pick.badge || pick.kind) + '</span>' +
+                '<span class="px-2 py-0.5 border border-white/25 text-white">' + (pick.platform || "Crunchyroll") + '</span>';
+            }
+            if (link) link.href = pick.url || "/";
+            window.hagAwardXP(25);
+          }
+        }, 78);
+      };
     })();
   </script>
   {% block extra_scripts %}{% endblock %}

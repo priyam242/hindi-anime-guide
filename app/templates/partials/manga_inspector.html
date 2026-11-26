@@ -176,6 +176,16 @@
       var modal = document.getElementById("manga-book-inspector");
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+
+      if (typeof hagAwardXP === "function") hagAwardXP(15);
+      if (typeof hagRecordVisit === "function") {
+        hagRecordVisit({
+          title: m.title_hi || m.title_en,
+          cover: m.cover_url,
+          url: "/manga?q=" + encodeURIComponent(m.title_en || ""),
+          kind: "MANGA DOSSIER"
+        });
+      }
     };
 
     window.closeMangaModal = function () {

@@ -184,6 +184,12 @@
                   class="katana-btn px-6 py-3 bg-white/5 hover:bg-white/15 border border-white/25 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
             <span><i class="fa-solid fa-play text-[#ff2e63]"></i> ट्रेलर चलाएं</span>
           </button>
+
+          <button type="button"
+                  onclick="hagOpenRoulette()"
+                  class="katana-btn px-5 py-3 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+            <span>🎲 किस्मत आज़माएं</span>
+          </button>
         </div>
       </div>
 
@@ -230,6 +236,64 @@
         </button>
         {% endfor %}
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY ANIME CLASH: LIVE SUPABASE COMMUNITY POLL -->
+<section id="daily-anime-clash" class="py-12 border-b border-white/10 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="p-6 sm:p-8 border-2 border-[#ff2e63]/60 bg-gradient-to-br from-[#ff2e63]/10 via-[#06070c] to-[#06070c] space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="inline-flex items-center gap-2 font-tech text-[11px] font-bold tracking-[0.2em] uppercase text-[#ff2e63]">
+            <span class="w-2 h-2 rounded-full bg-[#ff2e63] animate-pulse"></span>
+            आज का महामुकाबला &bull; LIVE FAN VOTE
+          </span>
+          <h2 class="font-display-shonen text-xl sm:text-2xl text-white mt-1">{{ daily_poll.question }}</h2>
+        </div>
+        <span id="clash-total-votes" class="font-tech text-xs font-bold uppercase tracking-widest text-white/70">
+          {{ daily_poll.total_votes }} FANS VOTED
+        </span>
+      </div>
+
+      <!-- Tug-of-War Split Bar -->
+      <div class="space-y-2">
+        <div class="w-full h-3 bg-white/15 overflow-hidden flex border border-white/15">
+          <div id="clash-bar-a" class="h-full bg-[#ff2e63] transition-all duration-700" style="width: {{ daily_poll.pct_a }}%;"></div>
+          <div id="clash-bar-b" class="h-full bg-white transition-all duration-700" style="width: {{ daily_poll.pct_b }}%;"></div>
+        </div>
+        <div class="flex items-center justify-between font-tech text-xs font-bold uppercase">
+          <span id="clash-pct-a" class="text-[#ff2e63]">{{ daily_poll.option_a.short }} &bull; {{ daily_poll.pct_a }}%</span>
+          <span id="clash-pct-b" class="text-white">{{ daily_poll.pct_b }}% &bull; {{ daily_poll.option_b.short }}</span>
+        </div>
+      </div>
+
+      <!-- Vote Buttons -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button type="button"
+                id="clash-btn-a"
+                onclick="castClashVote('a')"
+                class="p-4 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white text-left transition-all flex items-center justify-between gap-3">
+          <div>
+            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-80">TEAM CRIMSON &bull; VOTE A</p>
+            <p class="text-sm sm:text-base font-extrabold mt-0.5">{{ daily_poll.option_a.label }}</p>
+          </div>
+          <span id="clash-votes-a" class="font-tech text-sm font-bold">{{ daily_poll.option_a_votes }}</span>
+        </button>
+
+        <button type="button"
+                id="clash-btn-b"
+                onclick="castClashVote('b')"
+                class="p-4 border border-white/30 bg-white/5 hover:bg-white hover:text-[#06070c] text-white text-left transition-all flex items-center justify-between gap-3">
+          <div>
+            <p class="font-tech text-[10px] font-bold uppercase tracking-widest opacity-75">TEAM WHITE &bull; VOTE B</p>
+            <p class="text-sm sm:text-base font-extrabold mt-0.5">{{ daily_poll.option_b.label }}</p>
+          </div>
+          <span id="clash-votes-b" class="font-tech text-sm font-bold">{{ daily_poll.option_b_votes }}</span>
+        </button>
+      </div>
+      <p id="clash-status-note" class="font-tech text-[10px] uppercase tracking-widest text-white/55">एक वोट दें और लाइव कम्युनिटी परिणाम +25 XP पाएं</p>
     </div>
   </div>
 </section>
@@ -318,9 +382,15 @@
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
         <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-3">
-          <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
+          <div class="flex flex-wrap items-center gap-2 font-tech text-[11px] font-bold uppercase tracking-widest">
             <span class="px-2.5 py-0.5 bg-[#ff2e63] text-white">{{ lead.category }}</span>
+            {% if lead.is_expiring_soon %}
+            <span class="px-2 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी</span>
+            {% elif lead.is_brand_new %}
+            <span class="px-2 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+            {% else %}
             <span class="px-2 py-0.5 bg-white/10 text-white">{{ lead.relative_age }}</span>
+            {% endif %}
             <span class="text-white/70">{{ lead.source_name }}</span>
           </div>
           <h3 class="text-xl sm:text-2xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
@@ -339,9 +409,15 @@
                class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
           <div class="absolute bottom-0 left-0 right-0 p-5 space-y-1.5">
-            <div class="flex items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
+            <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
               <span class="text-[#ff2e63]">{{ item.category }}</span>
+              {% if item.is_expiring_soon %}
+              <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ item.hours_left }}h में आर्काइव हो जाएगी</span>
+              {% elif item.is_brand_new %}
+              <span class="px-1.5 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+              {% else %}
               <span class="text-white/75">&bull; {{ item.relative_age }}</span>
+              {% endif %}
             </div>
             <h3 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">
               {{ item.title_hi }}
@@ -366,7 +442,14 @@
         </div>
         <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
           <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ item.title_hi }}</h3>
-          <span class="font-tech text-[10px] uppercase tracking-wider text-white/60">{{ item.relative_age }} &bull; {{ item.source_name }}</span>
+          <div class="flex flex-wrap items-center justify-between gap-2 font-tech text-[10px] uppercase tracking-wider">
+            <span class="text-white/60">{{ item.relative_age }}</span>
+            {% if item.is_expiring_soon %}
+            <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white font-bold animate-pulse">⏳ {{ item.hours_left }}h में आर्काइव</span>
+            {% elif item.is_brand_new %}
+            <span class="px-1.5 py-0.5 bg-white text-[#06070c] font-bold">⚡ अभी आया</span>
+            {% endif %}
+          </div>
         </div>
       </a>
       {% endfor %}
@@ -563,6 +646,50 @@
       closeTrailerModal();
     }
   });
+
+  function applyClashUI(data, votedChoice) {
+    if (!data) return;
+    document.getElementById("clash-bar-a").style.width = data.pct_a + "%";
+    document.getElementById("clash-bar-b").style.width = data.pct_b + "%";
+    document.getElementById("clash-pct-a").textContent = (data.option_a ? data.option_a.short : "SOLO LEVELING") + " • " + data.pct_a + "%";
+    document.getElementById("clash-pct-b").textContent = data.pct_b + "% • " + (data.option_b ? data.option_b.short : "DEMON SLAYER");
+    document.getElementById("clash-votes-a").textContent = data.option_a_votes;
+    document.getElementById("clash-votes-b").textContent = data.option_b_votes;
+    document.getElementById("clash-total-votes").textContent = data.total_votes + " FANS VOTED";
+    if (votedChoice) {
+      document.getElementById("clash-status-note").textContent = "आपका वोट दर्ज हो चुका है (TEAM " + votedChoice.toUpperCase() + ") ✓";
+    }
+  }
+
+  function castClashVote(choice) {
+    var pollKey = {{ daily_poll.poll_key|tojson }};
+    var lockKey = "hag_clash_voted_" + pollKey;
+    var existing = localStorage.getItem(lockKey);
+    if (existing) {
+      document.getElementById("clash-status-note").textContent = "आप पहले ही आज के महामुकाबले में वोट कर चुके हैं ✓";
+      return;
+    }
+    fetch("/api/poll/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ poll_key: pollKey, choice: choice })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        localStorage.setItem(lockKey, choice);
+        applyClashUI(data, choice);
+        if (typeof hagAwardXP === "function") hagAwardXP(25);
+      })
+      .catch(function () {});
+  }
+
+  (function syncClashLock() {
+    var pollKey = {{ daily_poll.poll_key|tojson }};
+    var voted = localStorage.getItem("hag_clash_voted_" + pollKey);
+    if (voted) {
+      document.getElementById("clash-status-note").textContent = "आपका वोट दर्ज हो चुका है (TEAM " + voted.toUpperCase() + ") ✓";
+    }
+  })();
 
   (function startCountdownTickers() {
     function updateAll() {

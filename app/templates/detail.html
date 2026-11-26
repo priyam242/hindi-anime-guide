@@ -203,5 +203,16 @@
       }).catch(function () {});
     }
   }
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof hagAwardXP === "function") hagAwardXP(15);
+    if (typeof hagRecordVisit === "function") {
+      hagRecordVisit({
+        title: {{ (item.title_hi or item.title_en)|tojson }},
+        cover: {{ (item.cover_url or item.image_url or "/static/media/emblem_icon.webp")|tojson }},
+        url: window.location.pathname,
+        kind: {{ (badge_text or "GUIDE")|tojson }}
+      });
+    }
+  });
 </script>
 {% endblock %}

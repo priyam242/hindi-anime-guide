@@ -198,9 +198,15 @@
         <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" class="w-full h-full max-h-[420px] object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
         <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-2.5">
-          <div class="flex items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
+          <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
             <span class="px-2.5 py-0.5 bg-[#ff2e63] text-white">{{ lead.category }}</span>
-            <span class="text-white/75">FEATURED LEAD &bull; {{ lead.date }}</span>
+            {% if lead.is_expiring_soon %}
+            <span class="px-2 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी</span>
+            {% elif lead.is_brand_new %}
+            <span class="px-2 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+            {% else %}
+            <span class="text-white/75">FEATURED LEAD &bull; {{ lead.relative_age }}</span>
+            {% endif %}
           </div>
           <h2 class="text-xl sm:text-3xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63]">{{ lead.title_hi }}</h2>
           <p class="text-xs sm:text-sm text-white/75 line-clamp-2 max-w-3xl">{{ lead.summary }}</p>
@@ -221,6 +227,13 @@
           </div>
           <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
             <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase">
+                {% if item.is_expiring_soon %}
+                <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white animate-pulse">⏳ {{ item.hours_left }}h में आर्काइव हो जाएगी</span>
+                {% elif item.is_brand_new %}
+                <span class="px-1.5 py-0.5 bg-white text-[#06070c]">⚡ अभी आया • FRESH</span>
+                {% endif %}
+              </div>
               <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]">{{ item.title_hi }}</h2>
               <p class="text-xs text-white/65 line-clamp-2">{{ item.summary }}</p>
             </div>

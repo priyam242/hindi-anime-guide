@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 from xml.sax.saxutils import escape
 
 from dotenv import load_dotenv
@@ -7,14 +8,19 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 
 from app.db import ping_database
 from app.services.content import (
+    DEFAULT_POLL_KEY,
+    cast_poll_vote,
     filter_payload,
     get_anime_detail,
     get_cached_content,
     get_counts,
     get_news_detail,
+    get_poll_state,
+    get_roulette_pool,
     get_sitemap_urls,
 )
 
@@ -25,6 +31,11 @@ app = FastAPI(title="Hindi Anime Guide", version="v2-clean")
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
+class PollVoteRequest(BaseModel):
+    poll_key: str = Field(default=DEFAULT_POLL_KEY, min_length=1, max_length=100)
+    choice: Literal["a", "b"]
+
+
 @app.middleware("http")
 async def bandwidth_cache_headers(request: Request, call_next):
     response = await call_next(request)
@@ -32,7 +43,11 @@ async def bandwidth_cache_headers(request: Request, call_next):
     if response.status_code < 400:
         if path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif path not in ("/healthz", "/robots.txt", "/sitemap.xml") and request.method == "GET":
+        elif (
+            path not in ("/healthz", "/robots.txt", "/sitemap.xml", "/api/psychology/state")
+            and not path.startswith("/api/")
+            and request.method == "GET"
+        ):
             response.headers.setdefault("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600")
     return response
 
@@ -48,6 +63,19 @@ async def healthz():
     db_ok = ping_database()
     counts = get_counts() if db_ok else {}
     return {"status": "ok" if db_ok else "degraded", "version": "v2-clean", "db": db_ok, "counts": counts}
+
+
+@app.get("/api/psychology/state", response_class=JSONResponse)
+async def psychology_state():
+    return {
+        "poll": get_poll_state(DEFAULT_POLL_KEY),
+        "roulette_pool": get_roulette_pool(),
+    }
+
+
+@app.post("/api/poll/vote", response_class=JSONResponse)
+async def poll_vote(payload: PollVoteRequest):
+    return cast_poll_vote(payload.poll_key, payload.choice)
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -86,6 +114,7 @@ async def home(request: Request, q: str = Query(default="")):
             "active_nav": "home",
             "q": q,
             "counts": get_counts(),
+            "daily_poll": get_poll_state(DEFAULT_POLL_KEY),
             **data,
         },
     )
