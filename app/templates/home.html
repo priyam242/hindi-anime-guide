@@ -272,7 +272,7 @@
                 </span>
                 <div class="absolute bottom-2.5 left-2.5 right-2.5">
                   <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight">{{ m.title_hi }}</p>
-                  <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-1">{{ m.chapters }}</p>
+                  <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull; {{ m.chapters }}</p>
                 </div>
               </div>
             </div>
@@ -293,7 +293,10 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div class="space-y-2">
-        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">EDITORIAL WIRE &bull; IMAGE-FIRST</span>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-[#ff2e63]/15 border border-[#ff2e63]/50 font-tech text-[10px] font-bold tracking-[0.18em] uppercase text-[#ff2e63]">
+          <span class="w-2 h-2 rounded-full bg-[#ff2e63] animate-pulse"></span>
+          <span>LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं</span>
+        </div>
         <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">ताज़ा एनीमे <span class="text-[#ff2e63]">न्यूज़ &amp; गाइड्स</span></h2>
       </div>
       <a href="/news" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
@@ -309,16 +312,16 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- Featured Lead Visual Card -->
-      <a href="{{ lead.source_url }}" target="{{ '_blank' if lead.source_url.startswith('http') else '_self' }}"
-         rel="noopener noreferrer"
+      <a href="/news/{{ lead.slug }}"
          class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
         <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy"
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
         <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-3">
-          <div class="flex items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
+          <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
             <span class="px-2.5 py-0.5 bg-[#ff2e63] text-white">{{ lead.category }}</span>
-            <span class="text-white/70">{{ lead.date }} &bull; {{ lead.source_name }}</span>
+            <span class="px-2 py-0.5 bg-white/10 text-white">{{ lead.relative_age }}</span>
+            <span class="text-white/70">{{ lead.source_name }}</span>
           </div>
           <h3 class="text-xl sm:text-2xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
             {{ lead.title_hi }}
@@ -330,8 +333,7 @@
       <!-- Right Stacked Visual Cards -->
       <div class="lg:col-span-5 grid grid-cols-1 gap-6">
         {% for item in side_cards %}
-        <a href="{{ item.source_url }}" target="{{ '_blank' if item.source_url.startswith('http') else '_self' }}"
-           rel="noopener noreferrer"
+        <a href="/news/{{ item.slug }}"
            class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
                class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
@@ -339,7 +341,7 @@
           <div class="absolute bottom-0 left-0 right-0 p-5 space-y-1.5">
             <div class="flex items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
               <span class="text-[#ff2e63]">{{ item.category }}</span>
-              <span class="text-white/50">&bull; {{ item.date }}</span>
+              <span class="text-white/75">&bull; {{ item.relative_age }}</span>
             </div>
             <h3 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">
               {{ item.title_hi }}
@@ -353,8 +355,7 @@
     {% if grid_cards %}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       {% for item in grid_cards %}
-      <a href="{{ item.source_url }}" target="{{ '_blank' if item.source_url.startswith('http') else '_self' }}"
-         rel="noopener noreferrer"
+      <a href="/news/{{ item.slug }}"
          class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <div class="aspect-video overflow-hidden relative">
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy"
@@ -365,7 +366,7 @@
         </div>
         <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
           <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ item.title_hi }}</h3>
-          <span class="font-tech text-[10px] uppercase tracking-wider text-white/50">{{ item.date }} &bull; {{ item.source_name }}</span>
+          <span class="font-tech text-[10px] uppercase tracking-wider text-white/60">{{ item.relative_age }} &bull; {{ item.source_name }}</span>
         </div>
       </a>
       {% endfor %}
@@ -407,17 +408,17 @@
       {% for day_hi, day_en in schedule_days %}
       <div data-day-panel="{{ day_hi }}" class="sch-day-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 {{ '' if loop.first else 'hidden' }}">
         {% for show in schedule_by_day.get(day_hi, [])[:8] %}
-        <a href="{{ show.source_url }}" target="_blank" rel="noopener noreferrer"
+        <a href="{{ show.detail_url or show.source_url }}"
            class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
           <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy"
                class="w-14 h-20 object-cover shrink-0 border border-white/15" />
-          <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-wider">
+          <div class="min-w-0 space-y-1 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase tracking-wider">
               <span class="px-1.5 py-0.5 bg-[#ff2e63] text-white">{{ show.airing_time }}</span>
-              {% if show.score %}<span class="text-white/75">★ {{ show.score }}</span>{% endif %}
+              {% if show.airing_at %}<span class="text-[#ff2e63]" data-countdown-ts="{{ show.airing_at }}">--:--:--</span>{% endif %}
             </div>
             <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors">{{ show.title_hi }}</h3>
-            <p class="text-[10px] text-white/50 truncate">{{ show.title_en }}</p>
+            <p class="text-[10px] text-white/50 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
           </div>
         </a>
         {% endfor %}
@@ -466,33 +467,7 @@
   </div>
 </section>
 
-<!-- MANGA QUICK-READER MODAL -->
-<div id="manga-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/90 backdrop-blur-md">
-  <div class="relative w-full max-w-2xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_50px_rgba(255,46,99,0.35)] p-6 sm:p-8">
-    <button type="button" onclick="closeMangaModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-    <div class="flex flex-col sm:flex-row gap-6">
-      <img id="mm-cover" src="" alt="" class="w-36 h-52 object-cover border border-white/20 shrink-0 mx-auto sm:mx-0" />
-      <div class="space-y-3 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
-          <span id="mm-vol" class="px-2 py-0.5 bg-[#ff2e63] text-white"></span>
-          <span id="mm-status" class="px-2 py-0.5 border border-white/25 text-white"></span>
-          <span id="mm-chapters" class="text-white/70"></span>
-        </div>
-        <h3 id="mm-title-hi" class="text-xl font-extrabold text-white leading-snug"></h3>
-        <p id="mm-title-en" class="font-tech text-xs font-bold uppercase tracking-wider text-[#ff2e63]"></p>
-        <p id="mm-summary" class="text-xs sm:text-sm text-white/80 leading-relaxed max-h-40 overflow-y-auto"></p>
-        <div class="pt-2">
-          <a id="mm-link" href="#" target="_blank" rel="noopener noreferrer"
-             class="katana-btn inline-flex px-5 py-2.5 bg-[#ff2e63] text-white font-tech text-xs font-bold tracking-widest uppercase">
-            <span><i class="fa-solid fa-book-open"></i> आधिकारिक रीड सोर्स</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% include "partials/manga_inspector.html" %}
 
 <!-- OFFICIAL TRAILER LIGHTBOX MODAL -->
 <div id="trailer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/95 backdrop-blur-md">
@@ -567,26 +542,6 @@
     });
   }
 
-  function openMangaModal(m) {
-    document.getElementById("mm-cover").src = m.cover_url || "";
-    document.getElementById("mm-vol").textContent = m.volume_label || "VOL";
-    document.getElementById("mm-status").textContent = m.pub_status || "ONGOING";
-    document.getElementById("mm-chapters").textContent = m.chapters || "";
-    document.getElementById("mm-title-hi").textContent = m.title_hi || m.title_en || "";
-    document.getElementById("mm-title-en").textContent = m.title_en || "";
-    document.getElementById("mm-summary").textContent = m.summary_hi || m.summary_en || "";
-    document.getElementById("mm-link").href = m.source_url || "#";
-    var modal = document.getElementById("manga-modal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-  }
-
-  function closeMangaModal() {
-    var modal = document.getElementById("manga-modal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-  }
-
   function openTrailerModal(ytId, title) {
     if (!ytId) return;
     document.getElementById("tm-title").textContent = title || "Official Trailer";
@@ -605,10 +560,27 @@
 
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
-      closeMangaModal();
       closeTrailerModal();
     }
   });
+
+  (function startCountdownTickers() {
+    function updateAll() {
+      var nowSec = Math.floor(Date.now() / 1000);
+      document.querySelectorAll("[data-countdown-ts]").forEach(function (el) {
+        var target = parseInt(el.dataset.countdownTs || "0", 10);
+        if (!target) return;
+        var diff = Math.max(0, target - nowSec);
+        var h = Math.floor(diff / 3600);
+        var m = Math.floor((diff % 3600) / 60);
+        var s = diff % 60;
+        var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+        el.textContent = (diff === 0) ? "LIVE NOW" : (pad(h) + ":" + pad(m) + ":" + pad(s));
+      });
+    }
+    updateAll();
+    setInterval(updateAll, 1000);
+  })();
 
   // Linear Animation Principle: GSAP quickTo multi-depth pointer + scroll parallax
   (function initLinearParallax() {

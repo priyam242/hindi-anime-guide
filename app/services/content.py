@@ -1,7 +1,8 @@
+import json
 import re
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
@@ -182,6 +183,57 @@ def _slugify(value: str | None) -> str:
     return s or "item"
 
 
+def _parse_json_safe(raw: str | None) -> dict[str, Any]:
+    if not raw or not isinstance(raw, str) or not raw.strip().startswith("{"):
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def _ist_relative_age(dt: datetime | None) -> tuple[str, bool]:
+    """Return (Hindi relative IST age string, is_fresh_48h)."""
+    if not isinstance(dt, datetime):
+        return "ताज़ा अपडेट", True
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    delta_sec = max(0.0, (now_utc - dt).total_seconds())
+    is_fresh = delta_sec <= 48 * 3600
+    if delta_sec < 300:
+        return "अभी आया", is_fresh
+    mins = int(delta_sec // 60)
+    if mins < 60:
+        return f"{mins} मिनट पहले", is_fresh
+    hours = int(delta_sec // 3600)
+    if hours < 24:
+        return f"{hours} घंटे पहले", is_fresh
+    days = int(delta_sec // 86400)
+    return f"{days} दिन पहले", is_fresh
+
+
+def _next_ist_weekday_ts(day_hi: str | None, time_str: str | None) -> int:
+    """Compute next upcoming Unix timestamp for IST weekday/time when AniList airingAt missing."""
+    ist = timezone(timedelta(hours=5, minutes=30))
+    now_ist = datetime.now(ist)
+    day_idx = next((i for i, (hi, _) in enumerate(DAY_ORDER) if hi == day_hi), now_ist.weekday())
+    days_ahead = (day_idx - now_ist.weekday()) % 7
+    hour, minute = 20, 0
+    m = re.search(r"(\d{1,2}):(\d{2})\s*(AM|PM)?", time_str or "", re.IGNORECASE)
+    if m:
+        hour = int(m.group(1))
+        minute = int(m.group(2))
+        ampm = (m.group(3) or "").upper()
+        if ampm == "PM" and hour < 12:
+            hour += 12
+        elif ampm == "AM" and hour == 12:
+            hour = 0
+    target = (now_ist + timedelta(days=days_ahead)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if target <= now_ist:
+        target += timedelta(days=7)
+    return int(target.timestamp())
+
+
 def _clean_text(value: str | None, limit: int = 180) -> str:
     if not value:
         return ""
@@ -206,17 +258,18 @@ def _fetch_from_supabase() -> dict[str, Any]:
         ).mappings().all()
         platforms = [dict(r) for r in plat_rows]
 
-        # 1. Schedule items (IST airing)
+        # 1. Schedule items (IST airing + countdown timestamp)
         sch_rows = conn.execute(
             text(
                 """
                 SELECT id, title_en, title_hi, summary_en, summary_hi, image_url,
                        airing_day, airing_time, score, anilist_id, source_url,
-                       hindi_dub, dub_platform, season, season_year
+                       hindi_dub, dub_platform, season, season_year,
+                       official_links, latest_chapter
                 FROM anime_draft
                 WHERE content_type = 'schedule' AND status = 'published'
-                ORDER BY score DESC NULLS LAST, id ASC
-                LIMIT 120
+                ORDER BY (official_links IS NOT NULL AND official_links LIKE '{%') DESC, score DESC NULLS LAST, id ASC
+                LIMIT 140
                 """
             )
         ).mappings().all()
@@ -224,9 +277,16 @@ def _fetch_from_supabase() -> dict[str, Any]:
         top_ids = [int(r["anilist_id"]) for r in sch_rows[:36] if r.get("anilist_id")]
         _hydrate_anilist_covers(top_ids)
 
+        now_ts = int(time.time())
         for r in sch_rows:
             aid = int(r["anilist_id"]) if r.get("anilist_id") else None
             s_slug = _slugify(r["title_en"] or f"schedule-{r['id']}")
+            meta = _parse_json_safe(r.get("official_links"))
+            raw_airing_at = meta.get("airing_at")
+            if isinstance(raw_airing_at, (int, float)) and raw_airing_at > now_ts:
+                airing_at = int(raw_airing_at)
+            else:
+                airing_at = _next_ist_weekday_ts(r["airing_day"], r["airing_time"])
             schedule_items.append(
                 {
                     "id": r["id"],
@@ -237,6 +297,8 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "image_url": _resolve_safe_image(r["image_url"], aid),
                     "airing_day": r["airing_day"] or "रविवार",
                     "airing_time": r["airing_time"] or "TBD IST",
+                    "airing_at": airing_at,
+                    "episode_label": r.get("latest_chapter") or (f"Ep. {meta['episode']}" if meta.get("episode") else "New Ep."),
                     "score": int(r["score"]) if r.get("score") else None,
                     "source_url": r["source_url"] or f"/anime/{s_slug}",
                     "detail_url": f"/anime/{s_slug}",
@@ -246,43 +308,69 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 }
             )
 
-        # 2. Manga shelf items
+        # 2. Manga shelf items (enriched dossier priority)
         manga_rows = conn.execute(
             text(
                 """
                 SELECT id, title_en, title_hi, summary_en, summary_hi, image_url,
                        volumes, chapters, latest_chapter, publication_status,
-                       source_name, source_url, score, is_featured
+                       source_name, source_url, score, is_featured,
+                       official_links, season_year, start_date, end_date
                 FROM anime_draft
                 WHERE content_type = 'manga' AND status = 'published'
-                ORDER BY is_featured DESC, score DESC NULLS LAST, id ASC
-                LIMIT 150
+                ORDER BY (official_links IS NOT NULL AND official_links LIKE '{%') DESC, is_featured DESC, score DESC NULLS LAST, id ASC
+                LIMIT 180
                 """
             )
         ).mappings().all()
 
         for idx, r in enumerate(manga_rows):
-            vol_num = r["volumes"] or ((idx % 24) + 1)
-            chap_num = r["chapters"] or r["latest_chapter"] or f"Ch. {((idx * 17) % 180) + 12}"
+            meta = _parse_json_safe(r.get("official_links"))
+            vol_num = r["volumes"]
+            ch_num = r["chapters"]
+            pub_raw = (r["publication_status"] or "RELEASING").upper()
+            is_finished = pub_raw in ("FINISHED", "COMPLETED")
+            start_y = meta.get("start_year") or r.get("season_year") or (r["start_date"].year if isinstance(r.get("start_date"), datetime) else None)
+            end_y = meta.get("end_year") or (r["end_date"].year if isinstance(r.get("end_date"), datetime) else None)
+
+            latest_vol_label = f"Vol. {vol_num} Released" if vol_num else ("Complete Edition" if is_finished else "Ongoing Tankōbon")
+            chapters_label = f"{ch_num} Chapters" if ch_num else (r["latest_chapter"] or "Weekly Serialization")
+            serialization_label = (
+                f"पूर्ण हो चुका (Completed {end_y})" if (is_finished and end_y)
+                else ("पूर्ण (Completed)" if is_finished else "जारी है (Releasing)")
+            )
+            badge_vol = f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else "ONGOING")
+
             manga_items.append(
                 {
                     "id": r["id"],
                     "title_en": r["title_en"] or "",
                     "title_hi": r["title_hi"] or r["title_en"] or "",
-                    "summary_hi": _clean_text(r["summary_hi"], 260),
-                    "summary_en": _clean_text(r["summary_en"], 260),
+                    "native_title": meta.get("native_title") or "",
+                    "author": meta.get("author") or "Original Manga Creator",
+                    "genres": meta.get("genres") or ["Action", "Shonen"],
+                    "summary_hi": _clean_text(r["summary_hi"], 320),
+                    "summary_en": _clean_text(r["summary_en"], 320),
                     "cover_url": _resolve_safe_image(r["image_url"]),
                     "volumes": vol_num,
-                    "volume_label": f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else f"VOL. {vol_num}",
-                    "chapters": str(chap_num),
-                    "pub_status": (r["publication_status"] or "Ongoing").upper(),
-                    "source_name": r["source_name"] or "MangaDex",
+                    "volume_label": badge_vol,
+                    "latest_volume_label": latest_vol_label,
+                    "chapters": str(chapters_label),
+                    "chapters_label": str(chapters_label),
+                    "pub_status": "COMPLETED" if is_finished else "ONGOING",
+                    "status_short": "COMPLETED" if is_finished else "ONGOING",
+                    "status_badge_hi": "पूर्ण • COMPLETED" if is_finished else "जारी है • ONGOING",
+                    "serialization_label": serialization_label,
+                    "start_year_label": str(start_y) if start_y else "Featured",
+                    "source_name": r["source_name"] or "MangaPlus",
                     "source_url": r["source_url"] or "#",
+                    "read_platform": meta.get("official_platform") or r["source_name"] or "MangaPlus / Shonen Jump",
+                    "read_url": meta.get("official_url") or r["source_url"] or "#",
                     "score": int(r["score"]) if r.get("score") else 85,
                 }
             )
 
-        # 3. News items (anime_draft news + published guides/articles)
+        # 3. News items (Rolling 48-Hour Window + editorial guides)
         draft_news_rows = conn.execute(
             text(
                 """
@@ -290,10 +378,11 @@ def _fetch_from_supabase() -> dict[str, Any]:
                        image_url, news_category, source_name, source_url,
                        published_at, created_at, is_featured
                 FROM anime_draft
-                WHERE content_type = 'news' AND (status = 'published' OR image_url LIKE 'https://%')
-                ORDER BY (status = 'published') DESC, (image_url LIKE 'https://%') DESC,
+                WHERE content_type = 'news'
+                  AND (status = 'published' OR COALESCE(published_at, created_at) >= NOW() - INTERVAL '48 hours')
+                ORDER BY (COALESCE(published_at, created_at) >= NOW() - INTERVAL '48 hours') DESC,
                          COALESCE(published_at, created_at) DESC
-                LIMIT 24
+                LIMIT 28
                 """
             )
         ).mappings().all()
@@ -305,7 +394,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                        published_at, category, is_featured, reading_time_minutes, cover_image
                 FROM article
                 ORDER BY is_featured DESC, published_at DESC NULLS LAST, id DESC
-                LIMIT 16
+                LIMIT 12
                 """
             )
         ).mappings().all()
@@ -320,6 +409,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at") or r.get("created_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Recent"
+            rel_age, is_fresh = _ist_relative_age(pub_dt)
             n_slug = f"draft-{r['id']}"
             ext_url = r.get("source_url") or ""
             news_items.append(
@@ -333,9 +423,11 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "image_url": img,
                     "category": (r.get("news_category") or "Anime News").upper(),
                     "source_name": r.get("source_name") or "Official Wire",
-                    "source_url": ext_url if ext_url.startswith("http") else f"/news/{n_slug}",
+                    "source_url": f"/news/{n_slug}",
                     "external_url": ext_url,
                     "date": date_str,
+                    "relative_age": rel_age,
+                    "is_fresh": is_fresh,
                     "is_featured": bool(r.get("is_featured")),
                     "kind": "NEWS",
                 }
@@ -350,6 +442,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 img_cursor += 1
             pub_dt = r.get("published_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Guide"
+            rel_age, is_fresh = _ist_relative_age(pub_dt)
             paras = [re.sub(r"^[#>*`\-\s]+", "", p).strip() for p in (r.get("content_md") or "").split("\n\n") if p.strip()]
             news_items.append(
                 {
@@ -365,6 +458,8 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "source_url": f"/news/{r['slug']}",
                     "external_url": "",
                     "date": date_str,
+                    "relative_age": rel_age,
+                    "is_fresh": is_fresh,
                     "is_featured": bool(r.get("is_featured")),
                     "kind": "EDITORIAL",
                 }

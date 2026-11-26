@@ -2,7 +2,7 @@ name: Auto Sync Supabase Content
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Sync live schedule, manga, and news to Supabase
+      - name: Sync 48h news, manga dossier & IST countdowns to Supabase
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python scripts/sync_supabase.py
