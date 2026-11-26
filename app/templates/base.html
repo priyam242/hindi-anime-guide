@@ -53,144 +53,301 @@
 <body class="min-h-screen flex flex-col bg-[#06070c] text-white antialiased selection:bg-[#ff2e63] selection:text-white">
   {% include "partials/splash.html" %}
 
-  <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#06070c]/85 border-b border-white/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <a href="/" id="navbar-logo-target" class="relative inline-flex items-center min-h-[54px] shrink-0">
-        <span style="visibility: hidden;">{{ brand_logo('nav-spacer', True) }}</span>
-      </a>
+  <!-- ULTRA-CLEAN SINGLE-LINE TOP NAVBAR (ZERO 2-LINE WRAPPING) -->
+  <header class="sticky top-0 z-40 h-16 backdrop-blur-xl bg-[#06070c]/90 border-b border-white/10">
+    <div class="h-full px-4 sm:px-6 flex items-center justify-between gap-4">
+      <!-- 1. Left: Sidebar Toggle + Navbar Logo Target -->
+      <div class="flex items-center gap-3 shrink-0 whitespace-nowrap">
+        <button type="button"
+                id="sidebar-toggle-btn"
+                onclick="hagToggleSidebar()"
+                aria-label="Toggle Navigation Sidebar"
+                class="w-10 h-10 border border-white/15 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white flex items-center justify-center shrink-0 whitespace-nowrap transition-colors">
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
 
-      <nav class="hidden lg:flex items-center gap-1.5 font-tech text-xs font-bold tracking-wider uppercase">
-        {% set cur = active_nav|default('home') %}
-        <a href="/" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'home' else 'text-white/75 hover:text-white hover:bg-white/5' }}">होम</a>
-        <a href="/schedule" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'schedule' else 'text-white/75 hover:text-white hover:bg-white/5' }}">IST शेड्यूल</a>
-        <a href="/manga" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'manga' else 'text-white/75 hover:text-white hover:bg-white/5' }}">3D मंगा</a>
-        <a href="/news" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'news' else 'text-white/75 hover:text-white hover:bg-white/5' }}">एनीमे न्यूज़</a>
-        <a href="/trailers" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'trailers' else 'text-white/75 hover:text-white hover:bg-white/5' }}">ट्रेलर्स</a>
-      </nav>
+        <a href="/" id="navbar-logo-target" class="relative inline-flex items-center min-h-[54px] shrink-0 whitespace-nowrap">
+          <span style="visibility: hidden;">{{ brand_logo('nav-spacer', True) }}</span>
+        </a>
+      </div>
 
-      <div class="flex items-center gap-2.5 sm:gap-3">
-        <form action="{{ '/' if active_nav == 'home' else '/' + active_nav }}" method="get" class="relative hidden sm:block">
+      <!-- 2. Center: Wide Global Search Input -->
+      <form action="{{ '/' if active_nav == 'home' else ('/' + active_nav if active_nav in ('schedule','manga','news','trailers') else '/') }}"
+            method="get"
+            class="hidden md:flex flex-1 justify-center px-4">
+        <div class="relative max-w-xl w-full">
           <input
             id="global-search-input"
             type="search"
             name="q"
             value="{{ q or '' }}"
-            placeholder="एनीमे, मंगा, न्यूज़ खोजें... (/)"
-            class="w-40 md:w-56 pl-9 pr-3 py-1.5 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
+            placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
+            class="w-full pl-10 pr-4 py-2 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
           />
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
-        </form>
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#ff2e63]"></i>
+        </div>
+      </form>
 
-        <!-- Mystery Roulette Trigger -->
-        <button type="button"
-                id="roulette-nav-btn"
-                onclick="hagOpenRoulette()"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(255,46,99,0.25)]">
-          <span>🎲</span>
-          <span class="hidden md:inline">सरप्राइज़ स्पिन</span>
-        </button>
-
-        <!-- Zeigarnik Hunter Rank Pill -->
-        <button type="button"
-                id="hunter-rank-pill"
-                onclick="hagOpenHunterModal()"
-                class="hidden sm:inline-flex flex-col items-start px-3 py-1 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white transition-colors min-w-[116px]">
-          <span class="w-full flex items-center justify-between gap-2 font-tech text-[10px] font-bold tracking-wider uppercase">
-            <span id="hunter-pill-rank" class="text-[#ff2e63]">E-RANK</span>
-            <span id="hunter-pill-streak" class="text-white/80">🔥 1d</span>
-          </span>
-          <span class="w-full h-1 bg-white/10 mt-1 overflow-hidden">
-            <span id="hunter-pill-bar" class="block h-full bg-[#ff2e63] transition-all duration-500" style="width: 20%;"></span>
-          </span>
-        </button>
-
-        <!-- Watchlist Trigger -->
+      <!-- 3. Right: Single-Line Watchlist Pill + Login / Hunter Dropdown -->
+      <div class="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
         <button type="button"
                 id="watchlist-nav-btn"
                 onclick="hagOpenWatchlistDrawer()"
-                class="relative inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">
-          <i class="fa-solid fa-bookmark text-[#ff2e63]"></i>
-          <span class="hidden sm:inline">मेरी लिस्ट</span>
+                class="inline-flex items-center gap-2 px-3.5 py-2 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
+          <span class="text-[#ff2e63]">❤️</span>
+          <span class="hidden sm:inline whitespace-nowrap">मेरी लिस्ट</span>
           <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#ff2e63] text-white text-[10px] leading-none">0</span>
         </button>
-      </div>
-    </div>
 
-    <!-- Compact Mobile Nav Strip -->
-    <div class="lg:hidden border-t border-white/10 bg-[#06070c]/95 px-4 py-2 flex items-center gap-2 overflow-x-auto font-tech text-[11px] font-bold uppercase tracking-wider">
-      {% set cur = active_nav|default('home') %}
-      <a href="/" class="px-3 py-1 rounded shrink-0 {{ 'bg-[#ff2e63] text-white' if cur == 'home' else 'text-white/70 bg-white/5' }}">होम</a>
-      <a href="/schedule" class="px-3 py-1 rounded shrink-0 {{ 'bg-[#ff2e63] text-white' if cur == 'schedule' else 'text-white/70 bg-white/5' }}">IST शेड्यूल</a>
-      <a href="/manga" class="px-3 py-1 rounded shrink-0 {{ 'bg-[#ff2e63] text-white' if cur == 'manga' else 'text-white/70 bg-white/5' }}">3D मंगा</a>
-      <a href="/news" class="px-3 py-1 rounded shrink-0 {{ 'bg-[#ff2e63] text-white' if cur == 'news' else 'text-white/70 bg-white/5' }}">न्यूज़</a>
-      <a href="/trailers" class="px-3 py-1 rounded shrink-0 {{ 'bg-[#ff2e63] text-white' if cur == 'trailers' else 'text-white/70 bg-white/5' }}">ट्रेलर्स</a>
+        <div id="auth-nav-zone" class="relative shrink-0 whitespace-nowrap">
+          <button type="button"
+                  id="auth-login-btn"
+                  onclick="hagOpenAuthModal('login')"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
+            <i class="fa-solid fa-user text-[11px]"></i>
+            <span class="whitespace-nowrap">लॉगिन</span>
+          </button>
+
+          <div id="auth-user-menu" class="hidden relative shrink-0 whitespace-nowrap">
+            <button type="button"
+                    id="auth-user-pill"
+                    onclick="hagToggleUserDropdown()"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63]/25 text-white font-tech text-xs font-bold tracking-wider whitespace-nowrap shrink-0 transition-colors">
+              <span id="auth-avatar-initial" class="w-6 h-6 rounded bg-[#ff2e63] text-white flex items-center justify-center text-[11px] font-extrabold shrink-0">H</span>
+              <span id="auth-username-label" class="max-w-[110px] truncate whitespace-nowrap">Hunter</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-[#ff2e63]"></i>
+            </button>
+
+            <div id="auth-user-dropdown" class="hidden absolute right-0 mt-2 w-52 border-2 border-[#ff2e63] bg-[#06070c] shadow-[0_18px_48px_rgba(0,0,0,0.9)] py-1.5 z-50">
+              <button type="button" onclick="hagOpenHunterModal(); hagToggleUserDropdown(true);"
+                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-shield-halved text-[#ff2e63]"></i> हंटर रैंक / प्रोफ़ाइल
+              </button>
+              <button type="button" onclick="hagCloudSyncNow(true); hagToggleUserDropdown(true);"
+                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-white/85 hover:bg-[#ff2e63]/20 hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-cloud-arrow-up text-[#ff2e63]"></i> क्लाउड सिंक
+              </button>
+              <div class="my-1 border-t border-white/10"></div>
+              <button type="button" onclick="hagLogout()"
+                      class="w-full px-4 py-2.5 text-left font-tech text-xs font-bold uppercase text-[#ff2e63] hover:bg-[#ff2e63] hover:text-white flex items-center gap-2.5 whitespace-nowrap">
+                <i class="fa-solid fa-right-from-bracket"></i> लॉगआउट (Logout)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="flex-1">
-    {% block content %}{% endblock %}
-  </main>
+  <!-- STUDIO-GRADE LEFT SIDEBAR + MOBILE BACKDROP -->
+  <div id="sidebar-backdrop" onclick="hagSetSidebar(false)" class="fixed inset-0 top-16 z-30 hidden bg-[#06070c]/80 backdrop-blur-sm xl:hidden"></div>
+  <aside id="app-sidebar"
+         aria-label="Primary Sidebar Navigation"
+         class="fixed top-16 left-0 bottom-0 w-64 bg-[#06070c]/95 backdrop-blur-2xl border-r border-white/10 z-40 transform -translate-x-full xl:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-y-auto">
+    <div class="p-4 space-y-6">
+      <!-- Compact Mobile Search inside Sidebar -->
+      <form action="{{ '/' if active_nav == 'home' else '/' }}" method="get" class="md:hidden relative">
+        <input type="search" name="q" value="{{ q or '' }}" placeholder="खोजें..."
+               class="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63]" />
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
+      </form>
 
-  <footer class="border-t border-white/15 bg-[#06070c] py-12 text-xs text-white/65">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- Col 1: Brand & Legal Trust -->
-        <div class="space-y-3">
-          <span class="font-display-shonen text-base tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
-          <p class="text-white/75 leading-relaxed">
-            100% Official Legal Streaming Directory — We never host or link pirated content.
-          </p>
-          <p class="text-[11px] text-white/50">
-            भारत का आधिकारिक हिंदी एनीमे और मंगा डायरेक्टरी हब &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
-          </p>
+      <!-- 1. Hunter Command Card (Top of Sidebar) -->
+      <div class="p-3.5 border border-[#ff2e63]/50 bg-gradient-to-br from-[#ff2e63]/15 via-[#06070c] to-[#06070c] space-y-3">
+        <div id="sb-user-guest" class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">HUNTER COMMAND</span>
+            <span id="sb-streak-guest" class="font-tech text-[10px] font-bold text-white/80">🔥 1d</span>
+          </div>
+          <p class="text-[11px] font-bold text-white leading-snug">गेस्ट हंटर • क्लाउड सिंक के लिए लॉगिन करें</p>
+          <button type="button" onclick="hagOpenAuthModal('login')"
+                  class="w-full py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors">
+            लॉगिन / साइन अप
+          </button>
         </div>
 
-        <!-- Col 2: Explore -->
-        <div class="space-y-3">
-          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">एक्सप्लोर करें</h3>
-          <ul class="space-y-2 font-tech text-xs">
-            <li><a href="/" class="hover:text-white transition-colors">होम (Spotlight)</a></li>
-            <li><a href="/schedule" class="hover:text-white transition-colors">लाइव IST शेड्यूल</a></li>
-            <li><a href="/manga" class="hover:text-white transition-colors">3D मंगा शेल्फ़</a></li>
-            <li><a href="/news" class="hover:text-white transition-colors">48h लाइव न्यूज़</a></li>
-            <li><a href="/trailers" class="hover:text-white transition-colors">ऑफिशियल ट्रेलर्स</a></li>
-          </ul>
+        <div id="sb-user-authed" class="hidden space-y-1">
+          <div class="flex items-center justify-between gap-2">
+            <span id="sb-auth-name" class="text-xs font-extrabold text-white truncate">Hunter</span>
+            <span id="sb-streak-authed" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
+          </div>
+          <p id="sb-auth-email" class="text-[10px] text-white/55 truncate"></p>
+          <span class="inline-block font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">☁ CLOUD SYNC ACTIVE</span>
         </div>
 
-        <!-- Col 3: Company & Trust -->
-        <div class="space-y-3">
-          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">कंपनी और विश्वास</h3>
-          <ul class="space-y-2 font-tech text-xs">
-            <li><a href="/about" class="hover:text-white transition-colors">हमारे बारे में (About Us)</a></li>
-            <li><a href="/contact" class="hover:text-white transition-colors">संपर्क और स्पॉन्सरशिप (Contact)</a></li>
-            <li><a href="/sitemap.xml" class="hover:text-white transition-colors">XML साइटमैप (Sitemap)</a></li>
-            <li><a href="/ads.txt" class="hover:text-white transition-colors">AdSense ads.txt</a></li>
-          </ul>
-        </div>
-
-        <!-- Col 4: Legal & Policy -->
-        <div class="space-y-3">
-          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">लीगल और पॉलिसी</h3>
-          <ul class="space-y-2 font-tech text-xs">
-            <li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy (DPDP &amp; AdSense)</a></li>
-            <li><a href="/terms" class="hover:text-white transition-colors">Terms of Use</a></li>
-            <li><a href="/dmca" class="hover:text-white transition-colors">DMCA Copyright Compliance</a></li>
-            <li><a href="/disclaimer" class="hover:text-white transition-colors">Affiliate Disclaimer (ASCI / FTC)</a></li>
-          </ul>
-        </div>
+        <!-- Live E-Rank -> S-Rank XP Bar -->
+        <button type="button" onclick="hagOpenHunterModal()" class="w-full text-left pt-2 border-t border-white/10 space-y-1.5 group">
+          <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase">
+            <span id="hunter-pill-rank" class="text-[#ff2e63] group-hover:underline">E-RANK</span>
+            <span id="hunter-pill-xp" class="text-white/75">20 XP</span>
+          </div>
+          <div class="w-full h-1.5 bg-white/10 overflow-hidden">
+            <div id="hunter-pill-bar" class="h-full bg-[#ff2e63] transition-all duration-500" style="width: 20%;"></div>
+          </div>
+        </button>
       </div>
 
-      <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-tech uppercase tracking-wider text-white/45">
-        <span>&copy; 2026 Hindi Anime Guide (hindianimeguide.in) &bull; All Rights Reserved</span>
-        <div class="flex flex-wrap items-center gap-4">
-          <a href="https://www.crunchyroll.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Crunchyroll</a>
-          <a href="https://www.netflix.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Netflix</a>
-          <a href="https://www.hotstar.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">JioHotstar</a>
-          <a href="https://www.primevideo.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Prime Video</a>
+      <!-- 2. Main Menu (Browse) -->
+      <div class="space-y-1.5">
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">मेनू &bull; BROWSE</p>
+        {% set cur = active_nav|default('home') %}
+        {% set browse_links = [
+          ('home', '/', 'fa-house', 'होम'),
+          ('schedule', '/schedule', 'fa-calendar-days', 'IST लाइव शेड्यूल'),
+          ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़'),
+          ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़'),
+          ('trailers', '/trailers', 'fa-film', 'ऑफिशियल ट्रेलर्स')
+        ] %}
+        <nav class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
+          {% for key, href, icon, label in browse_links %}
+          <a href="{{ href }}"
+             class="flex items-center gap-3 px-3 py-2.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/70 hover:text-white hover:bg-white/5' }}">
+            <i class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/50' }}"></i>
+            <span class="whitespace-nowrap">{{ label }}</span>
+          </a>
+          {% endfor %}
+        </nav>
+      </div>
+
+      <!-- 3. Special Features (Interactive) -->
+      <div class="space-y-1.5">
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">स्पेशल फीचर्स</p>
+        <div class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
+          <button type="button" onclick="hagOpenRoulette()"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            <span class="w-4 text-center">🎲</span>
+            <span class="whitespace-nowrap">सरप्राइज़ एनीमे स्पिन</span>
+          </button>
+          <button type="button" onclick="hagOpenWatchlistDrawer()"
+                  class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            <span class="w-4 text-center text-[#ff2e63]">❤️</span>
+            <span class="whitespace-nowrap">मेरी वॉचलिस्ट</span>
+          </button>
         </div>
       </div>
     </div>
-  </footer>
+
+    <!-- 4. Bottom Legal & Business Links -->
+    <div class="p-4 border-t border-white/10 space-y-1.5">
+      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">लीगल और बिज़नेस</p>
+      <div class="space-y-1 font-tech text-[11px] font-bold uppercase tracking-wider">
+        <a href="/about" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'about' else 'text-white/60 hover:text-white' }}">
+          <i class="fa-solid fa-circle-info w-3.5 text-center"></i> <span>हमारे बारे में</span>
+        </a>
+        <a href="/contact" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'contact' else 'text-white/60 hover:text-white' }}">
+          <i class="fa-solid fa-envelope w-3.5 text-center"></i> <span>स्पॉन्सरशिप संपर्क</span>
+        </a>
+        <a href="/privacy-policy" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur in ('privacy','dmca','terms','disclaimer') else 'text-white/60 hover:text-white' }}">
+          <i class="fa-solid fa-scale-balanced w-3.5 text-center"></i> <span>प्राइवेसी व DMCA</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN SHELL WRAPPER (Pushed cleanly by Sidebar on Desktop xl:pl-64) -->
+  <div id="app-shell-content" class="flex-1 flex flex-col xl:pl-64 transition-[padding] duration-300">
+    <main class="flex-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-white/15 bg-[#06070c] py-12 text-xs text-white/65">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div class="space-y-3">
+            <span class="font-display-shonen text-base tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
+            <p class="text-white/75 leading-relaxed">
+              100% Official Legal Streaming Directory — We never host or link pirated content.
+            </p>
+            <p class="text-[11px] text-white/50">
+              भारत का आधिकारिक हिंदी एनीमे और मंगा डायरेक्टरी हब &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">एक्सप्लोर करें</h3>
+            <ul class="space-y-2 font-tech text-xs">
+              <li><a href="/" class="hover:text-white transition-colors">होम (Spotlight)</a></li>
+              <li><a href="/schedule" class="hover:text-white transition-colors">लाइव IST शेड्यूल</a></li>
+              <li><a href="/manga" class="hover:text-white transition-colors">3D मंगा शेल्फ़</a></li>
+              <li><a href="/news" class="hover:text-white transition-colors">48h लाइव न्यूज़</a></li>
+              <li><a href="/trailers" class="hover:text-white transition-colors">ऑफिशियल ट्रेलर्स</a></li>
+            </ul>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">कंपनी और विश्वास</h3>
+            <ul class="space-y-2 font-tech text-xs">
+              <li><a href="/about" class="hover:text-white transition-colors">हमारे बारे में (About Us)</a></li>
+              <li><a href="/contact" class="hover:text-white transition-colors">संपर्क और स्पॉन्सरशिप (Contact)</a></li>
+              <li><a href="/sitemap.xml" class="hover:text-white transition-colors">XML साइटमैप (Sitemap)</a></li>
+              <li><a href="/ads.txt" class="hover:text-white transition-colors">AdSense ads.txt</a></li>
+            </ul>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">लीगल और पॉलिसी</h3>
+            <ul class="space-y-2 font-tech text-xs">
+              <li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy (DPDP &amp; AdSense)</a></li>
+              <li><a href="/terms" class="hover:text-white transition-colors">Terms of Use</a></li>
+              <li><a href="/dmca" class="hover:text-white transition-colors">DMCA Copyright Compliance</a></li>
+              <li><a href="/disclaimer" class="hover:text-white transition-colors">Affiliate Disclaimer (ASCI / FTC)</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-tech uppercase tracking-wider text-white/45">
+          <span>&copy; 2026 Hindi Anime Guide (hindianimeguide.in) &bull; All Rights Reserved</span>
+          <div class="flex flex-wrap items-center gap-4">
+            <a href="https://www.crunchyroll.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Crunchyroll</a>
+            <a href="https://www.netflix.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Netflix</a>
+            <a href="https://www.hotstar.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">JioHotstar</a>
+            <a href="https://www.primevideo.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Prime Video</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- IN-PAGE SHONEN AUTH MODAL (LOGIN & SIGN-UP) -->
+  <div id="hag-auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/92 backdrop-blur-xl">
+    <div class="relative w-full max-w-md bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_75px_rgba(255,46,99,0.45)] p-6 sm:p-8 space-y-5">
+      <button type="button" onclick="hagCloseAuthModal()" class="absolute top-4 right-4 w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="space-y-1">
+        <p class="font-tech text-[10px] font-bold tracking-[0.24em] uppercase text-[#ff2e63]">CLOUD WATCHLIST &amp; HUNTER XP</p>
+        <h2 class="font-display-shonen text-2xl text-white">हंटर <span class="text-[#ff2e63]">लॉगिन / साइन अप</span></h2>
+      </div>
+
+      <div class="grid grid-cols-2 border border-white/15 font-tech text-xs font-bold uppercase">
+        <button type="button" id="modal-tab-login" onclick="hagSwitchAuthTab('login')" class="py-2 bg-[#ff2e63] text-white">लॉगिन</button>
+        <button type="button" id="modal-tab-register" onclick="hagSwitchAuthTab('register')" class="py-2 bg-transparent text-white/70 hover:text-white">नया अकाउंट</button>
+      </div>
+
+      <form id="hag-modal-auth-form" onsubmit="hagSubmitModalAuth(event)" class="space-y-4">
+        <div id="modal-username-wrap" class="space-y-1 hidden">
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">हंटर नाम / Username</label>
+          <input id="modal-auth-username" type="text" maxlength="60" placeholder="e.g. SungJinWoo"
+                 class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+        </div>
+        <div class="space-y-1">
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">ईमेल / Email</label>
+          <input id="modal-auth-email" type="email" required maxlength="160" placeholder="hunter@example.com"
+                 class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+        </div>
+        <div class="space-y-1">
+          <label class="block font-tech text-[11px] font-bold uppercase tracking-wider text-white/80">पासवर्ड / Password</label>
+          <input id="modal-auth-password" type="password" required minlength="6" maxlength="128" placeholder="••••••••"
+                 class="w-full px-3.5 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+        </div>
+        <p id="modal-auth-error" class="hidden text-xs font-bold text-[#ff2e63]"></p>
+        <button type="submit" id="modal-auth-submit" class="katana-btn w-full py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest flex items-center justify-center">
+          <span id="modal-auth-submit-lbl">लॉगिन करें और क्लाउड सिंक करें</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Cookie & Ad-Privacy Consent Banner -->
   <div id="hag-cookie-banner"
@@ -202,13 +359,11 @@
         हम बेहतर अनुभव व Google AdSense विज्ञापनों (DoubleClick DART कुकी) के लिए कुकीज़ का उपयोग करते हैं।
         <a href="/privacy-policy" class="text-[#ff2e63] underline font-semibold">Privacy Policy पढ़ें</a>
       </p>
-      <div class="flex items-center gap-2 shrink-0">
-        <button type="button"
-                onclick="hagAcceptCookies()"
-                class="px-4 py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider transition-colors">
-          स्वीकार करें / Accept
-        </button>
-      </div>
+      <button type="button"
+              onclick="hagAcceptCookies()"
+              class="px-4 py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors">
+        स्वीकार करें / Accept
+      </button>
     </div>
   </div>
 
@@ -291,7 +446,7 @@
          class="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[#06070c]/95 backdrop-blur-2xl border-l-2 border-[#ff2e63] shadow-[-20px_0_60px_rgba(255,46,99,0.28)] transform translate-x-full transition-transform duration-300 flex flex-col">
     <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
       <div>
-        <p class="font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">SAVED COLLECTION &bull; LOCAL</p>
+        <p class="font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]" id="wl-storage-subtitle">SAVED COLLECTION</p>
         <h2 class="font-display-shonen text-lg text-white tracking-wide">मेरी <span class="text-[#ff2e63]">लिस्ट</span></h2>
       </div>
       <button type="button" onclick="hagCloseWatchlistDrawer()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
@@ -300,7 +455,7 @@
     </div>
     <div id="watchlist-items-container" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
     <div class="px-6 py-4 border-t border-white/10 flex items-center justify-between text-[11px] font-tech text-white/60 uppercase tracking-wider">
-      <span>Saved in browser storage</span>
+      <span>Syncs automatically when logged in</span>
       <button type="button" onclick="hagClearWatchlist()" class="text-[#ff2e63] hover:underline">Clear All</button>
     </div>
   </aside>
@@ -308,7 +463,63 @@
   <script>
     (function () {
       var KEY = "hag_watchlist_v2";
+      var HUNTER_KEY = "hag_hunter_v2";
+      var HISTORY_KEY = "hag_history_v2";
+      var SIDEBAR_KEY = "hag_sidebar_open";
+      var currentUser = null;
+      var syncTimer = null;
 
+      /* === SIDEBAR RAIL TOGGLE & PERSISTENCE === */
+      function applySidebarState(open) {
+        var sb = document.getElementById("app-sidebar");
+        var bd = document.getElementById("sidebar-backdrop");
+        var shell = document.getElementById("app-shell-content");
+        if (!sb) return;
+        var isXl = window.innerWidth >= 1280;
+        if (isXl) {
+          if (open) {
+            sb.classList.add("xl:translate-x-0");
+            sb.classList.remove("-translate-x-full");
+            if (shell) shell.classList.add("xl:pl-64");
+          } else {
+            sb.classList.remove("xl:translate-x-0");
+            sb.classList.add("-translate-x-full");
+            if (shell) shell.classList.remove("xl:pl-64");
+          }
+          if (bd) bd.classList.add("hidden");
+        } else {
+          if (open) {
+            sb.classList.remove("-translate-x-full");
+            if (bd) bd.classList.remove("hidden");
+          } else {
+            sb.classList.add("-translate-x-full");
+            if (bd) bd.classList.add("hidden");
+          }
+        }
+      }
+
+      window.hagSetSidebar = function (open) {
+        try { localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0"); } catch (e) {}
+        applySidebarState(open);
+      };
+
+      window.hagToggleSidebar = function () {
+        var sb = document.getElementById("app-sidebar");
+        if (!sb) return;
+        var isXl = window.innerWidth >= 1280;
+        var curOpen = isXl ? !sb.classList.contains("-translate-x-full") : !sb.classList.contains("-translate-x-full");
+        window.hagSetSidebar(!curOpen);
+      };
+
+      (function initSidebar() {
+        var isXl = window.innerWidth >= 1280;
+        var stored = null;
+        try { stored = localStorage.getItem(SIDEBAR_KEY); } catch (e) {}
+        var shouldOpen = stored === null ? isXl : (isXl && stored !== "0");
+        applySidebarState(shouldOpen);
+      })();
+
+      /* === WATCHLIST & CLOUD SYNC === */
       window.hagGetWatchlist = function () {
         try {
           var raw = localStorage.getItem(KEY);
@@ -319,11 +530,29 @@
         }
       };
 
+      window.hagGetLocalXP = function () {
+        return loadHunter().xp || 20;
+      };
+
+      function scheduleCloudSync() {
+        if (!currentUser) return;
+        if (syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(function () { window.hagCloudSyncNow(false); }, 450);
+      }
+
+      window.hagCloudSyncNow = function () {
+        if (!currentUser) return;
+        fetch("/api/auth/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ watchlist: window.hagGetWatchlist(), hunter_xp: window.hagGetLocalXP() })
+        }).catch(function () {});
+      };
+
       function saveWatchlist(list) {
-        try {
-          localStorage.setItem(KEY, JSON.stringify(list));
-        } catch (e) {}
+        try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
         window.hagSyncWatchlistUI();
+        scheduleCloudSync();
       }
 
       window.hagIsInWatchlist = function (slug) {
@@ -352,8 +581,7 @@
       };
 
       window.hagRemoveWatchlist = function (slug) {
-        var list = window.hagGetWatchlist().filter(function (x) { return x.slug !== slug; });
-        saveWatchlist(list);
+        saveWatchlist(window.hagGetWatchlist().filter(function (x) { return x.slug !== slug; }));
       };
 
       window.hagClearWatchlist = function () {
@@ -417,36 +645,136 @@
         if (dr) dr.classList.add("translate-x-full");
       };
 
-      document.addEventListener("DOMContentLoaded", function () {
-        window.hagSyncWatchlistUI();
-        initHunterRankAndStreak();
-        try {
-          if (!localStorage.getItem("hag_cookie_consent_v2")) {
-            var cb = document.getElementById("hag-cookie-banner");
-            if (cb) cb.classList.remove("hidden");
-          }
-        } catch (e) {}
-      });
-      window.hagAcceptCookies = function () {
-        try { localStorage.setItem("hag_cookie_consent_v2", "accepted"); } catch (e) {}
-        var cb = document.getElementById("hag-cookie-banner");
-        if (cb) cb.classList.add("hidden");
+      /* === SUPABASE AUTH MODAL + USER STATE === */
+      var modalAuthMode = "login";
+      window.hagSwitchAuthTab = function (mode) {
+        modalAuthMode = mode;
+        var uWrap = document.getElementById("modal-username-wrap");
+        var tLogin = document.getElementById("modal-tab-login");
+        var tReg = document.getElementById("modal-tab-register");
+        var lbl = document.getElementById("modal-auth-submit-lbl");
+        if (mode === "register") {
+          uWrap.classList.remove("hidden");
+          tReg.className = "py-2 bg-[#ff2e63] text-white";
+          tLogin.className = "py-2 bg-transparent text-white/70 hover:text-white";
+          lbl.textContent = "नया हंटर अकाउंट बनाएं";
+        } else {
+          uWrap.classList.add("hidden");
+          tLogin.className = "py-2 bg-[#ff2e63] text-white";
+          tReg.className = "py-2 bg-transparent text-white/70 hover:text-white";
+          lbl.textContent = "लॉगिन करें और क्लाउड सिंक करें";
+        }
       };
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          window.hagCloseWatchlistDrawer();
-          window.hagCloseRoulette();
-          window.hagCloseHunterModal();
+
+      window.hagOpenAuthModal = function (mode) {
+        window.hagSwitchAuthTab(mode || "login");
+        var m = document.getElementById("hag-auth-modal");
+        if (m) { m.classList.remove("hidden"); m.classList.add("flex"); }
+      };
+
+      window.hagCloseAuthModal = function () {
+        var m = document.getElementById("hag-auth-modal");
+        if (m) { m.classList.add("hidden"); m.classList.remove("flex"); }
+      };
+
+      window.hagToggleUserDropdown = function (forceClose) {
+        var dd = document.getElementById("auth-user-dropdown");
+        if (!dd) return;
+        if (forceClose) dd.classList.add("hidden");
+        else dd.classList.toggle("hidden");
+      };
+
+      window.hagApplyCloudUser = function (user) {
+        currentUser = user || null;
+        var loginBtn = document.getElementById("auth-login-btn");
+        var userMenu = document.getElementById("auth-user-menu");
+        var sbGuest = document.getElementById("sb-user-guest");
+        var sbAuthed = document.getElementById("sb-user-authed");
+        var wlSub = document.getElementById("wl-storage-subtitle");
+
+        if (currentUser) {
+          if (loginBtn) loginBtn.classList.add("hidden");
+          if (userMenu) userMenu.classList.remove("hidden");
+          if (sbGuest) sbGuest.classList.add("hidden");
+          if (sbAuthed) sbAuthed.classList.remove("hidden");
+          if (wlSub) wlSub.textContent = "CLOUD SYNCED • " + (currentUser.username || "").toUpperCase();
+
+          var initial = (currentUser.username || "H").trim().charAt(0).toUpperCase();
+          var avEl = document.getElementById("auth-avatar-initial");
+          var unEl = document.getElementById("auth-username-label");
+          var sbName = document.getElementById("sb-auth-name");
+          var sbEmail = document.getElementById("sb-auth-email");
+          if (avEl) avEl.textContent = initial;
+          if (unEl) unEl.textContent = currentUser.username;
+          if (sbName) sbName.textContent = currentUser.username;
+          if (sbEmail) sbEmail.textContent = currentUser.email;
+
+          if (Array.isArray(currentUser.watchlist)) {
+            try { localStorage.setItem(KEY, JSON.stringify(currentUser.watchlist)); } catch (e) {}
+            window.hagSyncWatchlistUI();
+          }
+          if (typeof currentUser.hunter_xp === "number") {
+            var h = loadHunter();
+            h.xp = Math.max(h.xp || 20, currentUser.hunter_xp);
+            try { localStorage.setItem(HUNTER_KEY, JSON.stringify(h)); } catch (e) {}
+            syncHunterUI(h);
+          }
+        } else {
+          if (loginBtn) loginBtn.classList.remove("hidden");
+          if (userMenu) userMenu.classList.add("hidden");
+          if (sbGuest) sbGuest.classList.remove("hidden");
+          if (sbAuthed) sbAuthed.classList.add("hidden");
+          if (wlSub) wlSub.textContent = "SAVED COLLECTION • LOCAL";
         }
-        if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement && document.activeElement.tagName) || "")) {
-          var el = document.getElementById("global-search-input");
-          if (el) { e.preventDefault(); el.focus(); }
+      };
+
+      window.hagSubmitModalAuth = function (e) {
+        e.preventDefault();
+        var err = document.getElementById("modal-auth-error");
+        err.classList.add("hidden");
+        var endpoint = modalAuthMode === "register" ? "/api/auth/register" : "/api/auth/login";
+        var payload = {
+          email: document.getElementById("modal-auth-email").value.trim(),
+          password: document.getElementById("modal-auth-password").value,
+          watchlist: window.hagGetWatchlist(),
+          hunter_xp: window.hagGetLocalXP()
+        };
+        if (modalAuthMode === "register") {
+          payload.username = document.getElementById("modal-auth-username").value.trim() || "Hunter";
         }
-      });
+        fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            if (!res.ok || !res.data.ok) throw new Error(res.data.detail || "Authentication error");
+            window.hagApplyCloudUser(res.data.user);
+            window.hagCloseAuthModal();
+          })
+          .catch(function (ex) {
+            err.textContent = ex.message || "कृपया सही विवरण दर्ज करें।";
+            err.classList.remove("hidden");
+          });
+      };
+
+      window.hagLogout = function () {
+        fetch("/api/auth/logout", { method: "POST" })
+          .finally(function () {
+            window.hagToggleUserDropdown(true);
+            window.hagApplyCloudUser(null);
+          });
+      };
+
+      function fetchCurrentSession() {
+        fetch("/api/auth/me")
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) { if (d && d.authenticated && d.user) window.hagApplyCloudUser(d.user); })
+          .catch(function () {});
+      }
 
       /* === ZEIGARNIK HUNTER RANK XP + STREAK + CONTINUE EXPLORING === */
-      var HUNTER_KEY = "hag_hunter_v2";
-      var HISTORY_KEY = "hag_history_v2";
       var RANKS = [
         { name: "E-RANK", min: 0, next: 100, nextName: "C-RANK" },
         { name: "C-RANK", min: 100, next: 300, nextName: "A-RANK" },
@@ -455,11 +783,8 @@
       ];
 
       function getIstDateStr() {
-        try {
-          return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
-        } catch (e) {
-          return new Date().toISOString().slice(0, 10);
-        }
+        try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date()); }
+        catch (e) { return new Date().toISOString().slice(0, 10); }
       }
 
       function loadHunter() {
@@ -473,6 +798,7 @@
       function saveHunter(h) {
         try { localStorage.setItem(HUNTER_KEY, JSON.stringify(h)); } catch (e) {}
         syncHunterUI(h);
+        scheduleCloudSync();
       }
 
       function computeRank(xp) {
@@ -488,11 +814,15 @@
       function syncHunterUI(h) {
         var info = computeRank(h.xp);
         var pRank = document.getElementById("hunter-pill-rank");
-        var pStreak = document.getElementById("hunter-pill-streak");
+        var pXp = document.getElementById("hunter-pill-xp");
         var pBar = document.getElementById("hunter-pill-bar");
+        var sGuest = document.getElementById("sb-streak-guest");
+        var sAuth = document.getElementById("sb-streak-authed");
         if (pRank) pRank.textContent = info.rank.name;
-        if (pStreak) pStreak.textContent = "🔥 " + (h.streak || 1) + "d";
+        if (pXp) pXp.textContent = h.xp + " XP";
         if (pBar) pBar.style.width = info.pct + "%";
+        if (sGuest) sGuest.textContent = "🔥 " + (h.streak || 1) + "d";
+        if (sAuth) sAuth.textContent = "🔥 " + (h.streak || 1) + "d";
 
         var hsRank = document.getElementById("hs-rank-title");
         var hsStreak = document.getElementById("hs-streak-badge");
@@ -617,6 +947,38 @@
           }
         }, 78);
       };
+
+      window.hagAcceptCookies = function () {
+        try { localStorage.setItem("hag_cookie_consent_v2", "accepted"); } catch (e) {}
+        var cb = document.getElementById("hag-cookie-banner");
+        if (cb) cb.classList.add("hidden");
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        window.hagSyncWatchlistUI();
+        initHunterRankAndStreak();
+        fetchCurrentSession();
+        try {
+          if (!localStorage.getItem("hag_cookie_consent_v2")) {
+            var cb = document.getElementById("hag-cookie-banner");
+            if (cb) cb.classList.remove("hidden");
+          }
+        } catch (e) {}
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          window.hagCloseWatchlistDrawer();
+          window.hagCloseRoulette();
+          window.hagCloseHunterModal();
+          window.hagCloseAuthModal();
+          window.hagToggleUserDropdown(true);
+        }
+        if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement && document.activeElement.tagName) || "")) {
+          var el = document.getElementById("global-search-input");
+          if (el) { e.preventDefault(); el.focus(); }
+        }
+      });
     })();
   </script>
   {% block extra_scripts %}{% endblock %}

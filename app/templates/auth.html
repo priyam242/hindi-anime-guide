@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}हंटर लॉगिन और साइन-अप — Hindi Anime Guide{% endblock %}
+
+{% block content %}
+<section class="py-16 sm:py-24 bg-[#06070c] min-h-[75vh] flex items-center justify-center px-4">
+  <div class="w-full max-w-md border-2 border-[#ff2e63] bg-white/[0.02] p-6 sm:p-8 shadow-[0_0_70px_rgba(255,46,99,0.28)] space-y-6">
+    <div class="text-center space-y-2">
+      <span class="inline-block px-3 py-1 bg-[#ff2e63] text-white font-tech text-[10px] font-bold uppercase tracking-[0.22em]" style="transform: skewX(-8deg);">
+        CLOUD SYNC &bull; HUNTER ACCOUNT
+      </span>
+      <h1 class="font-display-shonen text-2xl sm:text-3xl text-white">हंटर <span class="text-[#ff2e63]">पोर्टल</span></h1>
+      <p class="text-xs text-white/65">अपनी वॉचलिस्ट, मंगा कलेक्शन और Hunter Rank XP को क्लाउड में सुरक्षित रखें।</p>
+    </div>
+
+    <div class="grid grid-cols-2 border border-white/15 font-tech text-xs font-bold uppercase">
+      <button type="button" id="page-tab-login" onclick="switchPageAuthTab('login')" class="py-2.5 bg-[#ff2e63] text-white">लॉगिन (Login)</button>
+      <button type="button" id="page-tab-register" onclick="switchPageAuthTab('register')" class="py-2.5 bg-transparent text-white/70 hover:text-white">साइन अप (Sign Up)</button>
+    </div>
+
+    <form id="page-auth-form" onsubmit="submitPageAuth(event)" class="space-y-4">
+      <div id="page-username-wrap" class="space-y-1.5 hidden">
+        <label class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">हंटर नाम / Username</label>
+        <input id="page-auth-username" type="text" maxlength="60" placeholder="e.g. SungJinWoo"
+               class="w-full px-4 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+      </div>
+      <div class="space-y-1.5">
+        <label class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">ईमेल / Email</label>
+        <input id="page-auth-email" type="email" required maxlength="160" placeholder="hunter@example.com"
+               class="w-full px-4 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+      </div>
+      <div class="space-y-1.5">
+        <label class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80">पासवर्ड / Password</label>
+        <input id="page-auth-password" type="password" required minlength="6" maxlength="128" placeholder="••••••••"
+               class="w-full px-4 py-2.5 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none" />
+      </div>
+      <p id="page-auth-error" class="hidden text-xs font-bold text-[#ff2e63]"></p>
+      <button type="submit" class="katana-btn w-full py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest flex items-center justify-center">
+        <span id="page-auth-submit-lbl">लॉगिन करें और सिंक शुरू करें</span>
+      </button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  var pageAuthMode = "login";
+  function switchPageAuthTab(mode) {
+    pageAuthMode = mode;
+    var uWrap = document.getElementById("page-username-wrap");
+    var tLogin = document.getElementById("page-tab-login");
+    var tReg = document.getElementById("page-tab-register");
+    var lbl = document.getElementById("page-auth-submit-lbl");
+    if (mode === "register") {
+      uWrap.classList.remove("hidden");
+      tReg.className = "py-2.5 bg-[#ff2e63] text-white";
+      tLogin.className = "py-2.5 bg-transparent text-white/70 hover:text-white";
+      lbl.textContent = "नया हंटर अकाउंट बनाएं";
+    } else {
+      uWrap.classList.add("hidden");
+      tLogin.className = "py-2.5 bg-[#ff2e63] text-white";
+      tReg.className = "py-2.5 bg-transparent text-white/70 hover:text-white";
+      lbl.textContent = "लॉगिन करें और सिंक शुरू करें";
+    }
+  }
+
+  function submitPageAuth(e) {
+    e.preventDefault();
+    var err = document.getElementById("page-auth-error");
+    err.classList.add("hidden");
+    var endpoint = pageAuthMode === "register" ? "/api/auth/register" : "/api/auth/login";
+    var body = {
+      email: document.getElementById("page-auth-email").value.trim(),
+      password: document.getElementById("page-auth-password").value,
+      watchlist: typeof hagGetWatchlist === "function" ? hagGetWatchlist() : [],
+      hunter_xp: typeof hagGetLocalXP === "function" ? hagGetLocalXP() : 20
+    };
+    if (pageAuthMode === "register") {
+      body.username = document.getElementById("page-auth-username").value.trim() || "Hunter";
+    }
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.data.ok) throw new Error(res.data.detail || "Authentication failed");
+        if (typeof hagApplyCloudUser === "function") hagApplyCloudUser(res.data.user);
+        window.location.href = "/";
+      })
+      .catch(function (ex) {
+        err.textContent = ex.message || "कृपया सही जानकारी भरें।";
+        err.classList.remove("hidden");
+      });
+  }
+</script>
+{% endblock %}

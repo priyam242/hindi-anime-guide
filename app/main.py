@@ -1,16 +1,25 @@
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from xml.sax.saxutils import escape
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response as FastAPIResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from app.auth import (
+    SESSION_COOKIE_NAME,
+    SESSION_MAX_AGE_SECONDS,
+    authenticate_user,
+    create_session_token,
+    get_current_user,
+    register_user,
+    sync_user_state,
+)
 from app.db import ping_database
 from app.services.content import (
     DEFAULT_POLL_KEY,
@@ -45,6 +54,26 @@ class ContactRequest(BaseModel):
     message: str = Field(min_length=5, max_length=4000)
 
 
+class RegisterRequest(BaseModel):
+    username: str = Field(min_length=2, max_length=60)
+    email: str = Field(min_length=5, max_length=160)
+    password: str = Field(min_length=6, max_length=128)
+    watchlist: list[dict[str, Any]] = Field(default_factory=list)
+    hunter_xp: int = Field(default=20, ge=0, le=1000000)
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=160)
+    password: str = Field(min_length=1, max_length=128)
+    watchlist: list[dict[str, Any]] = Field(default_factory=list)
+    hunter_xp: int = Field(default=20, ge=0, le=1000000)
+
+
+class SyncStateRequest(BaseModel):
+    watchlist: list[dict[str, Any]] = Field(default_factory=list)
+    hunter_xp: int = Field(default=20, ge=0, le=1000000)
+
+
 LEGAL_PAGE_META = {
     "about": ("About Us & Editorial Policy", "भारत का 100% वैध (Legal & Licensed) हिंदी एनीमे और मंगा डायरेक्टरी हब।", "EDITORIAL TRUST"),
     "privacy": ("Privacy Policy", "Google AdSense (DoubleClick DART), Client Storage व भारतीय DPDP Act 2023 नीति।", "PRIVACY & DPDP"),
@@ -63,7 +92,7 @@ async def bandwidth_cache_headers(request: Request, call_next):
         if path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif (
-            path not in ("/healthz", "/robots.txt", "/sitemap.xml", "/ads.txt", "/api/psychology/state")
+            path not in ("/healthz", "/robots.txt", "/sitemap.xml", "/ads.txt", "/login", "/api/psychology/state")
             and not path.startswith("/api/")
             and request.method == "GET"
         ):
@@ -75,6 +104,18 @@ static_dir = BASE_DIR / "static"
 if static_dir.is_dir():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def _set_session_cookie(response: FastAPIResponse, user: dict[str, Any]) -> None:
+    token = create_session_token(user["id"], user["email"])
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        path="/",
+    )
 
 
 @app.get("/healthz", response_class=JSONResponse)
@@ -91,6 +132,62 @@ async def ads_txt():
         clean_id = pub_id if pub_id.startswith("pub-") else f"pub-{pub_id}"
         return f"google.com, {clean_id}, DIRECT, f08c47fec0942fa0\n"
     return "# Hindi Anime Guide ads.txt\n# Set ADSENSE_PUB_ID environment variable to publish google.com seller entry.\n"
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "auth.html",
+        {"request": request, "active_nav": "login", "q": ""},
+    )
+
+
+@app.post("/api/auth/register", response_class=JSONResponse)
+async def auth_register(payload: RegisterRequest, response: FastAPIResponse):
+    if "@" not in payload.email or "." not in payload.email.split("@")[-1]:
+        raise HTTPException(status_code=422, detail="कृपया सही ईमेल पता दर्ज करें।")
+    user = register_user(
+        payload.username,
+        payload.email,
+        payload.password,
+        payload.watchlist,
+        payload.hunter_xp,
+    )
+    if not user:
+        raise HTTPException(status_code=409, detail="यह ईमेल पहले से रजिस्टर्ड है। कृपया लॉगिन करें।")
+    _set_session_cookie(response, user)
+    return {"ok": True, "user": user}
+
+
+@app.post("/api/auth/login", response_class=JSONResponse)
+async def auth_login(payload: LoginRequest, response: FastAPIResponse):
+    user = authenticate_user(payload.email, payload.password, payload.watchlist, payload.hunter_xp)
+    if not user:
+        raise HTTPException(status_code=401, detail="ईमेल या पासवर्ड गलत है।")
+    _set_session_cookie(response, user)
+    return {"ok": True, "user": user}
+
+
+@app.post("/api/auth/logout", response_class=JSONResponse)
+async def auth_logout(response: FastAPIResponse):
+    response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+    return {"ok": True}
+
+
+@app.get("/api/auth/me", response_class=JSONResponse)
+async def auth_me(request: Request):
+    user = get_current_user(request)
+    return {"authenticated": bool(user), "user": user}
+
+
+@app.post("/api/auth/sync", response_class=JSONResponse)
+async def auth_sync(payload: SyncStateRequest, request: Request):
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    updated = sync_user_state(user["id"], payload.watchlist, payload.hunter_xp)
+    return {"ok": True, "user": updated}
 
 
 @app.get("/api/psychology/state", response_class=JSONResponse)
@@ -157,7 +254,7 @@ def _render_legal(request: Request, page_key: str) -> HTMLResponse:
         "legal.html",
         {
             "request": request,
-            "active_nav": "legal",
+            "active_nav": page_key,
             "legal_page": page_key,
             "page_title": title,
             "hindi_summary": hi_summary,
