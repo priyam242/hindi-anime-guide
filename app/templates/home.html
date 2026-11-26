@@ -153,7 +153,7 @@
             {{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}
           </h1>
           <p id="hero-title-en" class="font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
-            {{ active_spot.title_en if active_spot else 'OFFICIAL STREAMING GUIDE' }}
+            {{ active_spot.title_en if active_spot else 'LEGAL STREAMING GUIDE' }}
           </p>
         </div>
 
@@ -167,28 +167,28 @@
              target="_blank"
              rel="noopener noreferrer"
              class="katana-btn px-6 py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase shadow-[0_0_28px_rgba(255,46,99,0.5)]">
-            <span><i class="fa-solid fa-bolt"></i> आधिकारिक स्ट्रीम देखें</span>
+            <span><i class="fa-solid fa-bolt"></i> <span data-hi="लाइसेंस्ड स्ट्रीम देखें" data-en="Watch Licensed Stream">लाइसेंस्ड स्ट्रीम देखें</span></span>
           </a>
 
           <a id="hero-detail-link"
              href="/anime/{{ active_spot.slug if active_spot else 'solo-leveling' }}"
              class="katana-btn px-5 py-3 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
-            <span><i class="fa-solid fa-layer-group text-[#ff2e63]"></i> विवरण</span>
+            <span><i class="fa-solid fa-layer-group text-[#ff2e63]"></i> <span data-hi="विवरण" data-en="Details">विवरण</span></span>
           </a>
 
           <button id="hero-trailer-btn"
                   type="button"
                   data-yt="{{ active_spot.trailer_id if active_spot else '' }}"
-                  data-title="{{ active_spot.title_en if active_spot else 'Official Trailer' }}"
+                  data-title="{{ active_spot.title_en if active_spot else 'Licensed Trailer' }}"
                   onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
                   class="katana-btn px-6 py-3 bg-white/5 hover:bg-white/15 border border-white/25 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
-            <span><i class="fa-solid fa-play text-[#ff2e63]"></i> ट्रेलर चलाएं</span>
+            <span><i class="fa-solid fa-play text-[#ff2e63]"></i> <span data-hi="ट्रेलर चलाएं" data-en="Play Trailer">ट्रेलर चलाएं</span></span>
           </button>
 
           <button type="button"
                   onclick="hagOpenRoulette()"
                   class="katana-btn px-5 py-3 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
-            <span>🎲 किस्मत आज़माएं</span>
+            <span data-hi="🎲 किस्मत आज़माएं" data-en="🎲 Surprise Me">🎲 किस्मत आज़माएं</span>
           </button>
         </div>
       </div>
@@ -304,7 +304,7 @@
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div class="space-y-2">
         <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">STRIPE PRESS EDITION &bull; 3D BOOKSHELF</span>
-        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">3D मंगा शेल्फ़ <span class="text-[#ff2e63]">COLLECTION</span></h2>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight"><span data-hi="3D मंगा शेल्फ़" data-en="3D MANGA SHELF">3D मंगा शेल्फ़</span> <span class="text-[#ff2e63]">COLLECTION</span></h2>
       </div>
       <a href="/manga" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
         <span>सभी {{ counts.manga }} वॉल्यूम देखें</span>
@@ -361,7 +361,7 @@
           <span class="w-2 h-2 rounded-full bg-[#ff2e63] animate-pulse"></span>
           <span>LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं</span>
         </div>
-        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">ताज़ा एनीमे <span class="text-[#ff2e63]">न्यूज़ &amp; गाइड्स</span></h2>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="ताज़ा एनीमे न्यूज़ और गाइड्स" data-en="FRESH ANIME NEWS &amp; GUIDES">ताज़ा एनीमे <span class="text-[#ff2e63]">न्यूज़ &amp; गाइड्स</span></h2>
       </div>
       <a href="/news" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
         <span>सभी {{ counts.news }} न्यूज़ पढ़ें</span>
@@ -467,7 +467,7 @@
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div class="space-y-2">
           <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">INDIAN STANDARD TIME &bull; LIVE TIMELINE</span>
-          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
+          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="साप्ताहिक IST शेड्यूल" data-en="WEEKLY IST SCHEDULE">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
         </div>
         <a href="/schedule" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
           <span>पूरा {{ counts.schedule }} शेड्यूल देखें</span>
@@ -509,12 +509,12 @@
       {% endfor %}
     </div>
 
-    <!-- Official Trailers Row -->
+    <!-- Licensed Trailers Row -->
     <div id="trailers-row" class="space-y-6 pt-4 border-t border-white/10">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div class="space-y-2">
-          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">OFFICIAL PVs &bull; LIGHTBOX</span>
-          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight">आधिकारिक <span class="text-[#ff2e63]">ट्रेलर्स</span></h2>
+          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">LICENSED PVs &bull; LIGHTBOX</span>
+          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="लाइसेंस्ड ट्रेलर्स" data-en="LICENSED TRAILERS">लाइसेंस्ड <span class="text-[#ff2e63]">ट्रेलर्स</span></h2>
         </div>
         <a href="/trailers" class="inline-flex items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/80 hover:text-[#ff2e63] transition-colors">
           <span>सभी {{ counts.trailers }} ट्रेलर्स देखें</span>

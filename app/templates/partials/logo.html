@@ -18,7 +18,7 @@
   }
   .hag-hex-emblem {
     position: relative;
-    width: 56px;
+    width: 60px;
     height: 48px;
     flex-shrink: 0;
     transform: skewX(-8deg);
@@ -61,13 +61,13 @@
     height: 100%;
     object-fit: cover;
     transform: skewX(8deg) scale(1.18);
-    filter: contrast(1.22) saturate(1.25);
+    filter: contrast(1.22) saturate(1.25) brightness(0.75);
     display: block;
   }
   .hag-emblem-rim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255, 46, 99, 0.38) 0%, rgba(6, 7, 12, 0.15) 48%, rgba(255, 255, 255, 0.18) 100%);
+    background: linear-gradient(135deg, rgba(255, 46, 99, 0.42) 0%, rgba(6, 7, 12, 0.28) 48%, rgba(255, 255, 255, 0.16) 100%);
     mix-blend-mode: screen;
     pointer-events: none;
     z-index: 2;
@@ -78,17 +78,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 2px;
     z-index: 3;
     pointer-events: none;
   }
-  .hag-emblem-monogram {
-    font-family: 'Russo One', 'Noto Sans Devanagari', sans-serif;
-    font-size: 20px;
+  .hag-emblem-hi {
+    font-family: 'Noto Sans Devanagari', 'Outfit', sans-serif;
+    font-size: 19px;
     font-weight: 900;
     line-height: 1;
     color: #ffffff;
-    text-shadow: -2px 0 0 #ff2e63, 2px 2px 0 #06070c, 0 0 10px rgba(255, 46, 99, 0.9);
-    letter-spacing: -0.04em;
+    text-shadow: -1.5px 0 0 #ff2e63, 2px 2px 0 #06070c, 0 0 10px rgba(255, 46, 99, 0.95);
+    transform: skewX(4deg) translateY(1px);
+  }
+  .hag-emblem-bar {
+    display: inline-block;
+    width: 2.5px;
+    height: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #ff2e63 100%);
+    transform: rotate(16deg);
+    box-shadow: 0 0 8px rgba(255, 46, 99, 0.9);
+  }
+  .hag-emblem-en {
+    font-family: 'Russo One', 'Chakra Petch', sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 1.5px 0 0 #ff2e63, 2px 2px 0 #06070c, 0 0 10px rgba(255, 46, 99, 0.95);
     transform: skewX(4deg);
   }
   .hag-wordmark {
@@ -114,7 +131,7 @@
     font-family: 'Chakra Petch', 'Noto Sans Devanagari', sans-serif;
     font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #ff2e63;
   }
@@ -129,7 +146,7 @@
     font-weight: 900;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: {{ '#ffffff' if on_dark else '#06070c' }};
+    color: {{ '#ffffff' if on_dark else '#090b10' }};
     text-shadow: 2px 2px 0px #ff2e63;
   }
   .hag-title-guide {
@@ -151,14 +168,16 @@
     <img src="/static/media/emblem_icon.webp" alt="" class="hag-emblem-art" />
     <div class="hag-emblem-rim"></div>
     <div class="hag-emblem-slash">
-      <span class="hag-emblem-monogram">ア&#x2F;</span>
+      <span class="hag-emblem-hi">ह</span>
+      <span class="hag-emblem-bar"></span>
+      <span class="hag-emblem-en">E</span>
     </div>
   </div>
 
   <span class="hag-wordmark">
     <span class="hag-kicker-row">
       <span class="hag-kicker-line"></span>
-      <span class="hag-kicker-text">भारत का नंबर #1 &bull; OFFICIAL ANIME HUB</span>
+      <span class="hag-kicker-text">भारत का नंबर #1 &bull; HINDI &amp; ENGLISH ANIME HUB</span>
     </span>
     <span class="hag-title-row">
       <span class="hag-title-main">HINDI ANIME</span>

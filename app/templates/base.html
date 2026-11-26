@@ -4,7 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Hindi Anime Guide — Official Hindi Anime Hub{% endblock %}</title>
+  <title>{% block title %}Hindi Anime Guide — India's Anime &amp; Manga Guide{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("hag_theme") === "light") {
+          document.documentElement.classList.add("light-theme");
+          document.documentElement.classList.remove("dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Russo+One&display=swap" rel="stylesheet">
@@ -47,6 +57,92 @@
     ::-webkit-scrollbar-track { background: #06070c; }
     ::-webkit-scrollbar-thumb { background: rgba(255, 46, 99, 0.45); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #ff2e63; }
+
+    /* CRISP 3-COLOR LIGHT THEME OVERRIDES (White #f8fafc + Obsidian #090b10 + Crimson #e11d48) */
+    html.light-theme body,
+    html.light-theme #app-shell-content,
+    html.light-theme footer,
+    html.light-theme section {
+      background-color: #f8fafc !important;
+      color: #090b10 !important;
+    }
+    html.light-theme header,
+    html.light-theme #app-sidebar,
+    html.light-theme #watchlist-drawer,
+    html.light-theme #hag-cookie-banner,
+    html.light-theme #auth-user-dropdown,
+    html.light-theme #hag-auth-modal > div,
+    html.light-theme #mystery-roulette-modal > div,
+    html.light-theme #hunter-system-modal > div,
+    html.light-theme #manga-book-inspector > div,
+    html.light-theme #trailer-modal > div {
+      background-color: #ffffff !important;
+      color: #090b10 !important;
+    }
+    html.light-theme header,
+    html.light-theme #app-sidebar,
+    html.light-theme footer,
+    html.light-theme .border-white\/10,
+    html.light-theme .border-white\/15,
+    html.light-theme .border-white\/20,
+    html.light-theme .border-white\/25,
+    html.light-theme .border-white\/30 {
+      border-color: rgba(9, 11, 16, 0.14) !important;
+    }
+    html.light-theme .text-white,
+    html.light-theme .text-white\/90,
+    html.light-theme .text-white\/85,
+    html.light-theme .text-white\/80,
+    html.light-theme .text-white\/75,
+    html.light-theme .text-white\/70,
+    html.light-theme .text-white\/65,
+    html.light-theme .text-white\/60,
+    html.light-theme .text-white\/55,
+    html.light-theme .text-white\/50,
+    html.light-theme .text-white\/45 {
+      color: #090b10 !important;
+    }
+    html.light-theme .bg-\[\#ff2e63\],
+    html.light-theme .bg-\[\#ff2e63\] *,
+    html.light-theme .bg-\[\#e11d48\],
+    html.light-theme .bg-\[\#e11d48\] *,
+    html.light-theme #splash-screen,
+    html.light-theme #splash-screen *,
+    html.light-theme .book-face-front *,
+    html.light-theme #visual-news a.group .text-white,
+    html.light-theme #visual-news a.group p {
+      color: #ffffff !important;
+    }
+    html.light-theme #linear-hero .hero-depth-layer .text-white,
+    html.light-theme #linear-hero .hero-depth-layer .text-white\/80,
+    html.light-theme #linear-hero .hero-depth-layer .text-white\/75,
+    html.light-theme #linear-hero .hero-depth-layer .text-white\/60 {
+      color: #ffffff !important;
+    }
+    html.light-theme .bg-white\/5,
+    html.light-theme .bg-white\/\[0\.02\],
+    html.light-theme .bg-white\/\[0\.03\] {
+      background-color: #ffffff !important;
+    }
+    html.light-theme input,
+    html.light-theme select,
+    html.light-theme textarea {
+      background-color: #ffffff !important;
+      color: #090b10 !important;
+      border-color: rgba(9, 11, 16, 0.22) !important;
+    }
+    html.light-theme header .hag-title-main {
+      color: #090b10 !important;
+      text-shadow: 2px 2px 0px #ff2e63;
+    }
+    html.light-theme header .hag-title-guide {
+      background: #e11d48 !important;
+      color: #ffffff !important;
+      border-left-color: #090b10 !important;
+    }
+    html.light-theme #splash-screen .hag-title-main {
+      color: #ffffff !important;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -81,6 +177,8 @@
             type="search"
             name="q"
             value="{{ q or '' }}"
+            data-hi-placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
+            data-en-placeholder="Search anime, manga, news or trailers... (Press /)"
             placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
             class="w-full pl-10 pr-4 py-2 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
           />
@@ -88,14 +186,29 @@
         </div>
       </form>
 
-      <!-- 3. Right: Single-Line Watchlist Pill + Login / Hunter Dropdown -->
-      <div class="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
+      <!-- 3. Right: Single-Line Lang Toggle + Theme Toggle + Watchlist + Login -->
+      <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
+        <!-- Instant Hindi <-> English Converter -->
+        <div id="lang-toggle-group" class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
+          <button type="button" id="lang-btn-hi" onclick="hagSetLang('hi')" class="px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors">ह</button>
+          <button type="button" id="lang-btn-en" onclick="hagSetLang('en')" class="px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors">EN</button>
+        </div>
+
+        <!-- Dark <-> Light Theme Toggle -->
+        <button type="button"
+                id="theme-toggle-btn"
+                onclick="hagToggleTheme()"
+                aria-label="Toggle Dark or Light Theme"
+                class="w-9 h-9 inline-flex items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
+          <span id="theme-toggle-icon" class="text-sm leading-none">☀️</span>
+        </button>
+
         <button type="button"
                 id="watchlist-nav-btn"
                 onclick="hagOpenWatchlistDrawer()"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
+                class="inline-flex items-center gap-2 px-3 py-2 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
           <span class="text-[#ff2e63]">❤️</span>
-          <span class="hidden sm:inline whitespace-nowrap">मेरी लिस्ट</span>
+          <span class="hidden sm:inline whitespace-nowrap" data-hi="मेरी लिस्ट" data-en="My List">मेरी लिस्ट</span>
           <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#ff2e63] text-white text-[10px] leading-none">0</span>
         </button>
 
@@ -103,9 +216,9 @@
           <button type="button"
                   id="auth-login-btn"
                   onclick="hagOpenAuthModal('login')"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
+                  class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
             <i class="fa-solid fa-user text-[11px]"></i>
-            <span class="whitespace-nowrap">लॉगिन</span>
+            <span class="whitespace-nowrap" data-hi="लॉगिन" data-en="Login">लॉगिन</span>
           </button>
 
           <div id="auth-user-menu" class="hidden relative shrink-0 whitespace-nowrap">
@@ -189,21 +302,21 @@
 
       <!-- 2. Main Menu (Browse) -->
       <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">मेनू &bull; BROWSE</p>
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="मेनू • BROWSE" data-en="MENU • BROWSE">मेनू &bull; BROWSE</p>
         {% set cur = active_nav|default('home') %}
         {% set browse_links = [
-          ('home', '/', 'fa-house', 'होम'),
-          ('schedule', '/schedule', 'fa-calendar-days', 'IST लाइव शेड्यूल'),
-          ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़'),
-          ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़'),
-          ('trailers', '/trailers', 'fa-film', 'ऑफिशियल ट्रेलर्स')
+          ('home', '/', 'fa-house', 'होम', 'Home'),
+          ('schedule', '/schedule', 'fa-calendar-days', 'IST लाइव शेड्यूल', 'Live IST Schedule'),
+          ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़', '3D Manga Shelf'),
+          ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़', '48h Anime News'),
+          ('trailers', '/trailers', 'fa-film', 'लाइसेंस्ड ट्रेलर्स', 'Licensed Trailers')
         ] %}
         <nav class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
-          {% for key, href, icon, label in browse_links %}
+          {% for key, href, icon, label_hi, label_en in browse_links %}
           <a href="{{ href }}"
              class="flex items-center gap-3 px-3 py-2.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/70 hover:text-white hover:bg-white/5' }}">
             <i class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/50' }}"></i>
-            <span class="whitespace-nowrap">{{ label }}</span>
+            <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_hi }}</span>
           </a>
           {% endfor %}
         </nav>
@@ -211,34 +324,46 @@
 
       <!-- 3. Special Features (Interactive) -->
       <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">स्पेशल फीचर्स</p>
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="स्पेशल फीचर्स" data-en="INTERACTIVE FEATURES">स्पेशल फीचर्स</p>
         <div class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
           <button type="button" onclick="hagOpenRoulette()"
                   class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center">🎲</span>
-            <span class="whitespace-nowrap">सरप्राइज़ एनीमे स्पिन</span>
+            <span class="whitespace-nowrap" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Surprise Anime Spin">सरप्राइज़ एनीमे स्पिन</span>
           </button>
           <button type="button" onclick="hagOpenWatchlistDrawer()"
                   class="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center text-[#ff2e63]">❤️</span>
-            <span class="whitespace-nowrap">मेरी वॉचलिस्ट</span>
+            <span class="whitespace-nowrap" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
           </button>
         </div>
+      </div>
+
+      <!-- Sidebar Language & Theme Controls -->
+      <div class="px-2 pt-2 flex items-center justify-between gap-2">
+        <div class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[10px] font-bold">
+          <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')" class="px-2.5 py-1 bg-[#ff2e63] text-white">ह</button>
+          <button type="button" id="sb-lang-btn-en" onclick="hagSetLang('en')" class="px-2.5 py-1 text-white/75">EN</button>
+        </div>
+        <button type="button" id="sb-theme-toggle-btn" onclick="hagToggleTheme()"
+                class="px-3 py-1 border border-white/20 bg-white/5 text-white font-tech text-[10px] font-bold uppercase whitespace-nowrap">
+          <span id="sb-theme-label">☀️ Light</span>
+        </button>
       </div>
     </div>
 
     <!-- 4. Bottom Legal & Business Links -->
     <div class="p-4 border-t border-white/10 space-y-1.5">
-      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">लीगल और बिज़नेस</p>
+      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/45" data-hi="लीगल और बिज़नेस" data-en="LEGAL &amp; BUSINESS">लीगल और बिज़नेस</p>
       <div class="space-y-1 font-tech text-[11px] font-bold uppercase tracking-wider">
         <a href="/about" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'about' else 'text-white/60 hover:text-white' }}">
-          <i class="fa-solid fa-circle-info w-3.5 text-center"></i> <span>हमारे बारे में</span>
+          <i class="fa-solid fa-circle-info w-3.5 text-center"></i> <span data-hi="हमारे बारे में" data-en="About Us">हमारे बारे में</span>
         </a>
         <a href="/contact" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'contact' else 'text-white/60 hover:text-white' }}">
-          <i class="fa-solid fa-envelope w-3.5 text-center"></i> <span>स्पॉन्सरशिप संपर्क</span>
+          <i class="fa-solid fa-envelope w-3.5 text-center"></i> <span data-hi="स्पॉन्सरशिप संपर्क" data-en="Sponsorship Contact">स्पॉन्सरशिप संपर्क</span>
         </a>
         <a href="/privacy-policy" class="flex items-center gap-2.5 px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur in ('privacy','dmca','terms','disclaimer') else 'text-white/60 hover:text-white' }}">
-          <i class="fa-solid fa-scale-balanced w-3.5 text-center"></i> <span>प्राइवेसी व DMCA</span>
+          <i class="fa-solid fa-scale-balanced w-3.5 text-center"></i> <span data-hi="प्राइवेसी व DMCA" data-en="Privacy &amp; DMCA">प्राइवेसी व DMCA</span>
         </a>
       </div>
     </div>
@@ -256,21 +381,21 @@
           <div class="space-y-3">
             <span class="font-display-shonen text-base tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
             <p class="text-white/75 leading-relaxed">
-              100% Official Legal Streaming Directory — We never host or link pirated content.
+              100% Legal Streaming Guide — We never host or link pirated content. Only licensed streaming platforms.
             </p>
             <p class="text-[11px] text-white/50">
-              भारत का आधिकारिक हिंदी एनीमे और मंगा डायरेक्टरी हब &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
+              <span data-hi="भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड" data-en="India's Hindi &amp; English Anime and Manga Guide">भारत का हिंदी और अंग्रेज़ी एनीमे व मंगा गाइड</span> &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
             </p>
           </div>
 
           <div class="space-y-3">
-            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">एक्सप्लोर करें</h3>
+            <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]" data-hi="एक्सप्लोर करें" data-en="EXPLORE">एक्सप्लोर करें</h3>
             <ul class="space-y-2 font-tech text-xs">
-              <li><a href="/" class="hover:text-white transition-colors">होम (Spotlight)</a></li>
-              <li><a href="/schedule" class="hover:text-white transition-colors">लाइव IST शेड्यूल</a></li>
-              <li><a href="/manga" class="hover:text-white transition-colors">3D मंगा शेल्फ़</a></li>
-              <li><a href="/news" class="hover:text-white transition-colors">48h लाइव न्यूज़</a></li>
-              <li><a href="/trailers" class="hover:text-white transition-colors">ऑफिशियल ट्रेलर्स</a></li>
+              <li><a href="/" class="hover:text-white transition-colors" data-hi="होम (Spotlight)" data-en="Home (Spotlight)">होम (Spotlight)</a></li>
+              <li><a href="/schedule" class="hover:text-white transition-colors" data-hi="लाइव IST शेड्यूल" data-en="Live IST Schedule">लाइव IST शेड्यूल</a></li>
+              <li><a href="/manga" class="hover:text-white transition-colors" data-hi="3D मंगा शेल्फ़" data-en="3D Manga Shelf">3D मंगा शेल्फ़</a></li>
+              <li><a href="/news" class="hover:text-white transition-colors" data-hi="48h लाइव न्यूज़" data-en="48h Live News">48h लाइव न्यूज़</a></li>
+              <li><a href="/trailers" class="hover:text-white transition-colors" data-hi="लाइसेंस्ड ट्रेलर्स" data-en="Licensed Trailers">लाइसेंस्ड ट्रेलर्स</a></li>
             </ul>
           </div>
 
@@ -954,10 +1079,72 @@
         if (cb) cb.classList.add("hidden");
       };
 
+      /* === INSTANT HINDI <-> ENGLISH I18N ENGINE (localStorage: hag_lang) === */
+      window.hagGetLang = function () {
+        try { return localStorage.getItem("hag_lang") === "en" ? "en" : "hi"; } catch (e) { return "hi"; }
+      };
+
+      window.hagApplyLang = function (lang) {
+        var cur = lang === "en" ? "en" : "hi";
+        document.documentElement.lang = cur;
+        document.querySelectorAll("[data-hi][data-en]").forEach(function (el) {
+          el.textContent = el.dataset[cur];
+        });
+        document.querySelectorAll("[data-hi-placeholder][data-en-placeholder]").forEach(function (el) {
+          el.placeholder = cur === "en" ? el.dataset.enPlaceholder : el.dataset.hiPlaceholder;
+        });
+        ["", "sb-"].forEach(function (prefix) {
+          var bHi = document.getElementById(prefix + "lang-btn-hi");
+          var bEn = document.getElementById(prefix + "lang-btn-en");
+          if (bHi && bEn) {
+            if (cur === "en") {
+              bEn.className = "px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors";
+              bHi.className = "px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors";
+            } else {
+              bHi.className = "px-2.5 py-1.5 bg-[#ff2e63] text-white whitespace-nowrap transition-colors";
+              bEn.className = "px-2.5 py-1.5 text-white/75 hover:text-white whitespace-nowrap transition-colors";
+            }
+          }
+        });
+      };
+
+      window.hagSetLang = function (lang) {
+        var next = lang === "en" ? "en" : "hi";
+        try { localStorage.setItem("hag_lang", next); } catch (e) {}
+        window.hagApplyLang(next);
+      };
+
+      /* === DARK <-> LIGHT THEME CONVERTER (localStorage: hag_theme) === */
+      window.hagApplyTheme = function (theme) {
+        var isLight = theme === "light";
+        if (isLight) {
+          document.documentElement.classList.add("light-theme");
+          document.documentElement.classList.remove("dark");
+        } else {
+          document.documentElement.classList.remove("light-theme");
+          document.documentElement.classList.add("dark");
+        }
+        var icon = document.getElementById("theme-toggle-icon");
+        var sbLbl = document.getElementById("sb-theme-label");
+        if (icon) icon.textContent = isLight ? "🌙" : "☀️";
+        if (sbLbl) sbLbl.textContent = isLight ? "🌙 Dark" : "☀️ Light";
+      };
+
+      window.hagToggleTheme = function () {
+        var isLight = document.documentElement.classList.contains("light-theme");
+        var next = isLight ? "dark" : "light";
+        try { localStorage.setItem("hag_theme", next); } catch (e) {}
+        window.hagApplyTheme(next);
+      };
+
       document.addEventListener("DOMContentLoaded", function () {
         window.hagSyncWatchlistUI();
         initHunterRankAndStreak();
         fetchCurrentSession();
+        window.hagApplyLang(window.hagGetLang());
+        try {
+          window.hagApplyTheme(localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
+        } catch (e) {}
         try {
           if (!localStorage.getItem("hag_cookie_consent_v2")) {
             var cb = document.getElementById("hag-cookie-banner");

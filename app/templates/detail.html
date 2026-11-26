@@ -105,22 +105,22 @@
           <button type="button"
                   onclick="hagShareDetail(this)"
                   class="katana-btn px-5 py-2.5 border border-white/25 hover:border-white text-white font-tech text-xs font-bold uppercase tracking-wider">
-            <span><i class="fa-solid fa-share-nodes text-[#ff2e63]"></i> <span id="share-btn-label">शेयर करें</span></span>
+            <span><i class="fa-solid fa-share-nodes text-[#ff2e63]"></i> <span id="share-btn-label" data-hi="शेयर करें" data-en="Share">शेयर करें</span></span>
           </button>
 
           {% if item.external_url and item.external_url.startswith('http') %}
           <a href="{{ item.external_url }}" target="_blank" rel="noopener noreferrer"
              class="katana-btn px-5 py-2.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
-            <span><i class="fa-solid fa-arrow-up-right-from-square"></i> आधिकारिक सोर्स</span>
+            <span><i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-hi="लाइसेंस्ड सोर्स" data-en="Source Link">लाइसेंस्ड सोर्स</span></span>
           </a>
           {% endif %}
         </div>
 
-        <!-- Official Streaming Matrix -->
+        <!-- Licensed Streaming Matrix -->
         {% if item.streaming_matrix %}
         <div class="space-y-3 pt-3 border-t border-white/10">
           <div class="flex items-center justify-between">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-[0.2em] text-white">कहाँ देखें &bull; <span class="text-[#ff2e63]">Official Platforms</span></h2>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-[0.2em] text-white" data-hi="कहाँ देखें • Licensed Platforms" data-en="WHERE TO WATCH • LICENSED PLATFORMS">कहाँ देखें &bull; <span class="text-[#ff2e63]">Licensed Platforms</span></h2>
             <span class="font-tech text-[10px] uppercase tracking-wider text-white/50">Verified India Streams</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

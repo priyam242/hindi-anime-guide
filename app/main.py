@@ -75,7 +75,7 @@ class SyncStateRequest(BaseModel):
 
 
 LEGAL_PAGE_META = {
-    "about": ("About Us & Editorial Policy", "भारत का 100% वैध (Legal & Licensed) हिंदी एनीमे और मंगा डायरेक्टरी हब।", "EDITORIAL TRUST"),
+    "about": ("About Us & Editorial Policy", "भारत का 100% वैध (Legal Streaming Guide) हिंदी और अंग्रेज़ी एनीमे व मंगा हब।", "EDITORIAL TRUST"),
     "privacy": ("Privacy Policy", "Google AdSense (DoubleClick DART), Client Storage व भारतीय DPDP Act 2023 नीति।", "PRIVACY & DPDP"),
     "terms": ("Terms & Conditions", "उपयोग की शर्तें, बौद्धिक संपदा व भारतीय न्यायिक क्षेत्राधिकार (Ahmedabad, Gujarat)।", "TERMS OF USE"),
     "dmca": ("DMCA & Copyright Compliance", "Zero-Piracy नीति व भारतीय कॉपीराइट एक्ट 1957 / DMCA 17 U.S.C. § 512 अनुपालन।", "DMCA SAFE HARBOR"),
@@ -433,7 +433,7 @@ async def trailers_page(request: Request, q: str = Query(default="")):
             "request": request,
             "active_nav": "trailers",
             "section": "trailers",
-            "section_title": "आधिकारिक एनीमे ट्रेलर्स और PVs",
+            "section_title": "लाइसेंस्ड एनीमे ट्रेलर्स और PVs",
             "q": q,
             **data,
         },
