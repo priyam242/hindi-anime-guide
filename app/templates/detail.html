@@ -2,79 +2,203 @@
 
 {% block title %}{{ item.title_hi or item.title_en }} — Hindi Anime Guide{% endblock %}
 
-{% block content %}
-<section class="relative py-12 sm:py-16 bg-[#06070c] min-h-[72vh] overflow-hidden">
-  {% if item.banner_url or item.image_url %}
-  <div class="absolute inset-x-0 top-0 h-80 pointer-events-none">
-    <img src="{{ item.banner_url or item.image_url }}" alt="" class="w-full h-full object-cover opacity-30" />
-    <div class="absolute inset-0 bg-gradient-to-b from-[#06070c]/50 via-[#06070c]/85 to-[#06070c]"></div>
-  </div>
-  {% endif %}
+{% block extra_head %}
+<style>
+  .poster-3d-frame {
+    perspective: 1200px;
+  }
+  .poster-3d-card {
+    transform: rotateY(-10deg) rotateX(2deg);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
+    box-shadow: -14px 26px 60px rgba(255, 46, 99, 0.28);
+  }
+  .poster-3d-frame:hover .poster-3d-card {
+    transform: rotateY(0deg) rotateX(0deg) scale(1.02);
+    box-shadow: 0 26px 70px rgba(255, 46, 99, 0.42);
+  }
+</style>
+<script type="application/ld+json">
+{{ json_ld|tojson }}
+</script>
+{% endblock %}
 
-  <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+{% block content %}
+<section class="relative py-12 sm:py-16 bg-[#06070c] min-h-[75vh] overflow-hidden">
+  {% set backdrop_src = item.banner_url or item.image_url or item.cover_url or '/static/media/emblem_icon.webp' %}
+  <div class="absolute inset-x-0 top-0 h-[440px] pointer-events-none overflow-hidden">
+    <img src="{{ backdrop_src }}" alt="" class="w-full h-full object-cover opacity-35 blur-md scale-110" />
+    <div class="absolute inset-0 bg-gradient-to-b from-[#06070c]/55 via-[#06070c]/88 to-[#06070c]"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-transparent to-[#06070c]"></div>
+  </div>
+
+  <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
     <a href="{{ back_url }}" class="inline-flex items-center gap-2 font-tech text-xs font-bold uppercase tracking-widest text-white/70 hover:text-[#ff2e63] transition-colors">
       <i class="fa-solid fa-arrow-left text-[#ff2e63]"></i>
       <span>{{ back_label }}</span>
     </a>
 
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-      <div class="md:col-span-4">
-        <div class="border-2 border-[#ff2e63] bg-[#06070c] shadow-[0_20px_50px_rgba(255,46,99,0.25)] overflow-hidden">
+    <!-- Hero Detail Header -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <div class="md:col-span-4 poster-3d-frame">
+        <div class="poster-3d-card border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden relative">
           <img src="{{ item.cover_url or item.image_url or '/static/media/emblem_icon.webp' }}"
-               alt="{{ item.title_en }}"
+               alt="{{ item.title_en or item.title_hi }}"
                class="w-full aspect-[2/3] object-cover" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+          <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#ff2e63] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+            {{ badge_text }}
+          </span>
+          {% if item.score %}
+          <span class="absolute bottom-3 right-3 px-2.5 py-1 bg-[#06070c]/90 border border-white/25 font-tech text-xs font-bold text-[#ff2e63]">
+            ★ {{ item.score }}%
+          </span>
+          {% endif %}
         </div>
       </div>
 
       <div class="md:col-span-8 space-y-6">
         <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
-          <span class="px-3 py-1 bg-[#ff2e63] text-white">{{ badge_text }}</span>
-          {% if item.score %}<span class="px-2.5 py-1 border border-white/20 text-white">★ {{ item.score }}% SCORE</span>{% endif %}
-          {% if item.airing_day %}<span class="text-white/75">{{ item.airing_day }} &bull; {{ item.airing_time }}</span>{% endif %}
+          <span class="px-3 py-1 bg-[#ff2e63] text-white" style="transform: skewX(-8deg);">{{ badge_text }}</span>
+          {% if item.airing_day %}<span class="px-2.5 py-1 border border-white/20 text-white">{{ item.airing_day }} &bull; {{ item.airing_time }}</span>{% endif %}
           {% if item.date %}<span class="text-white/75">{{ item.date }} &bull; {{ item.source_name }}</span>{% endif %}
+          {% if item.year %}<span class="text-white/75">RELEASE {{ item.year }}</span>{% endif %}
         </div>
 
         <div class="space-y-2">
-          <h1 class="font-display-shonen text-2xl sm:text-4xl text-white leading-tight">{{ item.title_hi or item.title_en }}</h1>
+          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight">
+            {{ item.title_hi or item.title_en }}
+          </h1>
           {% if item.title_en and item.title_en != item.title_hi %}
-          <p class="font-tech text-sm font-bold uppercase tracking-widest text-[#ff2e63]">{{ item.title_en }}</p>
+          <p class="font-tech text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#ff2e63]">{{ item.title_en }}</p>
           {% endif %}
         </div>
 
         {% if item.body_paragraphs %}
-        <div class="space-y-4 text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5">
+        <div class="space-y-3 text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5">
           {% for para in item.body_paragraphs %}
           <p>{{ para }}</p>
           {% endfor %}
         </div>
         {% else %}
         <p class="text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5">
-          {{ item.tagline or item.summary or item.summary_hi or item.summary_en or '' }}
+          {{ item.tagline or item.summary or item.summary_hi or item.summary_en or 'आधिकारिक हिंदी स्ट्रीमिंग विवरण और लाइव शेड्यूल गाइड।' }}
         </p>
         {% endif %}
 
-        {% if item.platforms %}
-        <div class="space-y-3 pt-2">
-          <p class="font-tech text-[11px] font-bold uppercase tracking-widest text-white/60">आधिकारिक स्ट्रीमिंग प्लेटफ़ॉर्म</p>
-          <div class="flex flex-wrap gap-3">
-            {% for p in item.platforms %}
-            <a href="{{ p.url or p.official_url }}" target="_blank" rel="noopener noreferrer"
-               class="katana-btn px-5 py-2.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
-              <span><i class="fa-solid fa-play"></i> {{ p.name or p.display_name }}</span>
+        <!-- Action Buttons: 1-Click Watchlist Toggle + Share -->
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <button type="button"
+                  data-watchlist-btn
+                  data-watchlist-slug="{{ item.slug }}"
+                  onclick='hagToggleWatchlist({
+                    slug: {{ item.slug|tojson }},
+                    title: {{ (item.title_hi or item.title_en)|tojson }},
+                    subtitle: {{ (item.title_en or "")|tojson }},
+                    cover: {{ (item.cover_url or item.image_url or "/static/media/emblem_icon.webp")|tojson }},
+                    url: {{ request.url.path|tojson }},
+                    type: {{ (badge_text or "ANIME")|tojson }}
+                  })'
+                  class="katana-btn px-5 py-2.5 border border-[#ff2e63] bg-white/5 text-white font-tech text-xs font-bold uppercase tracking-wider">
+            <span><i class="fa-solid fa-bookmark text-[#ff2e63]"></i> <span data-wl-label>मेरी लिस्ट में जोड़ें</span></span>
+          </button>
+
+          <button type="button"
+                  onclick="hagShareDetail(this)"
+                  class="katana-btn px-5 py-2.5 border border-white/25 hover:border-white text-white font-tech text-xs font-bold uppercase tracking-wider">
+            <span><i class="fa-solid fa-share-nodes text-[#ff2e63]"></i> <span id="share-btn-label">शेयर करें</span></span>
+          </button>
+
+          {% if item.external_url and item.external_url.startswith('http') %}
+          <a href="{{ item.external_url }}" target="_blank" rel="noopener noreferrer"
+             class="katana-btn px-5 py-2.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
+            <span><i class="fa-solid fa-arrow-up-right-from-square"></i> आधिकारिक सोर्स</span>
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Official Streaming Matrix -->
+        {% if item.streaming_matrix %}
+        <div class="space-y-3 pt-3 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <h2 class="font-tech text-xs font-bold uppercase tracking-[0.2em] text-white">कहाँ देखें &bull; <span class="text-[#ff2e63]">Official Platforms</span></h2>
+            <span class="font-tech text-[10px] uppercase tracking-wider text-white/50">Verified India Streams</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {% for plat in item.streaming_matrix %}
+            <a href="{{ plat.url }}" target="_blank" rel="noopener noreferrer"
+               class="group p-3.5 border {{ 'border-[#ff2e63]/60 bg-[#ff2e63]/10' if plat.active else 'border-white/15 bg-white/[0.02]' }} hover:border-[#ff2e63] transition-colors flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-tech text-xs font-bold uppercase tracking-wider text-white group-hover:text-[#ff2e63]">{{ plat.name }}</p>
+                <p class="text-[10px] font-tech uppercase tracking-wider text-white/70 mt-0.5">{{ plat.audio_status }}</p>
+              </div>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-[#ff2e63] shrink-0"></i>
             </a>
             {% endfor %}
           </div>
         </div>
-        {% elif item.external_url and item.external_url.startswith('http') %}
-        <div class="pt-2">
-          <a href="{{ item.external_url }}" target="_blank" rel="noopener noreferrer"
-             class="katana-btn inline-flex px-6 py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider">
-            <span><i class="fa-solid fa-arrow-up-right-from-square"></i> आधिकारिक सोर्स देखें</span>
-          </a>
-        </div>
         {% endif %}
       </div>
     </div>
+
+    <!-- Embedded Cinema Trailer Player -->
+    {% if item.trailer_id %}
+    <div class="space-y-4 border-t border-white/10 pt-10">
+      <div class="flex items-center justify-between">
+        <h2 class="font-display-shonen text-xl sm:text-2xl text-white">आधिकारिक <span class="text-[#ff2e63]">सिनेमा ट्रेलर</span></h2>
+        <span class="font-tech text-[11px] font-bold uppercase tracking-widest text-[#ff2e63]">HD TRAILER</span>
+      </div>
+      <div class="aspect-video border-2 border-white/15 hover:border-[#ff2e63] transition-colors bg-[#06070c] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.9)]">
+        <iframe src="https://www.youtube-nocookie.com/embed/{{ item.trailer_id }}?rel=0"
+                title="{{ item.title_en }} Official Trailer"
+                class="w-full h-full"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Related Titles Rail -->
+    {% if related %}
+    <div class="space-y-5 border-t border-white/10 pt-10">
+      <h2 class="font-display-shonen text-xl sm:text-2xl text-white">और देखें <span class="text-[#ff2e63]">(Related Titles)</span></h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
+        {% for rel in related %}
+        <a href="{{ rel.url }}" class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
+          <div class="aspect-[3/4] overflow-hidden relative">
+            <img src="{{ rel.cover }}" alt="{{ rel.title_en }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+            <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#ff2e63] text-white font-tech text-[9px] font-bold uppercase">{{ rel.tag }}</span>
+          </div>
+          <div class="p-3 space-y-1">
+            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]">{{ rel.title_hi }}</h3>
+            <p class="text-[10px] text-white/50 truncate">{{ rel.title_en }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function hagShareDetail() {
+    var lbl = document.getElementById("share-btn-label");
+    if (navigator.share) {
+      navigator.share({ title: document.title, url: window.location.href }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(window.location.href).then(function () {
+        if (lbl) {
+          lbl.textContent = "लिंक कॉपी हुआ ✓";
+          setTimeout(function () { lbl.textContent = "शेयर करें"; }, 2200);
+        }
+      }).catch(function () {});
+    }
+  }
+</script>
 {% endblock %}

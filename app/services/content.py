@@ -477,24 +477,117 @@ def filter_payload(data: dict[str, Any], query: str | None) -> dict[str, Any]:
     }
 
 
+def _build_streaming_matrix(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build India official streaming platform matrix with Hindi Dub / Sub status pills."""
+    item_plats = {str(p.get("name", "")).lower(): p for p in (item.get("platforms") or [])}
+    dub_plat = str(item.get("dub_platform") or "").lower()
+    has_dub = bool(item.get("hindi_dub")) or bool(item_plats)
+
+    matrix_defs = [
+        ("Crunchyroll", "https://www.crunchyroll.com", "HINDI DUB + SUB" if (has_dub or "crunchyroll" in dub_plat or "crunchyroll" in item_plats) else "JP AUDIO + EN SUB"),
+        ("Netflix", "https://www.netflix.com", "HINDI DUB + SUB" if ("netflix" in item_plats or "netflix" in dub_plat) else "SELECT SEASONS"),
+        ("SonyLIV", "https://www.sonyliv.com", "HINDI / TAMIL / TELUGU" if has_dub else "REGIONAL CATALOG"),
+        ("Prime Video", "https://www.primevideo.com", "HINDI + SUB" if "prime" in item_plats else "GLOBAL SIMULCAST"),
+        ("YouTube / Muse India", "https://www.youtube.com/@MuseIndia", "FREE • EN/HI SUB"),
+    ]
+    out: list[dict[str, Any]] = []
+    for name, default_url, status in matrix_defs:
+        key = name.lower()
+        active = key in item_plats or key in dub_plat or (name == "Crunchyroll" and has_dub)
+        url = item_plats[key]["url"] if key in item_plats and item_plats[key].get("url") else default_url
+        out.append({"name": name, "url": url, "audio_status": status, "active": active})
+    return out
+
+
+def _match_trailer_id(title_en: str, trailers: list[dict[str, Any]]) -> str:
+    key = (title_en or "").lower().split(":")[0].strip()
+    if not key:
+        return ""
+    for tr in trailers:
+        if key in (tr.get("title_en") or "").lower() and tr.get("youtube_id"):
+            return tr["youtube_id"]
+    return ""
+
+
 def get_anime_detail(slug: str) -> dict[str, Any] | None:
-    """Resolve an anime spotlight or schedule item by slug."""
+    """Resolve an anime spotlight or schedule item by slug with streaming matrix and related items."""
     data = get_cached_content()
     target = (slug or "").strip().lower()
+    found: dict[str, Any] | None = None
     for sp in data["spotlight"]:
         if sp["slug"].lower() == target:
-            return sp
-    for sch in data["schedule"]:
-        if sch.get("slug", "").lower() == target:
-            return sch
-    return None
+            found = dict(sp)
+            break
+    if not found:
+        for sch in data["schedule"]:
+            if sch.get("slug", "").lower() == target:
+                found = dict(sch)
+                break
+    if not found:
+        return None
+
+    if not found.get("trailer_id"):
+        found["trailer_id"] = _match_trailer_id(found.get("title_en", ""), data["trailers"])
+    found["streaming_matrix"] = _build_streaming_matrix(found)
+
+    related: list[dict[str, Any]] = []
+    for sp in data["spotlight"]:
+        if sp["slug"].lower() != target:
+            related.append(
+                {
+                    "title_hi": sp["title_hi"],
+                    "title_en": sp["title_en"],
+                    "cover": sp["cover_url"],
+                    "url": f"/anime/{sp['slug']}",
+                    "tag": "HINDI DUB",
+                }
+            )
+    for sch in data["schedule"][:8]:
+        if len(related) >= 4:
+            break
+        if sch.get("slug", "").lower() != target:
+            related.append(
+                {
+                    "title_hi": sch["title_hi"],
+                    "title_en": sch["title_en"],
+                    "cover": sch["image_url"],
+                    "url": f"/anime/{sch['slug']}",
+                    "tag": sch.get("airing_time", "IST"),
+                }
+            )
+    found["related"] = related[:4]
+    return found
 
 
 def get_news_detail(slug: str) -> dict[str, Any] | None:
-    """Resolve a news item or editorial article by slug."""
+    """Resolve a news item or editorial article by slug with related items."""
     data = get_cached_content()
     target = (slug or "").strip().lower()
+    found: dict[str, Any] | None = None
     for n in data["news"]:
         if str(n.get("slug", "")).lower() == target or str(n.get("id", "")).lower() == target:
-            return n
-    return None
+            found = dict(n)
+            break
+    if not found:
+        return None
+    related = [
+        {
+            "title_hi": x["title_hi"],
+            "title_en": x["date"],
+            "cover": x["image_url"],
+            "url": f"/news/{x['slug']}",
+            "tag": x["category"],
+        }
+        for x in data["news"]
+        if str(x.get("slug", "")).lower() != target
+    ][:4]
+    found["related"] = related
+    return found
+
+
+def get_sitemap_urls() -> tuple[list[str], list[str]]:
+    """Return all active anime and news slugs for dynamic XML sitemap."""
+    data = get_cached_content()
+    anime_slugs = list(dict.fromkeys([sp["slug"] for sp in data["spotlight"]] + [s["slug"] for s in data["schedule"] if s.get("slug")]))
+    news_slugs = list(dict.fromkeys([n["slug"] for n in data["news"] if n.get("slug")]))
+    return anime_slugs, news_slugs

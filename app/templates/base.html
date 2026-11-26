@@ -68,7 +68,7 @@
         <a href="/trailers" class="px-3.5 py-2 rounded transition-colors {{ 'bg-[#ff2e63] text-white shadow-[0_0_16px_rgba(255,46,99,0.45)]' if cur == 'trailers' else 'text-white/75 hover:text-white hover:bg-white/5' }}">ट्रेलर्स</a>
       </nav>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
         <form action="{{ '/' if active_nav == 'home' else '/' + active_nav }}" method="get" class="relative hidden sm:block">
           <input
             id="global-search-input"
@@ -76,10 +76,21 @@
             name="q"
             value="{{ q or '' }}"
             placeholder="एनीमे, मंगा, न्यूज़ खोजें... (/)"
-            class="w-48 md:w-64 pl-9 pr-3 py-1.5 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
+            class="w-40 md:w-56 pl-9 pr-3 py-1.5 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all"
           />
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
         </form>
+
+        <!-- Watchlist Trigger -->
+        <button type="button"
+                id="watchlist-nav-btn"
+                onclick="hagOpenWatchlistDrawer()"
+                class="relative inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">
+          <i class="fa-solid fa-bookmark text-[#ff2e63]"></i>
+          <span class="hidden sm:inline">मेरी लिस्ट</span>
+          <span id="watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#ff2e63] text-white text-[10px] leading-none">0</span>
+        </button>
+
         <span class="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#ff2e63]/40 bg-[#ff2e63]/10 text-[#ff2e63] font-tech text-[10px] font-bold tracking-widest uppercase">
           <span class="w-1.5 h-1.5 rounded-full bg-[#ff2e63] animate-pulse"></span>
           LIVE IST
@@ -114,18 +125,155 @@
         <a href="https://www.netflix.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Netflix</a>
         <a href="https://www.hotstar.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">JioHotstar</a>
         <a href="https://www.primevideo.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Prime Video</a>
+        <a href="/sitemap.xml" class="hover:text-[#ff2e63] transition-colors">Sitemap</a>
       </div>
     </div>
   </footer>
 
+  <!-- Slide-Over Glassmorphic Watchlist Drawer -->
+  <div id="watchlist-backdrop" onclick="hagCloseWatchlistDrawer()" class="fixed inset-0 z-50 hidden bg-[#06070c]/80 backdrop-blur-sm"></div>
+  <aside id="watchlist-drawer"
+         aria-label="मेरी वॉचलिस्ट"
+         class="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[#06070c]/95 backdrop-blur-2xl border-l-2 border-[#ff2e63] shadow-[-20px_0_60px_rgba(255,46,99,0.28)] transform translate-x-full transition-transform duration-300 flex flex-col">
+    <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+      <div>
+        <p class="font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">SAVED COLLECTION &bull; LOCAL</p>
+        <h2 class="font-display-shonen text-lg text-white tracking-wide">मेरी <span class="text-[#ff2e63]">लिस्ट</span></h2>
+      </div>
+      <button type="button" onclick="hagCloseWatchlistDrawer()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="watchlist-items-container" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+    <div class="px-6 py-4 border-t border-white/10 flex items-center justify-between text-[11px] font-tech text-white/60 uppercase tracking-wider">
+      <span>Saved in browser storage</span>
+      <button type="button" onclick="hagClearWatchlist()" class="text-[#ff2e63] hover:underline">Clear All</button>
+    </div>
+  </aside>
+
   <script>
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement && document.activeElement.tagName) || "")) {
-        var el = document.getElementById("global-search-input");
-        if (el) { e.preventDefault(); el.focus(); }
+    (function () {
+      var KEY = "hag_watchlist_v2";
+
+      window.hagGetWatchlist = function () {
+        try {
+          var raw = localStorage.getItem(KEY);
+          var list = raw ? JSON.parse(raw) : [];
+          return Array.isArray(list) ? list : [];
+        } catch (e) {
+          return [];
+        }
+      };
+
+      function saveWatchlist(list) {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(list));
+        } catch (e) {}
+        window.hagSyncWatchlistUI();
       }
-    });
+
+      window.hagIsInWatchlist = function (slug) {
+        return window.hagGetWatchlist().some(function (x) { return x.slug === slug; });
+      };
+
+      window.hagToggleWatchlist = function (item) {
+        if (!item || !item.slug) return false;
+        var list = window.hagGetWatchlist();
+        var exists = list.some(function (x) { return x.slug === item.slug; });
+        if (exists) {
+          list = list.filter(function (x) { return x.slug !== item.slug; });
+        } else {
+          list.unshift({
+            slug: item.slug,
+            title: item.title || item.title_hi || item.title_en || item.slug,
+            subtitle: item.subtitle || item.title_en || "",
+            cover: item.cover || "/static/media/emblem_icon.webp",
+            url: item.url || ("/anime/" + item.slug),
+            type: item.type || "ANIME"
+          });
+        }
+        saveWatchlist(list);
+        return !exists;
+      };
+
+      window.hagRemoveWatchlist = function (slug) {
+        var list = window.hagGetWatchlist().filter(function (x) { return x.slug !== slug; });
+        saveWatchlist(list);
+      };
+
+      window.hagClearWatchlist = function () {
+        saveWatchlist([]);
+      };
+
+      window.hagSyncWatchlistUI = function () {
+        var list = window.hagGetWatchlist();
+        var badge = document.getElementById("watchlist-count-badge");
+        if (badge) badge.textContent = String(list.length);
+
+        var container = document.getElementById("watchlist-items-container");
+        if (container) {
+          if (!list.length) {
+            container.innerHTML = '<div class="text-center py-14 space-y-3 border border-dashed border-white/15 px-6"><i class="fa-regular fa-bookmark text-3xl text-[#ff2e63]"></i><p class="text-sm font-bold text-white">आपकी लिस्ट अभी खाली है</p><p class="text-xs text-white/55">किसी भी एनीमे या मंगा पर "मेरी लिस्ट में जोड़ें" दबाएं।</p></div>';
+          } else {
+            container.innerHTML = list.map(function (it) {
+              return (
+                '<div class="flex items-center gap-3 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.03] transition-colors">' +
+                  '<img src="' + (it.cover || "/static/media/emblem_icon.webp") + '" alt="" class="w-12 h-16 object-cover border border-white/15 shrink-0" />' +
+                  '<div class="min-w-0 flex-1">' +
+                    '<span class="font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">' + (it.type || "SAVED") + '</span>' +
+                    '<a href="' + (it.url || "#") + '" class="block text-xs font-bold text-white hover:text-[#ff2e63] truncate">' + (it.title || "") + '</a>' +
+                    '<p class="text-[10px] text-white/50 truncate">' + (it.subtitle || "") + '</p>' +
+                  '</div>' +
+                  '<button type="button" onclick="hagRemoveWatchlist(\'' + String(it.slug).replace(/'/g, "\\'") + '\')" class="w-8 h-8 border border-white/15 hover:border-[#ff2e63] text-white/70 hover:text-[#ff2e63] shrink-0 flex items-center justify-center" aria-label="Remove"><i class="fa-solid fa-trash text-xs"></i></button>' +
+                '</div>'
+              );
+            }).join("");
+          }
+        }
+
+        document.querySelectorAll("[data-watchlist-btn]").forEach(function (btn) {
+          var slug = btn.dataset.watchlistSlug;
+          var saved = window.hagIsInWatchlist(slug);
+          var label = btn.querySelector("[data-wl-label]");
+          if (saved) {
+            btn.classList.add("bg-white", "text-[#06070c]");
+            btn.classList.remove("bg-white/5", "text-white");
+            if (label) label.textContent = "मेरी लिस्ट में सेव है ✓";
+          } else {
+            btn.classList.remove("bg-white", "text-[#06070c]");
+            btn.classList.add("bg-white/5", "text-white");
+            if (label) label.textContent = "मेरी लिस्ट में जोड़ें";
+          }
+        });
+      };
+
+      window.hagOpenWatchlistDrawer = function () {
+        window.hagSyncWatchlistUI();
+        var bd = document.getElementById("watchlist-backdrop");
+        var dr = document.getElementById("watchlist-drawer");
+        if (bd) bd.classList.remove("hidden");
+        if (dr) dr.classList.remove("translate-x-full");
+      };
+
+      window.hagCloseWatchlistDrawer = function () {
+        var bd = document.getElementById("watchlist-backdrop");
+        var dr = document.getElementById("watchlist-drawer");
+        if (bd) bd.classList.add("hidden");
+        if (dr) dr.classList.add("translate-x-full");
+      };
+
+      document.addEventListener("DOMContentLoaded", window.hagSyncWatchlistUI);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") window.hagCloseWatchlistDrawer();
+        if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement && document.activeElement.tagName) || "")) {
+          var el = document.getElementById("global-search-input");
+          if (el) { e.preventDefault(); el.focus(); }
+        }
+      });
+    })();
   </script>
   {% block extra_scripts %}{% endblock %}
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
 </html>

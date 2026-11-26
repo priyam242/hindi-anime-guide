@@ -1,9 +1,10 @@
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -14,6 +15,7 @@ from app.services.content import (
     get_cached_content,
     get_counts,
     get_news_detail,
+    get_sitemap_urls,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -30,7 +32,7 @@ async def bandwidth_cache_headers(request: Request, call_next):
     if response.status_code < 400:
         if path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif path != "/healthz" and request.method == "GET":
+        elif path not in ("/healthz", "/robots.txt", "/sitemap.xml") and request.method == "GET":
             response.headers.setdefault("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600")
     return response
 
@@ -46,6 +48,31 @@ async def healthz():
     db_ok = ping_database()
     counts = get_counts() if db_ok else {}
     return {"status": "ok" if db_ok else "degraded", "version": "v2-clean", "db": db_ok, "counts": counts}
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt(request: Request):
+    base = str(request.base_url).rstrip("/")
+    return f"User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n"
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml(request: Request):
+    base = str(request.base_url).rstrip("/")
+    anime_slugs, news_slugs = get_sitemap_urls()
+    urls = [
+        f"{base}/",
+        f"{base}/schedule",
+        f"{base}/manga",
+        f"{base}/news",
+        f"{base}/trailers",
+    ]
+    urls.extend(f"{base}/anime/{s}" for s in anime_slugs)
+    urls.extend(f"{base}/news/{s}" for s in news_slugs)
+
+    items = "\n".join(f"  <url><loc>{escape(u)}</loc><changefreq>daily</changefreq></url>" for u in urls)
+    xml_body = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{items}\n</urlset>\n'
+    return Response(content=xml_body, media_type="application/xml")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -120,6 +147,14 @@ async def news_detail_page(request: Request, slug: str):
     item = get_news_detail(slug)
     if not item:
         raise HTTPException(status_code=404, detail="News item not found")
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": item.get("title_hi") or item.get("title_en") or "",
+        "description": item.get("summary") or "",
+        "image": item.get("image_url") or "",
+        "publisher": {"@type": "Organization", "name": "Hindi Anime Guide"},
+    }
     return templates.TemplateResponse(
         request,
         "detail.html",
@@ -127,6 +162,8 @@ async def news_detail_page(request: Request, slug: str):
             "request": request,
             "active_nav": "news",
             "item": item,
+            "related": item.get("related", []),
+            "json_ld": json_ld,
             "badge_text": item.get("category", "ANIME NEWS"),
             "back_url": "/news",
             "back_label": "सभी एनीमे न्यूज़ पर वापस जाएं",
@@ -140,6 +177,15 @@ async def anime_detail_page(request: Request, slug: str):
     item = get_anime_detail(slug)
     if not item:
         raise HTTPException(status_code=404, detail="Anime not found")
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "TVSeries",
+        "name": item.get("title_en") or item.get("title_hi") or "",
+        "alternateName": item.get("title_hi") or "",
+        "description": item.get("tagline") or item.get("summary") or "",
+        "image": item.get("cover_url") or item.get("image_url") or "",
+        "inLanguage": "hi",
+    }
     return templates.TemplateResponse(
         request,
         "detail.html",
@@ -147,6 +193,8 @@ async def anime_detail_page(request: Request, slug: str):
             "request": request,
             "active_nav": "home",
             "item": item,
+            "related": item.get("related", []),
+            "json_ld": json_ld,
             "badge_text": item.get("badge") or "ANIME SPOTLIGHT",
             "back_url": "/",
             "back_label": "होमपेज पर वापस जाएं",
