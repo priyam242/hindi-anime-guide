@@ -128,7 +128,10 @@
             <a href="{{ plat.url }}" target="_blank" rel="noopener noreferrer"
                class="group p-3.5 border {{ 'border-[#ff2e63]/60 bg-[#ff2e63]/10' if plat.active else 'border-white/15 bg-white/[0.02]' }} hover:border-[#ff2e63] transition-colors flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <p class="font-tech text-xs font-bold uppercase tracking-wider text-white group-hover:text-[#ff2e63]">{{ plat.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="font-tech text-xs font-bold uppercase tracking-wider text-white group-hover:text-[#ff2e63]">{{ plat.name }}</p>
+                  <span class="px-1.5 py-0.5 text-[9px] font-tech font-bold uppercase {{ 'bg-[#ff2e63] text-white' if plat.tier == 'FREE' else 'bg-white/10 text-white/80' }}">{{ plat.tier or 'PAID' }}</span>
+                </div>
                 <p class="text-[10px] font-tech uppercase tracking-wider text-white/70 mt-0.5">{{ plat.audio_status }}</p>
               </div>
               <i class="fa-solid fa-arrow-up-right-from-square text-xs text-[#ff2e63] shrink-0"></i>

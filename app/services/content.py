@@ -579,18 +579,18 @@ def _build_streaming_matrix(item: dict[str, Any]) -> list[dict[str, Any]]:
     has_dub = bool(item.get("hindi_dub")) or bool(item_plats)
 
     matrix_defs = [
-        ("Crunchyroll", "https://www.crunchyroll.com", "HINDI DUB + SUB" if (has_dub or "crunchyroll" in dub_plat or "crunchyroll" in item_plats) else "JP AUDIO + EN SUB"),
-        ("Netflix", "https://www.netflix.com", "HINDI DUB + SUB" if ("netflix" in item_plats or "netflix" in dub_plat) else "SELECT SEASONS"),
-        ("SonyLIV", "https://www.sonyliv.com", "HINDI / TAMIL / TELUGU" if has_dub else "REGIONAL CATALOG"),
-        ("Prime Video", "https://www.primevideo.com", "HINDI + SUB" if "prime" in item_plats else "GLOBAL SIMULCAST"),
-        ("YouTube / Muse India", "https://www.youtube.com/@MuseIndia", "FREE • EN/HI SUB"),
+        ("Crunchyroll", "https://www.crunchyroll.com", "PAID", "HINDI DUB + SUB" if (has_dub or "crunchyroll" in dub_plat or "crunchyroll" in item_plats) else "JP AUDIO + EN SUB"),
+        ("Netflix", "https://www.netflix.com", "PAID", "HINDI DUB + SUB" if ("netflix" in item_plats or "netflix" in dub_plat) else "SELECT SEASONS"),
+        ("SonyLIV", "https://www.sonyliv.com", "PAID", "HINDI / TAMIL / TELUGU" if has_dub else "REGIONAL CATALOG"),
+        ("Prime Video", "https://www.primevideo.com", "PAID", "HINDI + SUB" if "prime" in item_plats else "GLOBAL SIMULCAST"),
+        ("YouTube / Muse India", "https://www.youtube.com/@MuseIndia", "FREE", "FREE • EN / HI SUB"),
     ]
     out: list[dict[str, Any]] = []
-    for name, default_url, status in matrix_defs:
+    for name, default_url, tier, status in matrix_defs:
         key = name.lower()
-        active = key in item_plats or key in dub_plat or (name == "Crunchyroll" and has_dub)
+        active = key in item_plats or key in dub_plat or (name == "Crunchyroll" and has_dub) or (tier == "FREE")
         url = item_plats[key]["url"] if key in item_plats and item_plats[key].get("url") else default_url
-        out.append({"name": name, "url": url, "audio_status": status, "active": active})
+        out.append({"name": name, "url": url, "tier": tier, "audio_status": status, "active": active})
     return out
 
 
