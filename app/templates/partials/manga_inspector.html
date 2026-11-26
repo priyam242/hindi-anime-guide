@@ -98,6 +98,11 @@
             <span><i class="fa-solid fa-book-open"></i> <span id="mi-read-platform">MangaPlus</span> पर पढ़ें</span>
           </a>
 
+          <a id="mi-buy-link" href="#" target="_blank" rel="noopener noreferrer nofollow sponsored"
+             class="katana-btn inline-flex px-4 py-3 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase">
+            <span>📚 ओरिजिनल पेपरबैक खरीदें (Amazon India Search)</span>
+          </a>
+
           <button type="button"
                   id="mi-wl-btn"
                   class="katana-btn inline-flex px-5 py-3 border border-white/25 hover:border-[#ff2e63] bg-white/5 text-white font-tech text-xs font-bold tracking-wider uppercase">
@@ -147,6 +152,11 @@
 
       document.getElementById("mi-read-link").href = m.read_url || m.source_url || "#";
       document.getElementById("mi-read-platform").textContent = m.read_platform || "MangaPlus / Shonen Jump";
+      var buyLink = document.getElementById("mi-buy-link");
+      if (buyLink) {
+        var qTitle = (m.title_en || m.title_hi || "anime").trim();
+        buyLink.href = "https://www.amazon.in/s?k=" + encodeURIComponent(qTitle + " manga");
+      }
 
       var wlSlug = "manga-" + m.id;
       var wlBtn = document.getElementById("mi-wl-btn");

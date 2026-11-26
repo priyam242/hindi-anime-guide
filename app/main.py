@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal
 from xml.sax.saxutils import escape
@@ -22,6 +23,7 @@ from app.services.content import (
     get_poll_state,
     get_roulette_pool,
     get_sitemap_urls,
+    save_contact_message,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,6 +38,23 @@ class PollVoteRequest(BaseModel):
     choice: Literal["a", "b"]
 
 
+class ContactRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=5, max_length=200)
+    subject: str = Field(min_length=2, max_length=80)
+    message: str = Field(min_length=5, max_length=4000)
+
+
+LEGAL_PAGE_META = {
+    "about": ("About Us & Editorial Policy", "भारत का 100% वैध (Legal & Licensed) हिंदी एनीमे और मंगा डायरेक्टरी हब।", "EDITORIAL TRUST"),
+    "privacy": ("Privacy Policy", "Google AdSense (DoubleClick DART), Client Storage व भारतीय DPDP Act 2023 नीति।", "PRIVACY & DPDP"),
+    "terms": ("Terms & Conditions", "उपयोग की शर्तें, बौद्धिक संपदा व भारतीय न्यायिक क्षेत्राधिकार (Ahmedabad, Gujarat)।", "TERMS OF USE"),
+    "dmca": ("DMCA & Copyright Compliance", "Zero-Piracy नीति व भारतीय कॉपीराइट एक्ट 1957 / DMCA 17 U.S.C. § 512 अनुपालन।", "DMCA SAFE HARBOR"),
+    "disclaimer": ("Affiliate & Advertising Disclaimer", "ASCI India व FTC अनुरूप Amazon India एफिलिएट और AdSense प्रकटीकरण।", "AFFILIATE DISCLOSURE"),
+    "contact": ("Contact & Business Sponsorships", "ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना और फीडबैक के लिए सीधे संपर्क करें।", "CONTACT & BUSINESS"),
+}
+
+
 @app.middleware("http")
 async def bandwidth_cache_headers(request: Request, call_next):
     response = await call_next(request)
@@ -44,7 +63,7 @@ async def bandwidth_cache_headers(request: Request, call_next):
         if path.startswith("/static/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif (
-            path not in ("/healthz", "/robots.txt", "/sitemap.xml", "/api/psychology/state")
+            path not in ("/healthz", "/robots.txt", "/sitemap.xml", "/ads.txt", "/api/psychology/state")
             and not path.startswith("/api/")
             and request.method == "GET"
         ):
@@ -65,6 +84,15 @@ async def healthz():
     return {"status": "ok" if db_ok else "degraded", "version": "v2-clean", "db": db_ok, "counts": counts}
 
 
+@app.get("/ads.txt", response_class=PlainTextResponse)
+async def ads_txt():
+    pub_id = os.getenv("ADSENSE_PUB_ID", "").strip()
+    if pub_id:
+        clean_id = pub_id if pub_id.startswith("pub-") else f"pub-{pub_id}"
+        return f"google.com, {clean_id}, DIRECT, f08c47fec0942fa0\n"
+    return "# Hindi Anime Guide ads.txt\n# Set ADSENSE_PUB_ID environment variable to publish google.com seller entry.\n"
+
+
 @app.get("/api/psychology/state", response_class=JSONResponse)
 async def psychology_state():
     return {
@@ -76,6 +104,19 @@ async def psychology_state():
 @app.post("/api/poll/vote", response_class=JSONResponse)
 async def poll_vote(payload: PollVoteRequest):
     return cast_poll_vote(payload.poll_key, payload.choice)
+
+
+@app.post("/api/contact", response_class=JSONResponse)
+async def contact_submit(payload: ContactRequest):
+    if "@" not in payload.email or "." not in payload.email.split("@")[-1]:
+        raise HTTPException(status_code=422, detail="Please enter a valid email address.")
+    row_id = save_contact_message(payload.name, payload.email, payload.subject, payload.message)
+    return {
+        "ok": True,
+        "id": row_id,
+        "subject": payload.subject,
+        "message": "Contact inquiry saved successfully.",
+    }
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -94,6 +135,12 @@ async def sitemap_xml(request: Request):
         f"{base}/manga",
         f"{base}/news",
         f"{base}/trailers",
+        f"{base}/about",
+        f"{base}/privacy-policy",
+        f"{base}/terms",
+        f"{base}/dmca",
+        f"{base}/disclaimer",
+        f"{base}/contact",
     ]
     urls.extend(f"{base}/anime/{s}" for s in anime_slugs)
     urls.extend(f"{base}/news/{s}" for s in news_slugs)
@@ -101,6 +148,53 @@ async def sitemap_xml(request: Request):
     items = "\n".join(f"  <url><loc>{escape(u)}</loc><changefreq>daily</changefreq></url>" for u in urls)
     xml_body = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{items}\n</urlset>\n'
     return Response(content=xml_body, media_type="application/xml")
+
+
+def _render_legal(request: Request, page_key: str) -> HTMLResponse:
+    title, hi_summary, badge = LEGAL_PAGE_META[page_key]
+    return templates.TemplateResponse(
+        request,
+        "legal.html",
+        {
+            "request": request,
+            "active_nav": "legal",
+            "legal_page": page_key,
+            "page_title": title,
+            "hindi_summary": hi_summary,
+            "badge_label": badge,
+            "q": "",
+        },
+    )
+
+
+@app.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    return _render_legal(request, "about")
+
+
+@app.get("/privacy-policy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    return _render_legal(request, "privacy")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    return _render_legal(request, "terms")
+
+
+@app.get("/dmca", response_class=HTMLResponse)
+async def dmca_page(request: Request):
+    return _render_legal(request, "dmca")
+
+
+@app.get("/disclaimer", response_class=HTMLResponse)
+async def disclaimer_page(request: Request):
+    return _render_legal(request, "disclaimer")
+
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact_page(request: Request):
+    return _render_legal(request, "contact")
 
 
 @app.get("/", response_class=HTMLResponse)

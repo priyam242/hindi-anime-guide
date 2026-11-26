@@ -839,3 +839,43 @@ def get_roulette_pool() -> list[dict[str, Any]]:
             }
         )
     return pool
+
+
+_contact_lock = threading.Lock()
+_contact_ready = False
+
+
+def save_contact_message(name: str, email: str, subject: str, message: str) -> int:
+    """Create contact_messages table if needed and persist contact/sponsorship inquiry."""
+    global _contact_ready
+    with _contact_lock:
+        if not _contact_ready:
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        """
+                        CREATE TABLE IF NOT EXISTS contact_messages (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(120) NOT NULL,
+                            email VARCHAR(200) NOT NULL,
+                            subject VARCHAR(80) NOT NULL,
+                            message TEXT NOT NULL,
+                            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                        )
+                        """
+                    )
+                )
+            _contact_ready = True
+
+    with engine.begin() as conn:
+        row_id = conn.execute(
+            text(
+                """
+                INSERT INTO contact_messages (name, email, subject, message, created_at)
+                VALUES (:name, :email, :subject, :message, NOW())
+                RETURNING id
+                """
+            ),
+            {"name": name[:120], "email": email[:200], "subject": subject[:80], "message": message[:4000]},
+        ).scalar()
+    return int(row_id or 1)

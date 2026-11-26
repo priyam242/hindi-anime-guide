@@ -131,22 +131,86 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="border-t border-white/10 bg-[#06070c] py-10 text-xs text-white/60">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-        <span class="font-display-shonen text-sm tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
-        <span class="hidden sm:inline text-white/25">|</span>
-        <span>भारत का आधिकारिक हिंदी एनीमे और मंगा डायरेक्टरी हब</span>
+  <footer class="border-t border-white/15 bg-[#06070c] py-12 text-xs text-white/65">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Col 1: Brand & Legal Trust -->
+        <div class="space-y-3">
+          <span class="font-display-shonen text-base tracking-wider text-white">HINDI ANIME <span class="text-[#ff2e63]">GUIDE</span></span>
+          <p class="text-white/75 leading-relaxed">
+            100% Official Legal Streaming Directory — We never host or link pirated content.
+          </p>
+          <p class="text-[11px] text-white/50">
+            भारत का आधिकारिक हिंदी एनीमे और मंगा डायरेक्टरी हब &bull; <span class="text-white/80">contact@hindianimeguide.in</span>
+          </p>
+        </div>
+
+        <!-- Col 2: Explore -->
+        <div class="space-y-3">
+          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">एक्सप्लोर करें</h3>
+          <ul class="space-y-2 font-tech text-xs">
+            <li><a href="/" class="hover:text-white transition-colors">होम (Spotlight)</a></li>
+            <li><a href="/schedule" class="hover:text-white transition-colors">लाइव IST शेड्यूल</a></li>
+            <li><a href="/manga" class="hover:text-white transition-colors">3D मंगा शेल्फ़</a></li>
+            <li><a href="/news" class="hover:text-white transition-colors">48h लाइव न्यूज़</a></li>
+            <li><a href="/trailers" class="hover:text-white transition-colors">ऑफिशियल ट्रेलर्स</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Company & Trust -->
+        <div class="space-y-3">
+          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">कंपनी और विश्वास</h3>
+          <ul class="space-y-2 font-tech text-xs">
+            <li><a href="/about" class="hover:text-white transition-colors">हमारे बारे में (About Us)</a></li>
+            <li><a href="/contact" class="hover:text-white transition-colors">संपर्क और स्पॉन्सरशिप (Contact)</a></li>
+            <li><a href="/sitemap.xml" class="hover:text-white transition-colors">XML साइटमैप (Sitemap)</a></li>
+            <li><a href="/ads.txt" class="hover:text-white transition-colors">AdSense ads.txt</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Legal & Policy -->
+        <div class="space-y-3">
+          <h3 class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">लीगल और पॉलिसी</h3>
+          <ul class="space-y-2 font-tech text-xs">
+            <li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy (DPDP &amp; AdSense)</a></li>
+            <li><a href="/terms" class="hover:text-white transition-colors">Terms of Use</a></li>
+            <li><a href="/dmca" class="hover:text-white transition-colors">DMCA Copyright Compliance</a></li>
+            <li><a href="/disclaimer" class="hover:text-white transition-colors">Affiliate Disclaimer (ASCI / FTC)</a></li>
+          </ul>
+        </div>
       </div>
-      <div class="flex flex-wrap items-center justify-center gap-4 font-tech uppercase tracking-wider text-[11px]">
-        <a href="https://www.crunchyroll.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Crunchyroll</a>
-        <a href="https://www.netflix.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Netflix</a>
-        <a href="https://www.hotstar.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">JioHotstar</a>
-        <a href="https://www.primevideo.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Prime Video</a>
-        <a href="/sitemap.xml" class="hover:text-[#ff2e63] transition-colors">Sitemap</a>
+
+      <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-tech uppercase tracking-wider text-white/45">
+        <span>&copy; 2026 Hindi Anime Guide (hindianimeguide.in) &bull; All Rights Reserved</span>
+        <div class="flex flex-wrap items-center gap-4">
+          <a href="https://www.crunchyroll.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Crunchyroll</a>
+          <a href="https://www.netflix.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Netflix</a>
+          <a href="https://www.hotstar.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">JioHotstar</a>
+          <a href="https://www.primevideo.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#ff2e63] transition-colors">Prime Video</a>
+        </div>
       </div>
     </div>
   </footer>
+
+  <!-- Cookie & Ad-Privacy Consent Banner -->
+  <div id="hag-cookie-banner"
+       role="region"
+       aria-label="Cookie and Privacy Consent"
+       class="fixed bottom-4 left-4 right-4 z-40 max-w-4xl mx-auto hidden border border-[#ff2e63] bg-[#06070c]/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_14px_40px_rgba(0,0,0,0.85)]">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <p class="text-xs text-white/80 leading-relaxed">
+        हम बेहतर अनुभव व Google AdSense विज्ञापनों (DoubleClick DART कुकी) के लिए कुकीज़ का उपयोग करते हैं।
+        <a href="/privacy-policy" class="text-[#ff2e63] underline font-semibold">Privacy Policy पढ़ें</a>
+      </p>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button"
+                onclick="hagAcceptCookies()"
+                class="px-4 py-1.5 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider transition-colors">
+          स्वीकार करें / Accept
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Mystery Anime Roulette Modal -->
   <div id="mystery-roulette-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/92 backdrop-blur-xl">
@@ -356,7 +420,18 @@
       document.addEventListener("DOMContentLoaded", function () {
         window.hagSyncWatchlistUI();
         initHunterRankAndStreak();
+        try {
+          if (!localStorage.getItem("hag_cookie_consent_v2")) {
+            var cb = document.getElementById("hag-cookie-banner");
+            if (cb) cb.classList.remove("hidden");
+          }
+        } catch (e) {}
       });
+      window.hagAcceptCookies = function () {
+        try { localStorage.setItem("hag_cookie_consent_v2", "accepted"); } catch (e) {}
+        var cb = document.getElementById("hag-cookie-banner");
+        if (cb) cb.classList.add("hidden");
+      };
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
           window.hagCloseWatchlistDrawer();
