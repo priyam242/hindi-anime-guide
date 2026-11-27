@@ -638,27 +638,37 @@ def _fetch_from_supabase() -> dict[str, Any]:
             rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             n_slug = f"draft-{r['id']}"
             ext_url = r.get("source_url") or ""
-            raw_shi = (r.get("summary_hi") or "").strip()
-            raw_sen = (r.get("summary_en") or "").strip()
-            paras = [p.strip() for p in (raw_shi or raw_sen).split("\n") if p.strip()]
-            if raw_sen and raw_shi and raw_sen != raw_shi and len(paras) < 2:
-                paras.append(raw_sen)
-            if len(paras) < 2:
-                paras.append(
-                    f"स्रोत रिपोर्ट ({r.get('source_name') or 'Official Wire'}) के अनुसार इस अपडेट में आगामी रिलीज़, क्रिएटिव टीम और वैश्विक प्रशंसकों के लिए मुख्य विवरण शामिल हैं।"
-                )
-            paras.append(
-                "भारतीय दर्शक इस शीर्षक से जुड़े आधिकारिक प्रसारण समय, हिंदी डब उपलब्धता और वैध स्ट्रीमिंग विकल्प (Crunchyroll India, Netflix, Muse Asia / Ani-One) हमारे एक्सप्लोर और शेड्यूल हब में ट्रैक कर सकते हैं।"
-            )
+            raw_shi = re.sub(r"\s*पूरी जानकारी,\s*कास्ट विवरण[^।]*।?", "", (r.get("summary_hi") or "")).strip()
+            raw_sen = re.sub(r"[\u0900-\u097F]+", "", (r.get("summary_en") or "")).strip()
+            raw_sen = re.sub(r"\s+", " ", raw_sen).strip()
+
+            hi_paras = [p.strip() for p in raw_shi.split("\n") if p.strip()]
+            if not hi_paras:
+                hi_paras = [r["title_hi"] or r["title_en"] or ""]
+
+            en_paras = [p.strip() for p in raw_sen.split("\n") if p.strip()]
+            if not en_paras:
+                en_paras = [
+                    f"{r['title_en'] or ''} — reported via {r.get('source_name') or 'Official Wire'}."
+                ]
+            else:
+                # Provide multi-sentence English editorial context when RSS feed excerpt is concise
+                if len(" ".join(en_paras)) < 160:
+                    en_paras.append(
+                        f"Source dispatch ({r.get('source_name') or 'Anime Newswire'}, {date_str}): track release schedule, staff announcements, and licensed India streaming platforms across our Explore and IST Schedule hubs."
+                    )
+
             news_items.append(
                 {
                     "id": n_slug,
                     "slug": n_slug,
                     "title_hi": r["title_hi"] or r["title_en"] or "",
                     "title_en": r["title_en"] or r["title_hi"] or "",
-                    "summary": _clean_text(r["summary_hi"] or r["summary_en"], 160),
-                    "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 160),
-                    "body_paragraphs": paras,
+                    "summary": _clean_text(hi_paras[0], 160),
+                    "summary_en": _clean_text(en_paras[0], 160),
+                    "body_paragraphs": hi_paras,
+                    "body_paragraphs_hi": hi_paras,
+                    "body_paragraphs_en": en_paras,
                     "image_url": img,
                     "category": (r.get("news_category") or "Anime News").upper(),
                     "source_name": r.get("source_name") or "Official Wire",
@@ -682,7 +692,12 @@ def _fetch_from_supabase() -> dict[str, Any]:
             pub_dt = r.get("published_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Guide"
             rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
-            paras = [re.sub(r"^[#>*`\-\s]+", "", p).strip() for p in (r.get("content_md") or "").split("\n\n") if p.strip()]
+            all_paras = [re.sub(r"^[#>*`\-\s]+", "", p).strip() for p in (r.get("content_md") or "").split("\n\n") if p.strip()]
+            hi_art_paras = [p for p in all_paras if re.search(r"[\u0900-\u097F]", p)][:6] or all_paras[:6]
+            en_art_paras = [re.sub(r"[\u0900-\u097F]+", "", p).strip(" ()•-") for p in all_paras if not re.search(r"[\u0900-\u097F]", p) or len(re.sub(r"[\u0900-\u097F\W]+", "", p)) > 40][:6]
+            en_art_paras = [p for p in en_art_paras if len(p) > 25]
+            if not en_art_paras:
+                en_art_paras = [f"{r.get('anime_title_en') or r['title']} — Full editorial guide available in English & Hindi."]
             en_title_guess = (r.get("slug") or "").replace("-", " ").title()
             news_items.append(
                 {
@@ -691,8 +706,10 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "title_hi": r["title"] or "",
                     "title_en": r.get("anime_title_en") or en_title_guess or r["title"] or "",
                     "summary": _clean_text(r["meta_description"] or r["content_md"], 160),
-                    "summary_en": _clean_text(r["meta_description"] or en_title_guess or r["title"], 160),
-                    "body_paragraphs": paras[:8],
+                    "summary_en": _clean_text(re.sub(r"[\u0900-\u097F]+", "", r["meta_description"] or "") or en_title_guess or r["title"], 160),
+                    "body_paragraphs": hi_art_paras,
+                    "body_paragraphs_hi": hi_art_paras,
+                    "body_paragraphs_en": en_art_paras,
                     "image_url": img,
                     "category": (r.get("category") or "Hindi Guide").upper(),
                     "source_name": f"{r.get('reading_time_minutes') or 5} MIN READ",
@@ -744,7 +761,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 130),
                     "thumb_url": thumb,
                     "youtube_id": yt_id,
-                    "embed_url": f"https://www.youtube-nocookie.com/embed/{yt_id}?autoplay=1&rel=0",
+                    "embed_url": f"https://www.youtube.com/embed/{yt_id}?autoplay=1&rel=0&modestbranding=1&playsinline=1",
                     "source_name": r.get("source_name") or "Official PV",
                     "source_url": r.get("source_url") or "#",
                     "season": f"{r.get('season') or ''} {r.get('season_year') or ''}".strip(),
@@ -1334,134 +1351,6 @@ def save_contact_message(name: str, email: str, subject: str, message: str) -> i
             {"name": name[:120], "email": email[:200], "subject": subject[:80], "message": message[:4000]},
         ).scalar()
     return int(row_id or 1)
-
-
-CURATED_AWARDS_FALLBACK: list[dict[str, Any]] = [
-    {
-        "id": 1,
-        "name": "Crunchyroll Anime Awards (10th Edition)",
-        "name_hi": "क्रंचीरोल एनीमे अवार्ड्स (10वां संस्करण)",
-        "edition_year": 2026,
-        "location": "Tokyo, Japan",
-        "source_url": "https://www.crunchyroll.com",
-        "status": "verified",
-        "entries": [
-            {
-                "category": "Anime of the Year",
-                "category_hi": "वर्ष का सर्वश्रेष्ठ एनीमे",
-                "winner_title": "Solo Leveling Season 2",
-                "winner_title_hi": "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो",
-                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
-                "detail_url": "/anime/solo-leveling",
-                "nominees": [],
-            },
-            {
-                "category": "Best Film",
-                "category_hi": "सर्वश्रेष्ठ एनीमे फिल्म",
-                "winner_title": "Demon Slayer: Infinity Castle",
-                "winner_title_hi": "डीमन स्लेयर: इन्फिनिटी कैसल",
-                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178788-zm3gtpB9TpRt.jpg",
-                "detail_url": "/anime/demon-slayer-infinity-castle",
-                "nominees": [],
-            },
-        ],
-    }
-]
-
-
-def get_awards_data() -> dict[str, Any]:
-    """Load anime award ceremonies and winner/nominee entries from Postgres with curated fallback."""
-    try:
-        content = get_cached_content()
-        known_slugs = {sp["slug"]: sp["slug"] for sp in content["spotlight"]}
-        for sch in content["schedule"]:
-            known_slugs[sch["slug"]] = sch["slug"]
-
-        def _resolve_award_url(title_en: str | None) -> str:
-            s = _slugify(title_en)
-            if s in known_slugs:
-                return f"/anime/{s}"
-            return f"/explore?q={(title_en or '').strip()}"
-
-        with engine.connect() as conn:
-            c_rows = conn.execute(
-                text(
-                    """
-                    SELECT id, name, name_hi, edition_year, date, location, source_url, status
-                    FROM award_ceremony
-                    ORDER BY edition_year DESC, id ASC
-                    """
-                )
-            ).mappings().all()
-            e_rows = conn.execute(
-                text(
-                    """
-                    SELECT id, ceremony_id, category, category_hi, winner_title, winner_title_hi,
-                           winner_poster, nominee_media_ids, source_url, status
-                    FROM award_entry
-                    ORDER BY ceremony_id ASC, id ASC
-                    """
-                )
-            ).mappings().all()
-
-        entries_by_ceremony: dict[int, list[dict[str, Any]]] = {}
-        total_entries = 0
-        for r in e_rows:
-            total_entries += 1
-            raw_nom = r.get("nominee_media_ids")
-            nominees: list[dict[str, Any]] = []
-            if isinstance(raw_nom, str) and raw_nom.strip().startswith("["):
-                try:
-                    parsed = json.loads(raw_nom)
-                    if isinstance(parsed, list):
-                        nominees = [n for n in parsed if isinstance(n, dict)]
-                except Exception:
-                    nominees = []
-            elif isinstance(raw_nom, list):
-                nominees = raw_nom
-            cid = int(r["ceremony_id"])
-            entries_by_ceremony.setdefault(cid, []).append(
-                {
-                    "id": r["id"],
-                    "category": r.get("category") or "Award Winner",
-                    "category_hi": r.get("category_hi") or r.get("category") or "विजेता",
-                    "winner_title": r.get("winner_title") or "",
-                    "winner_title_hi": r.get("winner_title_hi") or r.get("winner_title") or "",
-                    "winner_poster": _resolve_safe_image(r.get("winner_poster")),
-                    "detail_url": _resolve_award_url(r.get("winner_title")),
-                    "nominees": nominees[:6],
-                    "status": r.get("status") or "verified",
-                }
-            )
-
-        ceremonies: list[dict[str, Any]] = []
-        for c in c_rows:
-            cid = int(c["id"])
-            c_entries = entries_by_ceremony.get(cid, [])
-            if not c_entries:
-                continue
-            ceremonies.append(
-                {
-                    "id": cid,
-                    "name": c.get("name") or "Anime Awards",
-                    "name_hi": c.get("name_hi") or c.get("name") or "एनीमे अवार्ड्स",
-                    "edition_year": c.get("edition_year") or 2026,
-                    "date_label": c["date"].strftime("%d %b %Y") if hasattr(c.get("date"), "strftime") else str(c.get("edition_year") or ""),
-                    "location": c.get("location") or "Tokyo, Japan",
-                    "source_url": c.get("source_url") or "",
-                    "status": c.get("status") or "verified",
-                    "entries": c_entries,
-                }
-            )
-        if ceremonies:
-            return {"ceremonies": ceremonies, "total_ceremonies": len(ceremonies), "total_entries": total_entries}
-    except Exception:
-        pass
-    return {
-        "ceremonies": CURATED_AWARDS_FALLBACK,
-        "total_ceremonies": len(CURATED_AWARDS_FALLBACK),
-        "total_entries": sum(len(c["entries"]) for c in CURATED_AWARDS_FALLBACK),
-    }
 
 
 def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False) -> dict[str, Any]:

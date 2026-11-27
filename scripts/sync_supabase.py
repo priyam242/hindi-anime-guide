@@ -419,13 +419,65 @@ def translate_news_headline_hi(title_en: str) -> str:
     return f"{raw[:95]} — ताज़ा एनीमे समाचार अपडेट"
 
 
-def translate_news_summary_hi(summary_en: str | None, title_en: str) -> str:
-    """Provide natural Hindi journalism deck for a news item instead of raw/garbled copy."""
+def translate_news_summary_hi(summary_en: str | None, title_en: str, source_name: str = "") -> str:
+    """Provide factual natural Hindi summary deck without generic filler boilerplate."""
     title_hi = translate_news_headline_hi(title_en)
-    src = (summary_en or "").strip()
+    src = re.sub(r"[\u0900-\u097F]+", "", (summary_en or "")).strip()
+    src_lbl = source_name.strip() or "आधिकारिक एनीमे न्यूज़वायर"
+    yr_m = re.search(r"\b(202[5-9])\b", src)
+    yr_txt = f" इस अपडेट में {yr_m.group(1)} शेड्यूल और निर्माण से जुड़े मुख्य तथ्य साझा किए गए हैं।" if yr_m else ""
     if not src:
-        return f"{title_hi} — भारतीय एनीमे प्रशंसकों के लिए आधिकारिक अपडेट।"
-    return f"{title_hi}। पूरी जानकारी, कास्ट विवरण और आधिकारिक स्ट्रीमिंग संदर्भ पढ़ें।"
+        return f"{title_hi} ({src_lbl} रिपोर्ट)।"
+    return f"{title_hi}।{yr_txt} मूल स्रोत रिपोर्ट: {src_lbl}।"
+
+
+def _fetch_real_news_summary_en(source_url: str | None, rss_desc: str | None, title_en: str) -> str:
+    """Extract factual multi-sentence English summary from RSS description or article meta/paragraphs."""
+    import html as _html
+    base_clean = _html.unescape(re.sub(r"[\u0900-\u097F]+", "", (rss_desc or "")).strip())
+    base_clean = re.sub(r"\s+", " ", base_clean).strip()
+    extra_parts: list[str] = [base_clean] if base_clean else []
+
+    if len(base_clean) < 150 and source_url and source_url.startswith("http"):
+        try:
+            resp = httpx.get(source_url, timeout=4.5, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"})
+            if resp.status_code == 200:
+                raw_html = resp.text[:70000]
+                m_desc = re.search(
+                    r'<meta[^>]+(?:name=["\']description["\']|property=["\']og:description["\'])[^>]+content=["\']([^"\']{30,450})["\']',
+                    raw_html,
+                    re.I,
+                )
+                if m_desc:
+                    meta_txt = _html.unescape(re.sub(r"<[^>]+>", " ", m_desc.group(1))).strip()
+                    if meta_txt and meta_txt.lower() not in (base_clean or "").lower():
+                        extra_parts.append(meta_txt)
+                # Extract clean lead paragraphs
+                for pm in re.findall(r"<p\b[^>]*>(.*?)</p>", raw_html, re.I | re.S):
+                    ptxt = _html.unescape(re.sub(r"<[^>]+>", " ", pm))
+                    ptxt = re.sub(r"\s+", " ", ptxt).strip()
+                    if len(ptxt) >= 65 and not any(bad in ptxt.lower() for bad in ("cookie", "subscribe", "copyright", "privacy policy", "all rights reserved", "sign in")):
+                        if ptxt.lower() not in " ".join(extra_parts).lower():
+                            extra_parts.append(ptxt)
+                    if len(" ".join(extra_parts)) >= 360 or len(extra_parts) >= 3:
+                        break
+        except Exception:
+            pass
+
+    combined = " ".join(p for p in extra_parts if p).strip()
+    if not combined:
+        combined = f"{title_en}. Official announcement covered in our live anime newswire."
+    return combined[:650]
+
+
+def _is_youtube_embeddable(yt_id: str) -> bool:
+    if not yt_id or not re.match(r"^[A-Za-z0-9_-]{11}$", yt_id):
+        return False
+    try:
+        r = httpx.get(f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={yt_id}&format=json", timeout=6.0)
+        return r.status_code == 200
+    except Exception:
+        return False
 
 
 def _is_phonetic_or_untranslated_hi(title_hi: str | None, title_en: str | None) -> bool:
@@ -832,7 +884,7 @@ def fetch_48h_rss_news(max_per_feed: int = 8) -> list[dict]:
 
             ext_slug = re.sub(r"[^a-zA-Z0-9_-]+", "_", guid)[-95:]
             thumb = _extract_rss_image(item, desc_raw, link, title)
-            clean_desc = _strip_html(desc_raw)
+            clean_desc = _fetch_real_news_summary_en(link, _strip_html(desc_raw), title)
 
             records.append(
                 {
@@ -844,7 +896,7 @@ def fetch_48h_rss_news(max_per_feed: int = 8) -> list[dict]:
                     "title_en": title[:300],
                     "title_hi": translate_news_headline_hi(title)[:300],
                     "summary_en": clean_desc,
-                    "summary_hi": translate_news_summary_hi(clean_desc, title)[:500],
+                    "summary_hi": translate_news_summary_hi(clean_desc, title, feed_name)[:500],
                     "image_url": thumb,
                     "published_at": pub_naive,
                     "created_at": now_naive,
@@ -1288,10 +1340,10 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
                     {"aid": aid, "img": cov, "id": row_id},
                 )
 
-    # 3. Clean poisoned news images AND convert phonetic/untranslated news titles to natural Hindi journalism
+    # 3. Clean poisoned news images, upgrade news summaries (real EN + clean HI) & enforce natural Hindi headlines
     news_fixed = 0
     news_rows = conn.execute(
-        text("SELECT id, title_en, title_hi, summary_en, summary_hi, image_url, source_url FROM anime_draft WHERE content_type = 'news'")
+        text("SELECT id, title_en, title_hi, summary_en, summary_hi, image_url, source_url, source_name FROM anime_draft WHERE content_type = 'news'")
     ).mappings().all()
     for nr in news_rows:
         img = (nr["image_url"] or "").strip()
@@ -1310,30 +1362,44 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
 
         needs_hi_fix = _is_phonetic_or_untranslated_hi(nr["title_hi"], title_en)
         new_title_hi = translate_news_headline_hi(title_en)[:300] if needs_hi_fix else nr["title_hi"]
-        new_sum_hi = translate_news_summary_hi(nr["summary_en"], title_en)[:500] if (needs_hi_fix or not _has_devanagari(nr["summary_hi"])) else nr["summary_hi"]
 
-        if needs_img_fix or needs_hi_fix or new_sum_hi != nr["summary_hi"]:
+        raw_sen = (nr["summary_en"] or "").strip()
+        needs_en_enrich = (not raw_sen or len(raw_sen) < 120 or bool(re.search(r"[\u0900-\u097F]", raw_sen)))
+        new_sum_en = _fetch_real_news_summary_en(nr["source_url"], raw_sen, title_en) if needs_en_enrich else raw_sen
+
+        raw_shi = (nr["summary_hi"] or "").strip()
+        has_old_boilerplate = ("पूरी जानकारी, कास्ट विवरण" in raw_shi) or ("अधिकारिक अपडेट" in raw_shi) or not _has_devanagari(raw_shi)
+        new_sum_hi = translate_news_summary_hi(new_sum_en, title_en, nr["source_name"] or "")[:500] if (needs_hi_fix or has_old_boilerplate) else raw_shi
+
+        if needs_img_fix or needs_hi_fix or new_sum_en != nr["summary_en"] or new_sum_hi != nr["summary_hi"]:
             conn.execute(
                 text(
                     """
                     UPDATE anime_draft
                     SET image_url = :img,
                         title_hi = :thi,
+                        summary_en = :sen,
                         summary_hi = :shi
                     WHERE id = :id
                     """
                 ),
-                {"img": new_img, "thi": new_title_hi, "shi": new_sum_hi, "id": nr["id"]},
+                {"img": new_img, "thi": new_title_hi, "sen": new_sum_en[:700], "shi": new_sum_hi, "id": nr["id"]},
             )
-            if needs_hi_fix and not needs_img_fix:
+            if (needs_hi_fix or has_old_boilerplate or needs_en_enrich) and not needs_img_fix:
                 news_fixed += 1
 
-    # Clean up trailer rows with missing source_url or non-http images
+    # Clean up trailer rows with missing source_url, non-http images, or non-embeddable YouTube IDs
     conn.execute(
         text(
             "DELETE FROM anime_draft WHERE content_type = 'trailer' AND (source_url IS NULL OR source_url = '' OR image_url IS NULL OR image_url NOT LIKE 'http%')"
         )
     )
+    tr_check_rows = conn.execute(
+        text("SELECT id, source_url FROM anime_draft WHERE content_type = 'trailer' AND status = 'published'")
+    ).mappings().all()
+    bad_tr_ids = [int(tr["id"]) for tr in tr_check_rows if not _is_youtube_embeddable(_extract_yt_id(tr["source_url"]))]
+    if bad_tr_ids:
+        conn.execute(text("DELETE FROM anime_draft WHERE id = ANY(:ids)"), {"ids": bad_tr_ids})
 
     # 4. Backfill article table missing cover images via exact AniList title match
     art_rows = conn.execute(text("SELECT id, slug, title, cover_image FROM article WHERE cover_image IS NULL OR cover_image NOT LIKE 'http%'")).mappings().all()

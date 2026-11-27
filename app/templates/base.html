@@ -69,14 +69,14 @@
     html {
       scroll-behavior: smooth;
       max-width: 100%;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
 
     body {
       font-family: 'Outfit', 'Noto Sans Devanagari', sans-serif;
       background: #06070c;
       color: #ffffff;
-      overflow-x: hidden;
+      overflow-x: clip;
       max-width: 100%;
     }
 
@@ -250,8 +250,8 @@
   class="min-h-screen flex flex-col bg-[#06070c] text-white antialiased selection:bg-[#ff2e63] selection:text-white">
   {% include "partials/splash.html" %}
 
-  <!-- ULTRA-CLEAN SINGLE-LINE TOP NAVBAR (ZERO 2-LINE WRAPPING & ZERO 375PX OVERFLOW) -->
-  <header class="sticky top-0 z-40 h-16 backdrop-blur-xl bg-[#06070c]/90 border-b border-white/10">
+  <!-- BULLETPROOF FIXED SINGLE-LINE TOP NAVBAR (NEVER VANISHES ON SCROLL) -->
+  <header id="top-navbar" class="fixed top-0 inset-x-0 z-50 h-16 backdrop-blur-xl bg-[#06070c]/95 border-b border-white/10">
     <div class="h-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 max-w-full">
       <!-- 1. Left: Sidebar Toggle + Navbar Logo Target -->
       <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink-0 whitespace-nowrap">
@@ -361,10 +361,19 @@
 
   <!-- STUDIO-GRADE LEFT SIDEBAR + MOBILE BACKDROP -->
   <div id="sidebar-backdrop" onclick="hagSetSidebar(false)"
-    class="fixed inset-0 top-16 z-30 hidden bg-[#06070c]/80 backdrop-blur-sm xl:hidden"></div>
+    class="fixed inset-0 z-40 hidden bg-[#06070c]/80 backdrop-blur-sm xl:hidden"></div>
   <aside id="app-sidebar" aria-label="Primary Sidebar Navigation"
-    class="fixed top-16 left-0 bottom-0 w-64 bg-[#06070c]/95 backdrop-blur-2xl border-r border-white/10 z-40 transform -translate-x-full xl:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-y-auto">
-    <div class="p-4 space-y-6">
+    class="fixed top-0 xl:top-16 left-0 bottom-0 w-64 bg-[#06070c]/98 backdrop-blur-2xl border-r border-white/10 z-50 xl:z-40 transform -translate-x-full xl:translate-x-0 transition-transform duration-300 flex flex-col justify-between overflow-y-auto">
+    <div class="p-4 space-y-5">
+      <!-- Mobile Drawer Top Strip -->
+      <div class="flex items-center justify-between border-b border-white/10 pb-2.5 xl:hidden">
+        <span class="font-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]">HAG NAVIGATION</span>
+        <button type="button" onclick="hagSetSidebar(false)" aria-label="Close Sidebar"
+          class="w-8 h-8 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
       <!-- Compact Mobile Search inside Sidebar -->
       <form action="/explore" method="get" class="md:hidden relative">
         <input type="search" name="q" value="{{ q or '' }}" data-hi-placeholder="एनीमे, मंगा, न्यूज़ खोजें..."
@@ -373,67 +382,55 @@
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
       </form>
 
-      <!-- 1. Hunter Command Card (Top of Sidebar) -->
-      <div
-        class="p-3.5 border border-[#ff2e63]/50 bg-gradient-to-br from-[#ff2e63]/15 via-[#06070c] to-[#06070c] space-y-3">
-        <div id="sb-user-guest" class="space-y-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">HUNTER COMMAND</span>
-            <span id="sb-streak-guest" class="font-tech text-[10px] font-bold text-white/80">🔥 1d</span>
-          </div>
-          <p class="text-[11px] font-bold text-white leading-snug" data-hi="गेस्ट हंटर • क्लाउड सिंक के लिए लॉगिन करें"
-            data-en="Guest Hunter • Sign in for Cloud Sync">गेस्ट हंटर &bull; क्लाउड सिंक के लिए लॉगिन करें</p>
+      <!-- 1. Compact Single-Pill Hunter Status & XP Bar -->
+      <div class="p-2.5 border border-[#ff2e63]/45 bg-gradient-to-br from-[#ff2e63]/12 via-[#06070c] to-[#06070c] space-y-2">
+        <div id="sb-user-guest" class="flex items-center justify-between gap-2">
           <button type="button" onclick="hagOpenAuthModal('login')"
-            class="w-full min-h-[36px] py-2 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors"
-            data-hi="लॉगिन / साइन अप" data-en="Login / Sign Up">
-            लॉगिन / साइन अप
-          </button>
+            class="text-left min-w-0 flex-1 font-tech text-[11px] font-bold text-white hover:text-[#ff2e63] truncate"
+            data-hi="👤 गेस्ट हंटर • लॉगिन करें" data-en="👤 Guest Hunter • Sign In">👤 गेस्ट हंटर &bull; लॉगिन करें</button>
+          <span id="sb-streak-guest" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
         </div>
 
-        <div id="sb-user-authed" class="hidden space-y-1">
-          <div class="flex items-center justify-between gap-2">
-            <span id="sb-auth-name" class="text-xs font-extrabold text-white truncate">Hunter</span>
-            <span id="sb-streak-authed" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
+        <a href="/profile" id="sb-user-authed" class="hidden flex items-center justify-between gap-2 group">
+          <div class="min-w-0">
+            <span id="sb-auth-name" class="block text-xs font-extrabold text-white group-hover:text-[#ff2e63] truncate">Hunter</span>
+            <span id="sb-auth-email" class="hidden"></span>
+            <span class="font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">☁ CLOUD SYNC</span>
           </div>
-          <p id="sb-auth-email" class="text-[10px] text-white/65 truncate"></p>
-          <span class="inline-block font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">☁ CLOUD
-            SYNC ACTIVE</span>
-        </div>
+          <span id="sb-streak-authed" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
+        </a>
 
-        <!-- Live E-Rank -> S-Rank XP Bar -->
         <button type="button" onclick="hagOpenHunterModal()"
-          class="w-full min-h-[38px] text-left pt-2 border-t border-white/10 space-y-1.5 group">
+          class="w-full text-left pt-1.5 border-t border-white/10 space-y-1 group">
           <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase">
             <span id="hunter-pill-rank" class="text-[#ff2e63] group-hover:underline">E-RANK</span>
             <span id="hunter-pill-xp" class="text-white/75">20 XP</span>
           </div>
-          <div class="w-full h-1.5 bg-white/10 overflow-hidden">
+          <div class="w-full h-1 bg-white/10 overflow-hidden">
             <div id="hunter-pill-bar" class="h-full bg-[#cf0f46] transition-all duration-500" style="width: 20%;"></div>
           </div>
         </button>
       </div>
 
-      <!-- 2. Main Menu (Browse) -->
-      <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="मेनू • BROWSE"
+      <!-- 2. Focused 7-Hub Core Menu -->
+      <div class="space-y-1">
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/55" data-hi="मेनू • BROWSE"
           data-en="MENU • BROWSE">मेनू &bull; BROWSE</p>
         {% set cur = active_nav|default('home') %}
         {% set browse_links = [
         ('home', '/', 'fa-house', 'होम', 'Home'),
-        ('explore', '/explore', 'fa-compass', 'एक्सप्लोर व सर्च', 'Explore & Search'),
-        ('guides', '/guides', 'fa-book-journal-whills', 'हिंदी गाइड्स', 'Editorial Guides'),
-        ('schedule', '/schedule', 'fa-calendar-days', 'IST लाइव शेड्यूल', 'Live IST Schedule'),
-        ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़', '3D Manga Shelf'),
+        ('schedule', '/schedule', 'fa-calendar-days', 'लाइव IST शेड्यूल', 'Live IST Schedule'),
         ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़', '48h Anime News'),
+        ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़', '3D Manga Shelf'),
+        ('guides', '/guides', 'fa-book-journal-whills', 'एनीमे गाइड्स', 'Editorial Guides'),
         ('trailers', '/trailers', 'fa-film', 'लाइसेंस्ड ट्रेलर्स', 'Licensed Trailers'),
-        ('awards', '/awards', 'fa-trophy', 'एनीमे अवार्ड्स', 'Anime Awards'),
-        ('profile', '/profile', 'fa-id-badge', 'हंटर प्रोफ़ाइल', 'Hunter Profile')
+        ('explore', '/explore', 'fa-compass', 'एक्सप्लोर व सर्च', 'Explore & Search')
         ] %}
         <nav aria-label="Sidebar Browse Navigation"
-          class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
+          class="space-y-0.5 font-tech text-xs font-bold uppercase tracking-wider">
           {% for key, href, icon, label_hi, label_en in browse_links %}
           <a href="{{ href }}"
-            class="flex items-center gap-3 min-h-[38px] px-3 py-2 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
+            class="flex items-center gap-3 min-h-[36px] px-3 py-1.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
             <i
               class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/60' }}"></i>
             <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_hi }}</span>
@@ -442,27 +439,26 @@
         </nav>
       </div>
 
-      <!-- 3. Special Features (Interactive) -->
-      <div class="space-y-1.5">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="स्पेशल फीचर्स"
-          data-en="INTERACTIVE FEATURES">स्पेशल फीचर्स</p>
-        <div class="space-y-1 font-tech text-xs font-bold uppercase tracking-wider">
+      <!-- 3. Compact Quick Tools -->
+      <div class="space-y-1">
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/55" data-hi="क्विक टूल्स"
+          data-en="QUICK TOOLS">क्विक टूल्स</p>
+        <div class="space-y-0.5 font-tech text-xs font-bold uppercase tracking-wider">
           <button type="button" onclick="hagOpenRoulette()"
-            class="w-full min-h-[38px] flex items-center gap-3 px-3 py-2 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            class="w-full min-h-[36px] flex items-center gap-3 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center">🎲</span>
-            <span class="whitespace-nowrap" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Surprise Anime Spin">सरप्राइज़
-              एनीमे स्पिन</span>
+            <span class="whitespace-nowrap" data-hi="सरप्राइज़ स्पिन" data-en="Surprise Spin">सरप्राइज़ स्पिन</span>
           </button>
           <button type="button" onclick="hagOpenWatchlistDrawer()"
-            class="w-full min-h-[38px] flex items-center gap-3 px-3 py-2 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            class="w-full min-h-[36px] flex items-center gap-3 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="w-4 text-center text-[#ff2e63]">❤️</span>
             <span class="whitespace-nowrap" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
           </button>
         </div>
       </div>
 
-      <!-- Sidebar Language & Theme Controls -->
-      <div class="px-2 pt-2 flex items-center justify-between gap-2">
+      <!-- Mobile-only Language & Theme Controls (zero desktop duplication) -->
+      <div class="sm:hidden px-2 pt-2 flex items-center justify-between gap-2 border-t border-white/10">
         <div
           class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[11px] font-bold">
           <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')"
@@ -477,32 +473,20 @@
       </div>
     </div>
 
-    <!-- 4. Bottom Legal & Business Links -->
-    <div class="p-4 border-t border-white/10 space-y-1.5">
-      <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" data-hi="लीगल और बिज़नेस"
-        data-en="LEGAL &amp; BUSINESS">लीगल और बिज़नेस</p>
-      <div class="space-y-1 font-tech text-[11px] font-bold uppercase tracking-wider">
-        <a href="/about"
-          class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'about' else 'text-white/75 hover:text-white' }}">
-          <i class="fa-solid fa-circle-info w-3.5 text-center"></i> <span data-hi="हमारे बारे में"
-            data-en="About Us">हमारे बारे में</span>
-        </a>
-        <a href="/contact"
-          class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur == 'contact' else 'text-white/75 hover:text-white' }}">
-          <i class="fa-solid fa-envelope w-3.5 text-center"></i> <span data-hi="स्पॉन्सरशिप संपर्क"
-            data-en="Sponsorship Contact">स्पॉन्सरशिप संपर्क</span>
-        </a>
-        <a href="/privacy-policy"
-          class="flex items-center gap-2.5 min-h-[36px] px-2.5 py-1.5 whitespace-nowrap {{ 'text-[#ff2e63]' if cur in ('privacy','dmca','terms','disclaimer') else 'text-white/75 hover:text-white' }}">
-          <i class="fa-solid fa-scale-balanced w-3.5 text-center"></i> <span data-hi="प्राइवेसी व DMCA"
-            data-en="Privacy &amp; DMCA">प्राइवेसी व DMCA</span>
-        </a>
-      </div>
+    <!-- 4. Compact 1-Line Legal Footer inside Sidebar -->
+    <div class="px-4 py-3 border-t border-white/10 font-tech text-[10px] font-bold uppercase tracking-wider text-white/65 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <a href="/about" class="hover:text-[#ff2e63]">About</a>
+      <span>&bull;</span>
+      <a href="/contact" class="hover:text-[#ff2e63]">Contact</a>
+      <span>&bull;</span>
+      <a href="/privacy-policy" class="hover:text-[#ff2e63]">Privacy</a>
+      <span>&bull;</span>
+      <a href="/dmca" class="hover:text-[#ff2e63]">DMCA</a>
     </div>
   </aside>
 
-  <!-- MAIN SHELL WRAPPER (Pushed cleanly by Sidebar on Desktop xl:pl-64) -->
-  <div id="app-shell-content" class="flex-1 flex flex-col xl:pl-64 transition-[padding] duration-300">
+  <!-- MAIN SHELL WRAPPER (Fixed Top Offset pt-16 + Sidebar Offset xl:pl-64) -->
+  <div id="app-shell-content" class="flex-1 flex flex-col pt-16 xl:pl-64 transition-[padding] duration-300">
     <main class="flex-1">
       {% block content %}{% endblock %}
       {% if adsense_cid %}
@@ -540,8 +524,8 @@
                   data-hi="होम (Spotlight)" data-en="Home (Spotlight)">होम (Spotlight)</a></li>
               <li><a href="/explore" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
                   data-hi="ग्लोबल एक्सप्लोर" data-en="Global Explore">ग्लोबल एक्सप्लोर</a></li>
-              <li><a href="/awards" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
-                  data-hi="एनीमे अवार्ड्स" data-en="Anime Awards">एनीमे अवार्ड्स</a></li>
+              <li><a href="/guides" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
+                  data-hi="एनीमे गाइड्स" data-en="Editorial Guides">एनीमे गाइड्स</a></li>
               <li><a href="/schedule" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
                   data-hi="लाइव IST शेड्यूल" data-en="Live IST Schedule">लाइव IST शेड्यूल</a></li>
               <li><a href="/manga" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
@@ -1316,6 +1300,24 @@
         document.querySelectorAll("[data-hi-placeholder][data-en-placeholder]").forEach(function (el) {
           el.placeholder = cur === "en" ? el.dataset.enPlaceholder : el.dataset.hiPlaceholder;
         });
+        document.querySelectorAll(".hag-lang-hi").forEach(function (el) {
+          el.classList.toggle("hidden", cur === "en");
+        });
+        document.querySelectorAll(".hag-lang-en").forEach(function (el) {
+          el.classList.toggle("hidden", cur !== "en");
+        });
+        var metaEl = document.getElementById("hag-page-meta");
+        if (metaEl) {
+          var nextTitle = cur === "en" ? metaEl.dataset.pageTitleEn : metaEl.dataset.pageTitleHi;
+          if (nextTitle) document.title = nextTitle;
+        }
+        document.querySelectorAll(".hag-dedupe-subtitle").forEach(function (subEl) {
+          var mainEl = document.getElementById(subEl.dataset.mainTarget || "");
+          if (!mainEl) return;
+          var a = (mainEl.textContent || "").trim().toLowerCase();
+          var b = (subEl.textContent || "").trim().toLowerCase();
+          subEl.classList.toggle("hidden", !b || a === b);
+        });
         ["", "sb-"].forEach(function (prefix) {
           var bHi = document.getElementById(prefix + "lang-btn-hi");
           var bEn = document.getElementById(prefix + "lang-btn-en");
@@ -1397,8 +1399,13 @@
     })();
   </script>
   {% block extra_scripts %}{% endblock %}
-  <script defer src="/_vercel/insights/script.js"></script>
-  <script defer src="/_vercel/speed-insights/script.js"></script>
+  <script>
+    if (!/^(127\.0\.0\.1|localhost)$/i.test(window.location.hostname || "")) {
+      ["/_vercel/insights/script.js", "/_vercel/speed-insights/script.js"].forEach(function (src) {
+        var s = document.createElement("script"); s.defer = true; s.src = src; document.body.appendChild(s);
+      });
+    }
+  </script>
 </body>
 
 </html>

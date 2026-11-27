@@ -132,12 +132,11 @@
     <div class="absolute inset-0" style="background-image: linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 56px 56px;"></div>
   </div>
 
-  <!-- Depth 0.88x Light Streaks & Sparks Backdrop Layer (Moves Fast) -->
+  <!-- Depth 0.88x Light Streaks Backdrop Layer (Moves Fast) -->
   <div id="hero-layer-fg" class="hero-depth-layer absolute inset-0 pointer-events-none overflow-hidden">
     <div class="katana-streak w-56 top-20 right-[18%]"></div>
     <div class="katana-streak w-36 bottom-28 left-[42%] opacity-40"></div>
     <div class="absolute top-24 right-[12%] w-2.5 h-2.5 rotate-45 bg-[#ff2e63] shadow-[0_0_16px_#ff2e63]"></div>
-    <div class="absolute bottom-36 right-[32%] w-2 h-2 bg-white shadow-[0_0_12px_#ffffff]"></div>
   </div>
 
   <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 min-h-[min(80vh,680px)] flex flex-col justify-between gap-8">
@@ -160,7 +159,9 @@
               class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.4rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
             {{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}
           </h1>
-          <p id="hero-title-en" class="font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
+          <p id="hero-title-en"
+             data-main-target="hero-title-hi"
+             class="hag-dedupe-subtitle font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
             {{ active_spot.title_en if active_spot else 'LEGAL STREAMING GUIDE' }}
           </p>
         </div>
@@ -577,7 +578,8 @@
           {% for m in row_books %}
           <button type="button"
                   class="book-card-btn group focus:outline-none"
-                  onclick='openMangaModal({{ m|tojson }})'
+                  data-manga="{{ m|tojson }}"
+                  onclick="openMangaModal(JSON.parse(this.dataset.manga))"
                   title="Inspect {{ m.title_en }}">
             <div class="book-3d">
               <div class="book-spine">
@@ -632,7 +634,9 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {% for tr in trailers[:4] %}
         <button type="button"
-                onclick="openTrailerModal('{{ tr.youtube_id }}', {{ tr.title_en|tojson }})"
+                data-yt="{{ tr.youtube_id }}"
+                data-title="{{ tr.title_en }}"
+                onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
                 class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
           <div class="relative aspect-video overflow-hidden">
             <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
@@ -665,14 +669,20 @@
 <!-- OFFICIAL TRAILER LIGHTBOX MODAL -->
 <div id="trailer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/95 backdrop-blur-md">
   <div class="relative w-full max-w-4xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_50px_rgba(255,46,99,0.4)]">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
-      <span id="tm-title" class="font-tech text-xs font-bold uppercase tracking-widest text-white">Official Trailer</span>
-      <button type="button" aria-label="Close Trailer Modal" onclick="closeTrailerModal()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+    <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10">
+      <span id="tm-title" class="font-tech text-xs font-bold uppercase tracking-widest text-white truncate">Official Trailer</span>
+      <div class="flex items-center gap-2 shrink-0">
+        <a id="tm-ext-link" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"
+           class="px-3 py-1.5 border border-white/20 hover:border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-wider text-white/85 hover:text-white transition-colors">
+          Watch on YouTube <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[#ff2e63]"></i>
+        </a>
+        <button type="button" aria-label="Close Trailer Modal" onclick="closeTrailerModal()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
     </div>
     <div class="aspect-video bg-[#06070c]">
-      <iframe id="tm-iframe" src="" class="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      <iframe id="tm-iframe" src="" referrerpolicy="strict-origin-when-cross-origin" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     </div>
   </div>
 </div>
@@ -730,7 +740,9 @@
     tEl.dataset.hi = item.title_hi;
     tEl.dataset.en = item.title_en;
     tEl.textContent = isEn ? item.title_en : item.title_hi;
-    document.getElementById("hero-title-en").textContent = item.title_en;
+    var subEl = document.getElementById("hero-title-en");
+    subEl.textContent = item.title_en;
+    subEl.classList.toggle("hidden", (tEl.textContent || "").trim().toLowerCase() === (item.title_en || "").trim().toLowerCase());
 
     var tgEl = document.getElementById("hero-tagline");
     tgEl.dataset.hi = item.tagline;
@@ -824,10 +836,16 @@
     });
   }
 
+  window.hagOnLangChange = function () {
+    selectSpotlight(currentSpotIdx, true);
+  };
+
   function openTrailerModal(ytId, title) {
     if (!ytId) return;
     document.getElementById("tm-title").textContent = title || "Official Trailer";
-    document.getElementById("tm-iframe").src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(ytId) + "?autoplay=1&rel=0";
+    document.getElementById("tm-iframe").src = "https://www.youtube.com/embed/" + encodeURIComponent(ytId) + "?autoplay=1&rel=0&modestbranding=1&playsinline=1";
+    var extLink = document.getElementById("tm-ext-link");
+    if (extLink) extLink.href = "https://www.youtube.com/watch?v=" + encodeURIComponent(ytId);
     var modal = document.getElementById("trailer-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");

@@ -39,46 +39,51 @@
   <div class="absolute inset-x-0 top-0 h-[440px] pointer-events-none overflow-hidden bg-[radial-gradient(circle_at_25%_20%,rgba(255,46,99,0.22),transparent_62%)]"></div>
   {% endif %}
 
-  <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+  <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <span id="hag-page-meta" class="hidden"
+          data-page-title-hi="{{ (item.title_hi or item.title_en) ~ ' — Hindi Anime Guide' }}"
+          data-page-title-en="{{ (item.title_en or item.title_hi) ~ ' — Hindi Anime Guide' }}"></span>
     <a href="{{ back_url }}" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold uppercase tracking-widest text-white/80 hover:text-[#ff2e63] transition-colors">
       <i class="fa-solid fa-arrow-left text-[#ff2e63]"></i>
       <span data-hi="{{ back_label }}" data-en="{{ 'Back to Anime News' if back_url == '/news' else 'Back to Home' }}">{{ back_label }}</span>
     </a>
 
-    <!-- Hero Detail Header (Widescreen 16:9 for News vs 3D Poster 2:3 for Anime) -->
+    <!-- Hero Detail Header (Compact 16:9 Widescreen for News vs 3D Poster 2:3 for Anime) -->
     {% if is_news_detail %}
-    <article class="space-y-8">
+    <article class="space-y-6">
       {% set news_img = item.banner_url or item.image_url or item.cover_url %}
       {% if news_img %}
-      <div class="relative aspect-video w-full max-h-[520px] border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden shadow-[0_24px_70px_rgba(255,46,99,0.25)]">
+      <div class="relative aspect-video w-full max-w-4xl max-h-[380px] md:max-h-[440px] rounded-xl border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden shadow-[0_24px_70px_rgba(255,46,99,0.22)]">
         <img src="{{ news_img }}"
              alt="{{ item.title_en or item.title_hi }}"
              referrerpolicy="no-referrer"
              decoding="async"
              onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
              class="w-full h-full object-cover" />
-        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/20 to-transparent"></div>
-        <span class="absolute top-4 left-4 px-3 py-1 bg-[#cf0f46] text-white font-tech text-[11px] font-bold uppercase tracking-widest">{{ badge_text }}</span>
-        {% if item.date %}<span class="absolute bottom-4 right-4 px-3 py-1 bg-[#06070c]/90 border border-white/20 font-tech text-xs font-bold text-white uppercase">{{ item.date }} &bull; {{ item.source_name }}</span>{% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c]/90 via-transparent to-transparent"></div>
+        <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">{{ badge_text }}</span>
+        {% if item.date %}<span class="absolute bottom-3 right-3 px-2.5 py-1 bg-[#06070c]/90 border border-white/20 font-tech text-[11px] font-bold text-white uppercase">{{ item.date }} &bull; {{ item.source_name }}</span>{% endif %}
       </div>
       {% else %}
-      <div class="w-full p-8 border-2 border-[#ff2e63] bg-[linear-gradient(145deg,#06070c_0%,#1c0811_55%,#06070c_100%)] space-y-3">
+      <div class="w-full max-w-4xl p-6 rounded-xl border-2 border-[#ff2e63] bg-[linear-gradient(145deg,#06070c_0%,#1c0811_55%,#06070c_100%)] space-y-2">
         <span class="font-tech text-[11px] font-bold uppercase tracking-widest text-[#ff2e63]">HAG NEWSROOM DISPATCH &bull; {{ badge_text }}</span>
         <p class="font-tech text-xs text-white/75 uppercase tracking-widest">{{ item.date }} &bull; {{ item.source_name or 'ANIME & MANGA FEED' }}</p>
       </div>
       {% endif %}
 
-      <div class="space-y-6 max-w-4xl">
+      <div class="space-y-5 max-w-4xl">
         <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
           <span class="px-3 py-1 bg-[#cf0f46] text-white" style="transform: skewX(-8deg);">{{ badge_text }}</span>
           {% if item.date %}<span class="text-white/75">{{ item.date }} &bull; {{ item.source_name }}</span>{% endif %}
         </div>
         <div class="space-y-2">
-          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
+          <h1 id="detail-main-title"
+              class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
               data-hi="{{ item.title_hi or item.title_en }}"
               data-en="{{ item.title_en or item.title_hi }}">{{ item.title_hi or item.title_en }}</h1>
           {% if item.title_en and item.title_en != item.title_hi %}
-          <p class="font-tech text-sm sm:text-base font-bold uppercase tracking-[0.16em] text-[#ff2e63]">{{ item.title_en }}</p>
+          <p data-main-target="detail-main-title"
+             class="hag-dedupe-subtitle font-tech text-sm sm:text-base font-bold uppercase tracking-[0.16em] text-[#ff2e63]">{{ item.title_en }}</p>
           {% endif %}
         </div>
     {% else %}
@@ -121,20 +126,27 @@
         </div>
 
         <div class="space-y-2">
-          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
+          <h1 id="detail-main-title"
+              class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white leading-tight"
               data-hi="{{ item.title_hi or item.title_en }}"
               data-en="{{ item.title_en or item.title_hi }}">
             {{ item.title_hi or item.title_en }}
           </h1>
           {% if item.title_en and item.title_en != item.title_hi %}
-          <p class="font-tech text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#ff2e63]">{{ item.title_en }}</p>
+          <p data-main-target="detail-main-title"
+             class="hag-dedupe-subtitle font-tech text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#ff2e63]">{{ item.title_en }}</p>
           {% endif %}
         </div>
     {% endif %}
 
-        {% if item.body_paragraphs %}
-        <div class="space-y-3 text-sm sm:text-base text-white/85 leading-relaxed border-t border-white/10 pt-5">
-          {% for para in item.body_paragraphs %}
+        {% if item.body_paragraphs_hi or item.body_paragraphs_en %}
+        <div class="hag-lang-hi space-y-3 text-sm sm:text-base text-white/90 leading-relaxed border-t border-white/10 pt-5">
+          {% for para in (item.body_paragraphs_hi or item.body_paragraphs) %}
+          <p>{{ para }}</p>
+          {% endfor %}
+        </div>
+        <div class="hag-lang-en hidden space-y-3 text-sm sm:text-base text-white/90 leading-relaxed border-t border-white/10 pt-5">
+          {% for para in (item.body_paragraphs_en or [item.summary_en]) %}
           <p>{{ para }}</p>
           {% endfor %}
         </div>
@@ -269,7 +281,7 @@
   function hagMountDetailTrailer(ytId, title) {
     var stage = document.getElementById("detail-trailer-stage");
     if (!stage || !ytId) return;
-    stage.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId) + '?autoplay=1&rel=0" title="' + String(title || "Trailer").replace(/"/g, "") + '" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+    stage.innerHTML = '<iframe src="https://www.youtube.com/embed/' + encodeURIComponent(ytId) + '?autoplay=1&rel=0&modestbranding=1&playsinline=1" referrerpolicy="strict-origin-when-cross-origin" title="' + String(title || "Trailer").replace(/"/g, "") + '" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
   }
   function hagShareDetail() {
     var lbl = document.getElementById("share-btn-label");
