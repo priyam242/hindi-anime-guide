@@ -1354,7 +1354,15 @@
           if (!mainEl) return;
           var a = (mainEl.textContent || "").trim().toLowerCase();
           var b = (subEl.textContent || "").trim().toLowerCase();
-          subEl.classList.toggle("hidden", !b || a === b);
+          var redundant = !b || cur === "en" || a === b || (a.indexOf(b) !== -1);
+          if (!redundant && subEl.dataset.hideIfInMain === "1") {
+            var bTokens = b.split(/[^a-z0-9]+/).filter(function (w) { return w.length > 2; });
+            if (bTokens.length > 0) {
+              var hits = bTokens.filter(function (w) { return a.indexOf(w) !== -1; }).length;
+              if (hits / bTokens.length >= 0.45) redundant = true;
+            }
+          }
+          subEl.classList.toggle("hidden", redundant);
         });
         ["", "sb-"].forEach(function (prefix) {
           var bHi = document.getElementById(prefix + "lang-btn-hi");

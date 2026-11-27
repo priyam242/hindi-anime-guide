@@ -22,6 +22,10 @@
     text-align: left;
   }
 
+  .book-card-btn .book-3d {
+    pointer-events: none;
+  }
+
   .book-3d {
     position: relative;
     width: 100%;
@@ -192,6 +196,7 @@
       </span>
     </div>
 
+    <script type="application/json" id="manga-catalog-json">{{ manga|tojson }}</script>
     <div id="manga-shelf-stage" class="shelf-stage space-y-12">
       {% for row_items in manga|batch(6) %}
       <div class="shelf-ledge pb-7 pt-2 px-3 sm:px-6">
@@ -199,7 +204,7 @@
           {% for m in row_items %}
           <button type="button" class="book-card-btn group" data-filter-card
             data-filter-text="{{ (m.title_hi ~ ' ' ~ m.title_en ~ ' ' ~ m.pub_status)|lower }}"
-            data-manga="{{ m|tojson }}" onclick="openMangaModal(JSON.parse(this.dataset.manga))"
+            data-manga-trigger data-manga-id="{{ m.id }}"
             title="Inspect {{ m.title_en }}">
             <div class="book-3d">
               <div class="book-spine"><span class="book-spine-label">{{ m.volume_label }}</span></div>
@@ -420,10 +425,11 @@
     btn.type = "button";
     btn.className = "book-card-btn group";
     btn.dataset.filterCard = "";
+    btn.setAttribute("data-manga-trigger", "");
+    btn.setAttribute("data-manga-id", String(m.id));
     btn.title = "Inspect " + (m.title_en || "");
     var isEn = typeof hagGetLang === "function" && hagGetLang() === "en";
     var titleTxt = isEn ? (m.title_en || m.title_hi || "") : (m.title_hi || m.title_en || "");
-    btn.onclick = function () { openMangaModal(m); };
     btn.innerHTML =
       '<div class="book-3d">' +
       '<div class="book-spine"><span class="book-spine-label">' + (m.volume_label || "MANGA") + '</span></div>' +
@@ -444,6 +450,7 @@
   function appendMangaBatch(items, replace) {
     var stage = document.getElementById("manga-shelf-stage");
     if (!stage) return;
+    if (typeof window.hagRegisterMangaItems === "function") window.hagRegisterMangaItems(items);
     if (replace) stage.innerHTML = "";
     for (var i = 0; i < items.length; i += 6) {
       var slice = items.slice(i, i + 6);
@@ -454,6 +461,9 @@
       slice.forEach(function (m) { grid.appendChild(buildMangaCardBtn(m)); });
       ledge.appendChild(grid);
       stage.appendChild(ledge);
+    }
+    if (typeof window.hagApplyLang === "function" && typeof window.hagGetLang === "function") {
+      window.hagApplyLang(window.hagGetLang());
     }
   }
 

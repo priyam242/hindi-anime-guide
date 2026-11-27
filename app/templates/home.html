@@ -44,6 +44,10 @@
     text-align: left;
   }
 
+  .book-card-btn .book-3d {
+    pointer-events: none;
+  }
+
   .book-3d {
     position: relative;
     width: 100%;
@@ -531,13 +535,14 @@
 
     {% set shelf_books = manga[:12] %}
     {% if shelf_books %}
+    <script type="application/json" id="manga-catalog-json">{{ shelf_books|tojson }}</script>
     <div class="shelf-stage space-y-12">
       {% for row_books in [shelf_books[:6], shelf_books[6:12]] if row_books %}
       <div class="shelf-ledge pb-6 pt-2 px-3 sm:px-6">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 sm:gap-8 items-end">
           {% for m in row_books %}
-          <button type="button" class="book-card-btn group focus:outline-none" data-manga="{{ m|tojson }}"
-            onclick="openMangaModal(JSON.parse(this.dataset.manga))" title="Inspect {{ m.title_en }}">
+          <button type="button" class="book-card-btn group focus:outline-none"
+            data-manga-trigger data-manga-id="{{ m.id }}" title="Inspect {{ m.title_en }}">
             <div class="book-3d">
               <div class="book-spine">
                 <span class="book-spine-label">{{ m.volume_label }}</span>
@@ -556,7 +561,7 @@
                   <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="{{ m.title_hi }}"
                     data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
                   {% if m.title_en != m.title_hi %}
-                  <p class="font-tech text-[9px] text-white/70 truncate">{{ m.title_en }}</p>
+                  <p class="hag-lang-hi font-tech text-[9px] text-white/70 truncate">{{ m.title_en }}</p>
                   {% endif %}
                   <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-0.5 truncate">{{
                     m.author }} &bull; {{ m.chapters }}</p>
@@ -581,18 +586,41 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div class="space-y-2">
-        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]"
-          data-hi="🏆 हॉल ऑफ फेम • VERIFIED WINNERS" data-en="🏆 HALL OF FAME • VERIFIED WINNERS">🏆 हॉल ऑफ फेम &bull; VERIFIED WINNERS</span>
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#fbbf24]"
+          data-hi="👑 हॉल ऑफ फेम • ROYAL CHAMPIONS" data-en="👑 HALL OF FAME • VERIFIED WINNERS">👑 हॉल ऑफ फेम &bull; ROYAL CHAMPIONS</span>
         <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight"
           data-hi="एनीमे अवार्ड्स विजेता" data-en="ANIME AWARDS WINNERS">एनीमे <span class="text-[#ff2e63]">अवार्ड्स विजेता</span></h2>
       </div>
       <a href="/awards"
-        class="inline-flex min-h-[38px] px-4 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/10 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold tracking-widest uppercase items-center gap-2 transition-colors">
-        <span data-hi="सभी {{ awards.total_entries if awards else 26 }} अवॉर्ड्स देखें"
-          data-en="View Full Hall of Fame">सभी {{ awards.total_entries if awards else 26 }} अवॉर्ड्स देखें</span>
-        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+        class="inline-flex min-h-[38px] px-4 py-2 border border-[#fbbf24]/70 bg-[#cf0f46]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold tracking-widest uppercase items-center gap-2 transition-colors">
+        <span data-hi="सभी {{ awards.total_entries if awards else 35 }} अवॉर्ड्स देखें"
+          data-en="View Full Hall of Fame">सभी {{ awards.total_entries if awards else 35 }} अवॉर्ड्स देखें</span>
+        <i class="fa-solid fa-arrow-right text-[#fbbf24]"></i>
       </a>
     </div>
+
+    {% if awards and awards.aoty_hero %}
+    {% set aoty = awards.aoty_hero %}
+    <a href="/awards"
+      class="group block relative overflow-hidden border-2 border-[#fbbf24] bg-gradient-to-r from-[#fbbf24]/15 via-[#cf0f46]/12 to-[#06070c] p-5 sm:p-6 shadow-[0_0_40px_rgba(251,191,36,0.18)] hover:shadow-[0_0_55px_rgba(251,191,36,0.3)] transition-all">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <img src="{{ aoty.winner_poster }}" alt="{{ aoty.winner_title }}" referrerpolicy="no-referrer" loading="lazy"
+          decoding="async" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+          class="w-20 h-28 object-cover shrink-0 border-2 border-[#fbbf24]" />
+        <div class="min-w-0 flex-1 space-y-2">
+          <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-extrabold uppercase tracking-widest">
+            <span class="px-2.5 py-0.5 bg-[#fbbf24] text-[#06070c]">👑 ANIME OF THE YEAR &bull; {{ aoty.edition_year }}</span>
+            <span class="px-2 py-0.5 bg-[#cf0f46] text-white" data-hi="{{ aoty.ceremony_name_hi }}" data-en="{{ aoty.ceremony_name }}">{{ aoty.ceremony_name_hi }}</span>
+          </div>
+          <h3 class="font-display-shonen text-xl sm:text-2xl text-white group-hover:text-[#fbbf24] transition-colors"
+            data-hi="{{ aoty.winner_title_hi }}" data-en="{{ aoty.winner_title }}">{{ aoty.winner_title_hi }}</h3>
+          <p class="font-tech text-xs text-white/75 uppercase tracking-wider"
+            data-hi="वर्ष का सर्वश्रेष्ठ एनीमे विजेता व सभी श्रेणियाँ देखने के लिए क्लिक करें →"
+            data-en="Explore all 2021–2026 Crunchyroll &amp; TAAF Anime Award Winners →">वर्ष का सर्वश्रेष्ठ एनीमे विजेता व सभी श्रेणियाँ देखने के लिए क्लिक करें &rarr;</p>
+        </div>
+      </div>
+    </a>
+    {% endif %}
 
     {% set winners_pool = awards.showcase_winners if (awards and awards.showcase_winners) else [] %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -604,7 +632,7 @@
           class="w-16 h-24 object-cover shrink-0 border border-[#ff2e63]" />
         <div class="min-w-0 flex-1 space-y-1.5">
           <div class="flex flex-wrap items-center gap-1.5 font-tech text-[9px] font-bold uppercase tracking-wider">
-            <span class="px-2 py-0.5 bg-[#cf0f46] text-white">🏆 WINNER {{ win.edition_year }}</span>
+            <span class="px-2 py-0.5 bg-[#cf0f46] text-white inline-flex items-center gap-1"><i class="fa-solid fa-trophy text-[#fbbf24]"></i> WINNER {{ win.edition_year }}</span>
             <span class="text-[#ff2e63] truncate" data-hi="{{ win.category_hi }}" data-en="{{ win.category }}">{{ win.category_hi }}</span>
           </div>
           <h3 class="text-sm font-extrabold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors"

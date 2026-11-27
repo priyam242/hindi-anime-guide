@@ -74,7 +74,22 @@ async def run_gate() -> int:
         or "stay on top of anime news" in (r["summary_en"] or "").lower()
     ]
     news_hi_bad = [r["id"] for r in news_rows if phonetic_pat.search(r["title_hi"] or "") or not re.search(r"[\u0900-\u097F]", r["title_hi"] or "")]
-    news_boilerplate = [r["id"] for r in news_rows if "पूरी जानकारी, कास्ट विवरण" in (r["summary_hi"] or "")]
+    news_boilerplate = [
+        r["id"]
+        for r in news_rows
+        if ("पूरी जानकारी, कास्ट विवरण" in (r["summary_hi"] or "") or "मूल स्रोत रिपोर्ट:" in (r["summary_hi"] or ""))
+    ]
+    avg_en = sum(len((r["summary_en"] or "").strip()) for r in news_rows) / max(1, len(news_rows))
+    avg_hi = sum(len((r["summary_hi"] or "").strip()) for r in news_rows) / max(1, len(news_rows))
+    if avg_hi < avg_en * 0.85:
+        errors.append(f"News Hindi parity ratio too low: avg_hi={avg_hi:.1f} < 0.85 * avg_en={avg_en:.1f}")
+
+    # Check Awards years coverage (2026, 2024, 2023, 2022, 2021)
+    with engine.connect() as conn:
+        aw_years = {int(r[0]) for r in conn.execute(text("SELECT DISTINCT edition_year FROM award_ceremony")).fetchall()}
+    missing_aw_years = {2026, 2024, 2023, 2022, 2021} - aw_years
+    if missing_aw_years:
+        errors.append(f"Missing required award_ceremony years: {sorted(missing_aw_years)}")
     if news_en_bleed:
         errors.append(f"News summary_en Devanagari bleed or empty: {news_en_bleed}")
     if news_hi_bad:

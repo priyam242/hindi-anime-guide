@@ -327,13 +327,59 @@ def _translate_action_clause_hi(tail: str) -> str:
     return f"से जुड़ा बड़ा आधिकारिक अपडेट{date_note} जारी"
 
 
+def _post_clean_hindi(hi_text: str) -> str:
+    """Replace any stray phonetic loanwords from MT with natural Hindi editorial phrasing."""
+    replacements = (
+        (r"रिवील्स|अनवेल्स", "खुलासा किया"),
+        (r"अनाउंसेस", "घोषणा की"),
+        (r"रिलीज़ेस", "जारी किया"),
+        (r"हेल्म्स", "निर्देशन करेंगे"),
+        (r"ऑफिशियल", "आधिकारिक"),
+        (r"एडिशन्ल|एडिशलनल|एडिशनल कास्ट", "अतिरिक्त कास्ट"),
+        (r"फर्स्ट लुक", "पहली झलक"),
+    )
+    out = re.sub(r"\s+", " ", (hi_text or "").strip())
+    for pat, rep in replacements:
+        out = re.sub(pat, rep, out)
+    return out
+
+
+_gtx_cli = httpx.Client(timeout=10.0, follow_redirects=True)
+
+
+def _translate_en_to_hi_gtx(text_en: str) -> str:
+    """Translate clean English news text into natural, grammatical Hindi."""
+    src = re.sub(r"[\u0900-\u097F]+", "", (text_en or "")).strip()
+    src = re.sub(r"\s+", " ", src).strip()
+    if not src:
+        return ""
+    try:
+        resp = _gtx_cli.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params={"client": "gtx", "sl": "en", "tl": "hi", "dt": "t", "q": src[:1400]},
+        )
+        if resp.status_code == 200:
+            chunks = resp.json()[0]
+            joined = "".join(seg[0] for seg in chunks if seg and seg[0])
+            cleaned = _post_clean_hindi(joined)
+            if _has_devanagari(cleaned):
+                return cleaned
+    except Exception:
+        pass
+    return ""
+
+
 def translate_news_headline_hi(title_en: str) -> str:
     """Translate an English anime news headline into natural, grammatical Indian Hindi journalism."""
     raw = re.sub(r"\s+", " ", (title_en or "").strip())
     if not raw:
         return "ताज़ा एनीमे समाचार अपडेट"
 
-    # Specific recurring editorial patterns first
+    gtx_hi = _translate_en_to_hi_gtx(raw)
+    if gtx_hi and len(re.findall(r"[\u0900-\u097F]", gtx_hi)) >= max(6, int(len(gtx_hi) * 0.35)):
+        return gtx_hi[:280]
+
+    # Specific recurring editorial patterns fallback
     m_rev_guide = re.match(r"^(?:The\s+)?([A-Za-z]+\s+\d{4})\s+Anime\s+Preview\s+Guide\s*[-–—:]\s*(.+)$", raw, re.I)
     if m_rev_guide:
         return f"{m_rev_guide.group(2).strip()}: {m_rev_guide.group(1)} एनीमे प्रीव्यू गाइड"
@@ -430,15 +476,18 @@ def translate_news_headline_hi(title_en: str) -> str:
 
 
 def translate_news_summary_hi(summary_en: str | None, title_en: str, source_name: str = "") -> str:
-    """Provide factual natural Hindi summary deck without generic filler boilerplate."""
-    title_hi = translate_news_headline_hi(title_en)
+    """Translate full factual English news body into natural multi-sentence Hindi journalism."""
     src = re.sub(r"[\u0900-\u097F]+", "", (summary_en or "")).strip()
-    src_lbl = source_name.strip() or "आधिकारिक एनीमे न्यूज़वायर"
-    yr_m = re.search(r"\b(202[5-9])\b", src)
-    yr_txt = f" इस अपडेट में {yr_m.group(1)} शेड्यूल और निर्माण से जुड़े मुख्य तथ्य साझा किए गए हैं।" if yr_m else ""
-    if not src:
-        return f"{title_hi} ({src_lbl} रिपोर्ट)।"
-    return f"{title_hi}।{yr_txt} मूल स्रोत रिपोर्ट: {src_lbl}।"
+    src = re.sub(r"\s+", " ", src).strip()
+    if src:
+        hi_body = _translate_en_to_hi_gtx(src[:1200])
+        if hi_body and len(hi_body) >= max(45, int(len(src) * 0.65)):
+            return hi_body[:1800]
+    src_fallback = f"{title_en}. {src}" if src else f"{title_en}. Official report covered by {source_name or 'anime newswire'}."
+    hi_fb = _translate_en_to_hi_gtx(src_fallback[:1200])
+    if hi_fb:
+        return hi_fb[:1800]
+    return f"{translate_news_headline_hi(title_en)} — {source_name.strip() or 'एनीमे न्यूज़वायर'} द्वारा प्रकाशित विस्तृत अपडेट।"
 
 
 def _fetch_real_news_summary_en(source_url: str | None, rss_desc: str | None, title_en: str) -> str:
@@ -448,11 +497,11 @@ def _fetch_real_news_summary_en(source_url: str | None, rss_desc: str | None, ti
     base_clean = re.sub(r"\s+", " ", base_clean).strip()
     extra_parts: list[str] = [base_clean] if base_clean else []
 
-    if len(base_clean) < 150 and source_url and source_url.startswith("http"):
+    if len(base_clean) < 280 and source_url and source_url.startswith("http"):
         try:
-            resp = httpx.get(source_url, timeout=4.5, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"})
+            resp = httpx.get(source_url, timeout=5.5, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"})
             if resp.status_code == 200:
-                raw_html = resp.text[:70000]
+                raw_html = resp.text[:90000]
                 m_desc = re.search(
                     r'<meta[^>]+(?:name=["\']description["\']|property=["\']og:description["\'])[^>]+content=["\']([^"\']{30,450})["\']',
                     raw_html,
@@ -460,31 +509,32 @@ def _fetch_real_news_summary_en(source_url: str | None, rss_desc: str | None, ti
                 )
                 if m_desc:
                     meta_txt = _html.unescape(re.sub(r"<[^>]+>", " ", m_desc.group(1))).strip()
-                    if meta_txt and meta_txt.lower() not in (base_clean or "").lower():
+                    if meta_txt and meta_txt.lower() not in " ".join(extra_parts).lower():
                         extra_parts.append(meta_txt)
                 # Extract clean lead paragraphs
                 for pm in re.findall(r"<p\b[^>]*>(.*?)</p>", raw_html, re.I | re.S):
                     ptxt = _html.unescape(re.sub(r"<[^>]+>", " ", pm))
                     ptxt = re.sub(r"\s+", " ", ptxt).strip()
-                    if len(ptxt) >= 65 and not any(bad in ptxt.lower() for bad in (
+                    if len(ptxt) >= 60 and not any(bad in ptxt.lower() for bad in (
                         "cookie", "subscribe", "copyright", "privacy policy", "all rights reserved", "sign in",
-                        "stay on top of anime news", "crunchyroll news", "you heard it here first", "evergreen content"
+                        "stay on top of anime news", "crunchyroll news", "you heard it here first", "evergreen content",
+                        "follow us", "newsletter", "advertisement"
                     )):
                         if ptxt.lower() not in " ".join(extra_parts).lower():
                             extra_parts.append(ptxt)
-                    if len(" ".join(extra_parts)) >= 360 or len(extra_parts) >= 3:
+                    if len(" ".join(extra_parts)) >= 680 or len(extra_parts) >= 4:
                         break
         except Exception:
             pass
 
-    combined = " ".join(p for p in extra_parts if p).strip()
+    combined = "\n".join(p for p in extra_parts if p).strip()
     combined = re.sub(r"Stay on top of anime news and updates straight out of Japan with Crunchyroll News\.?", "", combined, flags=re.IGNORECASE)
     combined = re.sub(r"From breaking stories to evergreen content,\s*get all your anime and manga news updates in one place\.?", "", combined, flags=re.IGNORECASE)
     combined = re.sub(r"\s*You heard it here first!?", "", combined, flags=re.IGNORECASE)
-    combined = re.sub(r"\s+", " ", combined).strip()
-    if not combined or len(combined) < 35:
+    combined = re.sub(r"\n{2,}", "\n", combined).strip()
+    if not combined or len(combined) < 40:
         combined = f"{title_en}. Verified report in our 48-hour official anime newswire covering staff, release dates, and licensed streaming updates."
-    return combined[:650]
+    return combined[:1100]
 
 
 def _is_youtube_embeddable(yt_id: str) -> bool:
@@ -913,7 +963,7 @@ def fetch_48h_rss_news(max_per_feed: int = 8) -> list[dict]:
                     "title_en": title[:300],
                     "title_hi": translate_news_headline_hi(title)[:300],
                     "summary_en": clean_desc,
-                    "summary_hi": translate_news_summary_hi(clean_desc, title, feed_name)[:500],
+                    "summary_hi": translate_news_summary_hi(clean_desc, title, feed_name)[:1800],
                     "image_url": thumb,
                     "published_at": pub_naive,
                     "created_at": now_naive,
@@ -1026,6 +1076,109 @@ def _dedupe_rows(conn: Any, content_type: str) -> int:
         conn.execute(text("DELETE FROM anime_draft WHERE id = ANY(:ids)"), {"ids": dup_ids})
         deleted += len(dup_ids)
     return deleted
+
+
+def _ensure_historical_awards(conn: Any) -> None:
+    """Ensure verified 2022 & 2021 Crunchyroll Anime Awards ceremonies and winners exist."""
+    historical = [
+        {
+            "edition_year": 2022,
+            "name": "Crunchyroll Anime Awards",
+            "name_hi": "क्रंचीरोल एनीमे अवार्ड्स (6वां संस्करण)",
+            "date": "2022-02-09",
+            "location": "Tokyo, Japan (Global Virtual)",
+            "source_url": "https://en.wikipedia.org/wiki/6th_Crunchyroll_Anime_Awards",
+            "entries": [
+                ("Anime of the Year", "वर्ष का सर्वश्रेष्ठ एनीमे", 110277, "Attack on Titan Final Season Part 1", "अटैक ऑन टाइटन: फाइनल सीज़न पार्ट 1", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx110277-sKUNXAsWMNFw.jpg", [{"title": "JUJUTSU KAISEN"}, {"title": "86 EIGHTY-SIX"}, {"title": "ODDTAXI"}, {"title": "Ranking of Kings"}]),
+                ("Best Film", "सर्वश्रेष्ठ एनीमे फिल्म", 112151, "Demon Slayer -Kimetsu no Yaiba- The Movie: Mugen Train", "डीमन स्लेयर: मुगेन ट्रेन मूवी", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx112151-1qlQwPB1RrJe.png", [{"title": "BELLE"}, {"title": "Evangelion 3.0+1.0"}, {"title": "Josee, the Tiger and the Fish"}]),
+                ("Best Romance", "सर्वश्रेष्ठ रोमांस एनीमे", 124080, "Horimiya", "होरीमिया (Horimiya)", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx124080-3i22mRVPBS0T.jpg", [{"title": "Fruits Basket The Final"}, {"title": "Komi Can't Communicate"}]),
+                ("Best Protagonist", "सर्वश्रेष्ठ मुख्य पात्र", 113717, "Ranking of Kings", "रैंकिंग ऑफ किंग्स (Bojji)", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113717-9sNnN8WRgK15.jpg", [{"title": "Odd Taxi"}, {"title": "Attack on Titan"}]),
+            ],
+        },
+        {
+            "edition_year": 2021,
+            "name": "Crunchyroll Anime Awards",
+            "name_hi": "क्रंचीरोल एनीमे अवार्ड्स (5वां संस्करण)",
+            "date": "2021-02-19",
+            "location": "Tokyo, Japan (Global Virtual)",
+            "source_url": "https://en.wikipedia.org/wiki/5th_Crunchyroll_Anime_Awards",
+            "entries": [
+                ("Anime of the Year", "वर्ष का सर्वश्रेष्ठ एनीमे", 113415, "JUJUTSU KAISEN", "जुजुत्सु काइसेन (सीज़न 1)", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg", [{"title": "Dorohedoro"}, {"title": "Great Pretender"}, {"title": "Keep Your Hands Off Eizouken!"}]),
+                ("Best Animation", "सर्वश्रेष्ठ एनिमेशन", 109298, "Keep Your Hands Off Eizouken!", "कीप योर हैंड्स ऑफ़ आइज़ोउकेन!", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx109298-suwdIUbJEPJx.png", [{"title": "JUJUTSU KAISEN"}, {"title": "Great Pretender"}]),
+                ("Best Comedy", "सर्वश्रेष्ठ कॉमेडी एनीमे", 112641, "Kaguya-sama: Love is War? (Season 2)", "कागुया-सामा: लव इज़ वॉर? (सीज़न 2)", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx112641-zoGC8d6FaPXU.jpg", [{"title": "My Next Life as a Villainess"}, {"title": "Sleepy Princess in the Demon Castle"}]),
+                ("Best Fantasy", "सर्वश्रेष्ठ फ़ैंटेसी एनीमे", 108632, "Re:ZERO -Starting Life in Another World- Season 2", "री:ज़ीरो (सीज़न 2)", "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108632-lQWnmw7XaNOK.jpg", [{"title": "Tower of God"}, {"title": "Dorohedoro"}]),
+            ],
+        },
+    ]
+    for cer in historical:
+        cid = conn.execute(
+            text("SELECT id FROM award_ceremony WHERE edition_year = :yr AND name = :nm LIMIT 1"),
+            {"yr": cer["edition_year"], "nm": cer["name"]},
+        ).scalar()
+        if not cid:
+            cid = conn.execute(
+                text(
+                    """
+                    INSERT INTO award_ceremony (name, name_hi, edition_year, date, location, source_url, status)
+                    VALUES (:name, :name_hi, :edition_year, CAST(:date AS DATE), :location, :source_url, 'verified')
+                    RETURNING id
+                    """
+                ),
+                {
+                    "name": cer["name"],
+                    "name_hi": cer["name_hi"],
+                    "edition_year": cer["edition_year"],
+                    "date": cer["date"],
+                    "location": cer["location"],
+                    "source_url": cer["source_url"],
+                },
+            ).scalar()
+        existing_cats = {
+            r[0]
+            for r in conn.execute(text("SELECT category FROM award_entry WHERE ceremony_id = :cid"), {"cid": cid}).fetchall()
+        }
+        for cat, cat_hi, maid, wtitle, wtitle_hi, wposter, noms in cer["entries"]:
+            if cat in existing_cats:
+                continue
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO award_entry (ceremony_id, category, category_hi, winner_media_id, winner_title, winner_title_hi, winner_poster, nominee_media_ids, source_url, status)
+                    VALUES (:cid, :cat, :cat_hi, :maid, :wt, :wthi, :wpost, :noms, :src, 'verified')
+                    """
+                ),
+                {
+                    "cid": cid,
+                    "cat": cat,
+                    "cat_hi": cat_hi,
+                    "maid": maid,
+                    "wt": wtitle,
+                    "wthi": wtitle_hi,
+                    "wpost": wposter,
+                    "noms": json.dumps(noms, ensure_ascii=False),
+                    "src": cer["source_url"],
+                },
+            )
+
+
+def _needs_real_hindi_upgrade(title_hi: str | None, title_en: str, summary_hi: str | None, summary_en: str | None) -> tuple[bool, bool]:
+    th = (title_hi or "").strip()
+    te = (title_en or "").strip()
+    shi = (summary_hi or "").strip()
+    sen = (summary_en or "").strip()
+    deva_cnt = len(re.findall(r"[\u0900-\u097F]", th))
+    has_en_desc = bool(re.search(r"\b(?:Live-Action|Series|Anime Film|Preview Guide|Theme Song|Launches New|Boys-Love)\b", th, re.I))
+    need_title = _is_phonetic_or_untranslated_hi(th, te) or deva_cnt < max(5, int(len(th) * 0.35)) or has_en_desc
+    need_sum = (
+        not shi
+        or not _has_devanagari(shi)
+        or "मूल स्रोत रिपोर्ट:" in shi
+        or "पूरी जानकारी, कास्ट विवरण" in shi
+        or "अधिकारिक अपडेट" in shi
+        or (len(th) >= 20 and shi.startswith(th[:20]))
+        or (len(sen) >= 40 and len(shi) < int(len(sen) * 0.85))
+    )
+    return need_title, need_sum
 
 
 def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
@@ -1357,7 +1510,9 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
                     {"aid": aid, "img": cov, "id": row_id},
                 )
 
-    # 3. Clean poisoned news images, upgrade news summaries (real EN + clean HI) & enforce natural Hindi headlines
+    _ensure_historical_awards(conn)
+
+    # 3. Clean poisoned news images, upgrade news summaries (real EN + full HI parity) & enforce natural Hindi headlines
     news_fixed = 0
     news_rows = conn.execute(
         text("SELECT id, title_en, title_hi, summary_en, summary_hi, image_url, source_url, source_name FROM anime_draft WHERE content_type = 'news'")
@@ -1377,23 +1532,20 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
             new_img = _fetch_article_og_image(nr["source_url"]) or _strict_anilist_news_image(title_en) or ""
             news_fixed += 1
 
-        needs_hi_fix = _is_phonetic_or_untranslated_hi(nr["title_hi"], title_en)
-        new_title_hi = translate_news_headline_hi(title_en)[:300] if needs_hi_fix else nr["title_hi"]
-
         raw_sen = (nr["summary_en"] or "").strip()
         needs_en_enrich = (
             not raw_sen
-            or len(raw_sen) < 120
+            or len(raw_sen) < 220
             or bool(re.search(r"[\u0900-\u097F]", raw_sen))
             or ("stay on top of anime news" in raw_sen.lower())
         )
         new_sum_en = _fetch_real_news_summary_en(nr["source_url"], raw_sen, title_en) if needs_en_enrich else raw_sen
 
-        raw_shi = (nr["summary_hi"] or "").strip()
-        has_old_boilerplate = ("पूरी जानकारी, कास्ट विवरण" in raw_shi) or ("अधिकारिक अपडेट" in raw_shi) or not _has_devanagari(raw_shi)
-        new_sum_hi = translate_news_summary_hi(new_sum_en, title_en, nr["source_name"] or "")[:500] if (needs_hi_fix or has_old_boilerplate) else raw_shi
+        need_title_hi, need_sum_hi = _needs_real_hindi_upgrade(nr["title_hi"], title_en, nr["summary_hi"], new_sum_en)
+        new_title_hi = translate_news_headline_hi(title_en)[:300] if need_title_hi else nr["title_hi"]
+        new_sum_hi = translate_news_summary_hi(new_sum_en, title_en, nr["source_name"] or "") if (need_sum_hi or new_sum_en != nr["summary_en"]) else nr["summary_hi"]
 
-        if needs_img_fix or needs_hi_fix or new_sum_en != nr["summary_en"] or new_sum_hi != nr["summary_hi"]:
+        if needs_img_fix or need_title_hi or new_sum_en != nr["summary_en"] or new_sum_hi != nr["summary_hi"]:
             conn.execute(
                 text(
                     """
@@ -1405,9 +1557,9 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
                     WHERE id = :id
                     """
                 ),
-                {"img": new_img, "thi": new_title_hi, "sen": new_sum_en[:700], "shi": new_sum_hi, "id": nr["id"]},
+                {"img": new_img, "thi": new_title_hi, "sen": new_sum_en[:1200], "shi": new_sum_hi[:1800], "id": nr["id"]},
             )
-            if (needs_hi_fix or has_old_boilerplate or needs_en_enrich) and not needs_img_fix:
+            if (need_title_hi or need_sum_hi or needs_en_enrich) and not needs_img_fix:
                 news_fixed += 1
 
     # Clean up trailer rows with missing source_url, non-http images, or non-embeddable YouTube IDs

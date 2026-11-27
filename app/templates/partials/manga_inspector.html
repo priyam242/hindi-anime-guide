@@ -1,5 +1,5 @@
 <!-- SPLIT-SCREEN 3D MANGA OPEN-BOOK + METADATA INSPECTOR -->
-<div id="manga-book-inspector" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-[#06070c]/92 backdrop-blur-xl">
+<div id="manga-book-inspector" class="fixed inset-0 z-[90] hidden items-center justify-center p-3 sm:p-6 bg-[#06070c]/92 backdrop-blur-xl">
   <div class="relative w-full max-w-5xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_80px_rgba(255,46,99,0.35)] overflow-hidden max-h-[92vh] overflow-y-auto">
     <button type="button"
             onclick="closeMangaModal()"
@@ -181,8 +181,15 @@
       }
 
       var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
+      var mainT = isEn ? (m.title_en || m.title_hi || "") : (m.title_hi || m.title_en || "");
+      var subT = m.title_en || "";
       document.getElementById("mi-status-ribbon").textContent = isEn ? (m.status_badge_en || "ONGOING") : (m.status_badge_hi || "जारी है • ONGOING");
-      document.getElementById("mi-title-hi").textContent = isEn ? (m.title_en || m.title_hi || "") : (m.title_hi || m.title_en || "");
+      document.getElementById("mi-title-hi").textContent = mainT;
+      var miSubEl = document.getElementById("mi-title-en");
+      if (miSubEl) {
+        miSubEl.textContent = subT;
+        miSubEl.classList.toggle("hidden", isEn || !subT || subT.trim().toLowerCase() === mainT.trim().toLowerCase());
+      }
       document.getElementById("mi-serialization").textContent = isEn ? (m.serialization_en || m.pub_status || "Releasing") : (m.serialization_label || m.pub_status || "Releasing");
       document.getElementById("mi-summary").textContent = isEn ? (m.summary_en || m.summary_hi || "") : (m.summary_hi || m.summary_en || "");
 
@@ -246,6 +253,39 @@
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") window.closeMangaModal();
+      if ((e.key === "Enter" || e.key === " ") && document.activeElement && document.activeElement.matches && document.activeElement.matches("[data-manga-trigger]")) {
+        var id = document.activeElement.getAttribute("data-manga-id");
+        var item = id && window.HAG_MANGA_MAP ? window.HAG_MANGA_MAP[String(id)] : null;
+        if (item) {
+          e.preventDefault();
+          window.openMangaModal(item);
+        }
+      }
+    });
+
+    window.HAG_MANGA_MAP = window.HAG_MANGA_MAP || {};
+    window.hagRegisterMangaItems = function (items) {
+      if (!Array.isArray(items)) return;
+      items.forEach(function (m) {
+        if (m && m.id !== undefined) window.HAG_MANGA_MAP[String(m.id)] = m;
+      });
+    };
+    (function hydrateMangaCatalog() {
+      var catEl = document.getElementById("manga-catalog-json");
+      if (catEl && catEl.textContent) {
+        try { window.hagRegisterMangaItems(JSON.parse(catEl.textContent)); } catch (e) { }
+      }
+    })();
+
+    document.addEventListener("click", function (e) {
+      var trigger = e.target && e.target.closest ? e.target.closest("[data-manga-trigger]") : null;
+      if (!trigger) return;
+      var id = trigger.getAttribute("data-manga-id");
+      var item = id && window.HAG_MANGA_MAP ? window.HAG_MANGA_MAP[String(id)] : null;
+      if (item && typeof window.openMangaModal === "function") {
+        e.preventDefault();
+        window.openMangaModal(item);
+      }
     });
   })();
 </script>

@@ -545,8 +545,10 @@ async def guide_detail_page(request: Request, slug: str):
 
 
 @app.get("/awards", response_class=HTMLResponse)
-async def awards_page(request: Request, year: int = Query(default=0)):
-    awards = get_awards_data(year if year > 0 else None)
+async def awards_page(request: Request, year: str = Query(default="2026")):
+    raw_y = (year or "2026").strip().lower()
+    selected_year: int | None = None if raw_y in ("all", "0") else (int(raw_y) if raw_y.isdigit() else 2026)
+    awards = get_awards_data(selected_year)
     return templates.TemplateResponse(
         request,
         "awards.html",

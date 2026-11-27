@@ -2,7 +2,36 @@
 
 {% block title %}Anime Awards &amp; Hall of Fame — Hindi Anime Guide{% endblock %}
 {% block og_title %}Anime Awards &amp; Hall of Fame — Hindi Anime Guide{% endblock %}
-{% block og_description %}Verified Crunchyroll &amp; Tokyo Anime Award Festival winners, Best Action, Best Film, and Hindi Fan Favorites Hall of Fame.{% endblock %}
+{% block og_description %}Verified Crunchyroll &amp; Tokyo Anime Award Festival winners, Royal Anime of the Year Hall of Fame, Best Film, and India Watch Guides.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .aoty-royal-card {
+    background: radial-gradient(circle at 85% 20%, rgba(251, 191, 36, 0.16), transparent 48%),
+                radial-gradient(circle at 12% 85%, rgba(255, 46, 99, 0.18), transparent 45%),
+                #06070c;
+    box-shadow: 0 0 55px rgba(251, 191, 36, 0.2), 0 0 26px rgba(255, 46, 99, 0.16);
+  }
+  .aoty-gold-pill {
+    background: linear-gradient(135deg, #fbbf24 0%, #fde047 52%, #d97706 100%);
+    color: #06070c !important;
+  }
+  html.light-theme .aoty-royal-card {
+    background: radial-gradient(circle at 85% 20%, rgba(251, 191, 36, 0.16), transparent 50%),
+                radial-gradient(circle at 12% 85%, rgba(255, 46, 99, 0.12), transparent 45%),
+                #06070c !important;
+    color: #ffffff !important;
+  }
+  html.light-theme .aoty-royal-card h3,
+  html.light-theme .aoty-royal-card p,
+  html.light-theme .aoty-royal-card a {
+    color: #ffffff !important;
+  }
+  html.light-theme .aoty-royal-card .aoty-gold-pill {
+    color: #06070c !important;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <section class="py-10 sm:py-16 bg-[#06070c] min-h-[75vh]">
@@ -10,20 +39,20 @@
     <!-- Awards Hero Banner -->
     <div class="border-b border-white/15 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div class="space-y-2.5">
-        <span class="inline-flex items-center gap-2 px-3 py-1 bg-[#cf0f46] text-white font-tech text-[11px] font-bold uppercase tracking-[0.2em]" style="transform: skewX(-8deg);">
-          <span style="transform: skewX(8deg);" data-hi="🏆 हॉल ऑफ फेम • VERIFIED ARCHIVE" data-en="🏆 HALL OF FAME • VERIFIED ARCHIVE">🏆 हॉल ऑफ फेम &bull; VERIFIED ARCHIVE</span>
+        <span class="inline-flex items-center gap-2 px-3.5 py-1 aoty-gold-pill font-tech text-[11px] font-extrabold uppercase tracking-[0.2em]" style="transform: skewX(-8deg);">
+          <span style="transform: skewX(8deg);" data-hi="👑 रॉयल हॉल ऑफ फेम • ANIME OF THE YEAR" data-en="👑 ROYAL HALL OF FAME • VERIFIED ARCHIVE">👑 रॉयल हॉल ऑफ फेम &bull; ANIME OF THE YEAR</span>
         </span>
         <h1 class="font-display-shonen text-3xl sm:text-5xl text-white leading-tight"
             data-hi="एनीमे अवार्ड्स और विजेता गाइड"
             data-en="ANIME AWARDS &amp; HALL OF FAME">एनीमे अवार्ड्स और विजेता गाइड</h1>
         <p class="max-w-2xl text-sm text-white/80"
-           data-hi="Crunchyroll Anime Awards और Tokyo Anime Award Festival के आधिकारिक विजेता, नामांकित शो और देखने के वैध लिंक।"
-           data-en="Official Crunchyroll Anime Awards and Tokyo Anime Award Festival winners, nominees, and legal India streaming links.">
-          Crunchyroll Anime Awards और Tokyo Anime Award Festival के आधिकारिक विजेता, नामांकित शो और देखने के वैध लिंक।
+           data-hi="Crunchyroll Anime Awards (2021–2026) और Tokyo Anime Award Festival के आधिकारिक विजेता, नामांकित शो और देखने के वैध लिंक।"
+           data-en="Official Crunchyroll Anime Awards (2021–2026) and Tokyo Anime Award Festival winners, nominees, and legal India streaming links.">
+          Crunchyroll Anime Awards (2021–2026) और Tokyo Anime Award Festival के आधिकारिक विजेता, नामांकित शो और देखने के वैध लिंक।
         </p>
       </div>
       <div class="flex items-center gap-3 font-tech text-xs font-bold uppercase shrink-0">
-        <span class="px-3.5 py-2 border border-white/20 bg-white/5 text-white">
+        <span class="px-3.5 py-2 border border-[#fbbf24]/60 bg-[#fbbf24]/10 text-[#fbbf24]">
           {{ total_ceremonies }} <span data-hi="समारोह" data-en="CEREMONIES">समारोह</span>
         </span>
         <span class="px-3.5 py-2 border border-[#ff2e63] bg-[#ff2e63]/15 text-white">
@@ -32,17 +61,19 @@
       </div>
     </div>
 
-    <!-- Year Filter Bar -->
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="/awards"
-         class="min-h-[38px] px-4 py-2 inline-flex items-center font-tech text-xs font-bold uppercase tracking-wider border transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if not active_year else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}"
-         data-hi="सभी वर्ष" data-en="ALL YEARS">सभी वर्ष</a>
+    <!-- Year Filter Bar: STRICTLY 2026 -> 2025 -> 2024 -> 2023 -> 2022 -> 2021 -> All Years LAST -->
+    <div id="awards-year-tabs" class="flex flex-wrap items-center gap-2">
       {% for yr in years %}
       <a href="/awards?year={{ yr }}"
-         class="min-h-[38px] px-4 py-2 inline-flex items-center font-tech text-xs font-bold uppercase tracking-wider border transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if active_year == yr else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
+         data-year-tab="{{ yr }}"
+         class="min-h-[40px] px-4 py-2 inline-flex items-center font-tech text-xs font-bold uppercase tracking-wider border transition-colors {{ 'border-[#fbbf24] bg-[#cf0f46] text-white ring-1 ring-[#fbbf24]/70' if active_year == yr else 'border-white/20 bg-white/5 text-white/85 hover:border-[#fbbf24] hover:text-white' }}">
         {{ yr }}
       </a>
       {% endfor %}
+      <a href="/awards?year=all"
+         data-year-tab="all"
+         class="min-h-[40px] px-4 py-2 inline-flex items-center font-tech text-xs font-bold uppercase tracking-wider border transition-colors {{ 'border-[#fbbf24] bg-[#cf0f46] text-white ring-1 ring-[#fbbf24]/70' if active_year == 'all' else 'border-white/20 bg-white/5 text-white/85 hover:border-[#ff2e63] hover:text-white' }}"
+         data-hi="सभी वर्ष" data-en="All Years">सभी वर्ष</a>
     </div>
 
     {% for ceremony in ceremonies %}
@@ -50,8 +81,8 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
-            <span class="px-2 py-0.5 bg-[#cf0f46] text-white">{{ ceremony.edition_year }}</span>
-            <span class="px-2 py-0.5 border border-white/20 text-white/80">{{ ceremony.location }}</span>
+            <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ ceremony.edition_year }}</span>
+            <span class="px-2.5 py-0.5 border border-white/20 text-white/80">{{ ceremony.location }}</span>
           </div>
           <h2 class="font-display-shonen text-xl sm:text-2xl text-white"
               data-hi="{{ ceremony.name_hi }}"
@@ -66,8 +97,79 @@
         {% endif %}
       </div>
 
+      <!-- FULL-WIDTH ROYAL GOLD + CRIMSON ANIME OF THE YEAR CHAMPION SPOTLIGHT CARD -->
+      {% set aoty = ceremony.aoty_entry %}
+      {% if aoty %}
+      <article data-aoty-spotlight="true"
+               class="aoty-royal-card relative overflow-hidden border-2 border-[#fbbf24] p-5 sm:p-8">
+        <div class="absolute inset-0 pointer-events-none opacity-20">
+          <img src="{{ aoty.winner_poster }}" alt="" referrerpolicy="no-referrer"
+               class="w-full h-full object-cover blur-md scale-110" />
+          <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-[#06070c]/85 to-[#06070c]"></div>
+        </div>
+
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <div class="md:col-span-3 flex justify-center md:justify-start">
+            <a href="{{ aoty.detail_url }}"
+               class="block w-36 sm:w-44 aspect-[2/3] overflow-hidden border-2 border-[#fbbf24] shadow-[0_0_32px_rgba(251,191,36,0.35)]">
+              <img src="{{ aoty.winner_poster }}" alt="{{ aoty.winner_title }}" referrerpolicy="no-referrer" decoding="async"
+                   onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+                   class="w-full h-full object-cover" />
+            </a>
+          </div>
+
+          <div class="md:col-span-9 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="aoty-gold-pill px-3 py-1 font-tech text-[11px] font-extrabold uppercase tracking-[0.18em]">
+                👑 <span data-hi="{{ aoty.category_hi }} • GRAND WINNER" data-en="{{ aoty.category }} • GRAND WINNER">{{ aoty.category_hi }} &bull; GRAND WINNER</span>
+              </span>
+              <span class="px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-wider">
+                {{ ceremony.edition_year }} CHAMPION
+              </span>
+            </div>
+
+            <div class="space-y-1">
+              <h3 class="font-display-shonen text-2xl sm:text-4xl text-white leading-tight">
+                <a href="{{ aoty.detail_url }}" class="hover:text-[#fbbf24] transition-colors"
+                   data-hi="{{ aoty.winner_title_hi }}"
+                   data-en="{{ aoty.winner_title }}">{{ aoty.winner_title_hi }}</a>
+              </h3>
+              {% if aoty.winner_title != aoty.winner_title_hi %}
+              <p class="hag-lang-hi font-tech text-xs font-bold uppercase tracking-[0.18em] text-[#fbbf24]">{{ aoty.winner_title }}</p>
+              {% endif %}
+            </div>
+
+            {% if aoty.nominees %}
+            <div class="space-y-1.5 pt-1">
+              <p class="font-tech text-[10px] font-bold uppercase tracking-widest text-white/75"
+                 data-hi="फाइनलिस्ट व नामांकित (RUNNER-UP NOMINEES)"
+                 data-en="FINALISTS &amp; NOMINEES">फाइनलिस्ट व नामांकित (RUNNER-UP NOMINEES)</p>
+              <div class="flex flex-wrap gap-2">
+                {% for nom in aoty.nominees %}
+                <a href="/explore?q={{ (nom.title or '')|urlencode }}"
+                   class="px-2.5 py-1 border border-[#fbbf24]/35 bg-[#06070c]/80 hover:border-[#ff2e63] text-[11px] font-medium text-white/90 hover:text-white transition-colors">
+                  {{ nom.title }}
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="pt-1 flex flex-wrap items-center gap-3">
+              <a href="{{ aoty.detail_url }}"
+                 class="katana-btn min-h-[42px] inline-flex items-center px-6 py-2.5 bg-[#cf0f46] border border-[#fbbf24] hover:bg-[#fbbf24] hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-wider transition-colors">
+                <span><i class="fa-solid fa-crown text-[#fbbf24]"></i> <span data-hi="विजेता वॉच गाइड देखें" data-en="Open Champion Watch Guide">विजेता वॉच गाइड देखें</span></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+      {% endif %}
+
+      <!-- REMAINING CATEGORY WINNERS GRID -->
+      {% if ceremony.other_entries %}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {% for entry in ceremony.entries %}
+        {% for entry in ceremony.other_entries %}
         <article class="border border-white/15 hover:border-[#ff2e63] bg-white/[0.03] transition-colors flex flex-col overflow-hidden">
           <div class="p-4 flex gap-4 items-start flex-1">
             <a href="{{ entry.detail_url }}" class="w-20 h-28 shrink-0 overflow-hidden border border-[#ff2e63]">
@@ -77,7 +179,9 @@
             </a>
             <div class="min-w-0 flex-1 space-y-1.5">
               <div class="flex flex-wrap items-center gap-1.5">
-                <span class="px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase tracking-wider">🏆 WINNER</span>
+                <span class="px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase tracking-wider inline-flex items-center gap-1">
+                  <i class="fa-solid fa-trophy text-[#fbbf24]" aria-hidden="true"></i> WINNER
+                </span>
                 <span class="px-2 py-0.5 border border-white/20 text-white/90 font-tech text-[9px] font-bold uppercase tracking-wider"
                       data-hi="{{ entry.category_hi }}"
                       data-en="{{ entry.category }}">{{ entry.category_hi }}</span>
@@ -88,7 +192,7 @@
                    data-en="{{ entry.winner_title }}">{{ entry.winner_title_hi }}</a>
               </h3>
               {% if entry.winner_title != entry.winner_title_hi %}
-              <p class="font-tech text-[10px] font-bold uppercase tracking-wider text-white/65 truncate">{{ entry.winner_title }}</p>
+              <p class="hag-lang-hi font-tech text-[10px] font-bold uppercase tracking-wider text-white/65 truncate">{{ entry.winner_title }}</p>
               {% endif %}
               <a href="{{ entry.detail_url }}"
                  class="inline-flex items-center gap-1.5 pt-1 font-tech text-[10px] font-bold uppercase tracking-wider text-[#ff2e63] hover:underline">
@@ -115,6 +219,7 @@
         </article>
         {% endfor %}
       </div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>

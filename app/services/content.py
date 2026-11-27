@@ -655,18 +655,27 @@ def _fetch_from_supabase() -> dict[str, Any]:
             raw_sen = re.sub(r"\s*You heard it here first!?", "", raw_sen, flags=re.IGNORECASE)
             raw_sen = re.sub(r"\s+", " ", raw_sen).strip()
 
-            hi_paras = [p.strip() for p in raw_shi.split("\n") if p.strip()]
+            hi_paras = [p.strip() for p in re.split(r"\n+", raw_shi) if p.strip()]
             if not hi_paras:
                 hi_paras = [r["title_hi"] or r["title_en"] or ""]
+            elif len(hi_paras) == 1 and len(hi_paras[0]) > 260:
+                sents = [s.strip() for s in re.split(r"(?<=[।.!?])\s+", hi_paras[0]) if s.strip()]
+                if len(sents) >= 3:
+                    mid = max(2, len(sents) // 2)
+                    hi_paras = [" ".join(sents[:mid]), " ".join(sents[mid:])]
 
-            en_paras = [p.strip() for p in raw_sen.split("\n") if p.strip()]
+            en_paras = [p.strip() for p in re.split(r"\n+", raw_sen) if p.strip()]
             if not en_paras:
                 en_paras = [
                     f"{r['title_en'] or ''} — reported via {r.get('source_name') or 'Official Wire'}."
                 ]
             else:
-                # Provide multi-sentence English editorial context when RSS feed excerpt is concise
-                if len(" ".join(en_paras)) < 160:
+                if len(en_paras) == 1 and len(en_paras[0]) > 260:
+                    sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", en_paras[0]) if s.strip()]
+                    if len(sents) >= 3:
+                        mid = max(2, len(sents) // 2)
+                        en_paras = [" ".join(sents[:mid]), " ".join(sents[mid:])]
+                elif len(" ".join(en_paras)) < 140:
                     en_paras.append(
                         f"Source dispatch ({r.get('source_name') or 'Anime Newswire'}, {date_str}): track release schedule, staff announcements, and licensed India streaming platforms across our Explore and IST Schedule hubs."
                     )
@@ -1495,14 +1504,34 @@ def get_awards_data(year: int | None = None) -> dict[str, Any]:
                     "location": c.get("location") or "Tokyo, Japan",
                     "source_url": c.get("source_url") or "",
                     "status": "verified",
+                    "aoty_entry": next(
+                        (e for e in c_entries if "anime of the year" in (e["category"] or "").lower()),
+                        next((e for e in c_entries if "animation of the year" in (e["category"] or "").lower()), c_entries[0]),
+                    ),
+                    "other_entries": [],
                     "entries": c_entries,
                 }
             )
+            aoty_id = all_ceremonies[-1]["aoty_entry"]["id"]
+            all_ceremonies[-1]["other_entries"] = [e for e in c_entries if e["id"] != aoty_id]
         if all_ceremonies:
             years = sorted({int(c["edition_year"]) for c in all_ceremonies}, reverse=True)
             filtered_ceremonies = [c for c in all_ceremonies if (not year or int(c["edition_year"]) == int(year))]
             if not filtered_ceremonies:
                 filtered_ceremonies = all_ceremonies
+            aoty_hero = None
+            for c in all_ceremonies:
+                for ent in c["entries"]:
+                    if "anime of the year" in (ent["category"] or "").lower():
+                        aoty_hero = {
+                            **ent,
+                            "ceremony_name": c["name"],
+                            "ceremony_name_hi": c["name_hi"],
+                            "edition_year": c["edition_year"],
+                        }
+                        break
+                if aoty_hero:
+                    break
             showcase_winners: list[dict[str, Any]] = []
             seen_w: set[str] = set()
             for c in all_ceremonies:
@@ -1526,9 +1555,10 @@ def get_awards_data(year: int | None = None) -> dict[str, Any]:
             return {
                 "ceremonies": filtered_ceremonies,
                 "years": years,
-                "active_year": year or 0,
+                "active_year": year if year else "all",
                 "total_ceremonies": len(all_ceremonies),
                 "total_entries": sum(len(c["entries"]) for c in all_ceremonies),
+                "aoty_hero": aoty_hero or (showcase_winners[0] if showcase_winners else None),
                 "showcase_winners": showcase_winners,
             }
     except Exception:
@@ -1536,9 +1566,10 @@ def get_awards_data(year: int | None = None) -> dict[str, Any]:
     return {
         "ceremonies": CURATED_AWARDS_FALLBACK,
         "years": [2026],
-        "active_year": 0,
+        "active_year": year if year else "all",
         "total_ceremonies": len(CURATED_AWARDS_FALLBACK),
         "total_entries": sum(len(c["entries"]) for c in CURATED_AWARDS_FALLBACK),
+        "aoty_hero": CURATED_AWARDS_FALLBACK[0]["entries"][0],
         "showcase_winners": CURATED_AWARDS_FALLBACK[0]["entries"],
     }
 

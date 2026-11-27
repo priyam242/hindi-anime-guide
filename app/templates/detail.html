@@ -82,7 +82,7 @@
               data-hi="{{ item.title_hi or item.title_en }}"
               data-en="{{ item.title_en or item.title_hi }}">{{ item.title_hi or item.title_en }}</h1>
           {% if item.title_en and item.title_en != item.title_hi %}
-          <p data-main-target="detail-main-title"
+          <p data-main-target="detail-main-title" data-hide-if-in-main="1"
              class="hag-dedupe-subtitle font-tech text-sm sm:text-base font-bold uppercase tracking-[0.16em] text-[#ff2e63]">{{ item.title_en }}</p>
           {% endif %}
         </div>
