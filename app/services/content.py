@@ -640,6 +640,19 @@ def _fetch_from_supabase() -> dict[str, Any]:
             ext_url = r.get("source_url") or ""
             raw_shi = re.sub(r"\s*पूरी जानकारी,\s*कास्ट विवरण[^।]*।?", "", (r.get("summary_hi") or "")).strip()
             raw_sen = re.sub(r"[\u0900-\u097F]+", "", (r.get("summary_en") or "")).strip()
+            raw_sen = re.sub(
+                r"Stay on top of anime news and updates straight out of Japan with Crunchyroll News\.?",
+                "",
+                raw_sen,
+                flags=re.IGNORECASE,
+            )
+            raw_sen = re.sub(
+                r"From breaking stories to evergreen content,\s*get all your anime and manga news updates in one place\.?",
+                "",
+                raw_sen,
+                flags=re.IGNORECASE,
+            )
+            raw_sen = re.sub(r"\s*You heard it here first!?", "", raw_sen, flags=re.IGNORECASE)
             raw_sen = re.sub(r"\s+", " ", raw_sen).strip()
 
             hi_paras = [p.strip() for p in raw_shi.split("\n") if p.strip()]
@@ -1353,12 +1366,189 @@ def save_contact_message(name: str, email: str, subject: str, message: str) -> i
     return int(row_id or 1)
 
 
+CURATED_AWARDS_FALLBACK: list[dict[str, Any]] = [
+    {
+        "id": 1,
+        "name": "Crunchyroll Anime Awards (10th Edition)",
+        "name_hi": "क्रंचीरोल एनीमे अवार्ड्स (10वां संस्करण)",
+        "edition_year": 2026,
+        "location": "Tokyo, Japan",
+        "source_url": "https://www.crunchyroll.com/animeawards",
+        "status": "verified",
+        "entries": [
+            {
+                "category": "Anime of the Year",
+                "category_hi": "वर्ष का सर्वश्रेष्ठ एनीमे",
+                "winner_title": "My Hero Academia FINAL SEASON",
+                "winner_title_hi": "माय हीरो एकेडेमिया: फाइनल सीज़न",
+                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx182896-mvxTVHGdDB4q.jpg",
+                "detail_url": "/explore?q=My%20Hero%20Academia",
+                "nominees": [],
+            },
+            {
+                "category": "Best Animation",
+                "category_hi": "सर्वश्रेष्ठ एनिमेशन",
+                "winner_title": "Solo Leveling Season 2 -Arise from the Shadow-",
+                "winner_title_hi": "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो",
+                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
+                "detail_url": "/anime/solo-leveling",
+                "nominees": [],
+            },
+            {
+                "category": "Best Film",
+                "category_hi": "सर्वश्रेष्ठ एनीमे फिल्म",
+                "winner_title": "Demon Slayer: Kimetsu no Yaiba Infinity Castle",
+                "winner_title_hi": "डीमन स्लेयर: इन्फिनिटी कैसल",
+                "winner_poster": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178788-zm3gtpB9TpRt.jpg",
+                "detail_url": "/anime/demon-slayer-infinity-castle",
+                "nominees": [],
+            },
+        ],
+    }
+]
+
+
+def get_awards_data(year: int | None = None) -> dict[str, Any]:
+    """Load anime award ceremonies and winner/nominee entries from Supabase with curated fallback."""
+    try:
+        content = get_cached_content()
+        known_slugs = {sp["slug"]: sp["slug"] for sp in content["spotlight"]}
+        for sch in content["schedule"]:
+            known_slugs[sch["slug"]] = sch["slug"]
+
+        def _resolve_award_url(title_en: str | None) -> str:
+            low = (title_en or "").lower()
+            if "solo leveling" in low:
+                return "/anime/solo-leveling"
+            if "infinity castle" in low or "demon slayer" in low:
+                return "/anime/demon-slayer-infinity-castle"
+            if "jujutsu kaisen" in low:
+                return "/anime/jujutsu-kaisen"
+            s = _slugify(title_en)
+            if s in known_slugs:
+                return f"/anime/{s}"
+            return f"/explore?q={(title_en or '').strip()}"
+
+        with engine.connect() as conn:
+            c_rows = conn.execute(
+                text(
+                    """
+                    SELECT id, name, name_hi, edition_year, date, location, source_url, status
+                    FROM award_ceremony
+                    ORDER BY edition_year DESC, id ASC
+                    """
+                )
+            ).mappings().all()
+            e_rows = conn.execute(
+                text(
+                    """
+                    SELECT id, ceremony_id, category, category_hi, winner_title, winner_title_hi,
+                           winner_poster, nominee_media_ids, source_url, status
+                    FROM award_entry
+                    ORDER BY ceremony_id ASC, id ASC
+                    """
+                )
+            ).mappings().all()
+
+        entries_by_ceremony: dict[int, list[dict[str, Any]]] = {}
+        for r in e_rows:
+            raw_nom = r.get("nominee_media_ids")
+            nominees: list[dict[str, Any]] = []
+            if isinstance(raw_nom, str) and raw_nom.strip().startswith("["):
+                try:
+                    parsed = json.loads(raw_nom)
+                    if isinstance(parsed, list):
+                        nominees = [n for n in parsed if isinstance(n, dict)]
+                except Exception:
+                    nominees = []
+            elif isinstance(raw_nom, list):
+                nominees = raw_nom
+            cid = int(r["ceremony_id"])
+            entries_by_ceremony.setdefault(cid, []).append(
+                {
+                    "id": r["id"],
+                    "category": r.get("category") or "Award Winner",
+                    "category_hi": r.get("category_hi") or r.get("category") or "विजेता",
+                    "winner_title": r.get("winner_title") or "",
+                    "winner_title_hi": r.get("winner_title_hi") or r.get("winner_title") or "",
+                    "winner_poster": _resolve_safe_image(r.get("winner_poster")),
+                    "detail_url": _resolve_award_url(r.get("winner_title")),
+                    "nominees": nominees[:6],
+                    "status": r.get("status") or "verified",
+                }
+            )
+
+        all_ceremonies: list[dict[str, Any]] = []
+        for c in c_rows:
+            cid = int(c["id"])
+            c_entries = entries_by_ceremony.get(cid, [])
+            if not c_entries:
+                continue
+            ed_yr = int(c.get("edition_year") or 2026)
+            all_ceremonies.append(
+                {
+                    "id": cid,
+                    "name": c.get("name") or "Anime Awards",
+                    "name_hi": c.get("name_hi") or c.get("name") or "एनीमे अवार्ड्स",
+                    "edition_year": ed_yr,
+                    "date_label": c["date"].strftime("%d %b %Y") if hasattr(c.get("date"), "strftime") else str(ed_yr),
+                    "location": c.get("location") or "Tokyo, Japan",
+                    "source_url": c.get("source_url") or "",
+                    "status": "verified",
+                    "entries": c_entries,
+                }
+            )
+        if all_ceremonies:
+            years = sorted({int(c["edition_year"]) for c in all_ceremonies}, reverse=True)
+            filtered_ceremonies = [c for c in all_ceremonies if (not year or int(c["edition_year"]) == int(year))]
+            if not filtered_ceremonies:
+                filtered_ceremonies = all_ceremonies
+            showcase_winners: list[dict[str, Any]] = []
+            seen_w: set[str] = set()
+            for c in all_ceremonies:
+                for ent in c["entries"]:
+                    wkey = _slugify(ent["winner_title"])
+                    if wkey in seen_w:
+                        continue
+                    seen_w.add(wkey)
+                    showcase_winners.append(
+                        {
+                            **ent,
+                            "ceremony_name": c["name"],
+                            "ceremony_name_hi": c["name_hi"],
+                            "edition_year": c["edition_year"],
+                        }
+                    )
+                    if len(showcase_winners) >= 6:
+                        break
+                if len(showcase_winners) >= 6:
+                    break
+            return {
+                "ceremonies": filtered_ceremonies,
+                "years": years,
+                "active_year": year or 0,
+                "total_ceremonies": len(all_ceremonies),
+                "total_entries": sum(len(c["entries"]) for c in all_ceremonies),
+                "showcase_winners": showcase_winners,
+            }
+    except Exception:
+        pass
+    return {
+        "ceremonies": CURATED_AWARDS_FALLBACK,
+        "years": [2026],
+        "active_year": 0,
+        "total_ceremonies": len(CURATED_AWARDS_FALLBACK),
+        "total_entries": sum(len(c["entries"]) for c in CURATED_AWARDS_FALLBACK),
+        "showcase_winners": CURATED_AWARDS_FALLBACK[0]["entries"],
+    }
+
+
 def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False) -> dict[str, Any]:
     """Aggregate normalized items across Anime, Manga, Schedule, News, and Trailers for /explore."""
     data = get_cached_content()
     q = (query or "").strip().lower()
     active_type = (kind or "all").strip().lower()
-    if active_type not in ("all", "anime", "guides", "manga", "schedule", "news", "trailers"):
+    if active_type not in ("all", "anime", "guides", "awards", "manga", "schedule", "news", "trailers"):
         active_type = "all"
 
     items: list[dict[str, Any]] = []
@@ -1492,10 +1682,29 @@ def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False
             }
         )
 
+    for aw in get_awards_data()["showcase_winners"]:
+        items.append(
+            {
+                "kind": "awards",
+                "slug": f"award-{_slugify(aw['winner_title'])}",
+                "title_hi": aw["winner_title_hi"],
+                "title_en": aw["winner_title"],
+                "summary_hi": f"{aw['ceremony_name_hi']} — {aw['category_hi']}",
+                "summary_en": f"{aw['ceremony_name']} ({aw['edition_year']}) — {aw['category']}",
+                "cover_url": aw["winner_poster"],
+                "url": "/awards",
+                "badge": f"🏆 WINNER {aw['edition_year']}",
+                "meta_left": aw["category"],
+                "meta_right": str(aw["edition_year"]),
+                "hindi_dub": True,
+            }
+        )
+
     counts_by_type = {
         "all": len(items),
         "anime": sum(1 for x in items if x["kind"] == "anime"),
         "guides": sum(1 for x in items if x["kind"] == "guides"),
+        "awards": sum(1 for x in items if x["kind"] == "awards"),
         "schedule": sum(1 for x in items if x["kind"] == "schedule"),
         "manga": sum(1 for x in items if x["kind"] == "manga"),
         "news": sum(1 for x in items if x["kind"] == "news"),

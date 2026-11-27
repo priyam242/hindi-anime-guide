@@ -42,6 +42,9 @@ async def run_gate() -> int:
         mg_rows = conn.execute(
             text("SELECT id, anilist_id, title_en, image_url FROM anime_draft WHERE content_type='manga' AND status='published'")
         ).mappings().all()
+        aw_rows = conn.execute(
+            text("SELECT id, ceremony_id, category, winner_title, winner_poster FROM award_entry ORDER BY id ASC")
+        ).mappings().all()
         art_rows = conn.execute(
             text("SELECT id, slug, title, cover_image, content_md FROM article ORDER BY id ASC")
         ).mappings().all()
@@ -63,7 +66,13 @@ async def run_gate() -> int:
 
     # 2. News Gate (Zero Devanagari in summary_en, zero boilerplate in summary_hi, zero phonetic title_hi)
     phonetic_pat = re.compile(r"(?:आइ ड्रा देम|रिवील्स|अनवेल्स|अनाउंसेस|विशिंग आइ कुड|ऑफिशियल हिगे|हेल्म्स|बॉयज़-लव मंगा गेट्स|एडिशन्ल)")
-    news_en_bleed = [r["id"] for r in news_rows if re.search(r"[\u0900-\u097F]", r["summary_en"] or "") or len((r["summary_en"] or "").strip()) < 25]
+    news_en_bleed = [
+        r["id"]
+        for r in news_rows
+        if re.search(r"[\u0900-\u097F]", r["summary_en"] or "")
+        or len((r["summary_en"] or "").strip()) < 25
+        or "stay on top of anime news" in (r["summary_en"] or "").lower()
+    ]
     news_hi_bad = [r["id"] for r in news_rows if phonetic_pat.search(r["title_hi"] or "") or not re.search(r"[\u0900-\u097F]", r["title_hi"] or "")]
     news_boilerplate = [r["id"] for r in news_rows if "पूरी जानकारी, कास्ट विवरण" in (r["summary_hi"] or "")]
     if news_en_bleed:
@@ -115,6 +124,8 @@ async def run_gate() -> int:
         tasks = []
         for r in list(sch_rows) + list(mg_rows) + list(tr_rows):
             tasks.append(probe_img(f"{r['title_en'][:30]}", r["image_url"] or ""))
+        for aw in aw_rows:
+            tasks.append(probe_img(f"award:{aw['id']}:{aw['winner_title'][:24]}", aw["winner_poster"] or ""))
         for r in news_rows:
             if (r["image_url"] or "").strip():
                 tasks.append(probe_img(f"news:{r['id']}", r["image_url"]))
@@ -127,6 +138,11 @@ async def run_gate() -> int:
             tasks.append(probe_yt(f"trailer:{tr['id']}:{tr['title_en'][:24]}", _extract_youtube_id(tr["source_url"])))
 
         results = await asyncio.gather(*tasks)
+
+    known_unplayable_ids = {"P927_ZvgUUg", "fmUpSXFbSK0", "8XgKVzuLmJw", "_c_hMehCORQ", "uC13b3_8riU", "BJXBr_aFF8s"}
+    region_locked_tr = [tr["id"] for tr in tr_rows if _extract_youtube_id(tr["source_url"]) in known_unplayable_ids]
+    if region_locked_tr:
+        errors.append(f"Region-locked/unavailable YouTube trailers present: {region_locked_tr}")
 
     bad_imgs = [x for x in results if x[0] == "img" and x[2] != 200]
     bad_yts = [x for x in results if x[0] == "yt" and x[2] != 200]
@@ -141,6 +157,7 @@ async def run_gate() -> int:
     print(f"TRUTH GATE [trailer] : oembed_checked={yt_tot} failed={len(bad_yts)}")
     print(f"TRUTH GATE [news]    : count={len(news_rows)} en_bleed={len(news_en_bleed)} hi_bad={len(news_hi_bad)} boilerplate={len(news_boilerplate)}")
     print(f"TRUTH GATE [manga]   : count={len(mg_rows)} null_anilist_id={len(mg_null)}")
+    print(f"TRUTH GATE [awards]  : count={len(aw_rows)}")
     print(f"TRUTH GATE [article] : count={len(art_rows)} under_800_words={len(art_short)}")
     print(f"TRUTH GATE [images]  : live_checked={img_tot} broken={len(bad_imgs)}")
     print(f"TRUTH GATE TOTAL ERRORS: {len(errors)}")

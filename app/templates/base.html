@@ -251,7 +251,8 @@
   {% include "partials/splash.html" %}
 
   <!-- BULLETPROOF FIXED SINGLE-LINE TOP NAVBAR (NEVER VANISHES ON SCROLL) -->
-  <header id="top-navbar" class="fixed top-0 inset-x-0 z-50 h-16 backdrop-blur-xl bg-[#06070c]/95 border-b border-white/10">
+  <header id="top-navbar"
+    class="fixed top-0 inset-x-0 z-50 h-16 backdrop-blur-xl bg-[#06070c]/95 border-b border-white/10">
     <div class="h-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 max-w-full">
       <!-- 1. Left: Sidebar Toggle + Navbar Logo Target -->
       <div class="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink-0 whitespace-nowrap">
@@ -295,9 +296,9 @@
 
       <!-- 3. Right: Single-Line Lang Toggle + Theme Toggle + Watchlist + Login -->
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap">
-        <!-- Instant Hindi <-> English Converter (hidden on small phones, available inside sidebar) -->
+        <!-- Instant Hindi <-> English Converter (hidden on mobile <768px, shown inside sidebar drawer on mobile) -->
         <div id="lang-toggle-group"
-          class="hidden sm:inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
+          class="hidden md:inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
           <button type="button" id="lang-btn-hi" onclick="hagSetLang('hi')"
             class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 bg-[#cf0f46] text-white whitespace-nowrap transition-colors">ह</button>
           <button type="button" id="lang-btn-en" onclick="hagSetLang('en')"
@@ -306,7 +307,7 @@
 
         <!-- Dark <-> Light Theme Toggle -->
         <button type="button" id="theme-toggle-btn" onclick="hagToggleTheme()" aria-label="Toggle Dark or Light Theme"
-          class="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
+          class="hidden md:inline-flex w-9 h-9 items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
           <span id="theme-toggle-icon" class="text-sm leading-none">☀️</span>
         </button>
 
@@ -382,83 +383,67 @@
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
       </form>
 
-      <!-- 1. Compact Single-Pill Hunter Status & XP Bar -->
-      <div class="p-2.5 border border-[#ff2e63]/45 bg-gradient-to-br from-[#ff2e63]/12 via-[#06070c] to-[#06070c] space-y-2">
-        <div id="sb-user-guest" class="flex items-center justify-between gap-2">
-          <button type="button" onclick="hagOpenAuthModal('login')"
-            class="text-left min-w-0 flex-1 font-tech text-[11px] font-bold text-white hover:text-[#ff2e63] truncate"
-            data-hi="👤 गेस्ट हंटर • लॉगिन करें" data-en="👤 Guest Hunter • Sign In">👤 गेस्ट हंटर &bull; लॉगिन करें</button>
-          <span id="sb-streak-guest" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
-        </div>
-
-        <a href="/profile" id="sb-user-authed" class="hidden flex items-center justify-between gap-2 group">
-          <div class="min-w-0">
-            <span id="sb-auth-name" class="block text-xs font-extrabold text-white group-hover:text-[#ff2e63] truncate">Hunter</span>
-            <span id="sb-auth-email" class="hidden"></span>
-            <span class="font-tech text-[9px] font-bold uppercase tracking-widest text-[#ff2e63]">☁ CLOUD SYNC</span>
-          </div>
-          <span id="sb-streak-authed" class="font-tech text-[10px] font-bold text-white/80 shrink-0">🔥 1d</span>
-        </a>
-
-        <button type="button" onclick="hagOpenHunterModal()"
-          class="w-full text-left pt-1.5 border-t border-white/10 space-y-1 group">
-          <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase">
-            <span id="hunter-pill-rank" class="text-[#ff2e63] group-hover:underline">E-RANK</span>
-            <span id="hunter-pill-xp" class="text-white/75">20 XP</span>
-          </div>
-          <div class="w-full h-1 bg-white/10 overflow-hidden">
-            <div id="hunter-pill-bar" class="h-full bg-[#cf0f46] transition-all duration-500" style="width: 20%;"></div>
-          </div>
-        </button>
-      </div>
-
-      <!-- 2. Focused 7-Hub Core Menu -->
+      <!-- SECTION 1: MAIN HUB (USER-LOCKED FLOW: HOME -> NEWS -> SCHEDULE -> MANGA -> AWARDS -> GUIDES & EXPLORE) -->
       <div class="space-y-1">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/55" data-hi="मेनू • BROWSE"
-          data-en="MENU • BROWSE">मेनू &bull; BROWSE</p>
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/55" data-hi="मेनू • MAIN HUB"
+          data-en="MAIN HUB • BROWSE">मेनू &bull; MAIN HUB</p>
         {% set cur = active_nav|default('home') %}
         {% set browse_links = [
-        ('home', '/', 'fa-house', 'होम', 'Home'),
-        ('schedule', '/schedule', 'fa-calendar-days', 'लाइव IST शेड्यूल', 'Live IST Schedule'),
-        ('news', '/news', 'fa-bolt', '48h एनीमे न्यूज़', '48h Anime News'),
-        ('manga', '/manga', 'fa-book-open', '3D मंगा शेल्फ़', '3D Manga Shelf'),
-        ('guides', '/guides', 'fa-book-journal-whills', 'एनीमे गाइड्स', 'Editorial Guides'),
-        ('trailers', '/trailers', 'fa-film', 'लाइसेंस्ड ट्रेलर्स', 'Licensed Trailers'),
-        ('explore', '/explore', 'fa-compass', 'एक्सप्लोर व सर्च', 'Explore & Search')
+        ('home', '/', '🏠', 'होम', 'Home'),
+        ('news', '/news', '⚡', 'ताज़ा एनीमे न्यूज़', '48h Anime News'),
+        ('schedule', '/schedule', '📅', 'लाइव IST शेड्यूल', 'Live IST Schedule'),
+        ('manga', '/manga', '📚', '3D मंगा शेल्फ़', '3D Manga Shelf'),
+        ('awards', '/awards', '🏆', 'एनीमे अवार्ड्स', 'Anime Awards'),
+        ('guides', '/guides', '📖', 'हिंदी गाइड्स', 'Guides'),
+        ('explore', '/explore', '🧭', 'एक्सप्लोर व सर्च', 'Explore'),
+        ('trailers', '/trailers', '🎬', 'लाइसेंस्ड ट्रेलर्स', 'Trailers')
         ] %}
         <nav aria-label="Sidebar Browse Navigation"
           class="space-y-0.5 font-tech text-xs font-bold uppercase tracking-wider">
-          {% for key, href, icon, label_hi, label_en in browse_links %}
+          {% for key, href, emoji, label_hi, label_en in browse_links %}
           <a href="{{ href }}"
-            class="flex items-center gap-3 min-h-[36px] px-3 py-1.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
-            <i
-              class="fa-solid {{ icon }} w-4 text-center {{ 'text-[#ff2e63]' if cur == key else 'text-white/60' }}"></i>
+            class="flex items-center gap-2.5 min-h-[36px] px-3 py-1.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
+            <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">{{ emoji }}</span>
             <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_hi }}</span>
           </a>
           {% endfor %}
         </nav>
       </div>
 
-      <!-- 3. Compact Quick Tools -->
-      <div class="space-y-1">
-        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-white/55" data-hi="क्विक टूल्स"
-          data-en="QUICK TOOLS">क्विक टूल्स</p>
+      <!-- SECTION 2: OTAKU ARENA • PLAY & WIN XP -->
+      <div class="space-y-1 pt-2 border-t border-white/10">
+        <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]"
+          data-hi="ओटाकू एरीना • PLAY &amp; WIN XP" data-en="OTAKU ARENA • PLAY &amp; WIN XP">ओटाकू एरीना &bull; PLAY &amp; WIN XP</p>
         <div class="space-y-0.5 font-tech text-xs font-bold uppercase tracking-wider">
+          <a href="/#daily-anime-clash" onclick="if (window.innerWidth < 1280) hagSetSidebar(false);"
+            class="flex items-center justify-between gap-2 min-h-[36px] px-3 py-1.5 text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            <span class="flex items-center gap-2.5 min-w-0">
+              <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">⚔️</span>
+              <span class="truncate" data-hi="आज का महामुकाबला" data-en="Daily Clash Vote">आज का महामुकाबला</span>
+            </span>
+            <span class="px-1.5 py-0.5 bg-[#ff2e63]/20 border border-[#ff2e63]/50 text-[#ff2e63] text-[9px] shrink-0">+25 XP</span>
+          </a>
           <button type="button" onclick="hagOpenRoulette()"
-            class="w-full min-h-[36px] flex items-center gap-3 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
-            <span class="w-4 text-center">🎲</span>
-            <span class="whitespace-nowrap" data-hi="सरप्राइज़ स्पिन" data-en="Surprise Spin">सरप्राइज़ स्पिन</span>
+            class="w-full min-h-[36px] flex items-center justify-between gap-2 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            <span class="flex items-center gap-2.5 min-w-0">
+              <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">🎲</span>
+              <span class="truncate" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Mystery Spin">सरप्राइज़ एनीमे स्पिन</span>
+            </span>
+            <span class="px-1.5 py-0.5 bg-[#ff2e63]/20 border border-[#ff2e63]/50 text-[#ff2e63] text-[9px] shrink-0">+25 XP</span>
           </button>
           <button type="button" onclick="hagOpenWatchlistDrawer()"
-            class="w-full min-h-[36px] flex items-center gap-3 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
-            <span class="w-4 text-center text-[#ff2e63]">❤️</span>
-            <span class="whitespace-nowrap" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
+            class="w-full min-h-[36px] flex items-center justify-between gap-2 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
+            <span class="flex items-center gap-2.5 min-w-0">
+              <span class="w-4 text-center text-xs leading-none text-[#ff2e63] shrink-0" aria-hidden="true">❤️</span>
+              <span class="truncate" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
+            </span>
+            <span id="sb-watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#cf0f46] text-white text-[9px] leading-none shrink-0">0</span>
           </button>
         </div>
       </div>
 
       <!-- Mobile-only Language & Theme Controls (zero desktop duplication) -->
-      <div class="sm:hidden px-2 pt-2 flex items-center justify-between gap-2 border-t border-white/10">
+      <div id="sb-mobile-controls" class="md:hidden px-2 pt-2 flex items-center justify-between gap-2 border-t border-white/10">
         <div
           class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[11px] font-bold">
           <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')"
@@ -473,15 +458,66 @@
       </div>
     </div>
 
-    <!-- 4. Compact 1-Line Legal Footer inside Sidebar -->
-    <div class="px-4 py-3 border-t border-white/10 font-tech text-[10px] font-bold uppercase tracking-wider text-white/65 flex flex-wrap items-center gap-x-2 gap-y-1">
-      <a href="/about" class="hover:text-[#ff2e63]">About</a>
-      <span>&bull;</span>
-      <a href="/contact" class="hover:text-[#ff2e63]">Contact</a>
-      <span>&bull;</span>
-      <a href="/privacy-policy" class="hover:text-[#ff2e63]">Privacy</a>
-      <span>&bull;</span>
-      <a href="/dmca" class="hover:text-[#ff2e63]">DMCA</a>
+    <!-- Bottom Stack: SECTION 3 (HUNTER ACCOUNT) + Compact 1-Line Legal Footer -->
+    <div class="mt-auto">
+      <div class="px-4 pb-3 space-y-2.5">
+        <div class="p-3 border border-[#ff2e63]/45 bg-gradient-to-br from-[#ff2e63]/12 via-[#06070c] to-[#06070c] space-y-2.5">
+          <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase tracking-widest">
+            <span class="text-[#ff2e63]" data-hi="HUNTER ACCOUNT" data-en="HUNTER ACCOUNT">HUNTER ACCOUNT</span>
+            <span id="sb-streak-badge" class="text-white/85">🔥 1d</span>
+          </div>
+
+          <button type="button" onclick="hagOpenHunterModal()" class="w-full text-left space-y-1 group">
+            <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase">
+              <span id="hunter-pill-rank" class="text-white group-hover:text-[#ff2e63] transition-colors">E-RANK</span>
+              <span id="hunter-pill-xp" class="text-white/75">20 XP</span>
+            </div>
+            <div class="w-full h-1.5 bg-white/10 overflow-hidden">
+              <div id="hunter-pill-bar" class="h-full bg-[#cf0f46] transition-all duration-500" style="width: 20%;"></div>
+            </div>
+          </button>
+
+          <div id="sb-user-guest">
+            <button type="button" onclick="hagOpenAuthModal('login')"
+              class="w-full min-h-[36px] px-3 py-1.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors">
+              <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
+              <span data-hi="लॉगिन / साइन अप" data-en="Login / Sign Up">लॉगिन / साइन अप</span>
+            </button>
+          </div>
+
+          <div id="sb-user-authed" class="hidden space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <a href="/profile" class="min-w-0 flex-1 text-xs font-extrabold text-white hover:text-[#ff2e63] truncate">
+                <span id="sb-auth-name">Hunter</span>
+                <span id="sb-auth-email" class="hidden"></span>
+              </a>
+              <span class="font-tech text-[9px] font-bold uppercase text-[#ff2e63]">CLOUD SYNC</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 font-tech text-[10px] font-bold uppercase">
+              <a href="/profile"
+                class="min-h-[32px] px-2 flex items-center justify-center border border-white/20 hover:border-[#ff2e63] text-white">
+                <span data-hi="प्रोफ़ाइल" data-en="Profile">प्रोफ़ाइल</span>
+              </a>
+              <button type="button" onclick="hagLogout()"
+                class="min-h-[32px] px-2 flex items-center justify-center border border-[#ff2e63]/60 text-[#ff2e63] hover:bg-[#cf0f46] hover:text-white transition-colors">
+                <span data-hi="लॉगआउट" data-en="Logout">लॉगआउट</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Compact 1-Line Legal Footer inside Sidebar -->
+      <div
+        class="px-4 py-2.5 border-t border-white/10 font-tech text-[10px] font-bold uppercase tracking-wider text-white/65 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <a href="/about" class="hover:text-[#ff2e63]">About</a>
+        <span>&bull;</span>
+        <a href="/contact" class="hover:text-[#ff2e63]">Contact</a>
+        <span>&bull;</span>
+        <a href="/privacy-policy" class="hover:text-[#ff2e63]">Privacy</a>
+        <span>&bull;</span>
+        <a href="/dmca" class="hover:text-[#ff2e63]">DMCA</a>
+      </div>
     </div>
   </aside>
 
@@ -526,6 +562,8 @@
                   data-hi="ग्लोबल एक्सप्लोर" data-en="Global Explore">ग्लोबल एक्सप्लोर</a></li>
               <li><a href="/guides" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
                   data-hi="एनीमे गाइड्स" data-en="Editorial Guides">एनीमे गाइड्स</a></li>
+              <li><a href="/awards" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
+                  data-hi="एनीमे अवार्ड्स" data-en="Anime Awards">एनीमे अवार्ड्स</a></li>
               <li><a href="/schedule" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
                   data-hi="लाइव IST शेड्यूल" data-en="Live IST Schedule">लाइव IST शेड्यूल</a></li>
               <li><a href="/manga" class="inline-flex min-h-[32px] items-center hover:text-white transition-colors"
@@ -921,6 +959,8 @@
         var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
         var badge = document.getElementById("watchlist-count-badge");
         if (badge) badge.textContent = String(list.length);
+        var sbBadge = document.getElementById("sb-watchlist-count-badge");
+        if (sbBadge) sbBadge.textContent = String(list.length);
 
         var container = document.getElementById("watchlist-items-container");
         if (container) {
@@ -1147,13 +1187,11 @@
         var pRank = document.getElementById("hunter-pill-rank");
         var pXp = document.getElementById("hunter-pill-xp");
         var pBar = document.getElementById("hunter-pill-bar");
-        var sGuest = document.getElementById("sb-streak-guest");
-        var sAuth = document.getElementById("sb-streak-authed");
+        var sBadge = document.getElementById("sb-streak-badge");
         if (pRank) pRank.textContent = info.rank.name;
         if (pXp) pXp.textContent = h.xp + " XP";
         if (pBar) pBar.style.width = info.pct + "%";
-        if (sGuest) sGuest.textContent = "🔥 " + (h.streak || 1) + "d";
-        if (sAuth) sAuth.textContent = "🔥 " + (h.streak || 1) + "d";
+        if (sBadge) sBadge.textContent = "🔥 " + (h.streak || 1) + "d";
 
         var hsRank = document.getElementById("hs-rank-title");
         var hsStreak = document.getElementById("hs-streak-badge");

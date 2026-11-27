@@ -2,14 +2,26 @@
 
 {% block extra_head %}
 <style>
-  .shelf-stage { perspective: 1400px; }
+  .shelf-stage {
+    perspective: 1400px;
+  }
+
   .shelf-ledge {
     position: relative;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, #06070c 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, #06070c 100%);
     border-bottom: 2px solid #ff2e63;
     box-shadow: 0 18px 36px -10px rgba(255, 46, 99, 0.25);
   }
-  .book-card-btn { perspective: 1400px; background: transparent; border: none; padding: 0; cursor: pointer; text-align: left; }
+
+  .book-card-btn {
+    perspective: 1400px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+
   .book-3d {
     position: relative;
     width: 100%;
@@ -18,8 +30,12 @@
     transform: rotateY(-8deg);
     transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
   }
+
   .book-card-btn:hover .book-3d,
-  .book-card-btn:focus-visible .book-3d { transform: rotateY(-22deg) translateZ(34px) translateY(-10px); }
+  .book-card-btn:focus-visible .book-3d {
+    transform: rotateY(-22deg) translateZ(34px) translateY(-10px);
+  }
+
   .book-face-front {
     position: absolute;
     inset: 0;
@@ -29,26 +45,41 @@
     border: 1px solid rgba(255, 255, 255, 0.16);
     overflow: hidden;
   }
+
   .book-card-btn:hover .book-face-front {
     border-color: #ff2e63;
     box-shadow: -8px 22px 42px rgba(255, 46, 99, 0.28);
   }
+
   .book-spine {
     position: absolute;
-    top: 0; bottom: 0; left: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
     width: 28px;
     transform: rotateY(-90deg) translateZ(14px);
     background: linear-gradient(180deg, #ff2e63 0%, #06070c 25%, #06070c 100%);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+
   .book-spine-label {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 700;
-    letter-spacing: 0.18em; color: #ffffff;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #ffffff;
   }
+
   .book-pages {
     position: absolute;
-    top: 3px; bottom: 3px; right: 0; width: 26px;
+    top: 3px;
+    bottom: 3px;
+    right: 0;
+    width: 26px;
     transform: rotateY(90deg) translateZ(calc(100% - 13px));
     background: repeating-linear-gradient(90deg, #ffffff 0px, #ffffff 2px, #d4d4d8 3px, #ffffff 4px);
   }
@@ -61,294 +92,294 @@
     <!-- Hub Header + Instant Client Filter -->
     <div class="border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div class="space-y-2">
-        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">HINDI ANIME GUIDE &bull; INTERACTIVE HUB</span>
-        <h1 class="font-display-shonen text-3xl sm:text-4xl text-white"
-            data-hi="{{ section_title }}"
-            data-en="{{ section_title_en or section_title }}">{{ section_title }}</h1>
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">HINDI ANIME GUIDE
+          &bull; INTERACTIVE HUB</span>
+        <h1 class="font-display-shonen text-3xl sm:text-4xl text-white" data-hi="{{ section_title }}"
+          data-en="{{ section_title_en or section_title }}">{{ section_title }}</h1>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative">
-          <input id="hub-live-filter"
-                 type="search"
-                 data-hi-placeholder="तुरंत फ़िल्टर करें..."
-                 data-en-placeholder="Filter instantly..."
-                 placeholder="तुरंत फ़िल्टर करें..."
-                 value="{{ q or '' }}"
-                 oninput="filterHubCards(this.value)"
-                 class="w-56 sm:w-64 min-h-[38px] pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63]" />
+          <input id="hub-live-filter" type="search" data-hi-placeholder="तुरंत फ़िल्टर करें..."
+            data-en-placeholder="Filter instantly..." placeholder="तुरंत फ़िल्टर करें..." value="{{ q or '' }}"
+            oninput="filterHubCards(this.value)"
+            class="w-56 sm:w-64 min-h-[38px] pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63]" />
           <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
         </div>
         {% if q %}
-        <a href="/{{ active_nav }}" class="min-h-[36px] inline-flex items-center px-2 font-tech text-xs font-bold uppercase tracking-wider text-[#ff2e63] hover:underline">Reset</a>
+        <a href="/{{ active_nav }}"
+          class="min-h-[36px] inline-flex items-center px-2 font-tech text-xs font-bold uppercase tracking-wider text-[#ff2e63] hover:underline">Reset</a>
         {% endif %}
       </div>
     </div>
 
     {% if section == 'schedule' %}
-      <!-- 7-Day Interactive IST Broadcast Tabs (Auto-Selects Today's IST Weekday) -->
-      <div class="space-y-6">
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
-          <button type="button" onclick="selectHubDay('ALL')" data-hub-day-tab="ALL"
-                  class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
-            <span data-hi="सभी दिन ({{ schedule|length }})" data-en="ALL DAYS ({{ schedule|length }})">सभी दिन ({{ schedule|length }})</span>
+    <!-- 7-Day Interactive IST Broadcast Tabs (Auto-Selects Today's IST Weekday) -->
+    <div class="space-y-6">
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
+        <button type="button" onclick="selectHubDay('ALL')" data-hub-day-tab="ALL"
+          class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
+          <span data-hi="सभी दिन ({{ schedule|length }})" data-en="ALL DAYS ({{ schedule|length }})">सभी दिन ({{
+            schedule|length }})</span>
+        </button>
+        {% for day_hi, day_en in schedule_days %}
+        <button type="button" onclick="selectHubDay('{{ day_hi }}')" data-hub-day-tab="{{ day_hi }}"
+          class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
+          <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span
+            class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      {% for day_hi, day_en in schedule_days %}
+      {% set day_shows = schedule_by_day.get(day_hi, []) %}
+      <div data-hub-day-panel="{{ day_hi }}" class="hub-day-panel space-y-4">
+        <div class="flex items-center justify-between border-l-4 border-[#ff2e63] pl-3">
+          <h2 class="font-tech text-sm font-bold uppercase tracking-[0.2em] text-white">
+            <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> &bull; <span
+              class="text-[#ff2e63]">{{ day_en }}</span>
+          </h2>
+          <span class="font-tech text-[11px] uppercase tracking-widest text-white/65">{{ day_shows|length }}
+            SHOWS</span>
+        </div>
+        <div data-day-grid="{{ day_hi }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {% for show in day_shows[:12] %}
+          <a href="{{ show.detail_url or show.source_url }}" data-filter-card
+            data-filter-text="{{ (show.title_hi ~ ' ' ~ show.title_en ~ ' ' ~ show.airing_day ~ ' ' ~ show.airing_day_en)|lower }}"
+            class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
+            <img src="{{ show.image_url }}" alt="{{ show.title_en }}" referrerpolicy="no-referrer" loading="lazy"
+              decoding="async" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+              class="w-14 h-20 object-cover shrink-0 border border-white/15" />
+            <div class="min-w-0 space-y-1 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase">
+                <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
+                <span class="px-1.5 py-0.5 border border-white/25 text-white/90">{{ '🇮🇳 HINDI DUB' if show.hindi_dub
+                  else '🇯🇵 SUB' }}</span>
+                {% if show.score %}<span class="text-white/80">★ {{ show.score }}</span>{% endif %}
+              </div>
+              <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
+                data-hi="{{ show.title_hi }}" data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
+              <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
+              {% if show.airing_at %}
+              <p class="font-tech text-[10px] font-bold text-[#ff2e63] tracking-wider">⏱ <span
+                  data-hi="अगले एपिसोड में बाकी" data-en="NEXT EPISODE IN">अगले एपिसोड में बाकी</span> <span
+                  data-countdown-ts="{{ show.airing_at }}">{{ show.initial_countdown }}</span></p>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% if day_shows|length > 12 %}
+        <div class="text-center pt-1">
+          <button type="button" onclick="loadAllScheduleDay('{{ day_hi }}', this)"
+            class="min-h-[38px] px-5 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold uppercase tracking-wider transition-colors"
+            data-hi="सभी {{ day_shows|length }} शो दिखाएं" data-en="Show All {{ day_shows|length }} Shows">
+            सभी {{ day_shows|length }} शो दिखाएं
           </button>
-          {% for day_hi, day_en in schedule_days %}
-          <button type="button" onclick="selectHubDay('{{ day_hi }}')" data-hub-day-tab="{{ day_hi }}"
-                  class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
-            <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% elif section == 'manga' %}
+    <!-- Paginated Stripe Press 3D Physical Volumes Shelf (24 items initially -> crisp DOM & fast load) -->
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 text-xs font-tech uppercase tracking-wider text-white/75">
+      <span id="manga-count-summary"
+        data-hi="{{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए"
+        data-en="Showing {{ manga|length }} of {{ total_manga_count or manga|length }} Volumes">
+        {{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए
+      </span>
+    </div>
+
+    <div id="manga-shelf-stage" class="shelf-stage space-y-12">
+      {% for row_items in manga|batch(6) %}
+      <div class="shelf-ledge pb-7 pt-2 px-3 sm:px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-7 items-end">
+          {% for m in row_items %}
+          <button type="button" class="book-card-btn group" data-filter-card
+            data-filter-text="{{ (m.title_hi ~ ' ' ~ m.title_en ~ ' ' ~ m.pub_status)|lower }}"
+            data-manga="{{ m|tojson }}" onclick="openMangaModal(JSON.parse(this.dataset.manga))"
+            title="Inspect {{ m.title_en }}">
+            <div class="book-3d">
+              <div class="book-spine"><span class="book-spine-label">{{ m.volume_label }}</span></div>
+              <div class="book-pages"></div>
+              <div class="book-face-front">
+                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" referrerpolicy="no-referrer" loading="lazy"
+                  decoding="async" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+                  class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+                <span
+                  class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{
+                  m.volume_label }}</span>
+                <div class="absolute bottom-2.5 left-2.5 right-2.5">
+                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="{{ m.title_hi }}"
+                    data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
+                  <p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull;
+                    {{ m.chapters }}</p>
+                </div>
+              </div>
+            </div>
           </button>
           {% endfor %}
         </div>
-
-        {% for day_hi, day_en in schedule_days %}
-        {% set day_shows = schedule_by_day.get(day_hi, []) %}
-        <div data-hub-day-panel="{{ day_hi }}" class="hub-day-panel space-y-4">
-          <div class="flex items-center justify-between border-l-4 border-[#ff2e63] pl-3">
-            <h2 class="font-tech text-sm font-bold uppercase tracking-[0.2em] text-white">
-              <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> &bull; <span class="text-[#ff2e63]">{{ day_en }}</span>
-            </h2>
-            <span class="font-tech text-[11px] uppercase tracking-widest text-white/65">{{ day_shows|length }} SHOWS</span>
-          </div>
-          <div data-day-grid="{{ day_hi }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {% for show in day_shows[:12] %}
-            <a href="{{ show.detail_url or show.source_url }}"
-               data-filter-card
-               data-filter-text="{{ (show.title_hi ~ ' ' ~ show.title_en ~ ' ' ~ show.airing_day ~ ' ' ~ show.airing_day_en)|lower }}"
-               class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
-              <img src="{{ show.image_url }}" alt="{{ show.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
-                   onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-14 h-20 object-cover shrink-0 border border-white/15" />
-              <div class="min-w-0 space-y-1 flex-1">
-                <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase">
-                  <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
-                  <span class="px-1.5 py-0.5 border border-white/25 text-white/90">{{ '🇮🇳 HINDI DUB' if show.hindi_dub else '🇯🇵 SUB' }}</span>
-                  {% if show.score %}<span class="text-white/80">★ {{ show.score }}</span>{% endif %}
-                </div>
-                <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
-                    data-hi="{{ show.title_hi }}"
-                    data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
-                <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
-                {% if show.airing_at %}
-                <p class="font-tech text-[10px] font-bold text-[#ff2e63] tracking-wider">⏱ <span data-hi="अगले एपिसोड में बाकी" data-en="NEXT EPISODE IN">अगले एपिसोड में बाकी</span> <span data-countdown-ts="{{ show.airing_at }}">{{ show.initial_countdown }}</span></p>
-                {% endif %}
-              </div>
-            </a>
-            {% endfor %}
-          </div>
-          {% if day_shows|length > 12 %}
-          <div class="text-center pt-1">
-            <button type="button"
-                    onclick="loadAllScheduleDay('{{ day_hi }}', this)"
-                    class="min-h-[38px] px-5 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold uppercase tracking-wider transition-colors"
-                    data-hi="सभी {{ day_shows|length }} शो दिखाएं"
-                    data-en="Show All {{ day_shows|length }} Shows">
-              सभी {{ day_shows|length }} शो दिखाएं
-            </button>
-          </div>
-          {% endif %}
-        </div>
-        {% endfor %}
       </div>
+      {% endfor %}
+    </div>
 
-    {% elif section == 'manga' %}
-      <!-- Paginated Stripe Press 3D Physical Volumes Shelf (24 items initially -> crisp DOM & fast load) -->
-      <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-tech uppercase tracking-wider text-white/75">
-        <span id="manga-count-summary"
-              data-hi="{{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए"
-              data-en="Showing {{ manga|length }} of {{ total_manga_count or manga|length }} Volumes">
-          {{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए
-        </span>
-      </div>
-
-      <div id="manga-shelf-stage" class="shelf-stage space-y-12">
-        {% for row_items in manga|batch(6) %}
-        <div class="shelf-ledge pb-7 pt-2 px-3 sm:px-6">
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-7 items-end">
-            {% for m in row_items %}
-            <button type="button"
-                    class="book-card-btn group"
-                    data-filter-card
-                    data-filter-text="{{ (m.title_hi ~ ' ' ~ m.title_en ~ ' ' ~ m.pub_status)|lower }}"
-                    data-manga="{{ m|tojson }}"
-                    onclick="openMangaModal(JSON.parse(this.dataset.manga))"
-                    title="Inspect {{ m.title_en }}">
-              <div class="book-3d">
-                <div class="book-spine"><span class="book-spine-label">{{ m.volume_label }}</span></div>
-                <div class="book-pages"></div>
-                <div class="book-face-front">
-                  <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
-                       onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
-                  <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{ m.volume_label }}</span>
-                  <div class="absolute bottom-2.5 left-2.5 right-2.5">
-                    <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight"
-                       data-hi="{{ m.title_hi }}"
-                       data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
-                    <p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull; {{ m.chapters }}</p>
-                  </div>
-                </div>
-              </div>
-            </button>
-            {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-
-      {% if has_more_manga %}
-      <div id="manga-load-more-wrap" class="pt-4 text-center">
-        <button type="button"
-                id="manga-load-more-btn"
-                onclick="loadMoreManga()"
-                class="katana-btn min-h-[42px] px-7 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
-          <span data-hi="और मंगा दिखाएं (Load More)" data-en="Load More Volumes">और मंगा दिखाएं (Load More)</span>
-        </button>
-      </div>
-      {% endif %}
+    {% if has_more_manga %}
+    <div id="manga-load-more-wrap" class="pt-4 text-center">
+      <button type="button" id="manga-load-more-btn" onclick="loadMoreManga()"
+        class="katana-btn min-h-[42px] px-7 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
+        <span data-hi="और मंगा दिखाएं (Load More)" data-en="Load More Volumes">और मंगा दिखाएं (Load More)</span>
+      </button>
+    </div>
+    {% endif %}
 
     {% elif section == 'news' %}
-      <!-- Live 48-Hour Rolling Newswire Banner + Featured Hero + Category Pills -->
-      <div class="inline-flex items-center gap-2.5 px-4 py-2 bg-[#ff2e63]/15 border border-[#ff2e63] font-tech text-xs font-bold tracking-[0.16em] uppercase text-white">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#ff2e63] animate-pulse"></span>
-        <span data-hi="LIVE 48-HOUR NEWSWIRE • पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं"
-              data-en="LIVE 48-HOUR NEWSWIRE • EXPIRED STORIES PRUNED AFTER 48H">LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं</span>
-      </div>
+    <!-- Live 48-Hour Rolling Newswire Banner + Featured Hero + Category Pills -->
+    <div
+      class="inline-flex items-center gap-2.5 px-4 py-2 bg-[#ff2e63]/15 border border-[#ff2e63] font-tech text-xs font-bold tracking-[0.16em] uppercase text-white">
+      <span class="w-2.5 h-2.5 rounded-full bg-[#ff2e63] animate-pulse"></span>
+      <span data-hi="LIVE 48-HOUR NEWSWIRE • पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं"
+        data-en="LIVE 48-HOUR NEWSWIRE • EXPIRED STORIES PRUNED AFTER 48H">LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48
+        घंटे में स्वतः हट जाती हैं</span>
+    </div>
 
-      {% set categories = [] %}
-      {% for item in news %}
-        {% if item.category not in categories %}{% set _ = categories.append(item.category) %}{% endif %}
+    {% set categories = [] %}
+    {% for item in news %}
+    {% if item.category not in categories %}{% set _ = categories.append(item.category) %}{% endif %}
+    {% endfor %}
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" onclick="filterNewsCategory('ALL')" data-news-cat-btn="ALL"
+        class="news-cat-btn min-h-[36px] px-3.5 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border border-[#cf0f46] bg-[#cf0f46] text-white">
+        ALL ({{ news|length }})
+      </button>
+      {% for cat in categories %}
+      <button type="button" onclick="filterNewsCategory('{{ cat }}')" data-news-cat-btn="{{ cat }}"
+        class="news-cat-btn min-h-[36px] px-3.5 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border border-white/15 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white">
+        {{ cat }}
+      </button>
       {% endfor %}
+    </div>
 
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" onclick="filterNewsCategory('ALL')" data-news-cat-btn="ALL"
-                class="news-cat-btn min-h-[36px] px-3.5 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border border-[#cf0f46] bg-[#cf0f46] text-white">
-          ALL ({{ news|length }})
-        </button>
-        {% for cat in categories %}
-        <button type="button" onclick="filterNewsCategory('{{ cat }}')" data-news-cat-btn="{{ cat }}"
-                class="news-cat-btn min-h-[36px] px-3.5 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border border-white/15 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white">
-          {{ cat }}
-        </button>
-        {% endfor %}
+    {% if news %}
+    {% set lead = news[0] %}
+    <a href="/news/{{ lead.slug }}" data-filter-card data-news-cat="{{ lead.category }}"
+      data-filter-text="{{ (lead.title_hi ~ ' ' ~ lead.title_en ~ ' ' ~ lead.category)|lower }}"
+      class="group block relative min-h-[340px] sm:min-h-[400px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
+      {% if lead.image_url %}
+      <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" referrerpolicy="no-referrer" decoding="async"
+        onerror="hagImgFallback(this)"
+        class="absolute inset-0 w-full h-full max-h-[420px] object-cover group-hover:scale-105 transition-transform duration-500" />
+      <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
+      {% else %}
+      <div class="absolute inset-0 bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c]"></div>
+      {% endif %}
+      <div class="relative z-10 p-6 sm:p-8 space-y-2.5">
+        <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
+          <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ lead.category }}</span>
+          {% if lead.is_expiring_soon %}
+          <span class="px-2 py-0.5 bg-[#cf0f46] text-white animate-pulse"
+            data-hi="⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी" data-en="⏳ ARCHIVES IN {{ lead.hours_left }}H">⏳ {{
+            lead.hours_left }}h में आर्काइव हो जाएगी</span>
+          {% elif lead.is_brand_new %}
+          <span class="px-2 py-0.5 bg-white text-[#06070c]" data-hi="⚡ अभी आया • FRESH" data-en="⚡ JUST IN • FRESH">⚡
+            अभी आया • FRESH</span>
+          {% else %}
+          <span class="text-white/80">FEATURED LEAD &bull; <span data-hi="{{ lead.relative_age }}"
+              data-en="{{ lead.relative_age_en }}">{{ lead.relative_age }}</span></span>
+          {% endif %}
+        </div>
+        <h2 class="text-xl sm:text-3xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63]"
+          data-hi="{{ lead.title_hi }}" data-en="{{ lead.title_en }}">{{ lead.title_hi }}</h2>
+        <p class="text-xs sm:text-sm text-white/80 line-clamp-2 max-w-3xl" data-hi="{{ lead.summary }}"
+          data-en="{{ lead.summary_en or lead.summary }}">{{ lead.summary }}</p>
       </div>
+    </a>
+    {% endif %}
 
-      {% if news %}
-      {% set lead = news[0] %}
-      <a href="/news/{{ lead.slug }}"
-         data-filter-card
-         data-news-cat="{{ lead.category }}"
-         data-filter-text="{{ (lead.title_hi ~ ' ' ~ lead.title_en ~ ' ' ~ lead.category)|lower }}"
-         class="group block relative min-h-[340px] sm:min-h-[400px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
-        {% if lead.image_url %}
-        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" referrerpolicy="no-referrer" decoding="async"
-             onerror="hagImgFallback(this)"
-             class="absolute inset-0 w-full h-full max-h-[420px] object-cover group-hover:scale-105 transition-transform duration-500" />
-        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
-        {% else %}
-        <div class="absolute inset-0 bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c]"></div>
-        {% endif %}
-        <div class="relative z-10 p-6 sm:p-8 space-y-2.5">
-          <div class="flex flex-wrap items-center gap-3 font-tech text-[11px] font-bold uppercase tracking-widest">
-            <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ lead.category }}</span>
-            {% if lead.is_expiring_soon %}
-            <span class="px-2 py-0.5 bg-[#cf0f46] text-white animate-pulse"
-                  data-hi="⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी"
-                  data-en="⏳ ARCHIVES IN {{ lead.hours_left }}H">⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी</span>
-            {% elif lead.is_brand_new %}
-            <span class="px-2 py-0.5 bg-white text-[#06070c]"
-                  data-hi="⚡ अभी आया • FRESH"
-                  data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
-            {% else %}
-            <span class="text-white/80">FEATURED LEAD &bull; <span data-hi="{{ lead.relative_age }}" data-en="{{ lead.relative_age_en }}">{{ lead.relative_age }}</span></span>
-            {% endif %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for item in news[1:] %}
+      <a href="/news/{{ item.slug }}" data-filter-card data-news-cat="{{ item.category }}"
+        data-filter-text="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.category)|lower }}"
+        class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
+        <div class="aspect-video overflow-hidden relative bg-[#06070c]">
+          {% if item.image_url %}
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy"
+            decoding="async" onerror="hagImgFallback(this)"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {% else %}
+          <div
+            class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-5 flex flex-col justify-end border-b border-white/10">
+            <span class="font-tech text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff2e63]">HINDI ANIME
+              NEWSWIRE</span>
+            <p class="font-display-shonen text-base text-white/90 line-clamp-2 mt-1">{{ item.title_en }}</p>
           </div>
-          <h2 class="text-xl sm:text-3xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63]"
-              data-hi="{{ lead.title_hi }}"
-              data-en="{{ lead.title_en }}">{{ lead.title_hi }}</h2>
-          <p class="text-xs sm:text-sm text-white/80 line-clamp-2 max-w-3xl"
-             data-hi="{{ lead.summary }}"
-             data-en="{{ lead.summary_en or lead.summary }}">{{ lead.summary }}</p>
+          {% endif %}
+          <span
+            class="absolute top-3 left-3 px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold uppercase text-white">{{
+            item.category }}</span>
+        </div>
+        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase">
+              {% if item.is_expiring_soon %}
+              <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white animate-pulse"
+                data-hi="⏳ {{ item.hours_left }}h में आर्काइव" data-en="⏳ {{ item.hours_left }}H LEFT">⏳ {{
+                item.hours_left }}h में आर्काइव</span>
+              {% elif item.is_brand_new %}
+              <span class="px-1.5 py-0.5 bg-white text-[#06070c]" data-hi="⚡ अभी आया • FRESH"
+                data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
+              {% endif %}
+            </div>
+            <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
+              data-hi="{{ item.title_hi }}" data-en="{{ item.title_en }}">{{ item.title_hi }}</h2>
+            <p class="text-xs text-white/70 line-clamp-2" data-hi="{{ item.summary }}"
+              data-en="{{ item.summary_en or item.summary }}">{{ item.summary }}</p>
+          </div>
+          <span class="font-tech text-[10px] uppercase tracking-wider text-white/70">
+            <span data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span>
+            &bull; {{ item.source_name }}
+          </span>
         </div>
       </a>
-      {% endif %}
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {% for item in news[1:] %}
-        <a href="/news/{{ item.slug }}"
-           data-filter-card
-           data-news-cat="{{ item.category }}"
-           data-filter-text="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.category)|lower }}"
-           class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
-          <div class="aspect-video overflow-hidden relative bg-[#06070c]">
-            {% if item.image_url %}
-            <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
-                 onerror="hagImgFallback(this)"
-                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            {% else %}
-            <div class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-5 flex flex-col justify-end border-b border-white/10">
-              <span class="font-tech text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff2e63]">HINDI ANIME NEWSWIRE</span>
-              <p class="font-display-shonen text-base text-white/90 line-clamp-2 mt-1">{{ item.title_en }}</p>
-            </div>
-            {% endif %}
-            <span class="absolute top-3 left-3 px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold uppercase text-white">{{ item.category }}</span>
-          </div>
-          <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
-            <div class="space-y-1.5">
-              <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase">
-                {% if item.is_expiring_soon %}
-                <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white animate-pulse"
-                      data-hi="⏳ {{ item.hours_left }}h में आर्काइव"
-                      data-en="⏳ {{ item.hours_left }}H LEFT">⏳ {{ item.hours_left }}h में आर्काइव</span>
-                {% elif item.is_brand_new %}
-                <span class="px-1.5 py-0.5 bg-white text-[#06070c]"
-                      data-hi="⚡ अभी आया • FRESH"
-                      data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
-                {% endif %}
-              </div>
-              <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
-                  data-hi="{{ item.title_hi }}"
-                  data-en="{{ item.title_en }}">{{ item.title_hi }}</h2>
-              <p class="text-xs text-white/70 line-clamp-2"
-                 data-hi="{{ item.summary }}"
-                 data-en="{{ item.summary_en or item.summary }}">{{ item.summary }}</p>
-            </div>
-            <span class="font-tech text-[10px] uppercase tracking-wider text-white/70">
-              <span data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span> &bull; {{ item.source_name }}
-            </span>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
+      {% endfor %}
+    </div>
 
     {% elif section == 'trailers' %}
-      <!-- Cinema Grid with In-Page Theater Modal Player -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for tr in trailers %}
-        <button type="button"
-                data-filter-card
-                data-filter-text="{{ (tr.title_hi ~ ' ' ~ tr.title_en ~ ' ' ~ tr.source_name)|lower }}"
-                data-yt="{{ tr.youtube_id }}"
-                data-title="{{ tr.title_en }}"
-                onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
-                class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
-          <div class="relative aspect-video overflow-hidden">
-            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
-                 onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
-              <span class="w-14 h-10 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
-                <i class="fa-solid fa-play text-sm" style="transform: skewX(10deg);"></i>
-              </span>
-            </div>
+    <!-- Cinema Grid with In-Page Theater Modal Player -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for tr in trailers %}
+      <button type="button" data-filter-card
+        data-filter-text="{{ (tr.title_hi ~ ' ' ~ tr.title_en ~ ' ' ~ tr.source_name)|lower }}"
+        data-yt="{{ tr.youtube_id }}" data-title="{{ tr.title_en }}"
+        onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
+        class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
+        <div class="relative aspect-video overflow-hidden">
+          <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy"
+            decoding="async" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div
+            class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
+            <span
+              class="w-14 h-10 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]"
+              style="transform: skewX(-10deg);">
+              <i class="fa-solid fa-play text-sm" style="transform: skewX(10deg);"></i>
+            </span>
           </div>
-          <div class="p-4 space-y-1">
-            <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">{{ tr.source_name }} &bull; {{ tr.season }}</span>
-            <h2 class="text-sm font-bold text-white group-hover:text-[#ff2e63]"
-                data-hi="{{ tr.title_hi }}"
-                data-en="{{ tr.title_en }}">{{ tr.title_hi }}</h2>
-            <p class="text-xs text-white/65 line-clamp-1">{{ tr.title_en }}</p>
-          </div>
-        </button>
-        {% endfor %}
-      </div>
+        </div>
+        <div class="p-4 space-y-1">
+          <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">{{ tr.source_name }}
+            &bull; {{ tr.season }}</span>
+          <h2 class="text-sm font-bold text-white group-hover:text-[#ff2e63]" data-hi="{{ tr.title_hi }}"
+            data-en="{{ tr.title_en }}">{{ tr.title_hi }}</h2>
+          <p class="text-xs text-white/65 line-clamp-1">{{ tr.title_en }}</p>
+        </div>
+      </button>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 </section>
@@ -356,26 +387,32 @@
 {% include "partials/manga_inspector.html" %}
 
 <!-- In-Page Theater Modal Player -->
-<div id="trailer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/95 backdrop-blur-md">
+<div id="trailer-modal"
+  class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-[#06070c]/95 backdrop-blur-md">
   <div class="relative w-full max-w-4xl bg-[#06070c] border-2 border-[#ff2e63] shadow-[0_0_60px_rgba(255,46,99,0.45)]">
     <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10">
       <span id="tm-title" class="font-tech text-xs font-bold uppercase text-white truncate">Official Trailer</span>
       <div class="flex items-center gap-2 shrink-0">
         <a id="tm-ext-link" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"
-           class="px-3 py-1.5 border border-white/20 hover:border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-wider text-white/85 hover:text-white transition-colors">
+          class="px-3 py-1.5 border border-white/20 hover:border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-wider text-white/85 hover:text-white transition-colors">
           Watch on YouTube <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[#ff2e63]"></i>
         </a>
-        <button type="button" aria-label="Close Trailer Modal" onclick="closeTrailerModal()" class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" aria-label="Close Trailer Modal" onclick="closeTrailerModal()"
+          class="w-9 h-9 border border-white/20 hover:border-[#ff2e63] text-white flex items-center justify-center"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
-    <div class="aspect-video"><iframe id="tm-iframe" src="" referrerpolicy="strict-origin-when-cross-origin" class="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+    <div class="aspect-video"><iframe id="tm-iframe" src="" referrerpolicy="strict-origin-when-cross-origin"
+        class="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen></iframe></div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  var mangaOffset = {{ manga|length }};
+  var mangaOffset = {{ manga| length }};
   var mangaSearchTimer = null;
 
   function buildMangaCardBtn(m) {
@@ -389,17 +426,17 @@
     btn.onclick = function () { openMangaModal(m); };
     btn.innerHTML =
       '<div class="book-3d">' +
-        '<div class="book-spine"><span class="book-spine-label">' + (m.volume_label || "MANGA") + '</span></div>' +
-        '<div class="book-pages"></div>' +
-        '<div class="book-face-front">' +
-          '<img src="' + (m.cover_url || "/static/media/emblem_icon.webp") + '" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="hagImgFallback(this, \'/static/media/emblem_icon.webp\')" class="w-full h-full object-cover" />' +
-          '<div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>' +
-          '<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">' + (m.volume_label || "MANGA") + '</span>' +
-          '<div class="absolute bottom-2.5 left-2.5 right-2.5">' +
-            '<p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="' + String(m.title_hi || "").replace(/"/g, "&quot;") + '" data-en="' + String(m.title_en || "").replace(/"/g, "&quot;") + '">' + titleTxt + '</p>' +
-            '<p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">' + (m.author || "") + ' &bull; ' + (m.chapters || "") + '</p>' +
-          '</div>' +
-        '</div>' +
+      '<div class="book-spine"><span class="book-spine-label">' + (m.volume_label || "MANGA") + '</span></div>' +
+      '<div class="book-pages"></div>' +
+      '<div class="book-face-front">' +
+      '<img src="' + (m.cover_url || "/static/media/emblem_icon.webp") + '" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="hagImgFallback(this, \'/static/media/emblem_icon.webp\')" class="w-full h-full object-cover" />' +
+      '<div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>' +
+      '<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">' + (m.volume_label || "MANGA") + '</span>' +
+      '<div class="absolute bottom-2.5 left-2.5 right-2.5">' +
+      '<p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="' + String(m.title_hi || "").replace(/"/g, "&quot;") + '" data-en="' + String(m.title_en || "").replace(/"/g, "&quot;") + '">' + titleTxt + '</p>' +
+      '<p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">' + (m.author || "") + ' &bull; ' + (m.chapters || "") + '</p>' +
+      '</div>' +
+      '</div>' +
       '</div>';
     return btn;
   }

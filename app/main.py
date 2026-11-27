@@ -31,6 +31,7 @@ from app.services.content import (
     explore_catalog,
     filter_payload,
     get_anime_detail,
+    get_awards_data,
     get_cached_content,
     get_counts,
     get_guide_detail,
@@ -362,6 +363,7 @@ async def sitemap_xml(request: Request):
         f"{base}/",
         f"{base}/explore",
         f"{base}/guides",
+        f"{base}/awards",
         f"{base}/schedule",
         f"{base}/manga",
         f"{base}/news",
@@ -441,6 +443,7 @@ async def home(request: Request, q: str = Query(default="")):
             "q": q,
             "counts": get_counts(),
             "daily_poll": get_poll_state(DEFAULT_POLL_KEY),
+            "awards": get_awards_data(),
             **data,
         },
     )
@@ -537,6 +540,21 @@ async def guide_detail_page(request: Request, slug: str):
             "json_ld": json_ld,
             "q": "",
             **bundle,
+        },
+    )
+
+
+@app.get("/awards", response_class=HTMLResponse)
+async def awards_page(request: Request, year: int = Query(default=0)):
+    awards = get_awards_data(year if year > 0 else None)
+    return templates.TemplateResponse(
+        request,
+        "awards.html",
+        {
+            "request": request,
+            "active_nav": "awards",
+            "q": "",
+            **awards,
         },
     )
 
