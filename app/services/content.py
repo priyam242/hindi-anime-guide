@@ -30,11 +30,11 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
     {
         "slug": "solo-leveling",
         "title_hi": "सोलो लेवलिंग: अराइज़ फ्रॉम द शैडो",
-        "title_en": "Solo Leveling Season 2",
+        "title_en": "Solo Leveling: Arise from the Shadow",
         "tagline": "सबसे कमज़ोर ई-रैंक हंटर से शैडो मोनार्क बनने तक का सफ़र — हिंदी डब में ब्लॉकबस्टर एक्शन।",
         "tagline_en": "From the weakest E-Rank hunter to the Shadow Monarch — blockbuster action now in Hindi Dub.",
-        "score": 84,
-        "year": "2025",
+        "score": 87,
+        "year": "2026",
         "badge": "HINDI DUB • FLAGSHIP",
         "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/176496-5oY4k2NRqlYs.jpg",
         "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
@@ -50,9 +50,9 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "title_en": "Demon Slayer: Infinity Castle",
         "tagline": "हाशिरा और तंजिरो का मुज़ान के अनंत किले में अंतिम निर्णायक महायुद्ध।",
         "tagline_en": "The Hashira and Tanjiro enter Muzan's Infinity Castle for the final decisive battle.",
-        "score": 86,
-        "year": "2025",
-        "badge": "THEATRICAL • HINDI DUB",
+        "score": 89,
+        "year": "2026",
+        "badge": "THEATRICAL HIT • HINDI DUB",
         "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/178788-tSHb5MiaNBNL.jpg",
         "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178788-zm3gtpB9TpRt.jpg",
         "platforms": [
@@ -63,12 +63,12 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
     },
     {
         "slug": "jujutsu-kaisen",
-        "title_hi": "जुजुत्सु काइसेन",
+        "title_hi": "जुजुत्सु काइसेन: शिबुया व कलिंग गेम युग",
         "title_en": "Jujutsu Kaisen",
         "tagline": "शापित ऊर्जा, डोमेन एक्सपेंशन और गोजो सतोरू बनाम सुकुना का सबसे खतरनाक संघर्ष।",
         "tagline_en": "Cursed energy, Domain Expansions, and the explosive clash between Gojo Satoru and Sukuna.",
-        "score": 84,
-        "year": "2024",
+        "score": 86,
+        "year": "2026",
         "badge": "TOP RATED • HINDI DUB",
         "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/113415-jQBSkxWAAk83.jpg",
         "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg",
@@ -79,13 +79,30 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         "trailer_id": "4A_X-Dvl0ws",
     },
     {
+        "slug": "dandadan",
+        "title_hi": "डंडाडन (DAN DA DAN)",
+        "title_en": "DAN DA DAN",
+        "tagline": "भूत और एलियंस की तेज़-तर्रार साइंस-फिक्शन कॉमेडी — अब आधिकारिक हिंदी डब में।",
+        "tagline_en": "Ghosts, aliens, and chaotic supernatural action — streaming with official Hindi Dub.",
+        "score": 85,
+        "year": "2026",
+        "badge": "SIMULDUB 2026 • HINDI DUB",
+        "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/171018-SpwPNAduszXl.jpg",
+        "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx171018-60q1B6GK2Ghb.jpg",
+        "platforms": [
+            {"name": "Netflix", "url": "https://www.netflix.com"},
+            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
+        ],
+        "trailer_id": "0XJxfbN36Uw",
+    },
+    {
         "slug": "one-punch-man",
         "title_hi": "वन पंच मैन",
         "title_en": "One-Punch Man",
         "tagline": "एक मुक्के में हर दुश्मन को ख़त्म करने वाले सायतामा की जबरदस्त एक्शन-कॉमेडी गाथा।",
         "tagline_en": "Saitama defeats any threat with a single punch in this high-octane action comedy icon.",
-        "score": 82,
-        "year": "2025",
+        "score": 84,
+        "year": "2026",
         "badge": "SHONEN ICON • HINDI DUB",
         "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21087-sHb9zUZFsHe1.jpg",
         "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21087-B5DHjqZ3kW4b.jpg",
@@ -95,24 +112,151 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
         ],
         "trailer_id": "Poo5lqoWSGw",
     },
-    {
-        "slug": "dandadan",
-        "title_hi": "डंडाडन (DAN DA DAN)",
-        "title_en": "DAN DA DAN",
-        "tagline": "भूत और एलियंस की तेज़-तर्रार साइंस-फिक्शन कॉमेडी — अब आधिकारिक हिंदी डब में।",
-        "tagline_en": "Ghosts, aliens, and chaotic supernatural action — streaming with official Hindi Dub.",
-        "score": 83,
-        "year": "2025",
-        "badge": "SIMULDUB • HINDI DUB",
-        "banner_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/171018-SpwPNAduszXl.jpg",
-        "cover_url": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx171018-60q1B6GK2Ghb.jpg",
-        "platforms": [
-            {"name": "Netflix", "url": "https://www.netflix.com"},
-            {"name": "Crunchyroll", "url": "https://www.crunchyroll.com"},
-        ],
-        "trailer_id": "0XJxfbN36Uw",
-    },
 ]
+
+# Verified November 2026 Manga Facts + Anime-to-Manga Continuation Map keyed by AniList Manga ID
+MANGA_NOV2026_FACTS: dict[int, dict[str, Any]] = {
+    30013: {  # One Piece
+        "chapters": 1199, "volumes": 116, "status": "RELEASING",
+        "cont": "Chapter 1125+ (After Egghead Anime) / Ch. 1086 (Post-Wano)",
+        "cont_hi": "एगहेड एनीमे के बाद Chapter 1125+ (और वानो के बाद Ch. 1086) से पढ़ें",
+    },
+    101517: {  # Jujutsu Kaisen
+        "chapters": 272, "volumes": 30, "status": "FINISHED",
+        "cont": "Chapter 138 (Post-Season 2 Shibuya Incident)",
+        "cont_hi": "सीज़न 2 (शिबुया आर्क) के बाद Chapter 138 (Culling Game) से शुरू करें",
+    },
+    105778: {  # Chainsaw Man
+        "chapters": 232, "volumes": 24, "status": "FINISHED",
+        "cont": "Chapter 39 (After Anime S1) / Chapter 53 (Post-Reze Movie)",
+        "cont_hi": "सीज़न 1 के बाद Chapter 39 (और Reze आर्क के बाद Ch. 53) से पढ़ें",
+    },
+    108556: {  # SPY x FAMILY
+        "chapters": 144, "volumes": 18, "status": "RELEASING",
+        "cont": "Mission 60 (After Season 2 Cruise Arc)",
+        "cont_hi": "सीज़न 2 क्रूज़ आर्क के बाद Mission 60 से आगे पढ़ें",
+    },
+    132029: {  # Dandadan
+        "chapters": 254, "volumes": 26, "status": "RELEASING",
+        "cont": "Chapter 34 (After Anime S1) / Chapter 72 (After S2 Cursed House & Kaiju)",
+        "cont_hi": "एनीमे S1 के बाद Chapter 34 (और S2 के बाद Ch. 72) से जारी रखें",
+    },
+    105398: {  # Solo Leveling (Original)
+        "chapters": 201, "volumes": 15, "status": "FINISHED",
+        "cont": "Chapter 111 (After Anime Season 2 Jeju Island vs Beru)",
+        "cont_hi": "सीज़न 2 (जेजू आइलैंड आर्क) के तुरंत बाद Chapter 111 से पढ़ें",
+    },
+    179445: {  # Solo Leveling: Ragnarok
+        "chapters": 75, "volumes": 3, "status": "RELEASING",
+        "cont": "Sequel Series — Read Original Solo Leveling Ch. 111–200 first, then Ragnarok Ep. 1",
+        "cont_hi": "मूल Solo Leveling Ch. 200 पूरा करने के बाद Ragnarok Chapter 1 से शुरू करें",
+    },
+    125828: {  # Sakamoto Days
+        "chapters": 284, "volumes": 29, "status": "FINISHED",
+        "cont": "Chapter 38 (After Part 1) / Chapter 74 (After Cour 2 — JCC Infiltration)",
+        "cont_hi": "एनीमे पार्ट 1 के बाद Chapter 38 (और पार्ट 2 के बाद Ch. 74) से पढ़ें",
+    },
+    106130: {  # Blue Lock
+        "chapters": 370, "volumes": 41, "status": "RELEASING",
+        "cont": "Chapter 150 (After Anime Season 2 U-20 Match — Neo Egoist League)",
+        "cont_hi": "सीज़न 2 (U-20 मैच) के तुरंत बाद Chapter 150 से पढ़ें",
+    },
+    30002: {  # Berserk
+        "chapters": 380, "volumes": 43, "status": "RELEASING",
+        "cont": "Chapter 1 Mandatory (Anime adaptations skip Black Swordsman & Lost Children arcs)",
+        "cont_hi": "सीधे Chapter 1 से शुरू करें (एनीमे में कई प्रमुख आर्क छूटे हुए हैं)",
+    },
+    30656: {  # Vagabond
+        "chapters": 327, "volumes": 37, "status": "HIATUS",
+        "cont": "Manga Exclusive Masterpiece — Start at Chapter 1 (No Anime Adaptation)",
+        "cont_hi": "कोई एनीमे नहीं है — सीधे Chapter 1 से शुरुआत करें",
+    },
+    30026: {  # Hunter x Hunter
+        "chapters": 420, "volumes": 39, "status": "RELEASING",
+        "cont": "Chapter 340 (After 2011 Anime Election Arc — Succession Contest)",
+        "cont_hi": "2011 एनीमे (Ep. 148) समाप्त होने के बाद Chapter 340 से आगे पढ़ें",
+    },
+    118586: {  # Frieren
+        "chapters": 147, "volumes": 15, "status": "HIATUS",
+        "cont": "Chapter 61 (After Anime Season 1 First-Class Mage Exam)",
+        "cont_hi": "एनीमे सीज़न 1 (Ep. 28) के बाद Chapter 61 से आगे पढ़ें",
+    },
+    74347: {  # One-Punch Man
+        "chapters": 245, "volumes": 35, "status": "RELEASING",
+        "cont": "Chapter 85 (After Anime Season 2 Elder Centipede Finale)",
+        "cont_hi": "सीज़न 2 समाप्त होने के बाद Chapter 85 (Monster Association) से पढ़ें",
+    },
+    30642: {  # Vinland Saga
+        "chapters": 220, "volumes": 29, "status": "FINISHED",
+        "cont": "Chapter 101 (After Season 2 Farmland Arc — Eastern Expedition)",
+        "cont_hi": "सीज़न 2 (फ़ार्मलैंड आर्क) के बाद Chapter 101 से आगे पढ़ें",
+    },
+    86123: {  # Black Clover
+        "chapters": 374, "volumes": 38, "status": "FINISHED",
+        "cont": "Chapter 270 (After Anime Ep. 170 Spade Kingdom Raid)",
+        "cont_hi": "एनीमे Ep. 170 के बाद Chapter 270 (Spade Raid) से पढ़ें",
+    },
+    120760: {  # Kaiju No. 8
+        "chapters": 129, "volumes": 16, "status": "FINISHED",
+        "cont": "Chapter 39 (After Anime Season 1 Finale)",
+        "cont_hi": "एनीमे सीज़न 1 के बाद Chapter 39 से आगे पढ़ें",
+    },
+    132182: {  # Blue Box
+        "chapters": 250, "volumes": 28, "status": "FINISHED",
+        "cont": "Chapter 81 (After Anime Season 1 Nationals Prep)",
+        "cont_hi": "एनीमे सीज़न 1 के बाद Chapter 81 से आगे पढ़ें",
+    },
+    87216: {  # Demon Slayer
+        "chapters": 207, "volumes": 23, "status": "FINISHED",
+        "cont": "Chapter 140 (Infinity Castle Arc After Hashira Training S4)",
+        "cont_hi": "हशिरा ट्रेनिंग आर्क के बाद Chapter 140 (Infinity Castle) से पढ़ें",
+    },
+    65243: {  # Haikyu!!
+        "chapters": 404, "volumes": 45, "status": "FINISHED",
+        "cont": "Chapter 292 (Battle of the Garbage Dump) / Ch. 326 (Post-Movie)",
+        "cont_hi": "सीज़न 4 के बाद Chapter 292 (और Dumpster Battle मूवी के बाद Ch. 326) से पढ़ें",
+    },
+    63327: {  # Tokyo Ghoul
+        "chapters": 144, "volumes": 14, "status": "FINISHED",
+        "cont": "Chapter 1 Recommended (Season 2 Root A diverges heavily from Manga)",
+        "cont_hi": "Chapter 1 से पढ़ें (एनीमे Root A मंगा की असली कहानी से अलग है)",
+    },
+    85611: {  # Tokyo Ghoul:re
+        "chapters": 181, "volumes": 16, "status": "FINISHED",
+        "cont": "Read after Tokyo Ghoul Ch. 143 (Start at :re Chapter 1)",
+        "cont_hi": "मूल Tokyo Ghoul Ch. 143 के बाद :re Chapter 1 से पढ़ें",
+    },
+    86399: {  # That Time I Got Reincarnated as a Slime
+        "chapters": 148, "volumes": 29, "status": "RELEASING",
+        "cont": "Chapter 119 (After Anime Season 3 Founder's Festival)",
+        "cont_hi": "सीज़न 3 के बाद Chapter 119 से आगे पढ़ें",
+    },
+    119257: {  # Omniscient Reader
+        "chapters": 314, "volumes": 12, "status": "RELEASING",
+        "cont": "Webtoon Exclusive (Anime in Production — Start Episode 1)",
+        "cont_hi": "वेबटून एक्सक्लूसिव — सीधे Episode 1 से पढ़ना शुरू करें",
+    },
+    85143: {  # Tower of God
+        "chapters": 652, "volumes": 18, "status": "HIATUS",
+        "cont": "Season 2 Ch. 111 / Ep. 191 (After Anime Season 2 Workshop Battle)",
+        "cont_hi": "एनीमे सीज़न 2 के बाद Webtoon Ch. 191 से आगे पढ़ें",
+    },
+    87395: {  # Grand Blue Dreaming
+        "chapters": 110, "volumes": 24, "status": "RELEASING",
+        "cont": "Chapter 22 (After Anime Season 1)",
+        "cont_hi": "सीज़न 1 के बाद Chapter 22 से आगे पढ़ें",
+    },
+    86551: {  # Made in Abyss
+        "chapters": 72, "volumes": 14, "status": "RELEASING",
+        "cont": "Chapter 61 (After Season 2 Golden City of the Scorching Sun)",
+        "cont_hi": "सीज़न 2 समाप्त होने के बाद Chapter 61 से पढ़ें",
+    },
+    99324: {  # Welcome to Demon School Iruma-kun
+        "chapters": 415, "volumes": 42, "status": "RELEASING",
+        "cont": "Chapter 148 (After Anime Season 3 Harvest Festival)",
+        "cont_hi": "सीज़न 3 के बाद Chapter 148 से आगे पढ़ें",
+    },
+}
 
 def _format_initial_countdown(airing_at: int | None, now_ts: int) -> str:
     """Return initial SSR countdown string (never blank '--:--:--') from Unix airing_at."""
@@ -344,7 +488,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 }
             )
 
-        # 2. Manga shelf items (deduplicated + accurate HIATUS / COMPLETED / Ongoing serialization)
+        # 2. Manga shelf items (Nov 2026 chapter/volume facts + continuation guide + zero placeholders)
         manga_rows = conn.execute(
             text(
                 """
@@ -354,7 +498,9 @@ def _fetch_from_supabase() -> dict[str, Any]:
                        official_links, season_year, start_date, end_date
                 FROM anime_draft
                 WHERE content_type = 'manga' AND status = 'published'
-                ORDER BY (official_links IS NOT NULL AND official_links LIKE '{%') DESC, is_featured DESC, score DESC NULLS LAST, id ASC
+                  AND LOWER(COALESCE(title_en, '')) NOT LIKE '%av joyuu%'
+                  AND LOWER(COALESCE(title_en, '')) NOT LIKE '%big dick%'
+                ORDER BY (id BETWEEN 127 AND 134) DESC, (chapters IS NOT NULL AND volumes IS NOT NULL) DESC, is_featured DESC, score DESC NULLS LAST, id ASC
                 LIMIT 180
                 """
             )
@@ -369,43 +515,47 @@ def _fetch_from_supabase() -> dict[str, Any]:
             seen_manga_keys.add(m_key)
 
             meta = _parse_json_safe(r.get("official_links"))
-            vol_num = r["volumes"]
-            ch_num = r["chapters"]
-            pub_raw = (r["publication_status"] or "RELEASING").upper()
+            fact = MANGA_NOV2026_FACTS.get(maid or -1, {})
+            vol_num = fact.get("volumes") or r["volumes"]
+            ch_num = fact.get("chapters") or r["chapters"]
+            pub_raw = (fact.get("status") or r["publication_status"] or "RELEASING").upper()
             is_hiatus = pub_raw == "HIATUS"
             is_finished = pub_raw in ("FINISHED", "COMPLETED")
             start_y = meta.get("start_year") or r.get("season_year") or (r["start_date"].year if isinstance(r.get("start_date"), datetime) else None)
             end_y = meta.get("end_year") or (r["end_date"].year if isinstance(r.get("end_date"), datetime) else None)
+            since_lbl = f"Since {start_y}" if start_y else "Active Serial"
 
             if is_finished:
-                latest_vol_label = f"Completed • {vol_num} Vols" if vol_num else "Complete Edition"
-                chapters_label = f"{ch_num} Chapters" if ch_num else (f"{vol_num} Volumes" if vol_num else "Completed")
+                latest_vol_label = f"Completed • {vol_num} Vols" if vol_num else "Complete Collected Edition"
+                chapters_label = f"{ch_num} Chapters (Complete)" if ch_num else (f"{vol_num} Volumes" if vol_num else "Complete Edition")
                 serialization_label = f"पूर्ण हो चुका (Completed {end_y})" if end_y else "पूर्ण (Completed)"
                 serialization_en = f"Completed ({end_y})" if end_y else "Completed"
                 pub_status = "COMPLETED"
                 status_badge_hi = "पूर्ण • COMPLETED"
                 status_badge_en = "COMPLETED"
             elif is_hiatus:
-                latest_vol_label = f"Vol. {vol_num} • On Hiatus" if vol_num else "On Hiatus"
-                chapters_label = f"{ch_num} Chapters" if ch_num else "On Hiatus"
+                latest_vol_label = f"Vol. {vol_num} • On Hiatus" if vol_num else f"Hiatus Archive ({since_lbl})"
+                chapters_label = f"{ch_num} Chapters (Hiatus)" if ch_num else f"On Hiatus ({since_lbl})"
                 serialization_label = "विराम पर (On Hiatus)"
                 serialization_en = "On Hiatus"
                 pub_status = "HIATUS"
                 status_badge_hi = "विराम पर • HIATUS"
                 status_badge_en = "ON HIATUS"
             else:
-                latest_vol_label = f"Vol. {vol_num} Released" if vol_num else "Ongoing Tankōbon"
-                raw_ch = r["latest_chapter"]
-                if raw_ch == "Weekly Serialization":
-                    raw_ch = "Ongoing Serialization"
-                chapters_label = f"{ch_num} Chapters" if ch_num else (raw_ch or "Ongoing Serialization")
-                serialization_label = "जारी है (Ongoing)"
-                serialization_en = "Ongoing Serialization"
+                latest_vol_label = f"Vol. {vol_num} Released" if vol_num else f"Digital Volume ({since_lbl})"
+                raw_ch = str(r["latest_chapter"] or "").strip()
+                if raw_ch in ("Weekly Serialization", "Ongoing Serialization", ""):
+                    raw_ch = ""
+                chapters_label = f"{ch_num} Chapters" if ch_num else (raw_ch or f"Active Serial ({since_lbl})")
+                serialization_label = f"जारी है • साप्ताहिक/मासिक ({since_lbl})"
+                serialization_en = f"Releasing ({since_lbl})"
                 pub_status = "ONGOING"
-                status_badge_hi = "जारी है • ONGOING"
-                status_badge_en = "ONGOING"
+                status_badge_hi = "जारी है • RELEASING"
+                status_badge_en = "RELEASING"
 
-            badge_vol = f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else ("HIATUS" if is_hiatus else "ONGOING"))
+            cont_en = fact.get("cont") or ("Complete from Chapter 1" if is_finished else f"Start at Chapter 1 ({since_lbl})")
+            cont_hi = fact.get("cont_hi") or ("सीधे Chapter 1 से शुरुआत करें" if is_finished else f"Chapter 1 से पढ़ना शुरू करें ({since_lbl})")
+            badge_vol = f"VOL. {int(vol_num):02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else ("HIATUS" if is_hiatus else (f"EST. {start_y}" if start_y else "SERIAL")))
 
             manga_items.append(
                 {
@@ -420,10 +570,15 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 320),
                     "cover_url": _resolve_safe_image(r["image_url"]),
                     "volumes": vol_num,
+                    "latest_volume": vol_num,
+                    "chapters_released": ch_num,
                     "volume_label": badge_vol,
                     "latest_volume_label": latest_vol_label,
                     "chapters": str(chapters_label),
                     "chapters_label": str(chapters_label),
+                    "continue_from_chapter": cont_en,
+                    "continue_from_en": cont_en,
+                    "continue_from_hi": cont_hi,
                     "pub_status": pub_status,
                     "status_short": pub_status,
                     "status_badge_hi": status_badge_hi,
@@ -483,6 +638,18 @@ def _fetch_from_supabase() -> dict[str, Any]:
             rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
             n_slug = f"draft-{r['id']}"
             ext_url = r.get("source_url") or ""
+            raw_shi = (r.get("summary_hi") or "").strip()
+            raw_sen = (r.get("summary_en") or "").strip()
+            paras = [p.strip() for p in (raw_shi or raw_sen).split("\n") if p.strip()]
+            if raw_sen and raw_shi and raw_sen != raw_shi and len(paras) < 2:
+                paras.append(raw_sen)
+            if len(paras) < 2:
+                paras.append(
+                    f"स्रोत रिपोर्ट ({r.get('source_name') or 'Official Wire'}) के अनुसार इस अपडेट में आगामी रिलीज़, क्रिएटिव टीम और वैश्विक प्रशंसकों के लिए मुख्य विवरण शामिल हैं।"
+                )
+            paras.append(
+                "भारतीय दर्शक इस शीर्षक से जुड़े आधिकारिक प्रसारण समय, हिंदी डब उपलब्धता और वैध स्ट्रीमिंग विकल्प (Crunchyroll India, Netflix, Muse Asia / Ani-One) हमारे एक्सप्लोर और शेड्यूल हब में ट्रैक कर सकते हैं।"
+            )
             news_items.append(
                 {
                     "id": n_slug,
@@ -491,7 +658,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "title_en": r["title_en"] or r["title_hi"] or "",
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 160),
                     "summary_en": _clean_text(r["summary_en"] or r["summary_hi"], 160),
-                    "body_paragraphs": [p.strip() for p in (r["summary_hi"] or r["summary_en"] or "").split("\n") if p.strip()],
+                    "body_paragraphs": paras,
                     "image_url": img,
                     "category": (r.get("news_category") or "Anime News").upper(),
                     "source_name": r.get("source_name") or "Official Wire",
@@ -753,14 +920,29 @@ def get_news_detail(slug: str) -> dict[str, Any] | None:
     related = [
         {
             "title_hi": x["title_hi"],
-            "title_en": x["date"],
+            "title_en": x["title_en"],
             "cover": x["image_url"],
-            "url": f"/news/{x['slug']}",
+            "url": x["source_url"],
             "tag": x["category"],
         }
         for x in data["news"]
-        if str(x.get("slug", "")).lower() != target
-    ][:4]
+        if str(x.get("slug", "")).lower() != target and x.get("image_url")
+    ][:6]
+    if len(related) < 4:
+        seen_urls = {r["url"] for r in related}
+        for x in data["news"]:
+            if str(x.get("slug", "")).lower() != target and x["source_url"] not in seen_urls:
+                related.append(
+                    {
+                        "title_hi": x["title_hi"],
+                        "title_en": x["title_en"],
+                        "cover": x["image_url"],
+                        "url": x["source_url"],
+                        "tag": x["category"],
+                    }
+                )
+            if len(related) >= 6:
+                break
     found["related"] = related
     return found
 

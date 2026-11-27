@@ -31,7 +31,7 @@
 
           <!-- Front Cover -->
           <div style="position:absolute; inset:0; transform:translateZ(17px); background:#06070c; border:2px solid rgba(255,255,255,0.22); box-shadow:-16px 26px 50px rgba(0,0,0,0.9); overflow:hidden;">
-            <img id="mi-cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" class="w-full h-full object-cover" />
+            <img id="mi-cover" referrerpolicy="no-referrer" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
             <div class="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/70 to-transparent pointer-events-none"></div>
             <span id="mi-year-seal"
@@ -85,6 +85,14 @@
           </div>
         </div>
 
+        <!-- Anime -> Manga Continuation Guide Box -->
+        <div id="mi-continue-box" class="p-3.5 border border-[#ff2e63]/60 bg-gradient-to-r from-[#ff2e63]/15 via-[#06070c] to-[#06070c] space-y-1">
+          <p class="font-tech text-[10px] font-bold uppercase tracking-[0.18em] text-[#ff2e63]"
+             data-hi="📖 एनीमे के बाद कहाँ से पढ़ें? (CONTINUE READING AFTER ANIME)"
+             data-en="📖 WHERE TO CONTINUE READING AFTER THE ANIME">📖 एनीमे के बाद कहाँ से पढ़ें? (CONTINUE READING AFTER ANIME)</p>
+          <p id="mi-continue-ch" class="text-xs sm:text-sm font-extrabold text-white"></p>
+        </div>
+
         <!-- Genres -->
         <div id="mi-genres" class="flex flex-wrap gap-2"></div>
 
@@ -128,21 +136,31 @@
 
     window.openMangaModal = function (m) {
       if (!m) return;
-      document.getElementById("mi-cover").src = m.cover_url || "/static/media/emblem_icon.webp";
+      var coverEl = document.getElementById("mi-cover");
+      delete coverEl.dataset.hagProxied;
+      coverEl.src = m.cover_url || "/static/media/emblem_icon.webp";
       document.getElementById("mi-spine-text").textContent = m.volume_label || "VOL. 01";
       document.getElementById("mi-status-ribbon").textContent = m.status_badge_hi || "जारी है • ONGOING";
-      document.getElementById("mi-year-seal").textContent = "EST. " + (m.start_year_label || "2020");
+      document.getElementById("mi-year-seal").textContent = "EST. " + (m.start_year_label || "2024");
       document.getElementById("mi-score-pill").textContent = "★ " + (m.score || 85) + "%";
 
       document.getElementById("mi-native").textContent = m.native_title || m.source_name || "MANGA EDITION";
       document.getElementById("mi-title-hi").textContent = m.title_hi || m.title_en || "";
       document.getElementById("mi-title-en").textContent = m.title_en || "";
       document.getElementById("mi-author").textContent = m.author || "Original Manga Studio";
-      document.getElementById("mi-vol-release").textContent = m.latest_volume_label || m.volume_label || "Ongoing Tankōbon";
-      document.getElementById("mi-ch-release").textContent = m.chapters_label || m.chapters || "Ongoing Serialization";
+      document.getElementById("mi-vol-release").textContent = m.latest_volume_label || (m.latest_volume ? ("Vol. " + m.latest_volume) : "Vol. 01 Edition");
+      document.getElementById("mi-ch-release").textContent = m.chapters_label || (m.chapters_released ? (m.chapters_released + " Chapters") : "Active Serial");
       document.getElementById("mi-serialization").textContent = m.serialization_label || m.pub_status || "Releasing";
       document.getElementById("mi-start-year").textContent = m.start_year_label || "N/A";
       document.getElementById("mi-summary").textContent = m.summary_hi || m.summary_en || "";
+
+      var isEn = typeof window.hagGetLang === "function" && window.hagGetLang() === "en";
+      var contEl = document.getElementById("mi-continue-ch");
+      if (contEl) {
+        contEl.textContent = isEn
+          ? (m.continue_from_en || m.continue_from_chapter || "Read from Chapter 1")
+          : (m.continue_from_hi || m.continue_from_chapter || "Chapter 1 से शुरुआत करें");
+      }
 
       var genresBox = document.getElementById("mi-genres");
       var genres = Array.isArray(m.genres) ? m.genres : [];
@@ -197,6 +215,16 @@
       var modal = document.getElementById("manga-book-inspector");
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+
+      // 3D Book-Cover Flip Opening Reveal
+      var bookBox = document.getElementById("mi-3d-book");
+      if (bookBox && typeof gsap !== "undefined") {
+        gsap.fromTo(
+          bookBox,
+          { rotateY: -135, rotateX: 12, scale: 0.72, opacity: 0 },
+          { rotateY: -20, rotateX: 4, scale: 1, opacity: 1, duration: 0.58, ease: "back.out(1.4)" }
+        );
+      }
 
       if (typeof hagAwardXP === "function") hagAwardXP(15);
       if (typeof hagRecordVisit === "function") {

@@ -115,8 +115,8 @@
                data-filter-card
                data-filter-text="{{ (show.title_hi ~ ' ' ~ show.title_en ~ ' ' ~ show.airing_day ~ ' ' ~ show.airing_day_en)|lower }}"
                class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
-              <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy" decoding="async"
-                   onerror="this.src='/static/media/emblem_icon.webp'" class="w-14 h-20 object-cover shrink-0 border border-white/15" />
+              <img src="{{ show.image_url }}" alt="{{ show.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                   onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-14 h-20 object-cover shrink-0 border border-white/15" />
               <div class="min-w-0 space-y-1 flex-1">
                 <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase">
                   <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
@@ -174,8 +174,8 @@
                 <div class="book-spine"><span class="book-spine-label">{{ m.volume_label }}</span></div>
                 <div class="book-pages"></div>
                 <div class="book-face-front">
-                  <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" decoding="async"
-                       onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover" />
+                  <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                       onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover" />
                   <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
                   <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{ m.volume_label }}</span>
                   <div class="absolute bottom-2.5 left-2.5 right-2.5">
@@ -238,7 +238,8 @@
          data-filter-text="{{ (lead.title_hi ~ ' ' ~ lead.title_en ~ ' ' ~ lead.category)|lower }}"
          class="group block relative min-h-[340px] sm:min-h-[400px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
         {% if lead.image_url %}
-        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" decoding="async"
+        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" referrerpolicy="no-referrer" decoding="async"
+             onerror="hagImgFallback(this)"
              class="absolute inset-0 w-full h-full max-h-[420px] object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
         {% else %}
@@ -278,7 +279,8 @@
            class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
           <div class="aspect-video overflow-hidden relative bg-[#06070c]">
             {% if item.image_url %}
-            <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+            <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                 onerror="hagImgFallback(this)"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {% else %}
             <div class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-5 flex flex-col justify-end border-b border-white/10">
@@ -326,8 +328,8 @@
                 onclick="openTrailerModal('{{ tr.youtube_id }}', {{ tr.title_en|tojson }})"
                 class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
           <div class="relative aspect-video overflow-hidden">
-            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" loading="lazy" decoding="async"
-                 onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                 onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
               <span class="w-14 h-10 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
                 <i class="fa-solid fa-play text-sm" style="transform: skewX(10deg);"></i>
@@ -381,7 +383,7 @@
         '<div class="book-spine"><span class="book-spine-label">' + (m.volume_label || "MANGA") + '</span></div>' +
         '<div class="book-pages"></div>' +
         '<div class="book-face-front">' +
-          '<img src="' + (m.cover_url || "/static/media/emblem_icon.webp") + '" alt="" loading="lazy" decoding="async" onerror="this.src=\'/static/media/emblem_icon.webp\'" class="w-full h-full object-cover" />' +
+          '<img src="' + (m.cover_url || "/static/media/emblem_icon.webp") + '" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="hagImgFallback(this, \'/static/media/emblem_icon.webp\')" class="w-full h-full object-cover" />' +
           '<div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>' +
           '<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">' + (m.volume_label || "MANGA") + '</span>' +
           '<div class="absolute bottom-2.5 left-2.5 right-2.5">' +
@@ -439,7 +441,7 @@
           var title = isEn ? show.title_en : show.title_hi;
           var cd = show.initial_countdown ? (' <span class="text-[#ff2e63]">&bull; ' + show.initial_countdown + '</span>') : "";
           return '<a href="' + (show.detail_url || show.source_url) + '" data-filter-card data-filter-text="' + ((show.title_hi + " " + show.title_en).toLowerCase().replace(/"/g, "")) + '" class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">' +
-            '<img src="' + show.image_url + '" alt="" loading="lazy" decoding="async" onerror="this.src=\'/static/media/emblem_icon.webp\'" class="w-14 h-20 object-cover shrink-0 border border-white/15" />' +
+            '<img src="' + show.image_url + '" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="hagImgFallback(this, \'/static/media/emblem_icon.webp\')" class="w-14 h-20 object-cover shrink-0 border border-white/15" />' +
             '<div class="min-w-0 space-y-1 flex-1"><div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase"><span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">' + show.airing_time + '</span><span class="px-1.5 py-0.5 border border-white/20 text-white/85">' + badge + '</span></div>' +
             '<h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]" data-hi="' + String(show.title_hi || "").replace(/"/g, "&quot;") + '" data-en="' + String(show.title_en || "").replace(/"/g, "&quot;") + '">' + title + '</h3>' +
             '<p class="text-[10px] text-white/65 truncate">' + show.episode_label + cd + ' &bull; ' + show.title_en + '</p></div></a>';

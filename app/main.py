@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Any, Literal
 from xml.sax.saxutils import escape
 
+from urllib.parse import urlparse
+
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, Response as FastAPIResponse
 from fastapi.middleware.gzip import GZipMiddleware
@@ -173,6 +176,45 @@ def _set_session_cookie(response: FastAPIResponse, user: dict[str, Any]) -> None
         samesite="lax",
         path="/",
     )
+
+
+ALLOWED_IMAGE_PROXY_HOSTS = (
+    "animenewsnetwork.com",
+    "cdn.myanimelist.net",
+    "myanimelist.net",
+    "storyblok.com",
+    "livechart.me",
+    "anilist.co",
+    "img.youtube.com",
+    "i.ytimg.com",
+)
+
+
+@app.get("/api/img-proxy")
+async def image_proxy(url: str = Query(default="", max_length=700)):
+    """Serve hotlink-protected external anime/news CDN images safely with stripped Referer."""
+    parsed = urlparse((url or "").strip())
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or not any(host == h or host.endswith(f".{h}") for h in ALLOWED_IMAGE_PROXY_HOSTS):
+        raise HTTPException(status_code=400, detail="Disallowed image host")
+    try:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
+            resp = await client.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"},
+            )
+        ctype = (resp.headers.get("content-type") or "").split(";")[0].strip().lower()
+        if resp.status_code != 200 or not ctype.startswith("image/") or len(resp.content) > 8_000_000:
+            raise HTTPException(status_code=502, detail="Upstream image unavailable")
+        return Response(
+            content=resp.content,
+            media_type=ctype,
+            headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Image proxy error")
 
 
 @app.get("/healthz", response_class=JSONResponse)

@@ -16,7 +16,7 @@
 <section class="relative py-10 sm:py-14 bg-[#06070c] min-h-[75vh] overflow-hidden">
   {% if guide.cover_image %}
   <div class="absolute inset-x-0 top-0 h-[380px] pointer-events-none overflow-hidden">
-    <img src="{{ guide.cover_image }}" alt="" class="w-full h-full object-cover opacity-25 blur-md scale-110" />
+    <img src="{{ guide.cover_image }}" alt="" referrerpolicy="no-referrer" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover opacity-25 blur-md scale-110" />
     <div class="absolute inset-0 bg-gradient-to-b from-[#06070c]/55 via-[#06070c]/90 to-[#06070c]"></div>
   </div>
   {% endif %}
@@ -37,7 +37,8 @@
         {% if guide.cover_image %}
         <div class="md:col-span-4">
           <div class="border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden relative shadow-[0_18px_50px_rgba(255,46,99,0.22)]">
-            <img src="{{ guide.cover_image }}" alt="{{ guide.anime_title_en or guide.title }}"
+            <img src="{{ guide.cover_image }}" alt="{{ guide.anime_title_en or guide.title }}" referrerpolicy="no-referrer"
+                 onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                  class="w-full aspect-[3/4] object-cover" />
             <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
               {{ guide.category_label_en }}
@@ -98,7 +99,8 @@
         <a href="/guides/{{ rg.slug }}" class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
           <div class="aspect-video overflow-hidden relative bg-[#06070c]">
             {% if rg.cover_image %}
-            <img src="{{ rg.cover_image }}" alt="{{ rg.anime_title_en or rg.title }}" loading="lazy" decoding="async"
+            <img src="{{ rg.cover_image }}" alt="{{ rg.anime_title_en or rg.title }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                 onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {% endif %}
             <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{ rg.category_label_en }}</span>

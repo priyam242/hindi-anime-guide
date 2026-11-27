@@ -110,6 +110,29 @@
   }
 </style>
 
+<!-- SPRINT 8: Pre-paint Anti-FOUC Session + Reload Splash Gate -->
+<script>
+  (function () {
+    var navType = "navigate";
+    try {
+      var entries = window.performance && performance.getEntriesByType ? performance.getEntriesByType("navigation") : [];
+      if (entries && entries.length && entries[0].type) navType = entries[0].type;
+    } catch (e) {}
+    var played = false;
+    try { played = window.sessionStorage.getItem("hag_splash_played") === "1"; } catch (e) {}
+    var shouldPlay = (!played) || (navType === "reload");
+    window.__HAG_SHOULD_SPLASH = shouldPlay;
+    if (shouldPlay) {
+      try { window.sessionStorage.setItem("hag_splash_played", "1"); } catch (e) {}
+    } else {
+      var st = document.createElement("style");
+      st.id = "hag-skip-splash-style";
+      st.textContent = "#splash-screen{display:none !important;visibility:hidden !important;pointer-events:none !important;}";
+      document.head.appendChild(st);
+    }
+  })();
+</script>
+
 <div id="splash-screen" role="dialog" aria-label="Hindi Anime Guide Shonen Ident Bumper">
   <div id="splash-backdrop"></div>
   <div id="cn-impact-flash"></div>
@@ -206,6 +229,7 @@
         absolute: true,
         scale: true,
         onComplete: function () {
+          clearTimeout(fallbackTimer);
           navTarget.style.zIndex = "";
           if (screen.parentNode) screen.remove();
           gsap.set(logoStage, { clearProps: "transform,x,y,scale" });
@@ -229,10 +253,31 @@
       if (e.key === "Escape") dockLogo(false);
     }
 
-    if (navigator && navigator.webdriver) {
+    window.__hagDockNow = function () {
+      var nt = document.getElementById("navbar-logo-target");
+      var ls = document.getElementById("splash-logo-stage");
+      var sc = document.getElementById("splash-screen");
+      var bb = document.getElementById("cn-logo-bumper");
+      if (!nt || !ls) return;
+      docked = true;
+      if (bb) bb.style.display = "none";
+      nt.innerHTML = "";
+      ls.classList.remove("splash-centered");
+      ls.style.position = "static";
+      ls.style.opacity = "1";
+      ls.style.transform = "none";
+      nt.appendChild(ls);
+      if (sc && sc.parentNode) sc.remove();
+    };
+
+    if (!window.__HAG_SHOULD_SPLASH) {
       dockLogo(true);
       return;
     }
+
+    var fallbackTimer = setTimeout(function () {
+      if (!docked) dockLogo(true);
+    }, 4500);
 
     screen.addEventListener("click", onClick);
     window.addEventListener("keydown", onEsc);

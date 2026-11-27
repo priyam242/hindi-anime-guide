@@ -52,7 +52,8 @@
       <article class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <a href="/guides/{{ g.slug }}" class="block aspect-[16/10] overflow-hidden relative bg-[#06070c]">
           {% if g.cover_image %}
-          <img src="{{ g.cover_image }}" alt="{{ g.anime_title_en or g.title }}" loading="lazy" decoding="async"
+          <img src="{{ g.cover_image }}" alt="{{ g.anime_title_en or g.title }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+               onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
           {% endif %}

@@ -29,6 +29,19 @@
   {% endif %}
   <script>
     window.HAG_AMAZON_TAG = {{ get_amazon_tag() | tojson }};
+    window.hagImgFallback = function (img, fallbackUrl) {
+      if (!img) return;
+      var orig = img.getAttribute("src") || "";
+      if (!img.dataset.hagProxied && /^https?:\/\//i.test(orig) && orig.indexOf("/api/img-proxy") === -1) {
+        img.dataset.hagProxied = "1";
+        img.src = "/api/img-proxy?url=" + encodeURIComponent(orig);
+        return;
+      }
+      if (fallbackUrl && img.src.indexOf(fallbackUrl) === -1) {
+        img.onerror = null;
+        img.src = fallbackUrl;
+      }
+    };
     (function () {
       try {
         if (localStorage.getItem("hag_theme") === "light") {
@@ -252,6 +265,20 @@
           class="relative inline-flex items-center min-h-[54px] shrink-0 whitespace-nowrap">
           <span style="visibility: hidden;">{{ brand_logo('nav-spacer', True) }}</span>
         </a>
+        <script>
+          if (window.__HAG_SHOULD_SPLASH === false) {
+            var _nt = document.getElementById("navbar-logo-target");
+            var _ls = document.getElementById("splash-logo-stage");
+            if (_nt && _ls) {
+              _ls.classList.remove("splash-centered");
+              _ls.style.position = "static";
+              _ls.style.opacity = "1";
+              _ls.style.transform = "none";
+              _nt.innerHTML = "";
+              _nt.appendChild(_ls);
+            }
+          }
+        </script>
       </div>
 
       <!-- 2. Center: Wide Global Search Input -> /explore -->

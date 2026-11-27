@@ -58,8 +58,8 @@
         <article class="border border-white/15 hover:border-[#ff2e63] bg-white/[0.03] transition-colors flex flex-col overflow-hidden">
           <div class="p-4 flex gap-4 items-start flex-1">
             <a href="{{ entry.detail_url }}" class="w-20 h-28 shrink-0 overflow-hidden border border-[#ff2e63]">
-              <img src="{{ entry.winner_poster }}" alt="{{ entry.winner_title }}" loading="lazy" decoding="async"
-                   onerror="this.src='/static/media/emblem_icon.webp'"
+              <img src="{{ entry.winner_poster }}" alt="{{ entry.winner_title }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                   onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                    class="w-full h-full object-cover" />
             </a>
             <div class="min-w-0 flex-1 space-y-1.5">

@@ -18,6 +18,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from app.db import engine  # noqa: E402
+from app.services.content import MANGA_NOV2026_FACTS  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 DAYS_HI = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
@@ -1003,6 +1004,8 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
                 SET status = :st,
                     publication_status = :pst,
                     image_url = COALESCE(:img, image_url),
+                    season = COALESCE(:ssn, season),
+                    season_year = COALESCE(:syr, season_year),
                     airing_day = CASE WHEN :airing THEN :dhi ELSE airing_day END,
                     airing_time = CASE WHEN :airing THEN :tist ELSE airing_time END,
                     latest_chapter = :ep,
@@ -1014,6 +1017,8 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
                 "st": "published" if is_airing else "archived",
                 "pst": real_status,
                 "img": cover,
+                "ssn": (m.get("season") or "")[:20] or None,
+                "syr": m.get("seasonYear"),
                 "airing": is_airing,
                 "dhi": day_hi,
                 "tist": time_ist,
@@ -1023,6 +1028,38 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
             },
         )
         sch_updated += 1
+
+    # Purge any NSFW/inappropriate entries from catalog
+    conn.execute(
+        text(
+            "DELETE FROM anime_draft WHERE content_type = 'manga' AND (LOWER(title_en) LIKE '%av joyuu%' OR LOWER(title_en) LIKE '%big dick%' OR id IN (273, 282))"
+        )
+    )
+
+    # Apply Nov 2026 verified flagship chapter, volume & status facts directly in Supabase
+    for aid_key, facts in MANGA_NOV2026_FACTS.items():
+        ch_v = int(facts["chapters"])
+        vol_v = int(facts["volumes"])
+        st_v = str(facts["status"])
+        conn.execute(
+            text(
+                """
+                UPDATE anime_draft
+                SET chapters = :ch,
+                    volumes = :vol,
+                    publication_status = :pst,
+                    latest_chapter = :clbl
+                WHERE content_type = 'manga' AND anilist_id = :aid
+                """
+            ),
+            {
+                "ch": ch_v,
+                "vol": vol_v,
+                "pst": st_v,
+                "clbl": f"{ch_v} Chapters",
+                "aid": int(aid_key),
+            },
+        )
 
     # 2. Backfill ALL manga rows missing status/cover/volumes/chapters or with bogus 'Weekly Serialization'
     mg_rows = conn.execute(

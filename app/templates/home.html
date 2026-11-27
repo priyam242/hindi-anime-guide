@@ -114,20 +114,22 @@
 {% block content %}
 {% set active_spot = spotlight[0] if spotlight else None %}
 
-<!-- ZONE 1: LINEAR ANIMATION PRINCIPLE MULTI-DEPTH HERO STAGE -->
-<section id="linear-hero" class="border-b border-white/10">
-  <!-- Depth 0.14x (Heavy Focal Key Art — Moves Slow) -->
+<!-- ZONE 1: 4.5s AUTO-ROTATING WIDESCREEN CINEMA HERO STAGE -->
+<section id="linear-hero" data-active-spot="0" class="border-b border-white/10">
+  <!-- Depth 0.14x (Heavy Widescreen Banner Backdrop — Moves Slow) -->
   <div id="hero-layer-bg" class="hero-depth-layer absolute -inset-8 pointer-events-none">
     <img id="hero-bg-img"
          src="{{ active_spot.banner_url if active_spot else '/static/media/emblem_icon.webp' }}"
          alt=""
+         referrerpolicy="no-referrer"
          fetchpriority="high"
          decoding="async"
-         onerror="this.src='/static/media/emblem_icon.webp'"
-         class="w-full h-full object-cover opacity-45 scale-105 transition-opacity duration-500" />
-    <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-[#06070c]/82 to-[#06070c]/35"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-[#06070c]/75"></div>
-    <div class="absolute inset-0" style="background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 56px 56px;"></div>
+         onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
+         class="w-full h-full object-cover object-center opacity-60 scale-105 transition-opacity duration-500" />
+    <div class="absolute inset-0 bg-gradient-to-r from-[#06070c] via-[#06070c]/80 to-[#06070c]/25"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-[#06070c]/65"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_78%_40%,rgba(255,46,99,0.22),transparent_55%)]"></div>
+    <div class="absolute inset-0" style="background-image: linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 56px 56px;"></div>
   </div>
 
   <!-- Depth 0.88x Light Streaks & Sparks Backdrop Layer (Moves Fast) -->
@@ -138,16 +140,16 @@
     <div class="absolute bottom-36 right-[32%] w-2 h-2 bg-white shadow-[0_0_12px_#ffffff]"></div>
   </div>
 
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20 min-h-[min(86vh,760px)] flex flex-col justify-between gap-10">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center my-auto">
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 min-h-[min(80vh,680px)] flex flex-col justify-between gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto">
       <!-- Depth 0.38x (Typography + CTAs — Moves Medium) -->
-      <div id="hero-layer-mid" class="hero-depth-layer lg:col-span-7 space-y-6">
-        <div class="inline-flex items-center gap-3">
-          <span id="hero-badge" class="px-3 py-1 bg-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-[0.2em] uppercase" style="transform: skewX(-8deg);">
-            {{ active_spot.badge if active_spot else 'HINDI DUB • FLAGSHIP' }}
+      <div id="hero-layer-mid" class="hero-depth-layer lg:col-span-7 space-y-5">
+        <div class="inline-flex flex-wrap items-center gap-3">
+          <span id="hero-badge" class="px-3 py-1 bg-[#cf0f46] text-white font-tech text-[11px] font-bold tracking-[0.2em] uppercase" style="transform: skewX(-8deg);">
+            {{ active_spot.badge if active_spot else 'FALL 2026 • HINDI DUB' }}
           </span>
-          <span class="font-tech text-xs font-bold tracking-widest text-white/75 uppercase">
-            <span id="hero-score">{{ active_spot.score if active_spot else 85 }}</span>% MATCH &bull; <span id="hero-year">{{ active_spot.year if active_spot else '2025' }}</span>
+          <span class="font-tech text-xs font-bold tracking-widest text-white/85 uppercase">
+            <span id="hero-score">{{ active_spot.score if active_spot else 86 }}</span>% MATCH &bull; <span id="hero-year">{{ active_spot.year if active_spot else '2026' }}</span>
           </span>
         </div>
 
@@ -155,7 +157,7 @@
           <h1 id="hero-title-hi"
               data-hi="{{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}"
               data-en="{{ active_spot.title_en if active_spot else 'Hindi Anime Guide' }}"
-              class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.35rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+              class="font-display-shonen text-3xl sm:text-5xl lg:text-[3.4rem] leading-[1.08] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
             {{ active_spot.title_hi if active_spot else 'हिंदी एनीमे गाइड' }}
           </h1>
           <p id="hero-title-en" class="font-tech text-sm sm:text-base font-bold tracking-[0.16em] uppercase text-[#ff2e63]">
@@ -166,22 +168,22 @@
         <p id="hero-tagline"
            data-hi="{{ active_spot.tagline if active_spot else '' }}"
            data-en="{{ active_spot.tagline_en or active_spot.tagline if active_spot else '' }}"
-           class="max-w-xl text-sm sm:text-base text-white/85 leading-relaxed">
+           class="max-w-xl text-sm sm:text-base text-white/90 leading-relaxed">
           {{ active_spot.tagline if active_spot else '' }}
         </p>
 
-        <div class="flex flex-wrap items-center gap-4 pt-2">
+        <div class="flex flex-wrap items-center gap-3.5 pt-2">
           <a id="hero-watch-link"
              href="{{ active_spot.platforms[0].url if active_spot and active_spot.platforms else 'https://www.crunchyroll.com' }}"
              target="_blank"
              rel="noopener noreferrer"
-             class="katana-btn px-6 py-3 bg-[#ff2e63] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase shadow-[0_0_28px_rgba(255,46,99,0.5)]">
+             class="katana-btn min-h-[44px] inline-flex items-center px-6 py-3 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase shadow-[0_0_28px_rgba(255,46,99,0.5)]">
             <span><i class="fa-solid fa-bolt"></i> <span data-hi="लाइसेंस्ड स्ट्रीम देखें" data-en="Watch Licensed Stream">लाइसेंस्ड स्ट्रीम देखें</span></span>
           </a>
 
           <a id="hero-detail-link"
              href="/anime/{{ active_spot.slug if active_spot else 'solo-leveling' }}"
-             class="katana-btn px-5 py-3 border border-white/25 hover:border-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+             class="katana-btn min-h-[44px] inline-flex items-center px-5 py-3 border border-white/25 hover:border-[#ff2e63] bg-[#06070c]/60 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
             <span><i class="fa-solid fa-layer-group text-[#ff2e63]"></i> <span data-hi="विवरण" data-en="Details">विवरण</span></span>
           </a>
 
@@ -190,13 +192,13 @@
                   data-yt="{{ active_spot.trailer_id if active_spot else '' }}"
                   data-title="{{ active_spot.title_en if active_spot else 'Licensed Trailer' }}"
                   onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
-                  class="katana-btn px-6 py-3 bg-white/5 hover:bg-white/15 border border-white/25 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+                  class="katana-btn min-h-[44px] inline-flex items-center px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/25 text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
             <span><i class="fa-solid fa-play text-[#ff2e63]"></i> <span data-hi="ट्रेलर चलाएं" data-en="Play Trailer">ट्रेलर चलाएं</span></span>
           </button>
 
           <button type="button"
                   onclick="hagOpenRoulette()"
-                  class="katana-btn px-5 py-3 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#ff2e63] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
+                  class="katana-btn min-h-[44px] inline-flex items-center px-5 py-3 border border-[#ff2e63] bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold tracking-[0.16em] uppercase">
             <span data-hi="🎲 किस्मत आज़माएं" data-en="🎲 Surprise Me">🎲 किस्मत आज़माएं</span>
           </button>
         </div>
@@ -204,15 +206,17 @@
 
       <!-- Depth 0.88x Floating Key Art + Platform Chips (Moves Fast) -->
       <div id="hero-layer-card" class="hero-depth-layer lg:col-span-5 flex flex-col items-center lg:items-end gap-4">
-        <div class="relative w-60 sm:w-68 aspect-[2/3] border-2 border-white/20 bg-[#06070c] shadow-[0_24px_60px_rgba(255,46,99,0.28)] overflow-hidden" style="transform: skewX(-4deg);">
+        <div class="relative w-60 sm:w-72 aspect-[2/3] border-2 border-[#ff2e63]/70 bg-[#06070c] shadow-[0_24px_60px_rgba(255,46,99,0.35)] overflow-hidden" style="transform: skewX(-4deg);">
           <img id="hero-cover-img"
                src="{{ active_spot.cover_url if active_spot else '/static/media/emblem_icon.webp' }}"
-               alt=""
+               alt="{{ active_spot.title_en if active_spot else '' }}"
+               referrerpolicy="no-referrer"
+               onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                class="w-full h-full object-cover scale-105 transition-opacity duration-500"
                style="transform: skewX(4deg) scale(1.06);" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
           <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-            <span class="px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold tracking-widest uppercase text-white">HINDI AUDIO</span>
+            <span class="px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold tracking-widest uppercase text-white">HINDI / SUB</span>
             <span class="font-tech text-xs font-bold text-[#ff2e63]">★ TOP PICK</span>
           </div>
         </div>
@@ -220,7 +224,7 @@
         <div id="hero-platforms" class="flex flex-wrap items-center justify-center lg:justify-end gap-2">
           {% for p in (active_spot.platforms if active_spot else platforms[:3]) %}
           <a href="{{ p.url or p.official_url }}" target="_blank" rel="noopener noreferrer"
-             class="px-3 py-1.5 bg-[#06070c]/90 border border-white/15 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">
+             class="px-3 py-1.5 bg-[#06070c]/90 border border-white/20 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">
             {{ p.name or p.display_name }}
           </a>
           {% endfor %}
@@ -228,20 +232,22 @@
       </div>
     </div>
 
-    <!-- Interactive Spotlight Switcher (01 / 05) -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
-      <div class="flex items-center gap-2 font-tech text-xs font-bold tracking-[0.2em] uppercase text-white/60">
+    <!-- Interactive Auto-Rotating Cinema Switcher (01 / 05, 4.5s Progress Bar) -->
+    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+      <div class="flex items-center gap-2 font-tech text-xs font-bold tracking-[0.2em] uppercase text-white/75">
         <span id="spot-counter" class="text-[#ff2e63] text-sm">01</span>
         <span>/</span>
-        <span>0{{ spotlight|length }} SPOTLIGHT</span>
+        <span>0{{ spotlight|length }} CINEMA STAGE</span>
+        <span class="hidden sm:inline-block ml-2 px-2 py-0.5 bg-white/5 border border-white/10 text-[9px] text-white/70">4.5S AUTO-ROTATE</span>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         {% for sp in spotlight %}
         <button type="button"
                 onclick="selectSpotlight({{ loop.index0 }})"
                 data-spot-idx="{{ loop.index0 }}"
-                class="spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all {{ 'border-[#ff2e63] bg-[#ff2e63]/20 text-white' if loop.first else 'border-white/10 bg-white/5 text-white/60 hover:text-white hover:border-white/30' }}">
-          0{{ loop.index }} &bull; {{ sp.title_en.split(':')[0] }}
+                class="spot-tab relative overflow-hidden px-3 py-2 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all {{ 'border-[#ff2e63] bg-[#ff2e63]/20 text-white' if loop.first else 'border-white/15 bg-white/5 text-white/70 hover:text-white hover:border-white/30' }}">
+          <span>0{{ loop.index }} &bull; {{ sp.title_en.split(':')[0] }}</span>
+          <span class="spot-progress-bar absolute bottom-0 left-0 h-[2px] bg-[#ff2e63]" style="width: {{ '100%' if loop.first else '0%' }};"></span>
         </button>
         {% endfor %}
       </div>
@@ -281,8 +287,8 @@
       {% for show in schedule_by_day.get(day_hi, [])[:8] %}
       <a href="{{ show.detail_url or show.source_url }}"
          class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
-        <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy" decoding="async"
-             onerror="this.src='/static/media/emblem_icon.webp'"
+        <img src="{{ show.image_url }}" alt="{{ show.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+             onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
              class="w-14 h-20 object-cover shrink-0 border border-white/15" />
         <div class="min-w-0 space-y-1 flex-1">
           <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase tracking-wider">
@@ -398,7 +404,8 @@
       <a href="/news/{{ lead.slug }}"
          class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
         {% if lead.image_url %}
-        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy" decoding="async"
+        <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+             onerror="hagImgFallback(this)"
              class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
         {% else %}
@@ -440,7 +447,8 @@
         <a href="/news/{{ item.slug }}"
            class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+               onerror="hagImgFallback(this)"
                class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
           {% else %}
@@ -479,7 +487,8 @@
          class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <div class="aspect-video overflow-hidden relative bg-[#06070c] flex items-center justify-center">
           {% if item.image_url %}
-          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
+          <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+               onerror="hagImgFallback(this)"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {% else %}
           <div class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-5 flex flex-col justify-end border-b border-white/10">
@@ -576,8 +585,8 @@
               </div>
               <div class="book-pages"></div>
               <div class="book-face-front">
-                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" decoding="async"
-                     onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover" />
+                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                     onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')" class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/25 to-transparent"></div>
                 <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
                   {{ m.volume_label }}
@@ -626,8 +635,8 @@
                 onclick="openTrailerModal('{{ tr.youtube_id }}', {{ tr.title_en|tojson }})"
                 class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
           <div class="relative aspect-video overflow-hidden">
-            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" loading="lazy" decoding="async"
-                 onerror="this.src='/static/media/emblem_icon.webp'"
+            <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+                 onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-[#06070c]/40 group-hover:bg-[#06070c]/20 transition-colors flex items-center justify-center">
               <span class="w-12 h-9 bg-[#cf0f46] text-white flex items-center justify-center shadow-[0_0_24px_rgba(255,46,99,0.75)]" style="transform: skewX(-10deg);">
@@ -672,21 +681,57 @@
 {% block extra_scripts %}
 <script>
   var SPOTLIGHT_ITEMS = {{ spotlight|tojson }};
+  var currentSpotIdx = 0;
+  var heroAutoTimer = null;
+  var HERO_ROTATE_MS = 4500;
 
-  function selectSpotlight(idx) {
+  function animateSpotProgress(activeIdx) {
+    document.querySelectorAll(".spot-tab").forEach(function (btn, i) {
+      var bar = btn.querySelector(".spot-progress-bar");
+      if (bar) {
+        bar.style.transition = "none";
+        bar.style.width = "0%";
+        if (i === activeIdx) {
+          void bar.offsetWidth;
+          bar.style.transition = "width " + HERO_ROTATE_MS + "ms linear";
+          bar.style.width = "100%";
+        }
+      }
+    });
+  }
+
+  function selectSpotlight(idx, fromAuto) {
+    if (!SPOTLIGHT_ITEMS || !SPOTLIGHT_ITEMS.length) return;
+    idx = ((idx % SPOTLIGHT_ITEMS.length) + SPOTLIGHT_ITEMS.length) % SPOTLIGHT_ITEMS.length;
     var item = SPOTLIGHT_ITEMS[idx];
     if (!item) return;
+    currentSpotIdx = idx;
+
+    var heroEl = document.getElementById("linear-hero");
+    if (heroEl) heroEl.dataset.activeSpot = String(idx);
+
     var isEn = typeof hagGetLang === "function" && hagGetLang() === "en";
-    document.getElementById("hero-bg-img").src = item.banner_url;
-    document.getElementById("hero-cover-img").src = item.cover_url;
+    var bgImg = document.getElementById("hero-bg-img");
+    var covImg = document.getElementById("hero-cover-img");
+    if (bgImg) {
+      delete bgImg.dataset.hagProxied;
+      bgImg.src = item.banner_url;
+    }
+    if (covImg) {
+      delete covImg.dataset.hagProxied;
+      covImg.src = item.cover_url;
+    }
+
     document.getElementById("hero-badge").textContent = item.badge;
     document.getElementById("hero-score").textContent = item.score;
     document.getElementById("hero-year").textContent = item.year;
+
     var tEl = document.getElementById("hero-title-hi");
     tEl.dataset.hi = item.title_hi;
     tEl.dataset.en = item.title_en;
     tEl.textContent = isEn ? item.title_en : item.title_hi;
     document.getElementById("hero-title-en").textContent = item.title_en;
+
     var tgEl = document.getElementById("hero-tagline");
     tgEl.dataset.hi = item.tagline;
     tgEl.dataset.en = item.tagline_en || item.tagline;
@@ -709,17 +754,63 @@
     var pBox = document.getElementById("hero-platforms");
     if (pBox && item.platforms) {
       pBox.innerHTML = item.platforms.map(function (p) {
-        return '<a href="' + p.url + '" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-[#06070c]/90 border border-white/15 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">' + p.name + '</a>';
+        return '<a href="' + p.url + '" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-[#06070c]/90 border border-white/20 hover:border-[#ff2e63] text-white font-tech text-[11px] font-bold tracking-wider uppercase transition-colors">' + p.name + '</a>';
       }).join("");
     }
     document.querySelectorAll(".spot-tab").forEach(function (btn, i) {
       if (i === idx) {
-        btn.className = "spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-[#ff2e63] bg-[#ff2e63]/20 text-white";
+        btn.className = "spot-tab relative overflow-hidden px-3 py-2 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-[#ff2e63] bg-[#ff2e63]/20 text-white";
       } else {
-        btn.className = "spot-tab px-3 py-1.5 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-white/10 bg-white/5 text-white/60 hover:text-white hover:border-white/30";
+        btn.className = "spot-tab relative overflow-hidden px-3 py-2 font-tech text-[11px] font-bold uppercase tracking-wider border transition-all border-white/15 bg-white/5 text-white/70 hover:text-white hover:border-white/30";
       }
     });
+
+    if (typeof gsap !== "undefined") {
+      gsap.fromTo("#hero-layer-mid", { opacity: 0.35, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+      gsap.fromTo("#hero-layer-card", { opacity: 0.55, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" });
+    }
+    animateSpotProgress(idx);
+    if (!fromAuto) startHeroAutoRotate();
   }
+
+  function startHeroAutoRotate() {
+    if (heroAutoTimer) clearInterval(heroAutoTimer);
+    if (!SPOTLIGHT_ITEMS || SPOTLIGHT_ITEMS.length < 2) return;
+    heroAutoTimer = setInterval(function () {
+      selectSpotlight((currentSpotIdx + 1) % SPOTLIGHT_ITEMS.length, true);
+    }, HERO_ROTATE_MS);
+  }
+
+  function stopHeroAutoRotate() {
+    if (heroAutoTimer) {
+      clearInterval(heroAutoTimer);
+      heroAutoTimer = null;
+    }
+  }
+
+  (function initHeroCinemaStage() {
+    var hero = document.getElementById("linear-hero");
+    if (!hero) return;
+    animateSpotProgress(0);
+    startHeroAutoRotate();
+    hero.addEventListener("mouseenter", stopHeroAutoRotate);
+    hero.addEventListener("mouseleave", startHeroAutoRotate);
+    hero.addEventListener("focusin", stopHeroAutoRotate);
+    hero.addEventListener("focusout", startHeroAutoRotate);
+
+    var touchX = null;
+    hero.addEventListener("touchstart", function (e) {
+      touchX = (e.touches && e.touches[0]) ? e.touches[0].clientX : null;
+    }, { passive: true });
+    hero.addEventListener("touchend", function (e) {
+      if (touchX === null || !e.changedTouches || !e.changedTouches[0]) return;
+      var dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) >= 42) {
+        selectSpotlight(dx < 0 ? currentSpotIdx + 1 : currentSpotIdx - 1, false);
+      }
+    }, { passive: true });
+  })();
 
   function selectScheduleDay(dayHi) {
     document.querySelectorAll(".sch-day-tab").forEach(function (btn) {
