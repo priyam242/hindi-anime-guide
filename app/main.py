@@ -104,7 +104,8 @@ async def bandwidth_cache_headers(request: Request, call_next):
             and not path.startswith("/api/")
             and request.method == "GET"
         ):
-            response.headers.setdefault("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600")
+            response.headers["Vary"] = "Cookie"
+            response.headers["Cache-Control"] = "private, no-cache, max-age=0, must-revalidate"
     return response
 
 
@@ -136,9 +137,25 @@ def _adsense_client_id() -> str:
     return os.getenv("ADSENSE_CLIENT_ID", "").strip()
 
 
+def _req_lang(request: Request | None) -> str:
+    if request is None:
+        return "hi"
+    val = (request.cookies.get("hag_lang") or "hi").strip().lower()
+    return "en" if val == "en" else "hi"
+
+
+def _req_theme(request: Request | None) -> str:
+    if request is None:
+        return "dark"
+    val = (request.cookies.get("hag_theme") or "dark").strip().lower()
+    return "light" if val == "light" else "dark"
+
+
 templates.env.globals["get_amazon_tag"] = _amazon_affiliate_tag
 templates.env.globals["get_adsense_client_id"] = _adsense_client_id
 templates.env.globals["resolve_base_url"] = _resolve_base_url
+templates.env.globals["req_lang"] = _req_lang
+templates.env.globals["req_theme"] = _req_theme
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -519,17 +536,18 @@ async def guide_detail_page(request: Request, slug: str):
         raise HTTPException(status_code=404, detail="Editorial guide not found")
     guide = bundle["guide"]
     base = _resolve_base_url(request)
+    lang = _req_lang(request)
     json_ld = {
         "@context": "https://schema.org",
         "@type": "Article",
-        "headline": guide["title"],
-        "description": guide["meta_description"],
+        "headline": guide["title_en"] if lang == "en" else guide["title_hi"],
+        "description": guide["meta_description_en"] if lang == "en" else guide["meta_description"],
         "image": guide.get("cover_image") or f"{base}/static/media/emblem_icon.webp",
         "author": {"@type": "Organization", "name": "Hindi Anime Guide Editorial Desk"},
         "publisher": {"@type": "Organization", "name": "Hindi Anime Guide"},
         "mainEntityOfPage": f"{base}/guides/{guide['slug']}",
-        "wordCount": guide["word_count"],
-        "inLanguage": ["hi", "en"],
+        "wordCount": guide["word_count_en"] if lang == "en" else guide["word_count"],
+        "inLanguage": lang,
     }
     return templates.TemplateResponse(
         request,
@@ -678,13 +696,13 @@ async def anime_detail_page(request: Request, slug: str):
         "detail.html",
         {
             "request": request,
-            "active_nav": "home",
+            "active_nav": "schedule" if item.get("airing_day") else "explore",
             "item": item,
             "related": item.get("related", []),
             "json_ld": json_ld,
             "badge_text": item.get("badge") or "ANIME SPOTLIGHT",
-            "back_url": "/",
-            "back_label": "होमपेज पर वापस जाएं",
+            "back_url": "/schedule" if item.get("airing_day") else "/",
+            "back_label": "लाइव IST शेड्यूल पर वापस जाएं" if item.get("airing_day") else "होमपेज पर वापस जाएं",
             "q": "",
         },
     )

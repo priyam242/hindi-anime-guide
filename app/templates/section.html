@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% set ssr_lang = req_lang(request) %}
 
 {% block extra_head %}
 <style>
@@ -99,12 +100,12 @@
         <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">HINDI ANIME GUIDE
           &bull; INTERACTIVE HUB</span>
         <h1 class="font-display-shonen text-3xl sm:text-4xl text-white" data-hi="{{ section_title }}"
-          data-en="{{ section_title_en or section_title }}">{{ section_title }}</h1>
+          data-en="{{ section_title_en or section_title }}">{{ (section_title_en or section_title) if ssr_lang == 'en' else section_title }}</h1>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative">
           <input id="hub-live-filter" type="search" data-hi-placeholder="तुरंत फ़िल्टर करें..."
-            data-en-placeholder="Filter instantly..." placeholder="तुरंत फ़िल्टर करें..." value="{{ q or '' }}"
+            data-en-placeholder="Filter instantly..." placeholder="{{ 'Filter instantly...' if ssr_lang == 'en' else 'तुरंत फ़िल्टर करें...' }}" value="{{ q or '' }}"
             oninput="filterHubCards(this.value)"
             class="w-56 sm:w-64 min-h-[38px] pl-9 pr-3 py-2 bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63]" />
           <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[#ff2e63]"></i>
@@ -122,13 +123,12 @@
       <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
         <button type="button" onclick="selectHubDay('ALL')" data-hub-day-tab="ALL"
           class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
-          <span data-hi="सभी दिन ({{ schedule|length }})" data-en="ALL DAYS ({{ schedule|length }})">सभी दिन ({{
-            schedule|length }})</span>
+          <span data-hi="सभी दिन ({{ schedule|length }})" data-en="ALL DAYS ({{ schedule|length }})">{{ ('ALL DAYS (' ~ schedule|length ~ ')') if ssr_lang == 'en' else ('सभी दिन (' ~ schedule|length ~ ')') }}</span>
         </button>
         {% for day_hi, day_en in schedule_days %}
         <button type="button" onclick="selectHubDay('{{ day_hi }}')" data-hub-day-tab="{{ day_hi }}"
           class="hub-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 border-transparent text-white/75 hover:text-white">
-          <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span
+          <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_en if ssr_lang == 'en' else day_hi }}</span> <span
             class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
         </button>
         {% endfor %}
@@ -139,7 +139,7 @@
       <div data-hub-day-panel="{{ day_hi }}" class="hub-day-panel space-y-4">
         <div class="flex items-center justify-between border-l-4 border-[#ff2e63] pl-3">
           <h2 class="font-tech text-sm font-bold uppercase tracking-[0.2em] text-white">
-            <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> &bull; <span
+            <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_en if ssr_lang == 'en' else day_hi }}</span> &bull; <span
               class="text-[#ff2e63]">{{ day_en }}</span>
           </h2>
           <span class="font-tech text-[11px] uppercase tracking-widest text-white/65">{{ day_shows|length }}
@@ -161,11 +161,11 @@
                 {% if show.score %}<span class="text-white/80">★ {{ show.score }}</span>{% endif %}
               </div>
               <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
-                data-hi="{{ show.title_hi }}" data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
+                data-hi="{{ show.title_hi }}" data-en="{{ show.title_en }}">{{ show.title_en if ssr_lang == 'en' else show.title_hi }}</h3>
               <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
               {% if show.airing_at %}
               <p class="font-tech text-[10px] font-bold text-[#ff2e63] tracking-wider">⏱ <span
-                  data-hi="अगले एपिसोड में बाकी" data-en="NEXT EPISODE IN">अगले एपिसोड में बाकी</span> <span
+                  data-hi="अगले एपिसोड में बाकी" data-en="NEXT EPISODE IN">{{ 'NEXT EPISODE IN' if ssr_lang == 'en' else 'अगले एपिसोड में बाकी' }}</span> <span
                   data-countdown-ts="{{ show.airing_at }}">{{ show.initial_countdown }}</span></p>
               {% endif %}
             </div>
@@ -177,7 +177,7 @@
           <button type="button" onclick="loadAllScheduleDay('{{ day_hi }}', this)"
             class="min-h-[38px] px-5 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/15 hover:bg-[#cf0f46] text-white font-tech text-xs font-bold uppercase tracking-wider transition-colors"
             data-hi="सभी {{ day_shows|length }} शो दिखाएं" data-en="Show All {{ day_shows|length }} Shows">
-            सभी {{ day_shows|length }} शो दिखाएं
+            {{ ('Show All ' ~ day_shows|length ~ ' Shows') if ssr_lang == 'en' else ('सभी ' ~ day_shows|length ~ ' शो दिखाएं') }}
           </button>
         </div>
         {% endif %}
@@ -192,7 +192,7 @@
       <span id="manga-count-summary"
         data-hi="{{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए"
         data-en="Showing {{ manga|length }} of {{ total_manga_count or manga|length }} Volumes">
-        {{ manga|length }} / {{ total_manga_count or manga|length }} वॉल्यूम लोड हुए
+        {{ ('Showing ' ~ manga|length ~ ' of ' ~ (total_manga_count or manga|length) ~ ' Volumes') if ssr_lang == 'en' else (manga|length ~ ' / ' ~ (total_manga_count or manga|length) ~ ' वॉल्यूम लोड हुए') }}
       </span>
     </div>
 
@@ -219,9 +219,9 @@
                   m.volume_label }}</span>
                 <div class="absolute bottom-2.5 left-2.5 right-2.5">
                   <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="{{ m.title_hi }}"
-                    data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
+                    data-en="{{ m.title_en }}">{{ m.title_en if ssr_lang == 'en' else m.title_hi }}</p>
                   <p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull;
-                    {{ m.chapters }}</p>
+                    {{ m.card_chapters_short or m.chapters }}</p>
                 </div>
               </div>
             </div>
@@ -236,7 +236,7 @@
     <div id="manga-load-more-wrap" class="pt-4 text-center">
       <button type="button" id="manga-load-more-btn" onclick="loadMoreManga()"
         class="katana-btn min-h-[42px] px-7 py-2.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
-        <span data-hi="और मंगा दिखाएं (Load More)" data-en="Load More Volumes">और मंगा दिखाएं (Load More)</span>
+        <span data-hi="और मंगा दिखाएं (Load More)" data-en="Load More Volumes">{{ 'Load More Volumes' if ssr_lang == 'en' else 'और मंगा दिखाएं (Load More)' }}</span>
       </button>
     </div>
     {% endif %}
@@ -247,8 +247,7 @@
       class="inline-flex items-center gap-2.5 px-4 py-2 bg-[#ff2e63]/15 border border-[#ff2e63] font-tech text-xs font-bold tracking-[0.16em] uppercase text-white">
       <span class="w-2.5 h-2.5 rounded-full bg-[#ff2e63] animate-pulse"></span>
       <span data-hi="LIVE 48-HOUR NEWSWIRE • पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं"
-        data-en="LIVE 48-HOUR NEWSWIRE • EXPIRED STORIES PRUNED AFTER 48H">LIVE 48-HOUR NEWSWIRE &bull; पुरानी खबरें 48
-        घंटे में स्वतः हट जाती हैं</span>
+        data-en="LIVE 48-HOUR NEWSWIRE • EXPIRED STORIES PRUNED AFTER 48H">{{ 'LIVE 48-HOUR NEWSWIRE • EXPIRED STORIES PRUNED AFTER 48H' if ssr_lang == 'en' else 'LIVE 48-HOUR NEWSWIRE • पुरानी खबरें 48 घंटे में स्वतः हट जाती हैं' }}</span>
     </div>
 
     {% set categories = [] %}
@@ -273,7 +272,7 @@
     {% set lead = news[0] %}
     <a href="/news/{{ lead.slug }}" data-filter-card data-news-cat="{{ lead.category }}"
       data-filter-text="{{ (lead.title_hi ~ ' ' ~ lead.title_en ~ ' ' ~ lead.category)|lower }}"
-      class="group block relative min-h-[340px] sm:min-h-[400px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
+      class="dark-surface group block relative min-h-[340px] sm:min-h-[400px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
       {% if lead.image_url %}
       <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" referrerpolicy="no-referrer" decoding="async"
         onerror="hagImgFallback(this)"
@@ -287,20 +286,18 @@
           <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ lead.category }}</span>
           {% if lead.is_expiring_soon %}
           <span class="px-2 py-0.5 bg-[#cf0f46] text-white animate-pulse"
-            data-hi="⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी" data-en="⏳ ARCHIVES IN {{ lead.hours_left }}H">⏳ {{
-            lead.hours_left }}h में आर्काइव हो जाएगी</span>
+            data-hi="⏳ {{ lead.hours_left }}h में आर्काइव हो जाएगी" data-en="⏳ ARCHIVES IN {{ lead.hours_left }}H">{{ ('⏳ ARCHIVES IN ' ~ lead.hours_left ~ 'H') if ssr_lang == 'en' else ('⏳ ' ~ lead.hours_left ~ 'h में आर्काइव हो जाएगी') }}</span>
           {% elif lead.is_brand_new %}
-          <span class="px-2 py-0.5 bg-white text-[#06070c]" data-hi="⚡ अभी आया • FRESH" data-en="⚡ JUST IN • FRESH">⚡
-            अभी आया • FRESH</span>
+          <span class="px-2 py-0.5 bg-white text-[#06070c]" data-hi="⚡ अभी आया • FRESH" data-en="⚡ JUST IN • FRESH">{{ '⚡ JUST IN • FRESH' if ssr_lang == 'en' else '⚡ अभी आया • FRESH' }}</span>
           {% else %}
           <span class="text-white/80">FEATURED LEAD &bull; <span data-hi="{{ lead.relative_age }}"
-              data-en="{{ lead.relative_age_en }}">{{ lead.relative_age }}</span></span>
+              data-en="{{ lead.relative_age_en }}">{{ lead.relative_age_en if ssr_lang == 'en' else lead.relative_age }}</span></span>
           {% endif %}
         </div>
         <h2 class="text-xl sm:text-3xl font-extrabold text-white leading-snug group-hover:text-[#ff2e63]"
-          data-hi="{{ lead.title_hi }}" data-en="{{ lead.title_en }}">{{ lead.title_hi }}</h2>
+          data-hi="{{ lead.title_hi }}" data-en="{{ lead.title_en }}">{{ lead.title_en if ssr_lang == 'en' else lead.title_hi }}</h2>
         <p class="text-xs sm:text-sm text-white/80 line-clamp-2 max-w-3xl" data-hi="{{ lead.summary }}"
-          data-en="{{ lead.summary_en or lead.summary }}">{{ lead.summary }}</p>
+          data-en="{{ lead.summary_en or lead.summary }}">{{ (lead.summary_en or lead.summary) if ssr_lang == 'en' else lead.summary }}</p>
       </div>
     </a>
     {% endif %}
@@ -310,7 +307,7 @@
       <a href="/news/{{ item.slug }}" data-filter-card data-news-cat="{{ item.category }}"
         data-filter-text="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.category)|lower }}"
         class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
-        <div class="aspect-video overflow-hidden relative bg-[#06070c]">
+        <div class="dark-surface aspect-video overflow-hidden relative bg-[#06070c]">
           {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy"
             decoding="async" onerror="hagImgFallback(this)"
@@ -332,20 +329,19 @@
             <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase">
               {% if item.is_expiring_soon %}
               <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white animate-pulse"
-                data-hi="⏳ {{ item.hours_left }}h में आर्काइव" data-en="⏳ {{ item.hours_left }}H LEFT">⏳ {{
-                item.hours_left }}h में आर्काइव</span>
+                data-hi="⏳ {{ item.hours_left }}h में आर्काइव" data-en="⏳ {{ item.hours_left }}H LEFT">{{ ('⏳ ' ~ item.hours_left ~ 'H LEFT') if ssr_lang == 'en' else ('⏳ ' ~ item.hours_left ~ 'h में आर्काइव') }}</span>
               {% elif item.is_brand_new %}
               <span class="px-1.5 py-0.5 bg-white text-[#06070c]" data-hi="⚡ अभी आया • FRESH"
-                data-en="⚡ JUST IN • FRESH">⚡ अभी आया • FRESH</span>
+                data-en="⚡ JUST IN • FRESH">{{ '⚡ JUST IN • FRESH' if ssr_lang == 'en' else '⚡ अभी आया • FRESH' }}</span>
               {% endif %}
             </div>
             <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
-              data-hi="{{ item.title_hi }}" data-en="{{ item.title_en }}">{{ item.title_hi }}</h2>
+              data-hi="{{ item.title_hi }}" data-en="{{ item.title_en }}">{{ item.title_en if ssr_lang == 'en' else item.title_hi }}</h2>
             <p class="text-xs text-white/70 line-clamp-2" data-hi="{{ item.summary }}"
-              data-en="{{ item.summary_en or item.summary }}">{{ item.summary }}</p>
+              data-en="{{ item.summary_en or item.summary }}">{{ (item.summary_en or item.summary) if ssr_lang == 'en' else item.summary }}</p>
           </div>
           <span class="font-tech text-[10px] uppercase tracking-wider text-white/70">
-            <span data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span>
+            <span data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age_en if ssr_lang == 'en' else item.relative_age }}</span>
             &bull; {{ item.source_name }}
           </span>
         </div>
@@ -362,7 +358,7 @@
         data-yt="{{ tr.youtube_id }}" data-title="{{ tr.title_en }}"
         onclick="openTrailerModal(this.dataset.yt, this.dataset.title)"
         class="group text-left border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors">
-        <div class="relative aspect-video overflow-hidden">
+        <div class="dark-surface relative aspect-video overflow-hidden">
           <img src="{{ tr.thumb_url }}" alt="{{ tr.title_en }}" referrerpolicy="no-referrer" loading="lazy"
             decoding="async" onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -379,7 +375,7 @@
           <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">{{ tr.source_name }}
             &bull; {{ tr.season }}</span>
           <h2 class="text-sm font-bold text-white group-hover:text-[#ff2e63]" data-hi="{{ tr.title_hi }}"
-            data-en="{{ tr.title_en }}">{{ tr.title_hi }}</h2>
+            data-en="{{ tr.title_en }}">{{ tr.title_en if ssr_lang == 'en' else tr.title_hi }}</h2>
           <p class="text-xs text-white/65 line-clamp-1">{{ tr.title_en }}</p>
         </div>
       </button>
@@ -440,7 +436,7 @@
       '<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">' + (m.volume_label || "MANGA") + '</span>' +
       '<div class="absolute bottom-2.5 left-2.5 right-2.5">' +
       '<p class="text-[11px] font-bold text-white line-clamp-2 leading-tight" data-hi="' + String(m.title_hi || "").replace(/"/g, "&quot;") + '" data-en="' + String(m.title_en || "").replace(/"/g, "&quot;") + '">' + titleTxt + '</p>' +
-      '<p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">' + (m.author || "") + ' &bull; ' + (m.chapters || "") + '</p>' +
+      '<p class="font-tech text-[9px] font-bold uppercase text-[#ff2e63] mt-1 truncate">' + (m.author || "") + ' &bull; ' + (m.card_chapters_short || m.chapters || "") + '</p>' +
       '</div>' +
       '</div>' +
       '</div>';

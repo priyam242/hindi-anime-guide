@@ -556,6 +556,18 @@ def _fetch_from_supabase() -> dict[str, Any]:
             cont_en = fact.get("cont") or ("Complete from Chapter 1" if is_finished else f"Start at Chapter 1 ({since_lbl})")
             cont_hi = fact.get("cont_hi") or ("सीधे Chapter 1 से शुरुआत करें" if is_finished else f"Chapter 1 से पढ़ना शुरू करें ({since_lbl})")
             badge_vol = f"VOL. {int(vol_num):02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else ("HIATUS" if is_hiatus else (f"EST. {start_y}" if start_y else "SERIAL")))
+            if ch_num and vol_num:
+                card_ch_short = f"{ch_num} Ch • {vol_num} Vols"
+            elif ch_num:
+                card_ch_short = f"{ch_num} Ch"
+            elif vol_num:
+                card_ch_short = f"{vol_num} Vols"
+            elif is_finished:
+                card_ch_short = "Completed"
+            elif is_hiatus:
+                card_ch_short = "On Hiatus"
+            else:
+                card_ch_short = "Ongoing"
 
             manga_items.append(
                 {
@@ -576,6 +588,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "latest_volume_label": latest_vol_label,
                     "chapters": str(chapters_label),
                     "chapters_label": str(chapters_label),
+                    "card_chapters_short": card_ch_short,
                     "continue_from_chapter": cont_en,
                     "continue_from_en": cont_en,
                     "continue_from_hi": cont_hi,
@@ -1052,6 +1065,25 @@ GUIDE_CATEGORY_LABELS = {
 }
 
 
+def _strip_mixed_english_from_hindi_md(md_text: str) -> str:
+    """Keep Hindi guide pure Hindi cleanly by filtering standalone all-ASCII English summary paragraphs and parenthesized English heading suffixes."""
+    out_blocks: list[str] = []
+    for raw_block in (md_text or "").split("\n\n"):
+        blk = raw_block.strip()
+        if not blk:
+            continue
+        if blk.startswith("#"):
+            # Clean "(Introduction & Overview)" bilingual English tags off Hindi headings
+            blk = re.sub(r"\s*\([A-Za-z0-9\s&/,:-]+\)\s*$", "", blk).strip()
+            out_blocks.append(blk)
+            continue
+        if not re.search(r"[\u0900-\u097F]", blk):
+            # Standalone English paragraph inserted inside original seed -> hide in Hindi view so HI stays pure Hindi
+            continue
+        out_blocks.append(blk)
+    return "\n\n".join(out_blocks)
+
+
 def get_guides_list(category: str = "") -> dict[str, Any]:
     """Load all published editorial guides from Postgres `article` table."""
     active_cat = (category or "").strip().lower()
@@ -1059,9 +1091,11 @@ def get_guides_list(category: str = "") -> dict[str, Any]:
         rows = conn.execute(
             text(
                 """
-                SELECT id, slug, title, meta_description, content_md, published_at,
-                       category, anime_title_hi, anime_title_en, is_featured,
-                       reading_time_minutes, cover_image
+                SELECT id, slug, title, COALESCE(title_en, anime_title_en, title) AS title_en_resolved,
+                       meta_description, COALESCE(meta_description_en, '') AS meta_description_en,
+                       content_md, COALESCE(content_en_md, '') AS content_en_md,
+                       published_at, category, anime_title_hi, anime_title_en,
+                       is_featured, reading_time_minutes, cover_image
                 FROM article
                 ORDER BY is_featured DESC, id ASC
                 """
@@ -1075,25 +1109,36 @@ def get_guides_list(category: str = "") -> dict[str, Any]:
         cat_counts[cat_key] = cat_counts.get(cat_key, 0) + 1
         cat_hi, cat_en = GUIDE_CATEGORY_LABELS.get(cat_key, (cat_key.upper(), cat_key.upper()))
         md_txt = r.get("content_md") or ""
+        en_md_txt = r.get("content_en_md") or ""
         wcount = len(md_txt.split())
+        wcount_en = len(en_md_txt.split()) if en_md_txt else wcount
         pub_dt = r.get("published_at")
         pub_lbl = pub_dt.strftime("%d %b %Y") if hasattr(pub_dt, "strftime") else "November 2026"
         cov = (r.get("cover_image") or "").strip()
         if cov and not cov.startswith("http"):
             cov = ""
+        title_hi = r["title"]
+        title_en = (r.get("title_en_resolved") or r.get("anime_title_en") or r["title"]).strip()
+        meta_hi = r.get("meta_description") or ""
+        meta_en = (r.get("meta_description_en") or meta_hi).strip()
         item = {
             "id": r["id"],
             "slug": r["slug"],
-            "title": r["title"],
-            "meta_description": r.get("meta_description") or "",
+            "title": title_hi,
+            "title_hi": title_hi,
+            "title_en": title_en,
+            "meta_description": meta_hi,
+            "meta_description_hi": meta_hi,
+            "meta_description_en": meta_en,
             "category": cat_key,
             "category_label_hi": cat_hi,
             "category_label_en": cat_en,
-            "anime_title_hi": r.get("anime_title_hi") or r["title"],
-            "anime_title_en": r.get("anime_title_en") or r["title"],
+            "anime_title_hi": r.get("anime_title_hi") or title_hi,
+            "anime_title_en": r.get("anime_title_en") or title_en,
             "is_featured": bool(r.get("is_featured")),
             "reading_time_minutes": r.get("reading_time_minutes") or max(5, round(wcount / 165)),
             "word_count": wcount,
+            "word_count_en": wcount_en,
             "published_label": pub_lbl,
             "cover_image": cov,
         }
@@ -1113,7 +1158,7 @@ def get_guides_list(category: str = "") -> dict[str, Any]:
 
 
 def get_guide_detail(slug: str) -> dict[str, Any] | None:
-    """Resolve a single editorial guide by slug with rendered semantic HTML and related guides."""
+    """Resolve a single editorial guide by slug with pure Hindi and pure English semantic HTML."""
     target = (slug or "").strip().lower()
     if not target:
         return None
@@ -1122,9 +1167,11 @@ def get_guide_detail(slug: str) -> dict[str, Any] | None:
         row = conn.execute(
             text(
                 """
-                SELECT id, slug, title, meta_description, content_md, published_at,
-                       category, anime_title_hi, anime_title_en, is_featured,
-                       reading_time_minutes, cover_image
+                SELECT id, slug, title, COALESCE(title_en, anime_title_en, title) AS title_en_resolved,
+                       meta_description, COALESCE(meta_description_en, '') AS meta_description_en,
+                       content_md, COALESCE(content_en_md, '') AS content_en_md,
+                       published_at, category, anime_title_hi, anime_title_en,
+                       is_featured, reading_time_minutes, cover_image
                 FROM article
                 WHERE LOWER(slug) = :slug
                 LIMIT 1
@@ -1137,28 +1184,43 @@ def get_guide_detail(slug: str) -> dict[str, Any] | None:
         return None
     cat_key = (row.get("category") or "watch-order").lower()
     cat_hi, cat_en = GUIDE_CATEGORY_LABELS.get(cat_key, (cat_key.upper(), cat_key.upper()))
-    md_txt = row.get("content_md") or ""
-    wcount = len(md_txt.split())
+    md_hi_raw = row.get("content_md") or ""
+    md_hi_pure = _strip_mixed_english_from_hindi_md(md_hi_raw) or md_hi_raw
+    md_en = (row.get("content_en_md") or "").strip()
+    wcount = len(md_hi_raw.split())
+    wcount_en = len(md_en.split()) if md_en else wcount
     pub_dt = row.get("published_at")
     pub_lbl = pub_dt.strftime("%d %b %Y") if hasattr(pub_dt, "strftime") else "November 2026"
     cov = (row.get("cover_image") or "").strip()
     if cov and not cov.startswith("http"):
         cov = ""
 
+    title_hi = row["title"]
+    title_en = (row.get("title_en_resolved") or row.get("anime_title_en") or title_hi).strip()
+    meta_hi = row.get("meta_description") or ""
+    meta_en = (row.get("meta_description_en") or meta_hi).strip()
+
     guide = {
         "id": row["id"],
         "slug": row["slug"],
-        "title": row["title"],
-        "meta_description": row.get("meta_description") or "",
-        "content_md": md_txt,
-        "content_html": _render_markdown_html(md_txt),
+        "title": title_hi,
+        "title_hi": title_hi,
+        "title_en": title_en,
+        "meta_description": meta_hi,
+        "meta_description_hi": meta_hi,
+        "meta_description_en": meta_en,
+        "content_md": md_hi_raw,
+        "content_html": _render_markdown_html(md_hi_pure),
+        "content_html_hi": _render_markdown_html(md_hi_pure),
+        "content_html_en": _render_markdown_html(md_en) if md_en else _render_markdown_html(md_hi_raw),
         "category": cat_key,
         "category_label_hi": cat_hi,
         "category_label_en": cat_en,
-        "anime_title_hi": row.get("anime_title_hi") or row["title"],
-        "anime_title_en": row.get("anime_title_en") or row["title"],
+        "anime_title_hi": row.get("anime_title_hi") or title_hi,
+        "anime_title_en": row.get("anime_title_en") or title_en,
         "reading_time_minutes": row.get("reading_time_minutes") or max(5, round(wcount / 165)),
         "word_count": wcount,
+        "word_count_en": wcount_en,
         "published_label": pub_lbl,
         "cover_image": cov,
     }

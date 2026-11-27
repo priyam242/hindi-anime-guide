@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% set ssr_lang = req_lang(request) %}
 
 {% block title %}{{ ('Search: ' ~ q ~ ' — ') if q else '' }}Explore All Anime, Manga &amp; News — Hindi Anime Guide{% endblock %}
 {% block og_title %}{{ ('Search: ' ~ q ~ ' — ') if q else '' }}Explore All Anime, Manga &amp; News — Hindi Anime Guide{% endblock %}
@@ -16,7 +17,7 @@
                 data-en="GLOBAL DISCOVERY • MULTI-FILTER SEARCH">ग्लोबल डिस्कवरी &bull; MULTI-FILTER SEARCH</span>
           <h1 class="font-display-shonen text-2xl sm:text-4xl text-white"
               data-hi="सभी एनीमे, मंगा और न्यूज़ एक्सप्लोर करें"
-              data-en="EXPLORE ALL ANIME, MANGA &amp; NEWS">सभी एनीमे, मंगा और न्यूज़ एक्सप्लोर करें</h1>
+              data-en="EXPLORE ALL ANIME, MANGA &amp; NEWS">{{ 'EXPLORE ALL ANIME, MANGA & NEWS' if ssr_lang == 'en' else 'सभी एनीमे, मंगा और न्यूज़ एक्सप्लोर करें' }}</h1>
         </div>
         <span id="explore-match-counter" class="font-tech text-xs font-bold uppercase tracking-widest text-white/75">
           {{ total_matched }} <span data-hi="परिणाम मिले" data-en="RESULTS FOUND">परिणाम मिले</span>
@@ -78,7 +79,7 @@
          data-explore-card
          data-search="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.summary_en ~ ' ' ~ item.badge)|lower }}"
          class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
-        <div class="relative aspect-[16/10] overflow-hidden bg-[#06070c]">
+        <div class="dark-surface relative aspect-[16/10] overflow-hidden bg-[#06070c]">
           {% if item.cover_url %}
           <img src="{{ item.cover_url }}" alt="{{ item.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
                onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
@@ -103,11 +104,11 @@
           <div class="space-y-1">
             <h2 class="text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]"
                 data-hi="{{ item.title_hi }}"
-                data-en="{{ item.title_en }}">{{ item.title_hi }}</h2>
+                data-en="{{ item.title_en }}">{{ item.title_en if ssr_lang == 'en' else item.title_hi }}</h2>
             <p class="text-[11px] font-tech uppercase tracking-wider text-white/65 line-clamp-1">{{ item.title_en }}</p>
             <p class="text-xs text-white/70 line-clamp-2"
                data-hi="{{ item.summary_hi }}"
-               data-en="{{ item.summary_en }}">{{ item.summary_hi }}</p>
+               data-en="{{ item.summary_en }}">{{ item.summary_en if ssr_lang == 'en' else item.summary_hi }}</p>
           </div>
           <div class="pt-2 border-t border-white/10 flex items-center justify-between gap-2 font-tech text-[10px] font-bold uppercase text-white/70">
             <span class="truncate">{{ item.meta_left }}</span>

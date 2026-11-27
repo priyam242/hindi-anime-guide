@@ -1,6 +1,8 @@
 {% from "partials/logo.html" import brand_logo %}
+{% set ssr_lang = req_lang(request) %}
+{% set ssr_theme = req_theme(request) %}
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="{{ ssr_lang }}" data-lang="{{ ssr_lang }}" class="{{ 'light-theme' if ssr_theme == 'light' else 'dark' }}">
 
 <head>
   <meta charset="UTF-8">
@@ -42,12 +44,35 @@
         img.src = fallbackUrl;
       }
     };
+    window.hagSetCookie = function (name, val) {
+      try { document.cookie = name + "=" + encodeURIComponent(val) + "; Path=/; Max-Age=31536000; SameSite=Lax"; } catch (e) { }
+    };
+    window.hagGetCookie = function (name) {
+      try {
+        var m = document.cookie.match(new RegExp("(?:^|;\\s*)" + name + "=([^;]+)"));
+        return m ? decodeURIComponent(m[1]) : "";
+      } catch (e) { return ""; }
+    };
     (function () {
       try {
-        if (localStorage.getItem("hag_theme") === "light") {
+        var cTheme = window.hagGetCookie("hag_theme");
+        var theme = (cTheme === "light" || cTheme === "dark") ? cTheme : (localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
+        if (theme === "light") {
           document.documentElement.classList.add("light-theme");
           document.documentElement.classList.remove("dark");
+        } else {
+          document.documentElement.classList.remove("light-theme");
+          document.documentElement.classList.add("dark");
         }
+        localStorage.setItem("hag_theme", theme);
+        window.hagSetCookie("hag_theme", theme);
+
+        var cLang = window.hagGetCookie("hag_lang");
+        var lang = (cLang === "en" || cLang === "hi") ? cLang : (localStorage.getItem("hag_lang") === "en" ? "en" : "hi");
+        document.documentElement.lang = lang;
+        document.documentElement.dataset.lang = lang;
+        localStorage.setItem("hag_lang", lang);
+        window.hagSetCookie("hag_lang", lang);
       } catch (e) { }
     })();
   </script>
@@ -222,10 +247,59 @@
 
     html.light-theme input,
     html.light-theme select,
+    html.light-theme select option,
     html.light-theme textarea {
       background-color: #ffffff !important;
       color: #090b10 !important;
-      border-color: rgba(9, 11, 16, 0.22) !important;
+      border-color: rgba(9, 11, 16, 0.28) !important;
+    }
+
+    html.light-theme input::placeholder,
+    html.light-theme textarea::placeholder {
+      color: #525866 !important;
+      opacity: 1 !important;
+    }
+
+    /* Protect dark-backdrop hero stages, posters & media overlays in Light Theme (prevents black-on-black) */
+    html.light-theme .dark-surface,
+    html.light-theme section.dark-surface {
+      background-color: #06070c !important;
+      color: #ffffff !important;
+    }
+
+    html.light-theme .dark-surface .text-white,
+    html.light-theme .dark-surface .text-white\/90,
+    html.light-theme .dark-surface .text-white\/85,
+    html.light-theme .dark-surface .text-white\/80,
+    html.light-theme .dark-surface .text-white\/75,
+    html.light-theme .dark-surface .text-white\/70,
+    html.light-theme .dark-surface .text-white\/65,
+    html.light-theme .dark-surface .text-white\/60 {
+      color: #ffffff !important;
+    }
+
+    html.light-theme .dark-surface .text-\[\#ff2e63\] {
+      color: #ff4d79 !important;
+    }
+
+    html.light-theme .dark-surface .bg-white\/5,
+    html.light-theme .dark-surface .bg-white\/10,
+    html.light-theme .dark-surface .bg-white\/\[0\.02\],
+    html.light-theme .dark-surface .bg-white\/\[0\.03\] {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    html.light-theme .dark-surface .border-white\/10,
+    html.light-theme .dark-surface .border-white\/15,
+    html.light-theme .dark-surface .border-white\/20,
+    html.light-theme .dark-surface .border-white\/25 {
+      border-color: rgba(255, 255, 255, 0.24) !important;
+    }
+
+    html.light-theme .dark-surface a.bg-white,
+    html.light-theme .dark-surface button.bg-white,
+    html.light-theme .dark-surface .text-\[\#06070c\] {
+      color: #06070c !important;
     }
 
     html.light-theme header .hag-title-main {
@@ -288,7 +362,7 @@
           <input id="global-search-input" type="search" name="q" value="{{ q or '' }}"
             data-hi-placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
             data-en-placeholder="Search anime, manga, news or trailers... (Press /)"
-            placeholder="एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)"
+            placeholder="{{ 'Search anime, manga, news or trailers... (Press /)' if ssr_lang == 'en' else 'एनीमे, मंगा, न्यूज़ या ट्रेलर खोजें... (Press /)' }}"
             class="w-full min-h-[38px] pl-10 pr-4 py-2 rounded bg-white/5 border border-white/15 text-xs text-white placeholder-white/50 focus:outline-none focus:border-[#ff2e63] focus:bg-white/10 transition-all" />
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#ff2e63]"></i>
         </div>
@@ -300,22 +374,21 @@
         <div id="lang-toggle-group"
           class="hidden md:inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden shrink-0 whitespace-nowrap font-tech text-[11px] font-bold">
           <button type="button" id="lang-btn-hi" onclick="hagSetLang('hi')"
-            class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 bg-[#cf0f46] text-white whitespace-nowrap transition-colors">ह</button>
+            class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 whitespace-nowrap transition-colors {{ 'text-white/80 hover:text-white' if ssr_lang == 'en' else 'bg-[#cf0f46] text-white' }}">ह</button>
           <button type="button" id="lang-btn-en" onclick="hagSetLang('en')"
-            class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 text-white/80 hover:text-white whitespace-nowrap transition-colors">EN</button>
+            class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 whitespace-nowrap transition-colors {{ 'bg-[#cf0f46] text-white' if ssr_lang == 'en' else 'text-white/80 hover:text-white' }}">EN</button>
         </div>
 
         <!-- Dark <-> Light Theme Toggle -->
         <button type="button" id="theme-toggle-btn" onclick="hagToggleTheme()" aria-label="Toggle Dark or Light Theme"
           class="hidden md:inline-flex w-9 h-9 items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
-          <span id="theme-toggle-icon" class="text-sm leading-none">☀️</span>
+          <span id="theme-toggle-icon" class="text-sm leading-none">{{ '🌙' if ssr_theme == 'light' else '☀️' }}</span>
         </button>
 
         <button type="button" id="watchlist-nav-btn" onclick="hagOpenWatchlistDrawer()"
           class="inline-flex items-center gap-1.5 sm:gap-2 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
           <span class="text-[#ff2e63]" aria-hidden="true">❤️</span>
-          <span class="sr-only sm:not-sr-only whitespace-nowrap" data-hi="मेरी लिस्ट" data-en="My List">मेरी
-            लिस्ट</span>
+          <span class="sr-only sm:not-sr-only whitespace-nowrap" data-hi="मेरी लिस्ट" data-en="My List">{{ 'My List' if ssr_lang == 'en' else 'मेरी लिस्ट' }}</span>
           <span id="watchlist-count-badge"
             class="px-1.5 py-0.5 rounded bg-[#cf0f46] text-white text-[10px] leading-none">0</span>
         </button>
@@ -324,7 +397,7 @@
           <button type="button" id="auth-login-btn" onclick="hagOpenAuthModal('login')"
             class="inline-flex items-center gap-1.5 sm:gap-2 min-h-[36px] px-2.5 sm:px-3.5 py-1.5 rounded bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors shadow-[0_0_20px_rgba(255,46,99,0.35)]">
             <i class="fa-solid fa-user text-[11px]"></i>
-            <span class="whitespace-nowrap" data-hi="लॉगिन" data-en="Login">लॉगिन</span>
+            <span class="whitespace-nowrap" data-hi="लॉगिन" data-en="Login">{{ 'Login' if ssr_lang == 'en' else 'लॉगिन' }}</span>
           </button>
 
           <div id="auth-user-menu" class="hidden relative shrink-0 whitespace-nowrap">
@@ -404,7 +477,7 @@
           <a href="{{ href }}"
             class="flex items-center gap-2.5 min-h-[36px] px-3 py-1.5 whitespace-nowrap transition-colors {{ 'border-l-4 border-[#ff2e63] bg-[#ff2e63]/15 text-white' if cur == key else 'border-l-4 border-transparent text-white/75 hover:text-white hover:bg-white/5' }}">
             <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">{{ emoji }}</span>
-            <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_hi }}</span>
+            <span class="whitespace-nowrap" data-hi="{{ label_hi }}" data-en="{{ label_en }}">{{ label_en if ssr_lang == 'en' else label_hi }}</span>
           </a>
           {% endfor %}
         </nav>
@@ -413,13 +486,13 @@
       <!-- SECTION 2: OTAKU ARENA • PLAY & WIN XP -->
       <div class="space-y-1 pt-2 border-t border-white/10">
         <p class="px-2 font-tech text-[10px] font-bold uppercase tracking-[0.2em] text-[#ff2e63]"
-          data-hi="ओटाकू एरीना • PLAY &amp; WIN XP" data-en="OTAKU ARENA • PLAY &amp; WIN XP">ओटाकू एरीना &bull; PLAY &amp; WIN XP</p>
+          data-hi="ओटाकू एरीना • PLAY &amp; WIN XP" data-en="OTAKU ARENA • PLAY &amp; WIN XP">{{ 'OTAKU ARENA • PLAY & WIN XP' if ssr_lang == 'en' else 'ओटाकू एरीना • PLAY & WIN XP' }}</p>
         <div class="space-y-0.5 font-tech text-xs font-bold uppercase tracking-wider">
           <a href="/#daily-anime-clash" onclick="if (window.innerWidth < 1280) hagSetSidebar(false);"
             class="flex items-center justify-between gap-2 min-h-[36px] px-3 py-1.5 text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="flex items-center gap-2.5 min-w-0">
               <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">⚔️</span>
-              <span class="truncate" data-hi="आज का महामुकाबला" data-en="Daily Clash Vote">आज का महामुकाबला</span>
+              <span class="truncate" data-hi="आज का महामुकाबला" data-en="Daily Clash Vote">{{ 'Daily Clash Vote' if ssr_lang == 'en' else 'आज का महामुकाबला' }}</span>
             </span>
             <span class="px-1.5 py-0.5 bg-[#ff2e63]/20 border border-[#ff2e63]/50 text-[#ff2e63] text-[9px] shrink-0">+25 XP</span>
           </a>
@@ -427,7 +500,7 @@
             class="w-full min-h-[36px] flex items-center justify-between gap-2 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="flex items-center gap-2.5 min-w-0">
               <span class="w-4 text-center text-xs leading-none shrink-0" aria-hidden="true">🎲</span>
-              <span class="truncate" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Mystery Spin">सरप्राइज़ एनीमे स्पिन</span>
+              <span class="truncate" data-hi="सरप्राइज़ एनीमे स्पिन" data-en="Mystery Spin">{{ 'Mystery Spin' if ssr_lang == 'en' else 'सरप्राइज़ एनीमे स्पिन' }}</span>
             </span>
             <span class="px-1.5 py-0.5 bg-[#ff2e63]/20 border border-[#ff2e63]/50 text-[#ff2e63] text-[9px] shrink-0">+25 XP</span>
           </button>
@@ -435,7 +508,7 @@
             class="w-full min-h-[36px] flex items-center justify-between gap-2 px-3 py-1.5 text-left text-white/85 hover:text-white hover:bg-[#ff2e63]/15 border-l-4 border-transparent hover:border-[#ff2e63] whitespace-nowrap transition-colors">
             <span class="flex items-center gap-2.5 min-w-0">
               <span class="w-4 text-center text-xs leading-none text-[#ff2e63] shrink-0" aria-hidden="true">❤️</span>
-              <span class="truncate" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">मेरी वॉचलिस्ट</span>
+              <span class="truncate" data-hi="मेरी वॉचलिस्ट" data-en="My Watchlist">{{ 'My Watchlist' if ssr_lang == 'en' else 'मेरी वॉचलिस्ट' }}</span>
             </span>
             <span id="sb-watchlist-count-badge" class="px-1.5 py-0.5 rounded bg-[#cf0f46] text-white text-[9px] leading-none shrink-0">0</span>
           </button>
@@ -447,13 +520,13 @@
         <div
           class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[11px] font-bold">
           <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')"
-            class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 bg-[#cf0f46] text-white">ह</button>
+            class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 {{ 'text-white/80' if ssr_lang == 'en' else 'bg-[#cf0f46] text-white' }}">ह</button>
           <button type="button" id="sb-lang-btn-en" onclick="hagSetLang('en')"
-            class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 text-white/80">EN</button>
+            class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 {{ 'bg-[#cf0f46] text-white' if ssr_lang == 'en' else 'text-white/80' }}">EN</button>
         </div>
         <button type="button" id="sb-theme-toggle-btn" onclick="hagToggleTheme()"
           class="min-h-[36px] px-3 py-1.5 border border-white/20 bg-white/5 text-white font-tech text-[11px] font-bold uppercase whitespace-nowrap">
-          <span id="sb-theme-label">☀️ Light</span>
+          <span id="sb-theme-label">{{ '🌙 Dark' if ssr_theme == 'light' else '☀️ Light' }}</span>
         </button>
       </div>
     </div>
@@ -481,7 +554,7 @@
             <button type="button" onclick="hagOpenAuthModal('login')"
               class="w-full min-h-[36px] px-3 py-1.5 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors">
               <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
-              <span data-hi="लॉगिन / साइन अप" data-en="Login / Sign Up">लॉगिन / साइन अप</span>
+              <span data-hi="लॉगिन / साइन अप" data-en="Login / Sign Up">{{ 'Login / Sign Up' if ssr_lang == 'en' else 'लॉगिन / साइन अप' }}</span>
             </button>
           </div>
 
@@ -1324,9 +1397,13 @@
         if (cb) cb.classList.add("hidden");
       };
 
-      /* === INSTANT HINDI <-> ENGLISH I18N ENGINE (localStorage: hag_lang) === */
+      /* === INSTANT HINDI <-> ENGLISH I18N ENGINE (cookie + localStorage: hag_lang) === */
       window.hagGetLang = function () {
-        try { return localStorage.getItem("hag_lang") === "en" ? "en" : "hi"; } catch (e) { return "hi"; }
+        try {
+          var c = window.hagGetCookie ? window.hagGetCookie("hag_lang") : "";
+          if (c === "en" || c === "hi") return c;
+          return localStorage.getItem("hag_lang") === "en" ? "en" : "hi";
+        } catch (e) { return "hi"; }
       };
 
       window.hagApplyLang = function (lang) {
@@ -1387,10 +1464,11 @@
       window.hagSetLang = function (lang) {
         var next = lang === "en" ? "en" : "hi";
         try { localStorage.setItem("hag_lang", next); } catch (e) { }
+        if (window.hagSetCookie) window.hagSetCookie("hag_lang", next);
         window.hagApplyLang(next);
       };
 
-      /* === DARK <-> LIGHT THEME CONVERTER (localStorage: hag_theme) === */
+      /* === DARK <-> LIGHT THEME CONVERTER (cookie + localStorage: hag_theme) === */
       window.hagApplyTheme = function (theme) {
         var isLight = theme === "light";
         if (isLight) {
@@ -1410,6 +1488,7 @@
         var isLight = document.documentElement.classList.contains("light-theme");
         var next = isLight ? "dark" : "light";
         try { localStorage.setItem("hag_theme", next); } catch (e) { }
+        if (window.hagSetCookie) window.hagSetCookie("hag_theme", next);
         window.hagApplyTheme(next);
       };
 
@@ -1419,7 +1498,9 @@
         fetchCurrentSession();
         window.hagApplyLang(window.hagGetLang());
         try {
-          window.hagApplyTheme(localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
+          var cT = window.hagGetCookie ? window.hagGetCookie("hag_theme") : "";
+          var curTheme = (cT === "light" || cT === "dark") ? cT : (localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
+          window.hagApplyTheme(curTheme);
         } catch (e) { }
         try {
           if (!localStorage.getItem("hag_cookie_consent_v2")) {

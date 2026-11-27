@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% set ssr_lang = req_lang(request) %}
 
-{% block title %}Editorial Anime &amp; Manga Guides in Hindi &amp; English — Hindi Anime Guide{% endblock %}
+{% block title %}{{ 'Complete Anime & Manga Editorial Guides — Hindi Anime Guide' if ssr_lang == 'en' else 'Editorial Anime & Manga Guides in Hindi & English — Hindi Anime Guide' }}{% endblock %}
 {% block og_title %}Editorial Anime &amp; Manga Guides Hub — Hindi Anime Guide{% endblock %}
 {% block og_description %}20+ in-depth bilingual watch-order roadmaps, legal India streaming guides (Crunchyroll, Netflix, Muse Asia), and authentic manga buying advice.{% endblock %}
 
@@ -13,19 +14,19 @@
         <div class="space-y-2">
           <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]"
                 data-hi="एडिटोरियल गाइड्स हब • LONG-FORM DOSSIERS"
-                data-en="EDITORIAL GUIDES HUB • LONG-FORM DOSSIERS">एडिटोरियल गाइड्स हब &bull; LONG-FORM DOSSIERS</span>
+                data-en="EDITORIAL GUIDES HUB • LONG-FORM DOSSIERS">{{ 'EDITORIAL GUIDES HUB • LONG-FORM DOSSIERS' if ssr_lang == 'en' else 'एडिटोरियल गाइड्स हब • LONG-FORM DOSSIERS' }}</span>
           <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white"
               data-hi="संपूर्ण एनीमे व मंगा हिंदी गाइड्स"
-              data-en="COMPLETE ANIME &amp; MANGA EDITORIAL GUIDES">संपूर्ण एनीमे व मंगा <span class="text-[#ff2e63]">हिंदी गाइड्स</span></h1>
+              data-en="COMPLETE ANIME &amp; MANGA EDITORIAL GUIDES">{{ 'COMPLETE ANIME & MANGA EDITORIAL GUIDES' if ssr_lang == 'en' else 'संपूर्ण एनीमे व मंगा हिंदी गाइड्स' }}</h1>
           <p class="max-w-3xl text-sm text-white/80 leading-relaxed"
              data-hi="वॉच ऑर्डर रोडमैप्स, 100% वैध भारतीय ओटीटी स्ट्रीमिंग गाइड्स (Crunchyroll, Netflix, Muse Asia, Ani-One, MangaPlus) और असली मंगा खरीदने के विस्तृत द्विभाषी लेख।"
              data-en="In-depth bilingual watch-order roadmaps, 100% legal Indian streaming comparisons, and authentic manga collecting guides tailored for Indian fans.">
-            वॉच ऑर्डर रोडमैप्स, 100% वैध भारतीय ओटीटी स्ट्रीमिंग गाइड्स (Crunchyroll, Netflix, Muse Asia, Ani-One, MangaPlus) और असली मंगा खरीदने के विस्तृत द्विभाषी लेख।
+            {{ 'In-depth bilingual watch-order roadmaps, 100% legal Indian streaming comparisons, and authentic manga collecting guides tailored for Indian fans.' if ssr_lang == 'en' else 'वॉच ऑर्डर रोडमैप्स, 100% वैध भारतीय ओटीटी स्ट्रीमिंग गाइड्स (Crunchyroll, Netflix, Muse Asia, Ani-One, MangaPlus) और असली मंगा खरीदने के विस्तृत द्विभाषी लेख।' }}
           </p>
         </div>
         <div class="shrink-0 flex items-center gap-3">
           <span class="px-3.5 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/10 font-tech text-xs font-bold uppercase tracking-widest text-white">
-            {{ guides|length }} <span data-hi="गाइड्स उपलब्ध" data-en="GUIDES PUBLISHED">गाइड्स उपलब्ध</span>
+            {{ guides|length }} <span data-hi="गाइड्स उपलब्ध" data-en="GUIDES PUBLISHED">{{ 'GUIDES PUBLISHED' if ssr_lang == 'en' else 'गाइड्स उपलब्ध' }}</span>
           </span>
         </div>
       </div>
@@ -34,13 +35,13 @@
       <div class="flex flex-wrap items-center gap-2 pt-2">
         <a href="/guides"
            class="min-h-[36px] px-3.5 py-1.5 inline-flex items-center border font-tech text-xs font-bold uppercase tracking-wider transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if not active_cat else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
-          <span data-hi="सभी ({{ total_guides }})" data-en="ALL ({{ total_guides }})">सभी ({{ total_guides }})</span>
+          <span data-hi="सभी ({{ total_guides }})" data-en="ALL ({{ total_guides }})">{{ ('ALL (' ~ total_guides ~ ')') if ssr_lang == 'en' else ('सभी (' ~ total_guides ~ ')') }}</span>
         </a>
         {% for ckey, chi, cen in categories %}
         {% set is_act = active_cat == ckey %}
         <a href="/guides?cat={{ ckey }}"
            class="min-h-[36px] px-3.5 py-1.5 inline-flex items-center border font-tech text-xs font-bold uppercase tracking-wider transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if is_act else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
-          <span data-hi="{{ chi }}" data-en="{{ cen }}">{{ chi }}</span>
+          <span data-hi="{{ chi }}" data-en="{{ cen }}">{{ cen if ssr_lang == 'en' else chi }}</span>
         </a>
         {% endfor %}
       </div>
@@ -52,7 +53,7 @@
       <article class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <a href="/guides/{{ g.slug }}" class="block aspect-[16/10] overflow-hidden relative bg-[#06070c]">
           {% if g.cover_image %}
-          <img src="{{ g.cover_image }}" alt="{{ g.anime_title_en or g.title }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+          <img src="{{ g.cover_image }}" alt="{{ g.anime_title_en or g.title_en }}" referrerpolicy="no-referrer" loading="lazy" decoding="async"
                onerror="hagImgFallback(this, '/static/media/emblem_icon.webp')"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
@@ -61,7 +62,7 @@
             {{ g.category_label_en }}
           </span>
           <span class="absolute bottom-3 right-3 px-2 py-0.5 bg-[#06070c]/90 border border-white/20 font-tech text-[10px] font-bold text-white">
-            {{ g.reading_time_minutes }} MIN &bull; {{ g.word_count }} WORDS
+            {{ g.reading_time_minutes }} MIN &bull; {{ g.word_count_en if ssr_lang == 'en' else g.word_count }} WORDS
           </span>
         </a>
 
@@ -73,15 +74,17 @@
             </div>
             <h2 class="text-base sm:text-lg font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
               <a href="/guides/{{ g.slug }}"
-                 data-hi="{{ g.title }}"
-                 data-en="{{ g.anime_title_en or g.title }}">{{ g.title }}</a>
+                 data-hi="{{ g.title_hi }}"
+                 data-en="{{ g.title_en }}">{{ g.title_en if ssr_lang == 'en' else g.title_hi }}</a>
             </h2>
-            <p class="text-xs text-white/75 leading-relaxed line-clamp-3">{{ g.meta_description }}</p>
+            <p class="text-xs text-white/75 leading-relaxed line-clamp-3"
+               data-hi="{{ g.meta_description_hi }}"
+               data-en="{{ g.meta_description_en }}">{{ g.meta_description_en if ssr_lang == 'en' else g.meta_description_hi }}</p>
           </div>
 
           <a href="/guides/{{ g.slug }}"
              class="inline-flex min-h-[38px] items-center justify-between px-3.5 py-2 border border-white/15 group-hover:border-[#ff2e63] bg-white/[0.03] font-tech text-xs font-bold uppercase tracking-wider text-white">
-            <span data-hi="पूरी गाइड पढ़ें" data-en="READ FULL GUIDE">पूरी गाइड पढ़ें</span>
+            <span data-hi="पूरी गाइड पढ़ें" data-en="READ FULL GUIDE">{{ 'READ FULL GUIDE' if ssr_lang == 'en' else 'पूरी गाइड पढ़ें' }}</span>
             <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
           </a>
         </div>

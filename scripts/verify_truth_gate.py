@@ -40,13 +40,13 @@ async def run_gate() -> int:
             text("SELECT id, title_en, title_hi, summary_en, summary_hi, image_url FROM anime_draft WHERE content_type='news' AND status='published'")
         ).mappings().all()
         mg_rows = conn.execute(
-            text("SELECT id, anilist_id, title_en, image_url FROM anime_draft WHERE content_type='manga' AND status='published'")
+            text("SELECT id, anilist_id, title_en, title_hi, image_url FROM anime_draft WHERE content_type='manga' AND status='published'")
         ).mappings().all()
         aw_rows = conn.execute(
             text("SELECT id, ceremony_id, category, winner_title, winner_poster FROM award_entry ORDER BY id ASC")
         ).mappings().all()
         art_rows = conn.execute(
-            text("SELECT id, slug, title, cover_image, content_md FROM article ORDER BY id ASC")
+            text("SELECT id, slug, title, cover_image, content_md, title_en, meta_description_en, content_en_md FROM article ORDER BY id ASC")
         ).mappings().all()
 
     # 1. Schedule Gate
@@ -70,10 +70,17 @@ async def run_gate() -> int:
         r["id"]
         for r in news_rows
         if re.search(r"[\u0900-\u097F]", r["summary_en"] or "")
-        or len((r["summary_en"] or "").strip()) < 25
+        or len((r["summary_en"] or "").strip()) < 200
+        or len((r["summary_hi"] or "").strip()) < 200
         or "stay on top of anime news" in (r["summary_en"] or "").lower()
     ]
-    news_hi_bad = [r["id"] for r in news_rows if phonetic_pat.search(r["title_hi"] or "") or not re.search(r"[\u0900-\u097F]", r["title_hi"] or "")]
+    news_hi_bad = [
+        r["id"]
+        for r in news_rows
+        if phonetic_pat.search(r["title_hi"] or "")
+        or not re.search(r"[\u0900-\u097F]", r["title_hi"] or "")
+        or ("युसा" in (r["summary_hi"] or "") and "कर रही हैं" in (r["summary_hi"] or ""))
+    ]
     news_boilerplate = [
         r["id"]
         for r in news_rows
@@ -97,21 +104,33 @@ async def run_gate() -> int:
     if news_boilerplate:
         errors.append(f"News old filler boilerplate present: {news_boilerplate}")
 
-    # 3. Manga Gate (anilist_id + flagship numeric payload)
+    # 3. Manga Gate (anilist_id + Devanagari title_hi + flagship numeric payload)
     mg_null = [r["id"] for r in mg_rows if not r["anilist_id"]]
     if mg_null:
         errors.append(f"Manga null anilist_id: {mg_null}")
+    mg_no_hi = [r["id"] for r in mg_rows if not re.search(r"[\u0900-\u097F]", r["title_hi"] or "")]
+    if mg_no_hi:
+        errors.append(f"Manga missing Devanagari in title_hi ({len(mg_no_hi)}): {mg_no_hi[:10]}")
     for m in data["manga"]:
         if any(k in m["title_en"].lower() for k in ("one piece", "dandadan", "blue lock", "solo leveling", "jujutsu kaisen", "berserk")):
             if not m.get("chapters_released") or not m.get("latest_volume") or not m.get("continue_from_chapter"):
                 errors.append(f"Manga flagship missing chapter/volume/continuation: {m['title_en']}")
 
-    # 4. Article Gate (>= 20 guides, each >= 800 words)
+    # 4. Article Gate (>= 20 guides, each >= 800 words in both HI & pure EN)
     if len(art_rows) < 20:
         errors.append(f"Article count {len(art_rows)} < 20")
     art_short = [a["slug"] for a in art_rows if len((a["content_md"] or "").split()) < 800]
     if art_short:
         errors.append(f"Article guides under 800 words: {art_short}")
+    art_en_bad = [
+        a["slug"]
+        for a in art_rows
+        if len((a["content_en_md"] or "").split()) < 800
+        or re.search(r"[\u0900-\u097F]", f"{a.get('title_en') or ''} {a.get('meta_description_en') or ''} {a.get('content_en_md') or ''}")
+        or not (a["title_en"] or "").strip()
+    ]
+    if art_en_bad:
+        errors.append(f"Article English versions missing/short/Devanagari-bleed ({len(art_en_bad)}): {art_en_bad[:5]}")
 
     # 5. Live Network Checks: All HTTP Images + All YouTube oEmbed Trailers
     sem = asyncio.Semaphore(30)
