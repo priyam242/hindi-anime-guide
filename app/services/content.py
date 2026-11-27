@@ -460,10 +460,11 @@ def _fetch_from_supabase() -> dict[str, Any]:
             text(
                 """
                 SELECT id, slug, title, meta_description, content_md,
-                       published_at, category, is_featured, reading_time_minutes, cover_image
+                       published_at, category, anime_title_hi, anime_title_en,
+                       is_featured, reading_time_minutes, cover_image
                 FROM article
-                ORDER BY is_featured DESC, published_at DESC NULLS LAST, id DESC
-                LIMIT 12
+                ORDER BY is_featured DESC, published_at DESC NULLS LAST, id ASC
+                LIMIT 30
                 """
             )
         ).mappings().all()
@@ -521,14 +522,14 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "id": f"art-{r['id']}",
                     "slug": r["slug"],
                     "title_hi": r["title"] or "",
-                    "title_en": en_title_guess or r["title"] or "",
+                    "title_en": r.get("anime_title_en") or en_title_guess or r["title"] or "",
                     "summary": _clean_text(r["meta_description"] or r["content_md"], 160),
                     "summary_en": _clean_text(r["meta_description"] or en_title_guess or r["title"], 160),
                     "body_paragraphs": paras[:8],
                     "image_url": img,
                     "category": (r.get("category") or "Hindi Guide").upper(),
                     "source_name": f"{r.get('reading_time_minutes') or 5} MIN READ",
-                    "source_url": f"/news/{r['slug']}",
+                    "source_url": f"/guides/{r['slug']}",
                     "external_url": "",
                     "date": date_str,
                     "relative_age": rel_age,
@@ -764,12 +765,197 @@ def get_news_detail(slug: str) -> dict[str, Any] | None:
     return found
 
 
-def get_sitemap_urls() -> tuple[list[str], list[str]]:
-    """Return all active anime and news slugs for dynamic XML sitemap."""
+def _render_markdown_html(md_text: str) -> str:
+    """Convert structured Markdown into clean semantic HTML paragraphs, headings, and lists."""
+    lines = (md_text or "").splitlines()
+    html_parts: list[str] = []
+    in_list = False
+
+    def _inline(txt: str) -> str:
+        escaped = (
+            txt.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+        return re.sub(r"\*\*(.+?)\*\*", r'<strong class="text-white font-bold">\1</strong>', escaped)
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            if in_list:
+                html_parts.append("</ul>")
+                in_list = False
+            continue
+        if line.startswith("### "):
+            if in_list:
+                html_parts.append("</ul>")
+                in_list = False
+            html_parts.append(f'<h3 class="font-heading text-lg sm:text-xl font-extrabold text-[#ff2e63] pt-3">{_inline(line[4:])}</h3>')
+        elif line.startswith("## "):
+            if in_list:
+                html_parts.append("</ul>")
+                in_list = False
+            html_parts.append(f'<h2 class="font-display-shonen text-xl sm:text-2xl text-white border-l-4 border-[#ff2e63] pl-3.5 pt-4">{_inline(line[3:])}</h2>')
+        elif line.startswith("- ") or line.startswith("* "):
+            if not in_list:
+                html_parts.append('<ul class="list-disc pl-5 space-y-2 text-white/85">')
+                in_list = True
+            html_parts.append(f"<li>{_inline(line[2:])}</li>")
+        else:
+            if in_list:
+                html_parts.append("</ul>")
+                in_list = False
+            html_parts.append(f'<p class="text-white/85 leading-relaxed">{_inline(line)}</p>')
+
+    if in_list:
+        html_parts.append("</ul>")
+    return "\n".join(html_parts)
+
+
+GUIDE_CATEGORY_LABELS = {
+    "watch-order": ("वॉच ऑर्डर", "WATCH ORDER"),
+    "rankings": ("टॉप रैंकिंग", "RANKINGS"),
+    "recommendations": ("सिफारिशें", "PICKS"),
+    "romance": ("रोमांस", "ROMANCE"),
+    "sports": ("स्पोर्ट्स", "SPORTS"),
+    "hindi-dub": ("हिंदी डब", "HINDI DUB"),
+    "platforms": ("ओटीटी प्लेटफॉर्म", "OTT PLATFORMS"),
+    "free-legal": ("फ्री व वैध", "FREE LEGAL"),
+    "dossiers": ("डोज़ियर", "DOSSIER"),
+    "manga-buying": ("मंगा गाइड", "MANGA GUIDE"),
+    "beginners": ("बिगिनर्स", "BEGINNERS"),
+    "seinen": ("सीनेन क्लासिक्स", "SEINEN"),
+    "movies": ("एनीमे मूवीज", "MOVIES"),
+    "industry": ("उद्योग विश्लेषण", "INDUSTRY"),
+    "isekai": ("इसेकाई गाइड", "ISEKAI"),
+}
+
+
+def get_guides_list(category: str = "") -> dict[str, Any]:
+    """Load all published editorial guides from Postgres `article` table."""
+    active_cat = (category or "").strip().lower()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, slug, title, meta_description, content_md, published_at,
+                       category, anime_title_hi, anime_title_en, is_featured,
+                       reading_time_minutes, cover_image
+                FROM article
+                ORDER BY is_featured DESC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    guides: list[dict[str, Any]] = []
+    cat_counts: dict[str, int] = {}
+    for r in rows:
+        cat_key = (r.get("category") or "watch-order").lower()
+        cat_counts[cat_key] = cat_counts.get(cat_key, 0) + 1
+        cat_hi, cat_en = GUIDE_CATEGORY_LABELS.get(cat_key, (cat_key.upper(), cat_key.upper()))
+        md_txt = r.get("content_md") or ""
+        wcount = len(md_txt.split())
+        pub_dt = r.get("published_at")
+        pub_lbl = pub_dt.strftime("%d %b %Y") if hasattr(pub_dt, "strftime") else "November 2026"
+        cov = (r.get("cover_image") or "").strip()
+        if cov and not cov.startswith("http"):
+            cov = ""
+        item = {
+            "id": r["id"],
+            "slug": r["slug"],
+            "title": r["title"],
+            "meta_description": r.get("meta_description") or "",
+            "category": cat_key,
+            "category_label_hi": cat_hi,
+            "category_label_en": cat_en,
+            "anime_title_hi": r.get("anime_title_hi") or r["title"],
+            "anime_title_en": r.get("anime_title_en") or r["title"],
+            "is_featured": bool(r.get("is_featured")),
+            "reading_time_minutes": r.get("reading_time_minutes") or max(5, round(wcount / 165)),
+            "word_count": wcount,
+            "published_label": pub_lbl,
+            "cover_image": cov,
+        }
+        if not active_cat or cat_key == active_cat:
+            guides.append(item)
+
+    cats_menu = [
+        (ck, GUIDE_CATEGORY_LABELS.get(ck, (ck.upper(), ck.upper()))[0], f"{GUIDE_CATEGORY_LABELS.get(ck, (ck.upper(), ck.upper()))[1]} ({cnt})")
+        for ck, cnt in cat_counts.items()
+    ]
+    return {
+        "guides": guides,
+        "total_guides": len(rows),
+        "categories": cats_menu,
+        "active_cat": active_cat,
+    }
+
+
+def get_guide_detail(slug: str) -> dict[str, Any] | None:
+    """Resolve a single editorial guide by slug with rendered semantic HTML and related guides."""
+    target = (slug or "").strip().lower()
+    if not target:
+        return None
+    bundle = get_guides_list()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT id, slug, title, meta_description, content_md, published_at,
+                       category, anime_title_hi, anime_title_en, is_featured,
+                       reading_time_minutes, cover_image
+                FROM article
+                WHERE LOWER(slug) = :slug
+                LIMIT 1
+                """
+            ),
+            {"slug": target},
+        ).mappings().first()
+
+    if not row:
+        return None
+    cat_key = (row.get("category") or "watch-order").lower()
+    cat_hi, cat_en = GUIDE_CATEGORY_LABELS.get(cat_key, (cat_key.upper(), cat_key.upper()))
+    md_txt = row.get("content_md") or ""
+    wcount = len(md_txt.split())
+    pub_dt = row.get("published_at")
+    pub_lbl = pub_dt.strftime("%d %b %Y") if hasattr(pub_dt, "strftime") else "November 2026"
+    cov = (row.get("cover_image") or "").strip()
+    if cov and not cov.startswith("http"):
+        cov = ""
+
+    guide = {
+        "id": row["id"],
+        "slug": row["slug"],
+        "title": row["title"],
+        "meta_description": row.get("meta_description") or "",
+        "content_md": md_txt,
+        "content_html": _render_markdown_html(md_txt),
+        "category": cat_key,
+        "category_label_hi": cat_hi,
+        "category_label_en": cat_en,
+        "anime_title_hi": row.get("anime_title_hi") or row["title"],
+        "anime_title_en": row.get("anime_title_en") or row["title"],
+        "reading_time_minutes": row.get("reading_time_minutes") or max(5, round(wcount / 165)),
+        "word_count": wcount,
+        "published_label": pub_lbl,
+        "cover_image": cov,
+    }
+    related = [g for g in bundle["guides"] if g["slug"].lower() != target][:3]
+    return {
+        "guide": guide,
+        "related_guides": related,
+        "total_guides": bundle["total_guides"],
+    }
+
+
+def get_sitemap_urls() -> tuple[list[str], list[str], list[str]]:
+    """Return all active anime, news, and editorial guide slugs for dynamic XML sitemap."""
     data = get_cached_content()
     anime_slugs = list(dict.fromkeys([sp["slug"] for sp in data["spotlight"]] + [s["slug"] for s in data["schedule"] if s.get("slug")]))
     news_slugs = list(dict.fromkeys([n["slug"] for n in data["news"] if n.get("slug")]))
-    return anime_slugs, news_slugs
+    guide_slugs = list(dict.fromkeys([g["slug"] for g in get_guides_list()["guides"] if g.get("slug")]))
+    return anime_slugs, news_slugs, guide_slugs
 
 
 _poll_lock = threading.Lock()
@@ -1101,7 +1287,7 @@ def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False
     data = get_cached_content()
     q = (query or "").strip().lower()
     active_type = (kind or "all").strip().lower()
-    if active_type not in ("all", "anime", "manga", "schedule", "news", "trailers"):
+    if active_type not in ("all", "anime", "guides", "manga", "schedule", "news", "trailers"):
         active_type = "all"
 
     items: list[dict[str, Any]] = []
@@ -1217,9 +1403,28 @@ def explore_catalog(query: str = "", kind: str = "all", hindi_only: bool = False
             }
         )
 
+    for g in get_guides_list()["guides"]:
+        items.append(
+            {
+                "kind": "guides",
+                "slug": g["slug"],
+                "title_hi": g["title"],
+                "title_en": g["anime_title_en"] or g["title"],
+                "summary_hi": g["meta_description"],
+                "summary_en": g["meta_description"],
+                "cover_url": g["cover_image"],
+                "url": f"/guides/{g['slug']}",
+                "badge": g["category_label_en"],
+                "meta_left": f"{g['reading_time_minutes']} MIN READ",
+                "meta_right": f"{g['word_count']} WORDS",
+                "hindi_dub": True,
+            }
+        )
+
     counts_by_type = {
         "all": len(items),
         "anime": sum(1 for x in items if x["kind"] == "anime"),
+        "guides": sum(1 for x in items if x["kind"] == "guides"),
         "schedule": sum(1 for x in items if x["kind"] == "schedule"),
         "manga": sum(1 for x in items if x["kind"] == "manga"),
         "news": sum(1 for x in items if x["kind"] == "news"),

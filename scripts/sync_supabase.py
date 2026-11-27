@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import json
 import re
 import sys
@@ -149,9 +150,30 @@ NEWS_ANILIST_KEYWORDS = {
 
 ARTICLE_COVER_SEARCH = {
     "dragon-ball-complete-watch-order-hindi-guide": "Dragon Ball Z",
+    "top-10-best-anime-of-all-time-hindi-ranking": "Fullmetal Alchemist: Brotherhood",
     "5-mind-bending-anime-like-death-note-hindi": "Death Note",
     "your-name-makoto-shinkai-romance-anime-hindi": "Your Name",
     "haikyuu-blue-lock-sports-anime-hindi-guide": "Haikyu!!",
+}
+
+AWARD_ANILIST_IDS_BY_ROW = {
+    135: 145064,  # JUJUTSU KAISEN Season 2
+    136: 145139,  # Demon Slayer: Kimetsu no Yaiba Swordsmith Village Arc
+    137: 21,      # One Piece
+    138: 154587,  # Frieren: Beyond Journey's End
+    139: 109979,  # The Boy and the Heron (actual Miyazaki film ID!)
+    140: 166531,  # OSHI NO KO Season 2
+}
+
+LEGACY_MANGA_RESOLVE = {
+    127: 30013,   # One Piece
+    128: 101517,  # Jujutsu Kaisen
+    129: 105778,  # Chainsaw Man
+    130: 108556,  # SPY x FAMILY
+    131: 132029,  # DAN DA DAN
+    132: 179445,  # Solo Leveling: Ragnarok
+    133: 125828,  # SAKAMOTO DAYS
+    134: 106130,  # Blue Lock
 }
 
 UPSERT_SQL = text(
@@ -178,7 +200,15 @@ UPSERT_SQL = text(
         source_name = EXCLUDED.source_name,
         source_url = EXCLUDED.source_url,
         title_en = EXCLUDED.title_en,
+        title_hi = CASE
+            WHEN EXCLUDED.content_type = 'news' THEN EXCLUDED.title_hi
+            ELSE COALESCE(NULLIF(anime_draft.title_hi, ''), EXCLUDED.title_hi)
+        END,
         summary_en = COALESCE(EXCLUDED.summary_en, anime_draft.summary_en),
+        summary_hi = CASE
+            WHEN EXCLUDED.content_type = 'news' AND EXCLUDED.summary_hi IS NOT NULL THEN EXCLUDED.summary_hi
+            ELSE anime_draft.summary_hi
+        END,
         image_url = EXCLUDED.image_url,
         published_at = COALESCE(EXCLUDED.published_at, anime_draft.published_at),
         fetched_at = EXCLUDED.fetched_at,
@@ -196,6 +226,229 @@ UPSERT_SQL = text(
         is_featured = EXCLUDED.is_featured
     """
 )
+
+
+# ---------------------------------------------------------------------------
+# Natural Hindi News Journalism Translator (Zero Phonetic Transliteration)
+# ---------------------------------------------------------------------------
+_NUMBER_WORDS = {
+    "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+    "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+    "eleven": "11", "twelve": "12", "thirteen": "13",
+}
+
+_MONTHS_HI = {
+    "january": "जनवरी", "jan": "जनवरी", "february": "फ़रवरी", "feb": "फ़रवरी",
+    "march": "मार्च", "mar": "मार्च", "april": "अप्रैल", "apr": "अप्रैल",
+    "may": "मई", "june": "जून", "jun": "जून", "july": "जुलाई", "jul": "जुलाई",
+    "august": "अगस्त", "aug": "अगस्त", "september": "सितंबर", "sep": "सितंबर", "sept": "सितंबर",
+    "october": "अक्टूबर", "oct": "अक्टूबर", "november": "नवंबर", "nov": "नवंबर",
+    "december": "दिसंबर", "dec": "दिसंबर",
+}
+
+
+def _clean_subject(subj: str) -> str:
+    s = (subj or "").strip().strip("'\"“”‘’-–—:")
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _normalize_num_token(tok: str) -> str:
+    return _NUMBER_WORDS.get(tok.lower(), tok)
+
+
+def _replace_months_hi(text_val: str) -> str:
+    out = text_val
+    for eng, hi in _MONTHS_HI.items():
+        out = re.sub(rf"\b{eng}\b\.?", hi, out, flags=re.IGNORECASE)
+    return out
+
+
+def _translate_action_clause_hi(tail: str) -> str:
+    t = (tail or "").lower()
+    has_trailer = any(k in t for k in ("trailer", "promo", "pv", "video", "teaser"))
+    has_visual = any(k in t for k in ("visual", "poster", "key art"))
+    has_cast = "cast" in t
+    has_staff = "staff" in t
+    has_theme = any(k in t for k in ("theme", "opening", "ending", " op ", " ed ", "song", "music video"))
+    has_premiere = any(k in t for k in ("premiere", "debut", "release", "air", "2026", "2027", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"))
+
+    parts: list[str] = []
+    if has_visual:
+        parts.append("नया विज़ुअल")
+    if "teaser" in t:
+        parts.append("टीज़र वीडियो")
+    elif "music video" in t:
+        parts.append("म्यूज़िक वीडियो")
+    elif has_trailer:
+        parts.append("नया ट्रेलर")
+    if has_cast:
+        m_cnt = re.search(r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)\s+(?:more|additional|new)?\s*cast", t)
+        if m_cnt:
+            parts.append(f"{_normalize_num_token(m_cnt.group(1))} नए कास्ट मेंबर्स")
+        else:
+            parts.append("अतिरिक्त कास्ट")
+    if has_staff:
+        parts.append("मुख्य क्रिएटिव स्टाफ़")
+    if "opening" in t or re.search(r"\bop\b", t):
+        parts.append("ओपनिंग थीम सॉन्ग")
+    elif "ending" in t or re.search(r"\bed\b", t):
+        parts.append("एंडिंग थीम सॉन्ग")
+    elif has_theme:
+        parts.append("थीम सॉन्ग")
+
+    date_note = ""
+    m_date = re.search(r"(?:on|in)\s+([a-z]+\s*\d{1,2}|\d{4}|spring\s*\d{4}|winter\s*\d{4}|fall\s*\d{4}|summer\s*\d{4})", t)
+    if m_date:
+        date_note = f" ({_replace_months_hi(m_date.group(1).title())})"
+    elif has_premiere:
+        yr = re.search(r"\b(202\d)\b", t)
+        if yr:
+            date_note = f" ({yr.group(1)})"
+
+    if parts:
+        joined = ", ".join(parts[:-1]) + (" और " + parts[-1] if len(parts) > 1 else parts[0])
+        if len(parts) == 1 and parts[0].endswith("नए कास्ट मेंबर्स"):
+            return f"के {joined}{date_note} का खुलासा"
+        if "premiere" in t or "debut" in t or "launch" in t:
+            return f"का {joined} व प्रीमियर तारीख़{date_note} घोषित"
+        return f"का {joined}{date_note} जारी"
+    return f"से जुड़ा बड़ा आधिकारिक अपडेट{date_note} जारी"
+
+
+def translate_news_headline_hi(title_en: str) -> str:
+    """Translate an English anime news headline into natural, grammatical Indian Hindi journalism."""
+    raw = re.sub(r"\s+", " ", (title_en or "").strip())
+    if not raw:
+        return "ताज़ा एनीमे समाचार अपडेट"
+
+    # Specific recurring editorial patterns first
+    m_rev_guide = re.match(r"^(?:The\s+)?([A-Za-z]+\s+\d{4})\s+Anime\s+Preview\s+Guide\s*[-–—:]\s*(.+)$", raw, re.I)
+    if m_rev_guide:
+        return f"{m_rev_guide.group(2).strip()}: {m_rev_guide.group(1)} एनीमे प्रीव्यू गाइड"
+
+    m_game_rev = re.match(r"^(.+?)\s+Game\s+Review$", raw, re.I)
+    if m_game_rev:
+        return f"{_clean_subject(m_game_rev.group(1))}: गेम रिव्यू और पूरा विश्लेषण"
+
+    m_quote = re.match(r'^["“](.+?)["”]\s*[—–-]+\s*(.+?)\s+on\s+(.+)$', raw, re.I)
+    if m_quote:
+        return f"{_clean_subject(m_quote.group(3))} पर मंगाका {_clean_subject(m_quote.group(2))} का विशेष इंटरव्यू"
+
+    m_helms = re.match(r"^(.+?)\s+Helms\s+(.+?)\s+(?:Music Video|Film|Anime|Series)\b(.*)$", raw, re.I)
+    if m_helms:
+        return f"{_clean_subject(m_helms.group(1))} करेंगी {_clean_subject(m_helms.group(2))} म्यूज़िक वीडियो का निर्देशन"
+
+    m_op = re.match(r'^["“]?(.+?)["”]?\s+(?:OP|ED)\s+released(?:\s+ahead\s+of\s+(.+?)\s+release)?$', raw, re.I)
+    if m_op:
+        plat = f" ({m_op.group(2).strip()} रिलीज़ से पहले)" if m_op.group(2) else ""
+        return f"{_clean_subject(m_op.group(1))} का ओपनिंग थीम वीडियो जारी{plat}"
+
+    m_tv_adapt = re.match(r"^(?:Manga\s+)?['\"]?(.+?)['\"]?(?:\s+Manga)?\s+(?:Receives|Gets)\s+(?:TV\s+)?Anime(?:\s+Adaptation)?(.*)$", raw, re.I)
+    if m_tv_adapt:
+        yr = re.search(r"\b(202\d)\b", m_tv_adapt.group(2) or "")
+        yr_hi = f" ({yr.group(1)})" if yr else ""
+        return f"{_clean_subject(m_tv_adapt.group(1))} मंगा पर बनेगी नई टीवी एनीमे सीरीज़{yr_hi}"
+
+    m_live = re.match(r"^(?:Live-Action\s+)?['\"]?(.+?)['\"]?\s+(?:Boys-Love\s+)?(?:Manga\s+|Series\s+)?(?:Gets|Receives)\s+(?:a\s+)?(?:Live-Action\s+|[\w-]+\s+)?(Film|Series|Spinoff Drama)(.*)$", raw, re.I)
+    if m_live:
+        fmt_hi = "लाइव-एक्शन फिल्म" if "film" in m_live.group(2).lower() else ("स्पिन-ऑफ ड्रामा" if "spinoff" in m_live.group(2).lower() else "लाइव-एक्शन सीरीज़")
+        dt_match = re.search(r"on\s+([A-Za-z]+\s+\d{1,2})", m_live.group(3) or "", re.I)
+        dt_hi = f" ({_replace_months_hi(dt_match.group(1))})" if dt_match else ""
+        return f"{_clean_subject(m_live.group(1))} को मिलेगा {fmt_hi} रूपांतरण{dt_hi}"
+
+    m_detailed = re.match(r"^(.+?)\s+Detailed\s+in\s+(.+)$", raw, re.I)
+    if m_detailed:
+        return f"{_clean_subject(m_detailed.group(1))} का नया ओवरव्यू ट्रेलर और विवरण जारी"
+
+    m_catalogue = re.match(r"^(.+?)\s+Add(?:s)?\s+(.+?)\s+(?:Titles\s+)?to\s+Catalogue$", raw, re.I)
+    if m_catalogue:
+        return f"{_clean_subject(m_catalogue.group(1))} ने अपनी डिजिटल लाइब्रेरी में जोड़े {_clean_subject(m_catalogue.group(2))} के नए शीर्षक"
+
+    m_ends = re.match(r"^(.+?)\s+Manga\s+Ends,\s+Gets\s+(\d+)-Chapter\s+Epilogue$", raw, re.I)
+    if m_ends:
+        return f"{_clean_subject(m_ends.group(1))} मंगा समाप्त, मिलेगा {m_ends.group(2)}-चैप्टर एपिलॉग"
+
+    m_launch = re.match(r"^(.+?)\s+Launches\s+New\s+(Manga|Anime|Series)(?:\s+on\s+(.+))?$", raw, re.I)
+    if m_launch:
+        kind_hi = "मंगा" if m_launch.group(2).lower() == "manga" else "सीरीज़"
+        dt_hi = f" ({_replace_months_hi(m_launch.group(3))})" if m_launch.group(3) else ""
+        return f"{_clean_subject(m_launch.group(1))} की नई {kind_hi} सीरीज़ की शुरुआत{dt_hi}"
+
+    m_ann = re.match(r"^(.+?)\s+(?:TV\s+Anime\s+|Anime\s+Film\s+|Anime\s+)?Announced$", raw, re.I)
+    if m_ann:
+        return f"{_clean_subject(m_ann.group(1))} टीवी एनीमे की आधिकारिक घोषणा"
+
+    m_adds = re.match(r"^(.+?)\s+Adds\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)\s+Cast\s+Members?$", raw, re.I)
+    if m_adds:
+        return f"{_clean_subject(m_adds.group(1))} में जुड़े {_normalize_num_token(m_adds.group(2))} नए कास्ट मेंबर्स"
+
+    m_shares = re.match(r"^(.+?)\s+(?:Shares|Releases)\s+(.+?)\s+(?:Ending|Opening|Theme)\s+Song.*?(Music\s+Video|Video)?$", raw, re.I)
+    if m_shares:
+        return f"{_clean_subject(m_shares.group(1))} ने '{_clean_subject(m_shares.group(2))}' का थीम सॉन्ग म्यूज़िक वीडियो जारी किया"
+
+    m_coming = re.match(r"^(.+?)\s+Manga\s+Coming\s+from\s+(.+)$", raw, re.I)
+    if m_coming:
+        return f"{_clean_subject(m_coming.group(2))} द्वारा '{_clean_subject(m_coming.group(1))}' मंगा जल्द होगा प्रकाशित"
+
+    m_funko = re.match(r"^(.+?)\s+Funko\s+Pop!.*$", raw, re.I)
+    if m_funko:
+        return f"{_clean_subject(m_funko.group(1))} फनको पॉप! कलेक्शन की क्रंचीरोल स्टोर पर विशेष लॉन्चिंग"
+
+    # Generic clause splitter on high-frequency English news verbs
+    m_verb = re.match(
+        r"^(.+?)\s+(Reveals|Unveils|Announces|Releases|Uncovers|Debuts|Streams|Casts|Premieres|Delays|Celebrates|Launches|Previews)\s+(.+)$",
+        raw,
+        re.I,
+    )
+    if m_verb:
+        subj = _clean_subject(m_verb.group(1))
+        verb = m_verb.group(2).lower()
+        rest = m_verb.group(3)
+        if verb == "casts":
+            return f"{subj} सीरीज़ में {_clean_subject(rest)} की कास्टिंग की घोषणा"
+        if verb in ("reveals", "unveils", "announces", "releases", "uncovers"):
+            clause_hi = _translate_action_clause_hi(rest)
+            return f"{subj} {clause_hi}"
+        if verb in ("premieres", "debuts"):
+            return f"{subj} का प्रीमियर अपडेट ({_replace_months_hi(rest[:40])})"
+        if verb == "delays":
+            return f"{subj} की रिलीज़ या प्रसारण तारीख़ में बदलाव की सूचना"
+
+    return f"{raw[:95]} — ताज़ा एनीमे समाचार अपडेट"
+
+
+def translate_news_summary_hi(summary_en: str | None, title_en: str) -> str:
+    """Provide natural Hindi journalism deck for a news item instead of raw/garbled copy."""
+    title_hi = translate_news_headline_hi(title_en)
+    src = (summary_en or "").strip()
+    if not src:
+        return f"{title_hi} — भारतीय एनीमे प्रशंसकों के लिए आधिकारिक अपडेट।"
+    return f"{title_hi}। पूरी जानकारी, कास्ट विवरण और आधिकारिक स्ट्रीमिंग संदर्भ पढ़ें।"
+
+
+def _is_phonetic_or_untranslated_hi(title_hi: str | None, title_en: str | None) -> bool:
+    th = (title_hi or "").strip()
+    te = (title_en or "").strip()
+    if not th or th.lower() == te.lower():
+        return True
+    if not _has_devanagari(th):
+        return True
+    # Also catch awkward singular 'के नया' or generic fallback markers to upgrade cleanly
+    if "के नया " in th or "के अतिरिक्त कास्ट" in th or "के म्यूज़िक वीडियो" in th or "ताज़ा एनीमे समाचार और अपडेट" in th:
+        return True
+    # Detect phonetic Devanagari transliteration artifacts
+    phonetic_markers = (
+        "रिवील्स", "अनवेल्स", "अनाउंसेस", "आइ ड्रा", "विशिंग", "हेल्म्स", "ऑफिशियल हिगे",
+        "एडिशन्ल", "एडिशलनल", "एडिशनल कास्ट", "बॉयज़-लव मंगा गेट्स", "डिटेल्ड इन",
+        "फर्स्ट लुक", "रिलीज़ेस", "सेलिब्रेटिंग", "अनाउंसेस २४थ", "न्यू वीडियो अनवेल्स मोर",
+        "ऑन द फ्रैग्रेंट", "ऑफिशि", "के-ओन्स", "द केप्ट मैन ऑफ द", "नाउ दैट वी ड्रॉ एनिमीज",
+    )
+    if any(pm in th for pm in phonetic_markers):
+        return True
+    if re.search(r"\b(?:released|ahead of|reveals|announces|cast members|additional cast|second promo|theme songs|gets tv anime)\b", th, re.I):
+        return True
+    return False
 
 
 def _norm_title(val: str | None) -> str:
@@ -578,6 +831,7 @@ def fetch_48h_rss_news(max_per_feed: int = 8) -> list[dict]:
 
             ext_slug = re.sub(r"[^a-zA-Z0-9_-]+", "_", guid)[-95:]
             thumb = _extract_rss_image(item, desc_raw, link, title)
+            clean_desc = _strip_html(desc_raw)
 
             records.append(
                 {
@@ -587,9 +841,9 @@ def fetch_48h_rss_news(max_per_feed: int = 8) -> list[dict]:
                     "source_url": link[:500],
                     "external_id": f"rss48h_{ext_slug}"[:150],
                     "title_en": title[:300],
-                    "title_hi": title[:300],
-                    "summary_en": _strip_html(desc_raw),
-                    "summary_hi": None,
+                    "title_hi": translate_news_headline_hi(title)[:300],
+                    "summary_en": clean_desc,
+                    "summary_hi": translate_news_summary_hi(clean_desc, title)[:500],
                     "image_url": thumb,
                     "published_at": pub_naive,
                     "created_at": now_naive,
@@ -859,23 +1113,183 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
         )
     )
 
-    # 3. Clean poisoned news fallback images & non-http image URLs + clean broken trailer 163
+    # 2b. Resolve ALL manga rows still having anilist_id IS NULL (incl. legacy rows 127-134)
+    null_mg_rows = conn.execute(
+        text("SELECT id, title_en, title_hi, summary_hi, image_url FROM anime_draft WHERE content_type = 'manga' AND anilist_id IS NULL")
+    ).mappings().all()
+    if null_mg_rows:
+        target_ids: dict[int, int] = {}
+        for nmr in null_mg_rows:
+            rid = int(nmr["id"])
+            if rid in LEGACY_MANGA_RESOLVE:
+                target_ids[rid] = LEGACY_MANGA_RESOLVE[rid]
+            else:
+                q_term = re.split(r"[:\-–—]", nmr["title_en"] or "", maxsplit=1)[0].strip()
+                try:
+                    sr = httpx.post(
+                        ANILIST_URL,
+                        json={
+                            "query": "query ($s: String) { Media(search: $s, type: MANGA, sort: POPULARITY_DESC) { id } }",
+                            "variables": {"s": q_term},
+                        },
+                        timeout=8.0,
+                    )
+                    mid = ((sr.json().get("data") or {}).get("Media") or {}).get("id")
+                    if mid:
+                        target_ids[rid] = int(mid)
+                except Exception:
+                    pass
+
+        unique_aids = list(set(target_ids.values()))
+        resolved_meta: dict[int, dict] = {}
+        for i in range(0, len(unique_aids), 50):
+            try:
+                resp = httpx.post(
+                    ANILIST_URL,
+                    json={"query": ANILIST_BATCH_MANGA_QUERY, "variables": {"ids": unique_aids[i : i + 50]}},
+                    timeout=15.0,
+                )
+                if resp.status_code == 200:
+                    for m in (resp.json().get("data") or {}).get("Page", {}).get("media", []) or []:
+                        resolved_meta[int(m["id"])] = m
+            except Exception:
+                pass
+
+        for nmr in null_mg_rows:
+            rid = int(nmr["id"])
+            aid = target_ids.get(rid)
+            m = resolved_meta.get(aid or -1)
+            if not aid or not m:
+                continue
+            # Remove any other manga row already holding this AniList ID so rows 127-134 stay unique canonical keepers
+            existing_dups = conn.execute(
+                text("SELECT id, summary_hi, hindi_dub FROM anime_draft WHERE content_type = 'manga' AND anilist_id = :aid AND id != :rid"),
+                {"aid": aid, "rid": rid},
+            ).mappings().all()
+            if existing_dups:
+                conn.execute(
+                    text("DELETE FROM anime_draft WHERE id = ANY(:ids)"),
+                    {"ids": [int(d["id"]) for d in existing_dups]},
+                )
+
+            pub_st = (m.get("status") or "RELEASING").upper()
+            ch_count = m.get("chapters")
+            vol_count = m.get("volumes")
+            cover = ((m.get("coverImage") or {}).get("extraLarge") or (m.get("coverImage") or {}).get("large") or "")[:500] or None
+            ch_lbl = _manga_chapter_label(pub_st, ch_count, vol_count)
+            title_obj = m.get("title") or {}
+            reader_plat, reader_url = _pick_official_manga_reader(m)
+            dossier_json = json.dumps(
+                {
+                    "author": _extract_mangaka(m.get("staff")),
+                    "native_title": title_obj.get("native") or title_obj.get("romaji") or "",
+                    "genres": (m.get("genres") or [])[:4],
+                    "start_year": (m.get("startDate") or {}).get("year"),
+                    "end_year": (m.get("endDate") or {}).get("year"),
+                    "official_platform": reader_plat,
+                    "official_url": reader_url,
+                    "banner_url": m.get("bannerImage") or cover or "",
+                },
+                ensure_ascii=False,
+            )
+            conn.execute(
+                text(
+                    """
+                    UPDATE anime_draft
+                    SET anilist_id = :aid,
+                        mal_id = COALESCE(:mal_id, mal_id),
+                        external_id = :ext_id,
+                        source_name = :src_name,
+                        source_url = :src_url,
+                        image_url = COALESCE(:img, image_url),
+                        publication_status = :pst,
+                        chapters = :ch,
+                        volumes = :vol,
+                        score = COALESCE(:score, score),
+                        latest_chapter = :clbl,
+                        official_links = :links
+                    WHERE id = :id
+                    """
+                ),
+                {
+                    "aid": aid,
+                    "mal_id": m.get("idMal"),
+                    "ext_id": f"anilist_manga_{aid}",
+                    "src_name": reader_plat[:100],
+                    "src_url": reader_url[:500],
+                    "img": cover,
+                    "pst": pub_st,
+                    "ch": int(ch_count) if ch_count else None,
+                    "vol": int(vol_count) if vol_count else None,
+                    "score": float(m["averageScore"]) if m.get("averageScore") else None,
+                    "clbl": ch_lbl[:50],
+                    "links": dossier_json,
+                    "id": rid,
+                },
+            )
+            mg_updated += 1
+
+    # 2c. Fix synthetic 404 award posters via real AniList anime covers
+    award_ids = list(set(AWARD_ANILIST_IDS_BY_ROW.values()))
+    if award_ids:
+        aw_meta: dict[int, dict] = {}
+        try:
+            resp = httpx.post(ANILIST_URL, json={"query": ANILIST_BATCH_ANIME_QUERY, "variables": {"ids": award_ids}}, timeout=15.0)
+            if resp.status_code == 200:
+                for m in (resp.json().get("data") or {}).get("Page", {}).get("media", []) or []:
+                    aw_meta[int(m["id"])] = m
+        except Exception:
+            pass
+        for row_id, aid in AWARD_ANILIST_IDS_BY_ROW.items():
+            m = aw_meta.get(aid)
+            if not m:
+                continue
+            cov = ((m.get("coverImage") or {}).get("extraLarge") or (m.get("coverImage") or {}).get("large") or "")[:500]
+            if cov:
+                conn.execute(
+                    text("UPDATE anime_draft SET anilist_id = :aid, image_url = :img WHERE id = :id"),
+                    {"aid": aid, "img": cov, "id": row_id},
+                )
+
+    # 3. Clean poisoned news images AND convert phonetic/untranslated news titles to natural Hindi journalism
     news_fixed = 0
     news_rows = conn.execute(
-        text("SELECT id, title_en, image_url, source_url FROM anime_draft WHERE content_type = 'news'")
+        text("SELECT id, title_en, title_hi, summary_en, summary_hi, image_url, source_url FROM anime_draft WHERE content_type = 'news'")
     ).mappings().all()
     for nr in news_rows:
         img = (nr["image_url"] or "").strip()
-        title_l = (nr["title_en"] or "").lower()
-        needs_fix = (img and not img.startswith("http"))
+        title_en = (nr["title_en"] or "").strip()
+        title_l = title_en.lower()
+        needs_img_fix = bool(img and not img.startswith("http"))
         for aid_token, kw in NEWS_ANILIST_KEYWORDS.items():
             if img and aid_token in img and kw not in title_l:
-                needs_fix = True
+                needs_img_fix = True
                 break
-        if needs_fix:
-            real_img = _fetch_article_og_image(nr["source_url"]) or _strict_anilist_news_image(nr["title_en"] or "")
-            conn.execute(text("UPDATE anime_draft SET image_url = :img WHERE id = :id"), {"img": real_img, "id": nr["id"]})
+
+        new_img = img
+        if needs_img_fix:
+            new_img = _fetch_article_og_image(nr["source_url"]) or _strict_anilist_news_image(title_en) or ""
             news_fixed += 1
+
+        needs_hi_fix = _is_phonetic_or_untranslated_hi(nr["title_hi"], title_en)
+        new_title_hi = translate_news_headline_hi(title_en)[:300] if needs_hi_fix else nr["title_hi"]
+        new_sum_hi = translate_news_summary_hi(nr["summary_en"], title_en)[:500] if (needs_hi_fix or not _has_devanagari(nr["summary_hi"])) else nr["summary_hi"]
+
+        if needs_img_fix or needs_hi_fix or new_sum_hi != nr["summary_hi"]:
+            conn.execute(
+                text(
+                    """
+                    UPDATE anime_draft
+                    SET image_url = :img,
+                        title_hi = :thi,
+                        summary_hi = :shi
+                    WHERE id = :id
+                    """
+                ),
+                {"img": new_img, "thi": new_title_hi, "shi": new_sum_hi, "id": nr["id"]},
+            )
+            if needs_hi_fix and not needs_img_fix:
+                news_fixed += 1
 
     # Clean up trailer rows with missing source_url or non-http images
     conn.execute(
@@ -885,13 +1299,40 @@ def _backfill_anilist_metadata_and_covers(conn: Any) -> tuple[int, int, int]:
     )
 
     # 4. Backfill article table missing cover images via exact AniList title match
-    art_rows = conn.execute(text("SELECT id, slug, cover_image FROM article WHERE cover_image IS NULL OR cover_image NOT LIKE 'http%'")).mappings().all()
+    art_rows = conn.execute(text("SELECT id, slug, title, cover_image FROM article WHERE cover_image IS NULL OR cover_image NOT LIKE 'http%'")).mappings().all()
     for ar in art_rows:
-        search_term = ARTICLE_COVER_SEARCH.get(ar["slug"])
+        search_term = ARTICLE_COVER_SEARCH.get(ar["slug"]) or re.split(r"[:(]", ar["title"] or "", maxsplit=1)[0].strip()
         if search_term:
             cov = _strict_anilist_news_image(search_term)
             if cov:
                 conn.execute(text("UPDATE article SET cover_image = :img WHERE id = :id"), {"img": cov, "id": ar["id"]})
+
+    # 5. Live HTTP verification sweep across all image URLs so zero 404 links remain
+    url_rows = conn.execute(
+        text("SELECT id, content_type, image_url FROM anime_draft WHERE status = 'published' AND image_url IS NOT NULL AND image_url != ''")
+    ).mappings().all()
+
+    async def _probe_batch(items: list[Any]) -> list[tuple[int, str, int]]:
+        sem = asyncio.Semaphore(25)
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers={"User-Agent": "HindiAnimeGuideBot/2.0"}) as cli:
+            async def _one(rid: int, sec: str, url: str) -> tuple[int, str, int]:
+                async with sem:
+                    try:
+                        r = await cli.head(url)
+                        if r.status_code in (403, 405) or r.status_code >= 400:
+                            r = await cli.get(url)
+                        return rid, sec, int(r.status_code)
+                    except Exception:
+                        return rid, sec, 0
+            return await asyncio.gather(*[_one(int(it["id"]), str(it["content_type"]), str(it["image_url"])) for it in items])
+
+    try:
+        probe_results = asyncio.run(_probe_batch(url_rows))
+        broken_news_ids = [rid for rid, sec, code in probe_results if code != 200 and sec == "news"]
+        if broken_news_ids:
+            conn.execute(text("UPDATE anime_draft SET image_url = '' WHERE id = ANY(:ids)"), {"ids": broken_news_ids})
+    except Exception:
+        pass
 
     return sch_updated, mg_updated, news_fixed
 

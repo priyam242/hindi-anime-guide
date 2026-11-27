@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ guide.title }} — Hindi Anime Guide{% endblock %}
+{% block og_title %}{{ guide.title }}{% endblock %}
+{% block og_description %}{{ guide.meta_description }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{{ guide.cover_image or (resolve_base_url(request) ~ '/static/media/emblem_icon.webp') }}{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+{{ json_ld|tojson }}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="relative py-10 sm:py-14 bg-[#06070c] min-h-[75vh] overflow-hidden">
+  {% if guide.cover_image %}
+  <div class="absolute inset-x-0 top-0 h-[380px] pointer-events-none overflow-hidden">
+    <img src="{{ guide.cover_image }}" alt="" class="w-full h-full object-cover opacity-25 blur-md scale-110" />
+    <div class="absolute inset-0 bg-gradient-to-b from-[#06070c]/55 via-[#06070c]/90 to-[#06070c]"></div>
+  </div>
+  {% endif %}
+
+  <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="Breadcrumb" class="flex flex-wrap items-center gap-2 font-tech text-xs font-bold uppercase tracking-widest text-white/70">
+      <a href="/" class="hover:text-[#ff2e63]" data-hi="होम" data-en="HOME">होम</a>
+      <span class="text-[#ff2e63]">/</span>
+      <a href="/guides" class="hover:text-[#ff2e63]" data-hi="एडिटोरियल गाइड्स" data-en="GUIDES">एडिटोरियल गाइड्स</a>
+      <span class="text-[#ff2e63]">/</span>
+      <span class="text-white truncate max-w-[260px] sm:max-w-md">{{ guide.anime_title_en or guide.category_label_en }}</span>
+    </nav>
+
+    <!-- Main Long-Form Editorial Article -->
+    <article class="space-y-8">
+      <header class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-b border-white/15 pb-8">
+        {% if guide.cover_image %}
+        <div class="md:col-span-4">
+          <div class="border-2 border-[#ff2e63] bg-[#06070c] overflow-hidden relative shadow-[0_18px_50px_rgba(255,46,99,0.22)]">
+            <img src="{{ guide.cover_image }}" alt="{{ guide.anime_title_en or guide.title }}"
+                 class="w-full aspect-[3/4] object-cover" />
+            <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+              {{ guide.category_label_en }}
+            </span>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="{{ 'md:col-span-8' if guide.cover_image else 'md:col-span-12' }} space-y-5">
+          <div class="flex flex-wrap items-center gap-2 font-tech text-[11px] font-bold uppercase tracking-widest">
+            <span class="px-2.5 py-1 bg-[#cf0f46] text-white">{{ guide.category_label_en }}</span>
+            <span class="px-2.5 py-1 border border-white/20 text-white">{{ guide.reading_time_minutes }} MIN READ</span>
+            <span class="px-2.5 py-1 border border-white/20 text-white/85">{{ guide.word_count }} WORDS</span>
+            <span class="px-2.5 py-1 border border-[#ff2e63]/40 text-[#ff2e63]">100% LEGAL GUIDE</span>
+          </div>
+
+          <h1 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">{{ guide.title }}</h1>
+
+          <p class="text-sm sm:text-base text-white/80 leading-relaxed">{{ guide.meta_description }}</p>
+
+          <!-- Editorial Author & Compliance Byline -->
+          <div class="p-4 border border-white/15 bg-white/[0.03] flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-[#cf0f46] text-white font-display-shonen text-sm flex items-center justify-center shrink-0">HAG</div>
+              <div>
+                <p class="font-tech text-xs font-bold uppercase tracking-wider text-white">Hindi Anime Guide Editorial Desk</p>
+                <p class="text-[11px] text-white/70"
+                   data-hi="सत्यापित हिंदी/अंग्रेज़ी संपादकीय समीक्षा व कानूनी स्ट्रीमिंग गाइड"
+                   data-en="Verified Bilingual Editorial Research &amp; Legal Streaming Reference">सत्यापित हिंदी/अंग्रेज़ी संपादकीय समीक्षा व कानूनी स्ट्रीमिंग गाइड</p>
+              </div>
+            </div>
+            <div class="font-tech text-[11px] text-white/75 uppercase tracking-wider">
+              <span data-hi="प्रकाशित:" data-en="PUBLISHED:">प्रकाशित:</span> {{ guide.published_label }}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Rendered Semantic Editorial Body -->
+      <div class="hag-article-body space-y-5 text-sm sm:text-base text-white/90 leading-relaxed">
+        {{ guide.content_html|safe }}
+      </div>
+    </article>
+
+    <!-- Related Editorial Guides -->
+    {% if related_guides %}
+    <div class="border-t border-white/15 pt-10 space-y-5">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="font-display-shonen text-xl sm:text-2xl text-white"
+            data-hi="और संबंधित गाइड्स पढ़ें"
+            data-en="MORE EDITORIAL GUIDES">और संबंधित गाइड्स पढ़ें</h2>
+        <a href="/guides" class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63] hover:underline"
+           data-hi="सभी {{ total_guides }} गाइड्स देखें →"
+           data-en="VIEW ALL {{ total_guides }} GUIDES →">सभी {{ total_guides }} गाइड्स देखें &rarr;</a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        {% for rg in related_guides %}
+        <a href="/guides/{{ rg.slug }}" class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
+          <div class="aspect-video overflow-hidden relative bg-[#06070c]">
+            {% if rg.cover_image %}
+            <img src="{{ rg.cover_image }}" alt="{{ rg.anime_title_en or rg.title }}" loading="lazy" decoding="async"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            {% endif %}
+            <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold uppercase">{{ rg.category_label_en }}</span>
+          </div>
+          <div class="p-4 space-y-1.5 flex-1">
+            <h3 class="text-xs sm:text-sm font-bold text-white line-clamp-2 group-hover:text-[#ff2e63]">{{ rg.title }}</h3>
+            <p class="font-tech text-[10px] text-white/65 uppercase">{{ rg.reading_time_minutes }} MIN READ &bull; {{ rg.word_count }} WORDS</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

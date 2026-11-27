@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Editorial Anime &amp; Manga Guides in Hindi &amp; English — Hindi Anime Guide{% endblock %}
+{% block og_title %}Editorial Anime &amp; Manga Guides Hub — Hindi Anime Guide{% endblock %}
+{% block og_description %}20+ in-depth bilingual watch-order roadmaps, legal India streaming guides (Crunchyroll, Netflix, Muse Asia), and authentic manga buying advice.{% endblock %}
+
+{% block content %}
+<section class="py-10 sm:py-14 bg-[#06070c] min-h-[75vh]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <!-- Hub Hero Header -->
+    <div class="border-b border-white/10 pb-8 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="space-y-2">
+          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]"
+                data-hi="एडिटोरियल गाइड्स हब • LONG-FORM DOSSIERS"
+                data-en="EDITORIAL GUIDES HUB • LONG-FORM DOSSIERS">एडिटोरियल गाइड्स हब &bull; LONG-FORM DOSSIERS</span>
+          <h1 class="font-display-shonen text-2xl sm:text-4xl lg:text-5xl text-white"
+              data-hi="संपूर्ण एनीमे व मंगा हिंदी गाइड्स"
+              data-en="COMPLETE ANIME &amp; MANGA EDITORIAL GUIDES">संपूर्ण एनीमे व मंगा <span class="text-[#ff2e63]">हिंदी गाइड्स</span></h1>
+          <p class="max-w-3xl text-sm text-white/80 leading-relaxed"
+             data-hi="वॉच ऑर्डर रोडमैप्स, 100% वैध भारतीय ओटीटी स्ट्रीमिंग गाइड्स (Crunchyroll, Netflix, Muse Asia, Ani-One, MangaPlus) और असली मंगा खरीदने के विस्तृत द्विभाषी लेख।"
+             data-en="In-depth bilingual watch-order roadmaps, 100% legal Indian streaming comparisons, and authentic manga collecting guides tailored for Indian fans.">
+            वॉच ऑर्डर रोडमैप्स, 100% वैध भारतीय ओटीटी स्ट्रीमिंग गाइड्स (Crunchyroll, Netflix, Muse Asia, Ani-One, MangaPlus) और असली मंगा खरीदने के विस्तृत द्विभाषी लेख।
+          </p>
+        </div>
+        <div class="shrink-0 flex items-center gap-3">
+          <span class="px-3.5 py-2 border border-[#ff2e63]/60 bg-[#ff2e63]/10 font-tech text-xs font-bold uppercase tracking-widest text-white">
+            {{ guides|length }} <span data-hi="गाइड्स उपलब्ध" data-en="GUIDES PUBLISHED">गाइड्स उपलब्ध</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex flex-wrap items-center gap-2 pt-2">
+        <a href="/guides"
+           class="min-h-[36px] px-3.5 py-1.5 inline-flex items-center border font-tech text-xs font-bold uppercase tracking-wider transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if not active_cat else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
+          <span data-hi="सभी ({{ total_guides }})" data-en="ALL ({{ total_guides }})">सभी ({{ total_guides }})</span>
+        </a>
+        {% for ckey, chi, cen in categories %}
+        {% set is_act = active_cat == ckey %}
+        <a href="/guides?cat={{ ckey }}"
+           class="min-h-[36px] px-3.5 py-1.5 inline-flex items-center border font-tech text-xs font-bold uppercase tracking-wider transition-colors {{ 'border-[#cf0f46] bg-[#cf0f46] text-white' if is_act else 'border-white/20 bg-white/5 text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
+          <span data-hi="{{ chi }}" data-en="{{ cen }}">{{ chi }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Guides Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for g in guides %}
+      <article class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
+        <a href="/guides/{{ g.slug }}" class="block aspect-[16/10] overflow-hidden relative bg-[#06070c]">
+          {% if g.cover_image %}
+          <img src="{{ g.cover_image }}" alt="{{ g.anime_title_en or g.title }}" loading="lazy" decoding="async"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+          {% endif %}
+          <span class="absolute top-3 left-3 px-2.5 py-1 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-widest">
+            {{ g.category_label_en }}
+          </span>
+          <span class="absolute bottom-3 right-3 px-2 py-0.5 bg-[#06070c]/90 border border-white/20 font-tech text-[10px] font-bold text-white">
+            {{ g.reading_time_minutes }} MIN &bull; {{ g.word_count }} WORDS
+          </span>
+        </a>
+
+        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between font-tech text-[10px] font-bold uppercase tracking-wider text-white/65">
+              <span>HAG EDITORIAL DESK</span>
+              <span>{{ g.published_label }}</span>
+            </div>
+            <h2 class="text-base sm:text-lg font-extrabold text-white leading-snug group-hover:text-[#ff2e63] transition-colors">
+              <a href="/guides/{{ g.slug }}"
+                 data-hi="{{ g.title }}"
+                 data-en="{{ g.anime_title_en or g.title }}">{{ g.title }}</a>
+            </h2>
+            <p class="text-xs text-white/75 leading-relaxed line-clamp-3">{{ g.meta_description }}</p>
+          </div>
+
+          <a href="/guides/{{ g.slug }}"
+             class="inline-flex min-h-[38px] items-center justify-between px-3.5 py-2 border border-white/15 group-hover:border-[#ff2e63] bg-white/[0.03] font-tech text-xs font-bold uppercase tracking-wider text-white">
+            <span data-hi="पूरी गाइड पढ़ें" data-en="READ FULL GUIDE">पूरी गाइड पढ़ें</span>
+            <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+          </a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

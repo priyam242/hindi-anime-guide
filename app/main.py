@@ -31,6 +31,8 @@ from app.services.content import (
     get_awards_data,
     get_cached_content,
     get_counts,
+    get_guide_detail,
+    get_guides_list,
     get_news_detail,
     get_poll_state,
     get_roulette_pool,
@@ -314,10 +316,11 @@ async def robots_txt(request: Request):
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request):
     base = _resolve_base_url(request)
-    anime_slugs, news_slugs = get_sitemap_urls()
+    anime_slugs, news_slugs, guide_slugs = get_sitemap_urls()
     urls = [
         f"{base}/",
         f"{base}/explore",
+        f"{base}/guides",
         f"{base}/awards",
         f"{base}/schedule",
         f"{base}/manga",
@@ -330,6 +333,7 @@ async def sitemap_xml(request: Request):
         f"{base}/disclaimer",
         f"{base}/contact",
     ]
+    urls.extend(f"{base}/guides/{s}" for s in guide_slugs)
     urls.extend(f"{base}/anime/{s}" for s in anime_slugs)
     urls.extend(f"{base}/news/{s}" for s in news_slugs)
 
@@ -446,6 +450,53 @@ async def explore_page(
             "active_nav": "explore",
             "q": q,
             **catalog,
+        },
+    )
+
+
+@app.get("/guides", response_class=HTMLResponse)
+async def guides_page(request: Request, cat: str = Query(default="")):
+    bundle = get_guides_list(cat)
+    return templates.TemplateResponse(
+        request,
+        "guides.html",
+        {
+            "request": request,
+            "active_nav": "guides",
+            "q": "",
+            **bundle,
+        },
+    )
+
+
+@app.get("/guides/{slug}", response_class=HTMLResponse)
+async def guide_detail_page(request: Request, slug: str):
+    bundle = get_guide_detail(slug)
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Editorial guide not found")
+    guide = bundle["guide"]
+    base = _resolve_base_url(request)
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": guide["title"],
+        "description": guide["meta_description"],
+        "image": guide.get("cover_image") or f"{base}/static/media/emblem_icon.webp",
+        "author": {"@type": "Organization", "name": "Hindi Anime Guide Editorial Desk"},
+        "publisher": {"@type": "Organization", "name": "Hindi Anime Guide"},
+        "mainEntityOfPage": f"{base}/guides/{guide['slug']}",
+        "wordCount": guide["word_count"],
+        "inLanguage": ["hi", "en"],
+    }
+    return templates.TemplateResponse(
+        request,
+        "guide_detail.html",
+        {
+            "request": request,
+            "active_nav": "guides",
+            "json_ld": json_ld,
+            "q": "",
+            **bundle,
         },
     )
 
