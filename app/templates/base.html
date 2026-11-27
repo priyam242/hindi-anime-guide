@@ -1,8 +1,7 @@
 {% from "partials/logo.html" import brand_logo %}
 {% set ssr_lang = req_lang(request) %}
-{% set ssr_theme = req_theme(request) %}
 <!DOCTYPE html>
-<html lang="{{ ssr_lang }}" data-lang="{{ ssr_lang }}" class="{{ 'light-theme' if ssr_theme == 'light' else 'dark' }}">
+<html lang="{{ ssr_lang }}" data-lang="{{ ssr_lang }}" class="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -55,17 +54,10 @@
     };
     (function () {
       try {
-        var cTheme = window.hagGetCookie("hag_theme");
-        var theme = (cTheme === "light" || cTheme === "dark") ? cTheme : (localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
-        if (theme === "light") {
-          document.documentElement.classList.add("light-theme");
-          document.documentElement.classList.remove("dark");
-        } else {
-          document.documentElement.classList.remove("light-theme");
-          document.documentElement.classList.add("dark");
-        }
-        localStorage.setItem("hag_theme", theme);
-        window.hagSetCookie("hag_theme", theme);
+        document.documentElement.classList.remove("light-theme");
+        document.documentElement.classList.add("dark");
+        localStorage.removeItem("hag_theme");
+        document.cookie = "hag_theme=; Path=/; Max-Age=0; SameSite=Lax";
 
         var cLang = window.hagGetCookie("hag_lang");
         var lang = (cLang === "en" || cLang === "hi") ? cLang : (localStorage.getItem("hag_lang") === "en" ? "en" : "hi");
@@ -161,161 +153,6 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #ff2e63;
     }
-
-    /* CRISP 3-COLOR LIGHT THEME OVERRIDES (White #f8fafc + Obsidian #090b10 + Crimson #e11d48) */
-    html.light-theme body,
-    html.light-theme #app-shell-content,
-    html.light-theme footer,
-    html.light-theme section {
-      background-color: #f8fafc !important;
-      color: #090b10 !important;
-    }
-
-    html.light-theme header,
-    html.light-theme #app-sidebar,
-    html.light-theme #watchlist-drawer,
-    html.light-theme #hag-cookie-banner,
-    html.light-theme #auth-user-dropdown,
-    html.light-theme #hag-auth-modal>div,
-    html.light-theme #mystery-roulette-modal>div,
-    html.light-theme #hunter-system-modal>div,
-    html.light-theme #manga-book-inspector>div,
-    html.light-theme #trailer-modal>div {
-      background-color: #ffffff !important;
-      color: #090b10 !important;
-    }
-
-    html.light-theme header,
-    html.light-theme #app-sidebar,
-    html.light-theme footer,
-    html.light-theme .border-white\/10,
-    html.light-theme .border-white\/15,
-    html.light-theme .border-white\/20,
-    html.light-theme .border-white\/25,
-    html.light-theme .border-white\/30 {
-      border-color: rgba(9, 11, 16, 0.14) !important;
-    }
-
-    html.light-theme .text-white,
-    html.light-theme .text-white\/90,
-    html.light-theme .text-white\/85,
-    html.light-theme .text-white\/80,
-    html.light-theme .text-white\/75,
-    html.light-theme .text-white\/70,
-    html.light-theme .text-white\/65,
-    html.light-theme .text-white\/60,
-    html.light-theme .text-white\/55,
-    html.light-theme .text-white\/50,
-    html.light-theme .text-white\/45 {
-      color: #090b10 !important;
-    }
-
-    html.light-theme .text-\[\#ff2e63\] {
-      color: #be123c !important;
-    }
-
-    html.light-theme .bg-\[\#ff2e63\],
-    html.light-theme .bg-\[\#ff2e63\] *,
-    html.light-theme .bg-\[\#cf0f46\],
-    html.light-theme .bg-\[\#cf0f46\] *,
-    html.light-theme .bg-\[\#e11d48\],
-    html.light-theme .bg-\[\#e11d48\] *,
-    html.light-theme #splash-screen,
-    html.light-theme #splash-screen *,
-    html.light-theme .book-face-front *,
-    html.light-theme #visual-news a.group .text-white,
-    html.light-theme #visual-news a.group p {
-      color: #ffffff !important;
-    }
-
-    html.light-theme .hag-kicker-text {
-      color: #be123c !important;
-    }
-
-    html.light-theme #linear-hero .hero-depth-layer .text-white,
-    html.light-theme #linear-hero .hero-depth-layer .text-white\/80,
-    html.light-theme #linear-hero .hero-depth-layer .text-white\/75,
-    html.light-theme #linear-hero .hero-depth-layer .text-white\/60 {
-      color: #ffffff !important;
-    }
-
-    html.light-theme .bg-white\/5,
-    html.light-theme .bg-white\/\[0\.02\],
-    html.light-theme .bg-white\/\[0\.03\] {
-      background-color: #ffffff !important;
-    }
-
-    html.light-theme input,
-    html.light-theme select,
-    html.light-theme select option,
-    html.light-theme textarea {
-      background-color: #ffffff !important;
-      color: #090b10 !important;
-      border-color: rgba(9, 11, 16, 0.28) !important;
-    }
-
-    html.light-theme input::placeholder,
-    html.light-theme textarea::placeholder {
-      color: #525866 !important;
-      opacity: 1 !important;
-    }
-
-    /* Protect dark-backdrop hero stages, posters & media overlays in Light Theme (prevents black-on-black) */
-    html.light-theme .dark-surface,
-    html.light-theme section.dark-surface {
-      background-color: #06070c !important;
-      color: #ffffff !important;
-    }
-
-    html.light-theme .dark-surface .text-white,
-    html.light-theme .dark-surface .text-white\/90,
-    html.light-theme .dark-surface .text-white\/85,
-    html.light-theme .dark-surface .text-white\/80,
-    html.light-theme .dark-surface .text-white\/75,
-    html.light-theme .dark-surface .text-white\/70,
-    html.light-theme .dark-surface .text-white\/65,
-    html.light-theme .dark-surface .text-white\/60 {
-      color: #ffffff !important;
-    }
-
-    html.light-theme .dark-surface .text-\[\#ff2e63\] {
-      color: #ff4d79 !important;
-    }
-
-    html.light-theme .dark-surface .bg-white\/5,
-    html.light-theme .dark-surface .bg-white\/10,
-    html.light-theme .dark-surface .bg-white\/\[0\.02\],
-    html.light-theme .dark-surface .bg-white\/\[0\.03\] {
-      background-color: rgba(255, 255, 255, 0.08) !important;
-    }
-
-    html.light-theme .dark-surface .border-white\/10,
-    html.light-theme .dark-surface .border-white\/15,
-    html.light-theme .dark-surface .border-white\/20,
-    html.light-theme .dark-surface .border-white\/25 {
-      border-color: rgba(255, 255, 255, 0.24) !important;
-    }
-
-    html.light-theme .dark-surface a.bg-white,
-    html.light-theme .dark-surface button.bg-white,
-    html.light-theme .dark-surface .text-\[\#06070c\] {
-      color: #06070c !important;
-    }
-
-    html.light-theme header .hag-title-main {
-      color: #090b10 !important;
-      text-shadow: 2px 2px 0px #ff2e63;
-    }
-
-    html.light-theme header .hag-title-guide {
-      background: #e11d48 !important;
-      color: #ffffff !important;
-      border-left-color: #090b10 !important;
-    }
-
-    html.light-theme #splash-screen .hag-title-main {
-      color: #ffffff !important;
-    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -368,7 +205,7 @@
         </div>
       </form>
 
-      <!-- 3. Right: Single-Line Lang Toggle + Theme Toggle + Watchlist + Login -->
+      <!-- 3. Right: Single-Line Lang Toggle + Watchlist + Login -->
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap">
         <!-- Instant Hindi <-> English Converter (hidden on mobile <768px, shown inside sidebar drawer on mobile) -->
         <div id="lang-toggle-group"
@@ -378,12 +215,6 @@
           <button type="button" id="lang-btn-en" onclick="hagSetLang('en')"
             class="min-w-[34px] min-h-[36px] px-2.5 py-1.5 whitespace-nowrap transition-colors {{ 'bg-[#cf0f46] text-white' if ssr_lang == 'en' else 'text-white/80 hover:text-white' }}">EN</button>
         </div>
-
-        <!-- Dark <-> Light Theme Toggle -->
-        <button type="button" id="theme-toggle-btn" onclick="hagToggleTheme()" aria-label="Toggle Dark or Light Theme"
-          class="hidden md:inline-flex w-9 h-9 items-center justify-center rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 text-white shrink-0 whitespace-nowrap transition-colors">
-          <span id="theme-toggle-icon" class="text-sm leading-none">{{ '🌙' if ssr_theme == 'light' else '☀️' }}</span>
-        </button>
 
         <button type="button" id="watchlist-nav-btn" onclick="hagOpenWatchlistDrawer()"
           class="inline-flex items-center gap-1.5 sm:gap-2 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded border border-white/20 hover:border-[#ff2e63] bg-white/5 hover:bg-[#ff2e63]/15 text-white font-tech text-xs font-bold tracking-wider uppercase whitespace-nowrap shrink-0 transition-colors">
@@ -515,8 +346,9 @@
         </div>
       </div>
 
-      <!-- Mobile-only Language & Theme Controls (zero desktop duplication) -->
+      <!-- Mobile-only Language Controls (zero desktop duplication) -->
       <div id="sb-mobile-controls" class="md:hidden px-2 pt-2 flex items-center justify-between gap-2 border-t border-white/10">
+        <span class="font-tech text-[10px] font-bold uppercase tracking-wider text-white/65" data-hi="भाषा" data-en="Language">{{ 'Language' if ssr_lang == 'en' else 'भाषा' }}</span>
         <div
           class="inline-flex items-center border border-white/20 bg-white/5 rounded overflow-hidden font-tech text-[11px] font-bold">
           <button type="button" id="sb-lang-btn-hi" onclick="hagSetLang('hi')"
@@ -524,10 +356,6 @@
           <button type="button" id="sb-lang-btn-en" onclick="hagSetLang('en')"
             class="min-w-[36px] min-h-[36px] px-2.5 py-1.5 {{ 'bg-[#cf0f46] text-white' if ssr_lang == 'en' else 'text-white/80' }}">EN</button>
         </div>
-        <button type="button" id="sb-theme-toggle-btn" onclick="hagToggleTheme()"
-          class="min-h-[36px] px-3 py-1.5 border border-white/20 bg-white/5 text-white font-tech text-[11px] font-bold uppercase whitespace-nowrap">
-          <span id="sb-theme-label">{{ '🌙 Dark' if ssr_theme == 'light' else '☀️ Light' }}</span>
-        </button>
       </div>
     </div>
 
@@ -1468,40 +1296,11 @@
         window.hagApplyLang(next);
       };
 
-      /* === DARK <-> LIGHT THEME CONVERTER (cookie + localStorage: hag_theme) === */
-      window.hagApplyTheme = function (theme) {
-        var isLight = theme === "light";
-        if (isLight) {
-          document.documentElement.classList.add("light-theme");
-          document.documentElement.classList.remove("dark");
-        } else {
-          document.documentElement.classList.remove("light-theme");
-          document.documentElement.classList.add("dark");
-        }
-        var icon = document.getElementById("theme-toggle-icon");
-        var sbLbl = document.getElementById("sb-theme-label");
-        if (icon) icon.textContent = isLight ? "🌙" : "☀️";
-        if (sbLbl) sbLbl.textContent = isLight ? "🌙 Dark" : "☀️ Light";
-      };
-
-      window.hagToggleTheme = function () {
-        var isLight = document.documentElement.classList.contains("light-theme");
-        var next = isLight ? "dark" : "light";
-        try { localStorage.setItem("hag_theme", next); } catch (e) { }
-        if (window.hagSetCookie) window.hagSetCookie("hag_theme", next);
-        window.hagApplyTheme(next);
-      };
-
       document.addEventListener("DOMContentLoaded", function () {
         window.hagSyncWatchlistUI();
         initHunterRankAndStreak();
         fetchCurrentSession();
         window.hagApplyLang(window.hagGetLang());
-        try {
-          var cT = window.hagGetCookie ? window.hagGetCookie("hag_theme") : "";
-          var curTheme = (cT === "light" || cT === "dark") ? cT : (localStorage.getItem("hag_theme") === "light" ? "light" : "dark");
-          window.hagApplyTheme(curTheme);
-        } catch (e) { }
         try {
           if (!localStorage.getItem("hag_cookie_consent_v2")) {
             var cb = document.getElementById("hag-cookie-banner");

@@ -144,18 +144,10 @@ def _req_lang(request: Request | None) -> str:
     return "en" if val == "en" else "hi"
 
 
-def _req_theme(request: Request | None) -> str:
-    if request is None:
-        return "dark"
-    val = (request.cookies.get("hag_theme") or "dark").strip().lower()
-    return "light" if val == "light" else "dark"
-
-
 templates.env.globals["get_amazon_tag"] = _amazon_affiliate_tag
 templates.env.globals["get_adsense_client_id"] = _adsense_client_id
 templates.env.globals["resolve_base_url"] = _resolve_base_url
 templates.env.globals["req_lang"] = _req_lang
-templates.env.globals["req_theme"] = _req_theme
 
 
 @app.exception_handler(StarletteHTTPException)
