@@ -114,13 +114,19 @@ CURATED_SPOTLIGHT: list[dict[str, Any]] = [
     },
 ]
 
-FALLBACK_NEWS_IMAGES = [
-    "https://s4.anilist.co/file/anilistcdn/media/anime/banner/176496-5oY4k2NRqlYs.jpg",
-    "https://s4.anilist.co/file/anilistcdn/media/anime/banner/178788-tSHb5MiaNBNL.jpg",
-    "https://s4.anilist.co/file/anilistcdn/media/anime/banner/113415-jQBSkxWAAk83.jpg",
-    "https://s4.anilist.co/file/anilistcdn/media/anime/banner/171018-SpwPNAduszXl.jpg",
-    "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21087-sHb9zUZFsHe1.jpg",
-]
+def _format_initial_countdown(airing_at: int | None, now_ts: int) -> str:
+    """Return initial SSR countdown string (never blank '--:--:--') from Unix airing_at."""
+    if not airing_at:
+        return "LIVE"
+    diff = max(0, int(airing_at) - int(now_ts))
+    if diff == 0:
+        return "LIVE NOW"
+    days, rem = divmod(diff, 86400)
+    hours, rem = divmod(rem, 3600)
+    mins = rem // 60
+    if days > 0:
+        return f"{days}d {hours:02d}h"
+    return f"{hours:02d}:{mins:02d}:00"
 
 
 def _extract_youtube_id(url: str | None) -> str:
@@ -270,29 +276,41 @@ def _fetch_from_supabase() -> dict[str, Any]:
         ).mappings().all()
         platforms = [dict(r) for r in plat_rows]
 
-        # 1. Schedule items (IST airing + countdown timestamp)
+        # 1. Schedule items (Strictly RELEASING + deduplicated IST airing + real countdown timestamp)
         sch_rows = conn.execute(
             text(
                 """
                 SELECT id, title_en, title_hi, summary_en, summary_hi, image_url,
                        airing_day, airing_time, score, anilist_id, source_url,
                        hindi_dub, dub_platform, season, season_year,
-                       official_links, latest_chapter
+                       official_links, latest_chapter, publication_status
                 FROM anime_draft
-                WHERE content_type = 'schedule' AND status = 'published'
+                WHERE content_type = 'schedule'
+                  AND status = 'published'
+                  AND (publication_status IS NULL OR UPPER(publication_status) = 'RELEASING')
                 ORDER BY (official_links IS NOT NULL AND official_links LIKE '{%') DESC, score DESC NULLS LAST, id ASC
-                LIMIT 140
+                LIMIT 150
                 """
             )
         ).mappings().all()
 
-        top_ids = [int(r["anilist_id"]) for r in sch_rows[:36] if r.get("anilist_id")]
-        _hydrate_anilist_covers(top_ids)
+        missing_cov_ids = [
+            int(r["anilist_id"])
+            for r in sch_rows
+            if r.get("anilist_id") and (not r.get("image_url") or not str(r.get("image_url")).startswith("http"))
+        ]
+        _hydrate_anilist_covers(missing_cov_ids)
 
         day_hi_to_en = {hi: en for hi, en in DAY_ORDER}
         now_ts = int(time.time())
+        seen_sch_keys: set[str] = set()
         for r in sch_rows:
             aid = int(r["anilist_id"]) if r.get("anilist_id") else None
+            dedup_key = f"aid:{aid}" if aid else re.sub(r"[^a-z0-9]+", "", (r["title_en"] or "").lower())
+            if dedup_key in seen_sch_keys:
+                continue
+            seen_sch_keys.add(dedup_key)
+
             s_slug = _slugify(r["title_en"] or f"schedule-{r['id']}")
             meta = _parse_json_safe(r.get("official_links"))
             raw_airing_at = meta.get("airing_at")
@@ -304,6 +322,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
             schedule_items.append(
                 {
                     "id": r["id"],
+                    "anilist_id": aid,
                     "slug": s_slug,
                     "title_en": r["title_en"] or "",
                     "title_hi": r["title_hi"] or r["title_en"] or "",
@@ -314,7 +333,8 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "airing_day_en": day_hi_to_en.get(day_hi, "Sunday"),
                     "airing_time": r["airing_time"] or "TBD IST",
                     "airing_at": airing_at,
-                    "episode_label": r.get("latest_chapter") or (f"Ep. {meta['episode']}" if meta.get("episode") else "New Ep."),
+                    "initial_countdown": _format_initial_countdown(airing_at, now_ts),
+                    "episode_label": r.get("latest_chapter") or (f"Ep. {meta['episode']}" if meta.get("episode") else "Ongoing"),
                     "score": int(r["score"]) if r.get("score") else None,
                     "source_url": r["source_url"] or f"/anime/{s_slug}",
                     "detail_url": f"/anime/{s_slug}",
@@ -324,11 +344,11 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 }
             )
 
-        # 2. Manga shelf items (enriched dossier priority)
+        # 2. Manga shelf items (deduplicated + accurate HIATUS / COMPLETED / Ongoing serialization)
         manga_rows = conn.execute(
             text(
                 """
-                SELECT id, title_en, title_hi, summary_en, summary_hi, image_url,
+                SELECT id, anilist_id, title_en, title_hi, summary_en, summary_hi, image_url,
                        volumes, chapters, latest_chapter, publication_status,
                        source_name, source_url, score, is_featured,
                        official_links, season_year, start_date, end_date
@@ -340,30 +360,57 @@ def _fetch_from_supabase() -> dict[str, Any]:
             )
         ).mappings().all()
 
+        seen_manga_keys: set[str] = set()
         for idx, r in enumerate(manga_rows):
+            maid = int(r["anilist_id"]) if r.get("anilist_id") else None
+            m_key = f"aid:{maid}" if maid else re.sub(r"[^a-z0-9]+", "", (r["title_en"] or "").lower())
+            if m_key in seen_manga_keys:
+                continue
+            seen_manga_keys.add(m_key)
+
             meta = _parse_json_safe(r.get("official_links"))
             vol_num = r["volumes"]
             ch_num = r["chapters"]
             pub_raw = (r["publication_status"] or "RELEASING").upper()
+            is_hiatus = pub_raw == "HIATUS"
             is_finished = pub_raw in ("FINISHED", "COMPLETED")
             start_y = meta.get("start_year") or r.get("season_year") or (r["start_date"].year if isinstance(r.get("start_date"), datetime) else None)
             end_y = meta.get("end_year") or (r["end_date"].year if isinstance(r.get("end_date"), datetime) else None)
 
-            latest_vol_label = f"Vol. {vol_num} Released" if vol_num else ("Complete Edition" if is_finished else "Ongoing Tankōbon")
-            chapters_label = f"{ch_num} Chapters" if ch_num else (r["latest_chapter"] or "Weekly Serialization")
-            serialization_label = (
-                f"पूर्ण हो चुका (Completed {end_y})" if (is_finished and end_y)
-                else ("पूर्ण (Completed)" if is_finished else "जारी है (Releasing)")
-            )
-            serialization_en = (
-                f"Completed ({end_y})" if (is_finished and end_y)
-                else ("Completed" if is_finished else "Releasing")
-            )
-            badge_vol = f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else "ONGOING")
+            if is_finished:
+                latest_vol_label = f"Completed • {vol_num} Vols" if vol_num else "Complete Edition"
+                chapters_label = f"{ch_num} Chapters" if ch_num else (f"{vol_num} Volumes" if vol_num else "Completed")
+                serialization_label = f"पूर्ण हो चुका (Completed {end_y})" if end_y else "पूर्ण (Completed)"
+                serialization_en = f"Completed ({end_y})" if end_y else "Completed"
+                pub_status = "COMPLETED"
+                status_badge_hi = "पूर्ण • COMPLETED"
+                status_badge_en = "COMPLETED"
+            elif is_hiatus:
+                latest_vol_label = f"Vol. {vol_num} • On Hiatus" if vol_num else "On Hiatus"
+                chapters_label = f"{ch_num} Chapters" if ch_num else "On Hiatus"
+                serialization_label = "विराम पर (On Hiatus)"
+                serialization_en = "On Hiatus"
+                pub_status = "HIATUS"
+                status_badge_hi = "विराम पर • HIATUS"
+                status_badge_en = "ON HIATUS"
+            else:
+                latest_vol_label = f"Vol. {vol_num} Released" if vol_num else "Ongoing Tankōbon"
+                raw_ch = r["latest_chapter"]
+                if raw_ch == "Weekly Serialization":
+                    raw_ch = "Ongoing Serialization"
+                chapters_label = f"{ch_num} Chapters" if ch_num else (raw_ch or "Ongoing Serialization")
+                serialization_label = "जारी है (Ongoing)"
+                serialization_en = "Ongoing Serialization"
+                pub_status = "ONGOING"
+                status_badge_hi = "जारी है • ONGOING"
+                status_badge_en = "ONGOING"
+
+            badge_vol = f"VOL. {vol_num:02d}" if isinstance(vol_num, int) else ("COMPLETE" if is_finished else ("HIATUS" if is_hiatus else "ONGOING"))
 
             manga_items.append(
                 {
                     "id": r["id"],
+                    "anilist_id": maid,
                     "title_en": r["title_en"] or "",
                     "title_hi": r["title_hi"] or r["title_en"] or "",
                     "native_title": meta.get("native_title") or "",
@@ -377,10 +424,10 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "latest_volume_label": latest_vol_label,
                     "chapters": str(chapters_label),
                     "chapters_label": str(chapters_label),
-                    "pub_status": "COMPLETED" if is_finished else "ONGOING",
-                    "status_short": "COMPLETED" if is_finished else "ONGOING",
-                    "status_badge_hi": "पूर्ण • COMPLETED" if is_finished else "जारी है • ONGOING",
-                    "status_badge_en": "COMPLETED" if is_finished else "RELEASING • ONGOING",
+                    "pub_status": pub_status,
+                    "status_short": pub_status,
+                    "status_badge_hi": status_badge_hi,
+                    "status_badge_en": status_badge_en,
                     "serialization_label": serialization_label,
                     "serialization_en": serialization_en,
                     "start_year_label": str(start_y) if start_y else "Featured",
@@ -421,14 +468,15 @@ def _fetch_from_supabase() -> dict[str, Any]:
             )
         ).mappings().all()
 
-        img_cursor = 0
+        seen_news_titles: set[str] = set()
         for r in draft_news_rows:
-            raw_img = r.get("image_url")
-            if raw_img and raw_img.startswith("https://"):
-                img = raw_img
-            else:
-                img = FALLBACK_NEWS_IMAGES[img_cursor % len(FALLBACK_NEWS_IMAGES)]
-                img_cursor += 1
+            t_key = re.sub(r"[^a-z0-9]+", "", (r["title_en"] or r["title_hi"] or "").lower())
+            if t_key in seen_news_titles:
+                continue
+            if t_key:
+                seen_news_titles.add(t_key)
+            raw_img = (r.get("image_url") or "").strip()
+            img = raw_img if raw_img.startswith("https://") or raw_img.startswith("http://") else ""
             pub_dt = r.get("published_at") or r.get("created_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Recent"
             rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
@@ -461,12 +509,8 @@ def _fetch_from_supabase() -> dict[str, Any]:
             )
 
         for r in article_rows:
-            raw_img = r.get("cover_image")
-            if raw_img and raw_img.startswith("https://"):
-                img = raw_img
-            else:
-                img = FALLBACK_NEWS_IMAGES[img_cursor % len(FALLBACK_NEWS_IMAGES)]
-                img_cursor += 1
+            raw_img = (r.get("cover_image") or "").strip()
+            img = raw_img if raw_img.startswith("https://") or raw_img.startswith("http://") else ""
             pub_dt = r.get("published_at")
             date_str = pub_dt.strftime("%d %b %Y") if isinstance(pub_dt, datetime) else "Guide"
             rel_age, rel_age_en, is_fresh, hours_left, is_brand_new, is_expiring_soon = _ist_news_timing(pub_dt)
@@ -498,7 +542,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                 }
             )
 
-        # 4. Trailer items
+        # 4. Trailer items (valid YouTube ID + deduplicated)
         tr_rows = conn.execute(
             text(
                 """
@@ -512,10 +556,14 @@ def _fetch_from_supabase() -> dict[str, Any]:
             )
         ).mappings().all()
 
+        seen_yt: set[str] = set()
         for r in tr_rows:
             yt_id = _extract_youtube_id(r.get("source_url"))
+            if not yt_id or yt_id in seen_yt:
+                continue
+            seen_yt.add(yt_id)
             thumb = _resolve_safe_image(
-                r.get("image_url") or (f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg" if yt_id else None)
+                r.get("image_url") or f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
             )
             t_en = (r["title_en"] or r["title_hi"] or "").strip()
             t_hi = (r["title_hi"] or t_en).strip()
@@ -528,7 +576,7 @@ def _fetch_from_supabase() -> dict[str, Any]:
                     "summary": _clean_text(r["summary_hi"] or r["summary_en"], 130),
                     "thumb_url": thumb,
                     "youtube_id": yt_id,
-                    "embed_url": f"https://www.youtube-nocookie.com/embed/{yt_id}?autoplay=1&rel=0" if yt_id else "",
+                    "embed_url": f"https://www.youtube-nocookie.com/embed/{yt_id}?autoplay=1&rel=0",
                     "source_name": r.get("source_name") or "Official PV",
                     "source_url": r.get("source_url") or "#",
                     "season": f"{r.get('season') or ''} {r.get('season_year') or ''}".strip(),

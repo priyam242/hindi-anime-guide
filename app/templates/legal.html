@@ -9,26 +9,29 @@
       <!-- Left Sticky Legal Navigation Sidebar -->
       <aside class="lg:col-span-4 lg:sticky lg:top-24 border border-white/15 bg-white/[0.02] p-5 sm:p-6 space-y-5">
         <div class="border-b border-white/10 pb-4 space-y-1.5">
-          <span class="inline-flex items-center gap-2 font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">
+          <span
+            class="inline-flex items-center gap-2 font-tech text-[10px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">
             <span class="w-2 h-2 rounded-full bg-[#ff2e63]"></span>
             TRUST &amp; COMPLIANCE SUITE
           </span>
-          <h2 class="font-display-shonen text-xl text-white" data-hi="लीगल और विश्वास केंद्र" data-en="LEGAL &amp; TRUST HUB">लीगल और <span class="text-[#ff2e63]">विश्वास केंद्र</span></h2>
+          <h2 class="font-display-shonen text-xl text-white" data-hi="लीगल और विश्वास केंद्र"
+            data-en="LEGAL &amp; TRUST HUB">लीगल और <span class="text-[#ff2e63]">विश्वास केंद्र</span></h2>
           <p class="font-tech text-[10px] uppercase tracking-wider text-white/70">Last Updated: November 2026</p>
         </div>
 
-        <nav aria-label="Legal Navigation" class="flex flex-col gap-1.5 font-tech text-xs font-bold uppercase tracking-wider">
+        <nav aria-label="Legal Navigation"
+          class="flex flex-col gap-1.5 font-tech text-xs font-bold uppercase tracking-wider">
           {% set nav_items = [
-            ('about', '/about', 'About Us & Editorial Policy', 'हमारे बारे में'),
-            ('privacy', '/privacy-policy', 'Privacy Policy (AdSense & DPDP)', 'प्राइवेसी पॉलिसी'),
-            ('terms', '/terms', 'Terms & Conditions', 'नियम व शर्तें'),
-            ('dmca', '/dmca', 'DMCA & Copyright Compliance', 'कॉपीराइट व DMCA'),
-            ('disclaimer', '/disclaimer', 'Affiliate & Ad Disclaimer', 'एफिलिएट डिस्क्लेमर'),
-            ('contact', '/contact', 'Contact & Sponsorships', 'संपर्क और स्पॉन्सरशिप')
+          ('about', '/about', 'About Us & Editorial Policy', 'हमारे बारे में'),
+          ('privacy', '/privacy-policy', 'Privacy Policy (AdSense & DPDP)', 'प्राइवेसी पॉलिसी'),
+          ('terms', '/terms', 'Terms & Conditions', 'नियम व शर्तें'),
+          ('dmca', '/dmca', 'DMCA & Copyright Compliance', 'कॉपीराइट व DMCA'),
+          ('disclaimer', '/disclaimer', 'Affiliate & Ad Disclaimer', 'एफिलिएट डिस्क्लेमर'),
+          ('contact', '/contact', 'Contact & Sponsorships', 'संपर्क और स्पॉन्सरशिप')
           ] %}
           {% for key, href, en_lbl, hi_lbl in nav_items %}
           <a href="{{ href }}"
-             class="min-h-[38px] px-3.5 py-2 border transition-colors flex items-center justify-between gap-2 {{ 'border-[#cf0f46] bg-[#cf0f46] text-white shadow-[0_0_20px_rgba(255,46,99,0.3)]' if legal_page == key else 'border-white/10 bg-white/[0.02] text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
+            class="min-h-[38px] px-3.5 py-2 border transition-colors flex items-center justify-between gap-2 {{ 'border-[#cf0f46] bg-[#cf0f46] text-white shadow-[0_0_20px_rgba(255,46,99,0.3)]' if legal_page == key else 'border-white/10 bg-white/[0.02] text-white/80 hover:border-[#ff2e63] hover:text-white' }}">
             <span class="truncate">{{ en_lbl }}</span>
             <span class="text-[10px] opacity-90 shrink-0" data-hi="{{ hi_lbl }}" data-en="READ">{{ hi_lbl }}</span>
           </a>
@@ -37,7 +40,8 @@
 
         <div class="p-4 border border-[#ff2e63]/40 bg-[#ff2e63]/10 space-y-1.5 text-xs">
           <p class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">100% LEGAL DIRECTORY</p>
-          <p class="text-white/80 leading-relaxed">Hindi Anime Guide hosts zero pirated video streams or unauthorized manga scans. Licensed streaming links only.</p>
+          <p class="text-white/80 leading-relaxed">Hindi Anime Guide hosts zero pirated video streams or unauthorized
+            manga scans. Licensed streaming links only.</p>
           <p class="font-tech text-[11px] text-white pt-1">contact@hindianimeguide.in</p>
         </div>
       </aside>
@@ -50,173 +54,258 @@
             <span class="px-3 py-1 border border-white/20 text-white/80">LAST UPDATED: NOVEMBER 2026</span>
           </div>
           <h1 class="font-display-shonen text-2xl sm:text-4xl text-white leading-tight">{{ page_title }}</h1>
-          <p class="text-sm text-[#ff2e63] font-semibold" data-hi="{{ hindi_summary }}" data-en="{{ badge_label }} • Hindi Anime Guide Official Policy &amp; Transparency">{{ hindi_summary }}</p>
+          <p class="text-sm text-[#ff2e63] font-semibold" data-hi="{{ hindi_summary }}"
+            data-en="{{ badge_label }} • Hindi Anime Guide Official Policy &amp; Transparency">{{ hindi_summary }}</p>
         </div>
 
         {% if legal_page == 'about' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]" data-hi="संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)" data-en="EDITORIAL MISSION SUMMARY">संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)</h2>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]"
+              data-hi="संक्षिप्त हिंदी परिचय (EDITORIAL MISSION)" data-en="EDITORIAL MISSION SUMMARY">संक्षिप्त हिंदी
+              परिचय (EDITORIAL MISSION)</h2>
             <p data-hi="Hindi Anime Guide (hindianimeguide.in) भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब है — केवल 100% वैध स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST टाइमिंग और आधिकारिक मंगा विवरण।"
-               data-en="Hindi Anime Guide (hindianimeguide.in) is India's dedicated Hindi &amp; English Anime and Manga directory hub providing 100% legal streaming platforms, live IST airing schedules, and official manga metadata."><strong>Hindi Anime Guide (hindianimeguide.in)</strong> भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब है। हमारा उद्देश्य भारतीय एनीमे प्रशंसकों को केवल <strong>100% वैध (Legal &amp; Licensed)</strong> स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST ब्रॉडकास्ट टाइमिंग, और आधिकारिक मंगा प्रकाशन विवरण उपलब्ध कराना है।</p>
+              data-en="Hindi Anime Guide (hindianimeguide.in) is India's dedicated Hindi &amp; English Anime and Manga directory hub providing 100% legal streaming platforms, live IST airing schedules, and official manga metadata.">
+              <strong>Hindi Anime Guide (hindianimeguide.in)</strong> भारत का समर्पित हिंदी एनीमे और मंगा डायरेक्टरी हब
+              है। हमारा उद्देश्य भारतीय एनीमे प्रशंसकों को केवल <strong>100% वैध (Legal &amp; Licensed)</strong>
+              स्ट्रीमिंग प्लेटफ़ॉर्म, सटीक IST ब्रॉडकास्ट टाइमिंग, और आधिकारिक मंगा प्रकाशन विवरण उपलब्ध कराना है।</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">1. Who We Are &amp; E-E-A-T Editorial Standards</h2>
-            <p>Hindi Anime Guide is an independent Indian digital publication and discovery platform dedicated to Hindi-dubbed anime, simulcast IST broadcast schedules, official manga metadata, and verified industry news. Every title listing, airing schedule, and streaming availability badge is curated to bridge Japanese animation with Hindi-speaking audiences transparently.</p>
+            <p>Hindi Anime Guide is an independent Indian digital publication and discovery platform dedicated to
+              Hindi-dubbed anime, simulcast IST broadcast schedules, official manga metadata, and verified industry
+              news. Every title listing, airing schedule, and streaming availability badge is curated to bridge Japanese
+              animation with Hindi-speaking audiences transparently.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">2. Zero-Piracy Verification Policy</h2>
-            <p>We maintain a strict, uncompromising anti-piracy standard. Hindi Anime Guide <strong>never</strong> hosts, embeds, mirrors, or links to unlicensed anime streaming websites, torrent trackers, or unauthorized scanlation portals. Every watch or read button connects exclusively to rights-holding licensors such as Crunchyroll, Netflix, SonyLIV, JioHotstar, Prime Video, Muse India (YouTube), Shueisha MangaPlus, and Viz Media.</p>
+            <p>We maintain a strict, uncompromising anti-piracy standard. Hindi Anime Guide <strong>never</strong>
+              hosts, embeds, mirrors, or links to unlicensed anime streaming websites, torrent trackers, or unauthorized
+              scanlation portals. Every watch or read button connects exclusively to rights-holding licensors such as
+              Crunchyroll, Netflix, SonyLIV, JioHotstar, Prime Video, Muse India (YouTube), Shueisha MangaPlus, and Viz
+              Media.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">3. Automated + Human Data Methodology</h2>
-            <p>Our live IST broadcast countdowns, manga dossier volumes/chapters, and rolling 48-hour newswire sync directly from structured official metadata sources including AniList GraphQL APIs and licensed publisher RSS feeds (Anime News Network, MyAnimeList, Crunchyroll News), reviewed against Indian streaming availability matrices for accuracy.</p>
+            <p>Our live IST broadcast countdowns, manga dossier volumes/chapters, and rolling 48-hour newswire sync
+              directly from structured official metadata sources including AniList GraphQL APIs and licensed publisher
+              RSS feeds (Anime News Network, MyAnimeList, Crunchyroll News), reviewed against Indian streaming
+              availability matrices for accuracy.</p>
           </div>
 
           <div class="space-y-2">
             <h2 class="font-display-shonen text-xl text-white">4. Editorial Contact</h2>
-            <p>For editorial corrections, press releases, licensing partnerships, or advertising inquiries, write directly to <strong>contact@hindianimeguide.in</strong> or submit a verified inquiry via our <a href="/contact" class="text-[#ff2e63] underline">Contact &amp; Sponsorships</a> page.</p>
+            <p>For editorial corrections, press releases, licensing partnerships, or advertising inquiries, write
+              directly to <strong>contact@hindianimeguide.in</strong> or submit a verified inquiry via our <a
+                href="/contact" class="text-[#ff2e63] underline">Contact &amp; Sponsorships</a> page.</p>
           </div>
         </div>
 
         {% elif legal_page == 'privacy' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">प्राइवेसी सारांश (DPDP ACT 2023 &amp; COOKIES)</h2>
-            <p>हम आपकी प्राइवेसी का पूरा सम्मान करते हैं। आपकी वॉचलिस्ट और हंटर रैंक केवल आपके ब्राउज़र (`localStorage`) में सेव होती है। Google AdSense विज्ञापन दिखाने के लिए DoubleClick DART कुकीज़ का उपयोग कर सकता है, जिसे आप Google Ads Settings से बंद कर सकते हैं।</p>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">प्राइवेसी सारांश (DPDP ACT
+              2023 &amp; COOKIES)</h2>
+            <p>हम आपकी प्राइवेसी का पूरा सम्मान करते हैं। आपकी वॉचलिस्ट और हंटर रैंक केवल आपके ब्राउज़र (`localStorage`)
+              में सेव होती है। Google AdSense विज्ञापन दिखाने के लिए DoubleClick DART कुकीज़ का उपयोग कर सकता है, जिसे
+              आप Google Ads Settings से बंद कर सकते हैं।</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">1. Information We Collect &amp; Client-Side Storage</h2>
-            <p>Hindi Anime Guide does not require account registration to browse guides, schedules, or manga dossiers. Features such as <strong>मेरी लिस्ट (Watchlist)</strong>, <strong>Hunter Rank XP</strong>, recent browsing history, daily clash vote locks, and cookie preferences are stored locally in your browser via <code>localStorage</code> keys (<code>hag_watchlist_v2</code>, <code>hag_hunter_v2</code>, <code>hag_history_v2</code>, <code>hag_cookie_consent_v2</code>). Personal contact data (name, email, message) is processed only when voluntarily submitted via our Contact form.</p>
+            <p>Hindi Anime Guide does not require account registration to browse guides, schedules, or manga dossiers.
+              Features such as <strong>मेरी लिस्ट (Watchlist)</strong>, <strong>Hunter Rank XP</strong>, recent browsing
+              history, daily clash vote locks, and cookie preferences are stored locally in your browser via
+              <code>localStorage</code> keys (<code>hag_watchlist_v2</code>, <code>hag_hunter_v2</code>,
+              <code>hag_history_v2</code>, <code>hag_cookie_consent_v2</code>). Personal contact data (name, email,
+              message) is processed only when voluntarily submitted via our Contact form.</p>
           </div>
 
           <div class="space-y-3">
-            <h2 class="font-display-shonen text-xl text-white">2. Google AdSense &amp; DoubleClick DART Cookie Disclosure</h2>
-            <p>Third-party vendors, including <strong>Google AdSense</strong>, use cookies (including the <strong>DoubleClick DART cookie</strong>) to serve advertisements based on a user's prior visits to Hindi Anime Guide or other websites on the Internet. Google's use of advertising cookies enables it and its partners to serve personalized ads to users based on their browsing history.</p>
-            <p>You may opt out of personalized advertising at any time by visiting <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="text-[#ff2e63] underline">Google Ads Settings (adssettings.google.com)</a>, or opt out of third-party vendor cookie use via <a href="https://optout.aboutads.info" target="_blank" rel="noopener noreferrer" class="text-[#ff2e63] underline">aboutads.info</a>.</p>
+            <h2 class="font-display-shonen text-xl text-white">2. Google AdSense &amp; DoubleClick DART Cookie
+              Disclosure</h2>
+            <p>Third-party vendors, including <strong>Google AdSense</strong>, use cookies (including the
+              <strong>DoubleClick DART cookie</strong>) to serve advertisements based on a user's prior visits to Hindi
+              Anime Guide or other websites on the Internet. Google's use of advertising cookies enables it and its
+              partners to serve personalized ads to users based on their browsing history.</p>
+            <p>You may opt out of personalized advertising at any time by visiting <a
+                href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer"
+                class="text-[#ff2e63] underline">Google Ads Settings (adssettings.google.com)</a>, or opt out of
+              third-party vendor cookie use via <a href="https://optout.aboutads.info" target="_blank"
+                rel="noopener noreferrer" class="text-[#ff2e63] underline">aboutads.info</a>.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">3. Analytics &amp; Performance Telemetry</h2>
-            <p>We utilize <strong>Vercel Analytics</strong> and <strong>Vercel Speed Insights</strong> to measure aggregate page performance, latency, and Core Web Vitals without building invasive cross-site personal behavioral profiles.</p>
+            <p>We utilize <strong>Vercel Analytics</strong> and <strong>Vercel Speed Insights</strong> to measure
+              aggregate page performance, latency, and Core Web Vitals without building invasive cross-site personal
+              behavioral profiles.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">4. Rights Under Indian DPDP Act, 2023</h2>
-            <p>In compliance with India's <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, users acting as Data Principals have the right to request access, correction, updating, or erasure of any contact inquiry data submitted to us, as well as the right to grievance redressal. Clear browser storage at any time to wipe client-side preferences, or email our Grievance Officer at <strong>contact@hindianimeguide.in</strong> for record deletion requests.</p>
+            <p>In compliance with India's <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, users
+              acting as Data Principals have the right to request access, correction, updating, or erasure of any
+              contact inquiry data submitted to us, as well as the right to grievance redressal. Clear browser storage
+              at any time to wipe client-side preferences, or email our Grievance Officer at
+              <strong>contact@hindianimeguide.in</strong> for record deletion requests.</p>
           </div>
         </div>
 
         {% elif legal_page == 'terms' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">नियम व शर्तों का सारांश (TERMS OF USE)</h2>
-            <p>Hindi Anime Guide एक सूचनात्मक और 100% वैध स्ट्रीमिंग गाइड डायरेक्टरी है। बाहरी स्ट्रीमिंग प्लेटफ़ॉर्म के सब्सक्रिप्शन और कंटेंट उपलब्धता पर संबंधित प्लेटफ़ॉर्म के नियम लागू होते हैं।</p>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">नियम व शर्तों का सारांश
+              (TERMS OF USE)</h2>
+            <p>Hindi Anime Guide एक सूचनात्मक और 100% वैध स्ट्रीमिंग गाइड डायरेक्टरी है। बाहरी स्ट्रीमिंग प्लेटफ़ॉर्म के
+              सब्सक्रिप्शन और कंटेंट उपलब्धता पर संबंधित प्लेटफ़ॉर्म के नियम लागू होते हैं।</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">1. Acceptance &amp; Acceptable Use</h2>
-            <p>By accessing or using <strong>hindianimeguide.in</strong>, you agree to be bound by these Terms &amp; Conditions. You agree to use the service strictly for lawful, personal, non-commercial discovery of anime schedules, manga data, and streaming availability, and must not scrape, abuse, flood API endpoints, or disrupt service availability.</p>
+            <p>By accessing or using <strong>hindianimeguide.in</strong>, you agree to be bound by these Terms &amp;
+              Conditions. You agree to use the service strictly for lawful, personal, non-commercial discovery of anime
+              schedules, manga data, and streaming availability, and must not scrape, abuse, flood API endpoints, or
+              disrupt service availability.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">2. Intellectual Property Rights</h2>
-            <p>Original site branding, editorial summaries, Hindi translations, layout architecture, and software code are the property of Hindi Anime Guide. All anime titles, series names, key visuals, logos, and manga artwork remain the respective intellectual property of their Japanese and international copyright holders, publishers, and official distributors.</p>
+            <p>Original site branding, editorial summaries, Hindi translations, layout architecture, and software code
+              are the property of Hindi Anime Guide. All anime titles, series names, key visuals, logos, and manga
+              artwork remain the respective intellectual property of their Japanese and international copyright holders,
+              publishers, and official distributors.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">3. Third-Party Streaming Links Disclaimer</h2>
-            <p>Our directory includes outbound hyperlinks to third-party licensed platforms (such as Crunchyroll, Netflix, SonyLIV, JioHotstar, Prime Video, Amazon India, YouTube, and MangaPlus). We do not control, endorse, or guarantee subscription pricing, regional catalog changes, audio track updates, or uptime on third-party platforms.</p>
+            <p>Our directory includes outbound hyperlinks to third-party licensed platforms (such as Crunchyroll,
+              Netflix, SonyLIV, JioHotstar, Prime Video, Amazon India, YouTube, and MangaPlus). We do not control,
+              endorse, or guarantee subscription pricing, regional catalog changes, audio track updates, or uptime on
+              third-party platforms.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">4. Governing Law &amp; Jurisdiction</h2>
-            <p>These Terms &amp; Conditions shall be governed by and construed in accordance with the laws of the <strong>Republic of India</strong>, including the Information Technology Act, 2000. Any disputes arising out of or relating to this website shall be subject to the exclusive jurisdiction of the competent <strong>Courts of Ahmedabad, Gujarat, India</strong>.</p>
+            <p>These Terms &amp; Conditions shall be governed by and construed in accordance with the laws of the
+              <strong>Republic of India</strong>, including the Information Technology Act, 2000. Any disputes arising
+              out of or relating to this website shall be subject to the exclusive jurisdiction of the competent
+              <strong>Courts of Ahmedabad, Gujarat, India</strong>.</p>
           </div>
         </div>
 
         {% elif legal_page == 'dmca' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">कॉपीराइट व सेफ-हार्बर नीति (DMCA &amp; INDIA COPYRIGHT ACT)</h2>
-            <p>Hindi Anime Guide किसी भी पाइरेटेड वीडियो, एपिसोड या मंगा स्कैन को होस्ट नहीं करता। हम केवल वैध लाइसेंस प्राप्त प्लेटफ़ॉर्म के आधिकारिक लिंक और संपादकीय जानकारी दिखाते हैं।</p>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">कॉपीराइट व सेफ-हार्बर नीति
+              (DMCA &amp; INDIA COPYRIGHT ACT)</h2>
+            <p>Hindi Anime Guide किसी भी पाइरेटेड वीडियो, एपिसोड या मंगा स्कैन को होस्ट नहीं करता। हम केवल वैध लाइसेंस
+              प्राप्त प्लेटफ़ॉर्म के आधिकारिक लिंक और संपादकीय जानकारी दिखाते हैं।</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">1. Safe-Harbor &amp; Zero-Piracy Compliance</h2>
-            <p>Hindi Anime Guide operates as an editorial information index and legal streaming guide in compliance with the <strong>Indian Copyright Act, 1957 (including Section 52 fair dealing provisions)</strong> and the safe-harbor principles of the <strong>Digital Millennium Copyright Act (DMCA, 17 U.S.C. § 512)</strong>.</p>
-            <p><strong>Zero Piracy Guarantee:</strong> Hindi Anime Guide hosts zero pirated video streams, MP4/MKV episode downloads, or copyrighted manga chapter scans. All viewing and reading links point exclusively to officially licensed distributors (Crunchyroll, Netflix, SonyLIV, JioHotstar, Prime Video, Muse India, MangaPlus, and Viz Media). Promotional thumbnails, trailer embeds, and bibliographic metadata are displayed strictly for editorial review and official discovery.</p>
+            <p>Hindi Anime Guide operates as an editorial information index and legal streaming guide in compliance with
+              the <strong>Indian Copyright Act, 1957 (including Section 52 fair dealing provisions)</strong> and the
+              safe-harbor principles of the <strong>Digital Millennium Copyright Act (DMCA, 17 U.S.C. § 512)</strong>.
+            </p>
+            <p><strong>Zero Piracy Guarantee:</strong> Hindi Anime Guide hosts zero pirated video streams, MP4/MKV
+              episode downloads, or copyrighted manga chapter scans. All viewing and reading links point exclusively to
+              officially licensed distributors (Crunchyroll, Netflix, SonyLIV, JioHotstar, Prime Video, Muse India,
+              MangaPlus, and Viz Media). Promotional thumbnails, trailer embeds, and bibliographic metadata are
+              displayed strictly for editorial review and official discovery.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">2. Copyright Takedown Notice Procedure</h2>
-            <p>If you are a copyright owner or authorized legal representative and believe any image, excerpt, or link indexed on our site infringes your rights, please transmit a formal notice containing:</p>
+            <p>If you are a copyright owner or authorized legal representative and believe any image, excerpt, or link
+              indexed on our site infringes your rights, please transmit a formal notice containing:</p>
             <ul class="list-disc pl-6 space-y-1.5 text-white/80">
               <li>Identification of the copyrighted work claimed to have been infringed.</li>
               <li>The exact URL(s) on <strong>hindianimeguide.in</strong> where the material appears.</li>
               <li>Your full name, organization, postal address, and verifiable official email address.</li>
               <li>A good-faith declaration that the disputed use is not authorized by the rights holder or the law.</li>
             </ul>
-            <p class="pt-2">Send takedown notices to <strong>contact@hindianimeguide.in</strong> or submit via our <a href="/contact" class="text-[#ff2e63] underline">Contact Form (Subject: Copyright)</a>. Verified notices are processed within 48 business hours.</p>
+            <p class="pt-2">Send takedown notices to <strong>contact@hindianimeguide.in</strong> or submit via our <a
+                href="/contact" class="text-[#ff2e63] underline">Contact Form (Subject: Copyright)</a>. Verified notices
+              are processed within 48 business hours.</p>
           </div>
         </div>
 
         {% elif legal_page == 'disclaimer' %}
         <div class="space-y-6 text-sm sm:text-base text-white/85 leading-relaxed">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-2">
-            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">एफिलिएट और विज्ञापन डिस्क्लेमर (ASCI &amp; FTC)</h2>
-            <p>इस वेबसाइट पर दिखाए गए Amazon मंगा लिंक्स या पार्टनर लिंक्स के ज़रिए खरीदारी करने पर हमें बिना किसी अतिरिक्त शुल्क के छोटा एफिलिएट कमीशन मिल सकता है।</p>
+            <h2 class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">एफिलिएट और विज्ञापन
+              डिस्क्लेमर (ASCI &amp; FTC)</h2>
+            <p>इस वेबसाइट पर दिखाए गए Amazon मंगा लिंक्स या पार्टनर लिंक्स के ज़रिए खरीदारी करने पर हमें बिना किसी
+              अतिरिक्त शुल्क के छोटा एफिलिएट कमीशन मिल सकता है।</p>
           </div>
 
           <div class="space-y-3">
-            <h2 class="font-display-shonen text-xl text-white">1. Affiliate Disclosure (ASCI India &amp; FTC Guidelines)</h2>
-            <p>In full compliance with the <strong>Advertising Standards Council of India (ASCI)</strong> guidelines and United States <strong>Federal Trade Commission (FTC 16 CFR Part 255)</strong> endorsement rules, Hindi Anime Guide transparently discloses that certain outbound links—including official paperback search or product links to <strong>Amazon India (amazon.in)</strong> and partner retail platforms—are affiliate links.</p>
-            <p>When you click an affiliate link and complete a qualifying purchase, Hindi Anime Guide may earn a modest affiliate commission at <strong>zero extra cost to you</strong>. Affiliate revenue directly supports our server infrastructure, editorial writing, and automated Indian schedule tracking.</p>
+            <h2 class="font-display-shonen text-xl text-white">1. Affiliate Disclosure (ASCI India &amp; FTC Guidelines)
+            </h2>
+            <p>In full compliance with the <strong>Advertising Standards Council of India (ASCI)</strong> guidelines and
+              United States <strong>Federal Trade Commission (FTC 16 CFR Part 255)</strong> endorsement rules, Hindi
+              Anime Guide transparently discloses that certain outbound links—including official paperback search or
+              product links to <strong>Amazon India (amazon.in)</strong> and partner retail platforms—are affiliate
+              links.</p>
+            <p>When you click an affiliate link and complete a qualifying purchase, Hindi Anime Guide may earn a modest
+              affiliate commission at <strong>zero extra cost to you</strong>. Affiliate revenue directly supports our
+              server infrastructure, editorial writing, and automated Indian schedule tracking.</p>
           </div>
 
           <div class="space-y-3">
-            <h2 class="font-display-shonen text-xl text-white">2. Google AdSense &amp; Sponsored Content Transparency</h2>
-            <p>Display advertisements served through <strong>Google AdSense</strong> and clearly labeled sponsored placements are managed independently from our editorial rankings and anime recommendations. Editorial scores, IST airing schedules, and Hindi dub availability indicators are never altered in exchange for ad clicks or commissions.</p>
+            <h2 class="font-display-shonen text-xl text-white">2. Google AdSense &amp; Sponsored Content Transparency
+            </h2>
+            <p>Display advertisements served through <strong>Google AdSense</strong> and clearly labeled sponsored
+              placements are managed independently from our editorial rankings and anime recommendations. Editorial
+              scores, IST airing schedules, and Hindi dub availability indicators are never altered in exchange for ad
+              clicks or commissions.</p>
           </div>
 
           <div class="space-y-3">
             <h2 class="font-display-shonen text-xl text-white">3. Availability &amp; Pricing Accuracy</h2>
-            <p>Streaming catalog rights, Hindi audio dub releases, and retail paperback prices on third-party platforms change frequently without prior notice. Always verify active availability and pricing directly on the destination platform before subscribing or purchasing.</p>
+            <p>Streaming catalog rights, Hindi audio dub releases, and retail paperback prices on third-party platforms
+              change frequently without prior notice. Always verify active availability and pricing directly on the
+              destination platform before subscribing or purchasing.</p>
           </div>
         </div>
 
         {% elif legal_page == 'contact' %}
         <div class="space-y-6">
           <div class="p-5 border-l-4 border-[#ff2e63] bg-white/[0.03] space-y-1.5 text-sm text-white/85">
-            <p class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">DIRECT SUPABASE INBOX &bull; SPONSORSHIPS &amp; SUPPORT</p>
+            <p class="font-tech text-xs font-bold uppercase tracking-widest text-[#ff2e63]">DIRECT SUPABASE INBOX &bull;
+              SPONSORSHIPS &amp; SUPPORT</p>
             <p data-hi="ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या contact@hindianimeguide.in पर ईमेल करें।"
-               data-en="Submit the form below or email contact@hindianimeguide.in for brand sponsorships, DMCA inquiries, or editorial feedback.">ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या <strong>contact@hindianimeguide.in</strong> पर ईमेल करें।</p>
+              data-en="Submit the form below or email contact@hindianimeguide.in for brand sponsorships, DMCA inquiries, or editorial feedback.">
+              ब्रांड स्पॉन्सरशिप, कॉपीराइट सूचना (DMCA), या फीडबैक के लिए नीचे फॉर्म भरें या
+              <strong>contact@hindianimeguide.in</strong> पर ईमेल करें।</p>
           </div>
 
           <form id="hag-contact-form" onsubmit="submitContactForm(event)" class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div class="space-y-1.5">
-                <label for="cf-name" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="आपका नाम / Full Name" data-en="Full Name">आपका नाम / Full Name</label>
-                <input id="cf-name" name="name" type="text" required maxlength="120"
-                       placeholder="e.g. Aarav Sharma"
-                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
+                <label for="cf-name" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80"
+                  data-hi="आपका नाम / Full Name" data-en="Full Name">आपका नाम / Full Name</label>
+                <input id="cf-name" name="name" type="text" required maxlength="120" placeholder="e.g. Aarav Sharma"
+                  class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
               </div>
               <div class="space-y-1.5">
-                <label for="cf-email" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="ईमेल / Email Address" data-en="Email Address">ईमेल / Email Address</label>
-                <input id="cf-email" name="email" type="email" required maxlength="200"
-                       placeholder="name@example.com"
-                       class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
+                <label for="cf-email" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80"
+                  data-hi="ईमेल / Email Address" data-en="Email Address">ईमेल / Email Address</label>
+                <input id="cf-email" name="email" type="email" required maxlength="200" placeholder="name@example.com"
+                  class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none" />
               </div>
             </div>
 
             <div class="space-y-1.5">
-              <label for="cf-subject" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="विषय / Subject" data-en="Subject">विषय / Subject</label>
+              <label for="cf-subject" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80"
+                data-hi="विषय / Subject" data-en="Subject">विषय / Subject</label>
               <select id="cf-subject" name="subject"
-                      class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none">
+                class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white focus:outline-none">
                 <option value="Sponsorship">Sponsorship &amp; Brand Partnership</option>
                 <option value="Copyright">Copyright / DMCA Takedown Inquiry</option>
                 <option value="Feedback">Feedback, Dub Request &amp; Correction</option>
@@ -224,18 +313,20 @@
             </div>
 
             <div class="space-y-1.5">
-              <label for="cf-message" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80" data-hi="संदेश / Message" data-en="Message">संदेश / Message</label>
+              <label for="cf-message" class="block font-tech text-xs font-bold uppercase tracking-wider text-white/80"
+                data-hi="संदेश / Message" data-en="Message">संदेश / Message</label>
               <textarea id="cf-message" name="message" rows="5" required maxlength="4000"
-                        data-hi-placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
-                        data-en-placeholder="Write your message, sponsorship proposal, or inquiry details..."
-                        placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
-                        class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none"></textarea>
+                data-hi-placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
+                data-en-placeholder="Write your message, sponsorship proposal, or inquiry details..."
+                placeholder="अपना संदेश, स्पॉन्सरशिप प्रस्ताव, या विवरण लिखें..."
+                class="w-full px-4 py-3 bg-[#06070c] border border-white/20 focus:border-[#ff2e63] text-sm text-white placeholder-white/40 focus:outline-none"></textarea>
             </div>
 
             <div class="flex flex-wrap items-center gap-4">
               <button type="submit" id="cf-submit-btn"
-                      class="katana-btn px-7 py-3 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
-                <span><i class="fa-solid fa-paper-plane"></i> <span data-hi="संदेश भेजें" data-en="Send Message">संदेश भेजें</span></span>
+                class="katana-btn px-7 py-3 bg-[#cf0f46] hover:bg-white hover:text-[#06070c] text-white font-tech text-xs font-bold uppercase tracking-widest">
+                <span><i class="fa-solid fa-paper-plane"></i> <span data-hi="संदेश भेजें" data-en="Send Message">संदेश
+                    भेजें</span></span>
               </button>
               <span id="cf-error" class="text-xs font-bold text-[#ff2e63] hidden"></span>
             </div>

@@ -77,10 +77,16 @@
          data-search="{{ (item.title_hi ~ ' ' ~ item.title_en ~ ' ' ~ item.summary_en ~ ' ' ~ item.badge)|lower }}"
          class="group border border-white/15 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
         <div class="relative aspect-[16/10] overflow-hidden bg-[#06070c]">
+          {% if item.cover_url %}
           <img src="{{ item.cover_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
-               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-transparent to-transparent"></div>
+          {% else %}
+          <div class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-4 flex flex-col justify-end">
+            <span class="font-tech text-[10px] font-bold uppercase tracking-widest text-[#ff2e63]">{{ item.meta_left }}</span>
+            <p class="font-display-shonen text-sm text-white/90 line-clamp-2 mt-1">{{ item.title_en }}</p>
+          </div>
+          {% endif %}
           <span class="absolute top-2.5 left-2.5 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[10px] font-bold uppercase tracking-wider">
             {{ item.kind|upper }}
           </span>

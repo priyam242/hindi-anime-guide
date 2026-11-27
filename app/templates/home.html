@@ -249,7 +249,60 @@
   </div>
 </section>
 
-<!-- DAILY ANIME CLASH: LIVE SUPABASE COMMUNITY POLL -->
+<!-- ZONE 2: LIVE IST SCHEDULE (HABIT LOOP FIRST — TODAY'S EPISODES AUTO-FOCUSED) -->
+<section id="ist-schedule" class="py-14 sm:py-16 border-b border-white/10 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div class="space-y-2">
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">INDIAN STANDARD TIME &bull; LIVE TIMELINE</span>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="साप्ताहिक IST शेड्यूल • आज के एपिसोड" data-en="WEEKLY IST SCHEDULE • TODAY'S EPISODES">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
+      </div>
+      <a href="/schedule" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+        <span data-hi="पूरा {{ counts.schedule }} शेड्यूल देखें" data-en="View Full {{ counts.schedule }} Schedule">पूरा {{ counts.schedule }} शेड्यूल देखें</span>
+        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+      </a>
+    </div>
+
+    <!-- Day Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
+      {% for day_hi, day_en in schedule_days %}
+      <button type="button"
+              onclick="selectScheduleDay('{{ day_hi }}')"
+              data-day-tab="{{ day_hi }}"
+              class="sch-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors {{ 'border-[#ff2e63] text-white bg-white/5' if loop.first else 'border-transparent text-white/70 hover:text-white' }}">
+        <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Day Panels -->
+    {% for day_hi, day_en in schedule_days %}
+    <div data-day-panel="{{ day_hi }}" class="sch-day-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 {{ '' if loop.first else 'hidden' }}">
+      {% for show in schedule_by_day.get(day_hi, [])[:8] %}
+      <a href="{{ show.detail_url or show.source_url }}"
+         class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
+        <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy" decoding="async"
+             onerror="this.src='/static/media/emblem_icon.webp'"
+             class="w-14 h-20 object-cover shrink-0 border border-white/15" />
+        <div class="min-w-0 space-y-1 flex-1">
+          <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase tracking-wider">
+            <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
+            <span class="px-1.5 py-0.5 border border-white/25 text-white/90">{{ '🇮🇳 HINDI DUB' if show.hindi_dub else '🇯🇵 SUB' }}</span>
+            {% if show.airing_at %}<span class="text-[#ff2e63]" data-countdown-ts="{{ show.airing_at }}">{{ show.initial_countdown }}</span>{% endif %}
+          </div>
+          <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
+              data-hi="{{ show.title_hi }}"
+              data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
+          <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ZONE 3: DAILY ANIME CLASH: LIVE SUPABASE COMMUNITY POLL -->
 <section id="daily-anime-clash" class="py-12 border-b border-white/10 bg-[#06070c]">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="p-6 sm:p-8 border-2 border-[#ff2e63]/60 bg-gradient-to-br from-[#ff2e63]/10 via-[#06070c] to-[#06070c] space-y-6">
@@ -315,64 +368,7 @@
   </div>
 </section>
 
-<!-- ZONE 2: STRIPE PRESS 3D INTERACTIVE MANGA SHELF -->
-<section id="manga-3d-shelf" class="py-16 sm:py-20 border-b border-white/10 bg-[#06070c]">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div class="space-y-2">
-        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">STRIPE PRESS EDITION &bull; 3D BOOKSHELF</span>
-        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight"><span data-hi="3D मंगा शेल्फ़" data-en="3D MANGA SHELF">3D मंगा शेल्फ़</span> <span class="text-[#ff2e63]">COLLECTION</span></h2>
-      </div>
-      <a href="/manga" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
-        <span data-hi="सभी {{ counts.manga }} वॉल्यूम देखें" data-en="View All {{ counts.manga }} Volumes">सभी {{ counts.manga }} वॉल्यूम देखें</span>
-        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
-      </a>
-    </div>
-
-    {% set shelf_books = manga[:12] %}
-    {% if shelf_books %}
-    <div class="shelf-stage space-y-12">
-      {% for row_books in [shelf_books[:6], shelf_books[6:12]] if row_books %}
-      <div class="shelf-ledge pb-6 pt-2 px-3 sm:px-6">
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 sm:gap-8 items-end">
-          {% for m in row_books %}
-          <button type="button"
-                  class="book-card-btn group focus:outline-none"
-                  onclick='openMangaModal({{ m|tojson }})'
-                  title="Inspect {{ m.title_en }}">
-            <div class="book-3d">
-              <div class="book-spine">
-                <span class="book-spine-label">{{ m.volume_label }}</span>
-              </div>
-              <div class="book-pages"></div>
-              <div class="book-face-front">
-                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" decoding="async"
-                     onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover" />
-                <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/20 to-transparent"></div>
-                <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
-                  {{ m.volume_label }}
-                </span>
-                <div class="absolute bottom-2.5 left-2.5 right-2.5">
-                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight"
-                     data-hi="{{ m.title_hi }}"
-                     data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
-                  <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-1 truncate">{{ m.author }} &bull; {{ m.chapters }}</p>
-                </div>
-              </div>
-            </div>
-          </button>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="text-sm text-white/60" data-hi="कोई मंगा परिणाम नहीं मिला।" data-en="No manga results found.">कोई मंगा परिणाम नहीं मिला।</p>
-    {% endif %}
-  </div>
-</section>
-
-<!-- ZONE 3: VISUAL EDITORIAL NEWS BENTO GRID -->
+<!-- ZONE 4: 48-HOUR ROLLING ANIME NEWSWIRE -->
 <section id="visual-news" class="py-16 sm:py-20 border-b border-white/10 bg-[#06070c]">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -397,12 +393,16 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- Featured Lead Visual Card -->
       <a href="/news/{{ lead.slug }}"
-         class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
+         class="lg:col-span-7 group relative min-h-[340px] sm:min-h-[420px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
+        {% if lead.image_url %}
         <img src="{{ lead.image_url }}" alt="{{ lead.title_en }}" loading="lazy" decoding="async"
-             onerror="this.src='/static/media/emblem_icon.webp'"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/55 to-transparent"></div>
-        <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-8 space-y-3">
+             class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
+        {% else %}
+        <div class="absolute inset-0 bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c]"></div>
+        <span class="absolute top-6 right-6 font-display-shonen text-5xl text-white/10 tracking-widest select-none">NEWS</span>
+        {% endif %}
+        <div class="relative z-10 p-6 sm:p-8 space-y-3">
           <div class="flex flex-wrap items-center gap-2 font-tech text-[11px] font-bold uppercase tracking-widest">
             <span class="px-2.5 py-0.5 bg-[#cf0f46] text-white">{{ lead.category }}</span>
             {% if lead.is_expiring_soon %}
@@ -435,12 +435,15 @@
       <div class="lg:col-span-5 grid grid-cols-1 gap-6">
         {% for item in side_cards %}
         <a href="/news/{{ item.slug }}"
-           class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors">
+           class="group relative min-h-[195px] border border-white/15 hover:border-[#ff2e63] overflow-hidden bg-[#06070c] transition-colors flex flex-col justify-end">
+          {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
-               onerror="this.src='/static/media/emblem_icon.webp'"
-               class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
+               class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
           <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/60 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-5 space-y-1.5">
+          {% else %}
+          <div class="absolute inset-0 bg-gradient-to-br from-[#cf0f46]/25 via-[#06070c] to-[#06070c]"></div>
+          {% endif %}
+          <div class="relative z-10 p-5 space-y-1.5">
             <div class="flex flex-wrap items-center gap-2 font-tech text-[10px] font-bold uppercase tracking-widest">
               <span class="text-[#ff2e63]">{{ item.category }}</span>
               {% if item.is_expiring_soon %}
@@ -471,20 +474,26 @@
       {% for item in grid_cards %}
       <a href="/news/{{ item.slug }}"
          class="group border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] overflow-hidden transition-colors flex flex-col">
-        <div class="aspect-video overflow-hidden relative">
+        <div class="aspect-video overflow-hidden relative bg-[#06070c] flex items-center justify-center">
+          {% if item.image_url %}
           <img src="{{ item.image_url }}" alt="{{ item.title_en }}" loading="lazy" decoding="async"
-               onerror="this.src='/static/media/emblem_icon.webp'"
                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {% else %}
+          <div class="w-full h-full bg-gradient-to-br from-[#cf0f46]/30 via-[#06070c] to-[#06070c] p-5 flex flex-col justify-end border-b border-white/10">
+            <span class="font-tech text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff2e63]">HINDI ANIME NEWSWIRE</span>
+            <p class="font-display-shonen text-base text-white/90 line-clamp-2 mt-1">{{ item.title_en }}</p>
+          </div>
+          {% endif %}
           <span class="absolute top-3 left-3 px-2 py-0.5 bg-[#06070c]/90 border-l-2 border-[#ff2e63] font-tech text-[10px] font-bold uppercase tracking-widest text-white">
             {{ item.category }}
           </span>
         </div>
-        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between bg-[#06070c]">
           <h3 class="text-sm font-bold text-white leading-snug line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
               data-hi="{{ item.title_hi }}"
               data-en="{{ item.title_en }}">{{ item.title_hi }}</h3>
           <div class="flex flex-wrap items-center justify-between gap-2 font-tech text-[10px] uppercase tracking-wider">
-            <span class="text-white/70" data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span>
+            <span class="text-white/75" data-hi="{{ item.relative_age }}" data-en="{{ item.relative_age_en }}">{{ item.relative_age }}</span>
             {% if item.is_expiring_soon %}
             <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white font-bold animate-pulse"
                   data-hi="⏳ {{ item.hours_left }}h में आर्काइव"
@@ -504,61 +513,70 @@
   </div>
 </section>
 
-<!-- ZONE 4: LIVE IST BROADCAST SCHEDULE STRIP & OFFICIAL TRAILERS ROW -->
-<section id="ist-schedule" class="py-16 sm:py-20 bg-[#06070c]">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-    <!-- IST Broadcast Timeline -->
-    <div class="space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div class="space-y-2">
-          <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">INDIAN STANDARD TIME &bull; LIVE TIMELINE</span>
-          <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight" data-hi="साप्ताहिक IST शेड्यूल" data-en="WEEKLY IST SCHEDULE">साप्ताहिक <span class="text-[#ff2e63]">IST शेड्यूल</span></h2>
-        </div>
-        <a href="/schedule" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
-          <span data-hi="पूरा {{ counts.schedule }} शेड्यूल देखें" data-en="View Full {{ counts.schedule }} Schedule">पूरा {{ counts.schedule }} शेड्यूल देखें</span>
-          <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
-        </a>
+<!-- ZONE 5: STRIPE PRESS 3D INTERACTIVE MANGA SHELF -->
+<section id="manga-3d-shelf" class="py-16 sm:py-20 border-b border-white/10 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div class="space-y-2">
+        <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">STRIPE PRESS EDITION &bull; 3D BOOKSHELF</span>
+        <h2 class="font-display-shonen text-2xl sm:text-4xl text-white tracking-tight"><span data-hi="3D मंगा शेल्फ़" data-en="3D MANGA SHELF">3D मंगा शेल्फ़</span> <span class="text-[#ff2e63]">COLLECTION</span></h2>
       </div>
+      <a href="/manga" class="inline-flex min-h-[36px] items-center gap-2 font-tech text-xs font-bold tracking-widest uppercase text-white/85 hover:text-[#ff2e63] transition-colors">
+        <span data-hi="सभी {{ counts.manga }} वॉल्यूम देखें" data-en="View All {{ counts.manga }} Volumes">सभी {{ counts.manga }} वॉल्यूम देखें</span>
+        <i class="fa-solid fa-arrow-right text-[#ff2e63]"></i>
+      </a>
+    </div>
 
-      <!-- Day Tabs -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10">
-        {% for day_hi, day_en in schedule_days %}
-        <button type="button"
-                onclick="selectScheduleDay('{{ day_hi }}')"
-                data-day-tab="{{ day_hi }}"
-                class="sch-day-tab min-h-[38px] px-4 py-2 font-tech text-xs font-bold uppercase tracking-wider shrink-0 border-b-2 transition-colors {{ 'border-[#ff2e63] text-white bg-white/5' if loop.first else 'border-transparent text-white/70 hover:text-white' }}">
-          <span data-hi="{{ day_hi }}" data-en="{{ day_en }}">{{ day_hi }}</span> <span class="text-[10px] opacity-80">({{ schedule_by_day.get(day_hi, [])|length }})</span>
-        </button>
-        {% endfor %}
-      </div>
-
-      <!-- Day Panels -->
-      {% for day_hi, day_en in schedule_days %}
-      <div data-day-panel="{{ day_hi }}" class="sch-day-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 {{ '' if loop.first else 'hidden' }}">
-        {% for show in schedule_by_day.get(day_hi, [])[:8] %}
-        <a href="{{ show.detail_url or show.source_url }}"
-           class="group flex items-center gap-3.5 p-3 border border-white/10 hover:border-[#ff2e63] bg-white/[0.02] transition-colors">
-          <img src="{{ show.image_url }}" alt="{{ show.title_en }}" loading="lazy" decoding="async"
-               onerror="this.src='/static/media/emblem_icon.webp'"
-               class="w-14 h-20 object-cover shrink-0 border border-white/15" />
-          <div class="min-w-0 space-y-1 flex-1">
-            <div class="flex flex-wrap items-center gap-1.5 font-tech text-[10px] font-bold uppercase tracking-wider">
-              <span class="px-1.5 py-0.5 bg-[#cf0f46] text-white">{{ show.airing_time }}</span>
-              {% if show.airing_at %}<span class="text-[#ff2e63]" data-countdown-ts="{{ show.airing_at }}">--:--:--</span>{% endif %}
+    {% set shelf_books = manga[:12] %}
+    {% if shelf_books %}
+    <div class="shelf-stage space-y-12">
+      {% for row_books in [shelf_books[:6], shelf_books[6:12]] if row_books %}
+      <div class="shelf-ledge pb-6 pt-2 px-3 sm:px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 sm:gap-8 items-end">
+          {% for m in row_books %}
+          <button type="button"
+                  class="book-card-btn group focus:outline-none"
+                  onclick='openMangaModal({{ m|tojson }})'
+                  title="Inspect {{ m.title_en }}">
+            <div class="book-3d">
+              <div class="book-spine">
+                <span class="book-spine-label">{{ m.volume_label }}</span>
+              </div>
+              <div class="book-pages"></div>
+              <div class="book-face-front">
+                <img src="{{ m.cover_url }}" alt="{{ m.title_en }}" loading="lazy" decoding="async"
+                     onerror="this.src='/static/media/emblem_icon.webp'" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-[#06070c] via-[#06070c]/25 to-transparent"></div>
+                <span class="absolute top-2 left-2 px-2 py-0.5 bg-[#cf0f46] text-white font-tech text-[9px] font-bold tracking-widest uppercase">
+                  {{ m.volume_label }}
+                </span>
+                <div class="absolute bottom-2.5 left-2.5 right-2.5">
+                  <p class="text-[11px] font-bold text-white line-clamp-2 leading-tight"
+                     data-hi="{{ m.title_hi }}"
+                     data-en="{{ m.title_en }}">{{ m.title_hi }}</p>
+                  {% if m.title_en != m.title_hi %}
+                  <p class="font-tech text-[9px] text-white/70 truncate">{{ m.title_en }}</p>
+                  {% endif %}
+                  <p class="font-tech text-[9px] font-bold uppercase tracking-wider text-[#ff2e63] mt-0.5 truncate">{{ m.author }} &bull; {{ m.chapters }}</p>
+                </div>
+              </div>
             </div>
-            <h3 class="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ff2e63] transition-colors"
-                data-hi="{{ show.title_hi }}"
-                data-en="{{ show.title_en }}">{{ show.title_hi }}</h3>
-            <p class="text-[10px] text-white/65 truncate">{{ show.episode_label }} &bull; {{ show.title_en }}</p>
-          </div>
-        </a>
-        {% endfor %}
+          </button>
+          {% endfor %}
+        </div>
       </div>
       {% endfor %}
     </div>
+    {% else %}
+    <p class="text-sm text-white/60" data-hi="कोई मंगा परिणाम नहीं मिला।" data-en="No manga results found.">कोई मंगा परिणाम नहीं मिला।</p>
+    {% endif %}
+  </div>
+</section>
 
-    <!-- Licensed Trailers Row -->
-    <div id="trailers-row" class="space-y-6 pt-4 border-t border-white/10">
+<!-- ZONE 6: LICENSED TRAILERS LIGHTBOX ROW -->
+<section id="trailers-section" class="py-16 sm:py-20 bg-[#06070c]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div id="trailers-row" class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div class="space-y-2">
           <span class="font-tech text-[11px] font-bold tracking-[0.22em] uppercase text-[#ff2e63]">LICENSED PVs &bull; LIGHTBOX</span>
@@ -765,6 +783,17 @@
     }
     updateAll();
     setInterval(updateAll, 1000);
+  })();
+
+  (function autoSelectTodayISTHero() {
+    var dayMap = {
+      Sun: "रविवार", Mon: "सोमवार", Tue: "मंगलवार", Wed: "बुधवार",
+      Thu: "गुरुवार", Fri: "शुक्रवार", Sat: "शनिवार"
+    };
+    try {
+      var wd = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", weekday: "short" }).format(new Date());
+      if (dayMap[wd] && typeof selectScheduleDay === "function") selectScheduleDay(dayMap[wd]);
+    } catch (e) {}
   })();
 
   // Linear Animation Principle: GSAP quickTo multi-depth pointer + scroll parallax
